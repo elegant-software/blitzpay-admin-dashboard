@@ -1,0 +1,1155 @@
+import { CommonModule } from '@angular/common';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import * as L from 'leaflet';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import {
+  Branch,
+  BranchFormModel,
+  LogoFormModel,
+  LocationFormModel,
+  Merchant,
+  MerchantFormModel,
+  MerchantLocation,
+  Product,
+  ProductBranchGroup,
+  ProductFormModel,
+  UpdateBranchRequest,
+  UpdateMerchantRequest
+} from '../models/merchant-catalog.models';
+import { MerchantApiService } from '../services/merchant-api.service';
+import { getEnvironmentByKey } from '../services/merchant-environment.service';
+
+@Component({
+  selector: 'app-merchant-catalog',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './merchant-catalog.component.html',
+  styleUrl: './merchant-catalog.component.css'
+})
+export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
+  @ViewChild('leafletBranchMap') private leafletBranchMapElement?: ElementRef<HTMLDivElement>;
+
+  selectedEnvironmentKey: 'local' | 'staging' = 'local';
+  apiVersion = 'v1';
+
+  catalogSearchTerm = '';
+  catalogSearchSummary = '';
+
+  selectedMerchant: Merchant | null = null;
+  merchantLocation: MerchantLocation | null = null;
+  branches: Branch[] = [];
+  selectedBranch: Branch | null = null;
+  products: Product[] = [];
+
+  selectedProduct: Product | null = null;
+  productDialogOpen = false;
+  merchantDialogOpen = false;
+  branchDialogOpen = false;
+  failedProductImages = new Set<string>();
+
+  locationForm: LocationFormModel = this.emptyLocationForm();
+  merchantForm: MerchantFormModel = this.emptyMerchantForm();
+  branchForm: BranchFormModel = this.emptyBranchForm();
+  productEditForm: ProductFormModel = this.emptyProductForm();
+  logoForm: LogoFormModel = { storageKey: '' };
+
+  statusMessage = '';
+  errorMessage = '';
+  loading = false;
+
+  dirtyForms = {
+    location: false,
+    merchant: false,
+    branch: false,
+    editProduct: false,
+    logo: false
+  };
+
+  readonly paymentChannelOptions = ['PAYPAL', 'STRIPE', 'TRUELAYER'];
+  readonly merchantStatusOptions = [
+    'DRAFT',
+    'SUBMITTED',
+    'VERIFICATION',
+    'SCREENING',
+    'RISK_REVIEW',
+    'DECISION_PENDING',
+    'SETUP',
+    'ACTIVE',
+    'MONITORING',
+    'ACTION_REQUIRED',
+    'REJECTED'
+  ];
+
+  private leafletMap: L.Map | null = null;
+  private leafletMarker: L.CircleMarker | null = null;
+  private leafletCircle: L.Circle | null = null;
+  private leafletRenderTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(
+    private readonly merchantApi: MerchantApiService
+  ) {}
+
+  ngAfterViewInit(): void {
+    this.scheduleLeafletRender();
+  }
+
+  ngOnDestroy(): void {
+    this.clearLeafletTimer();
+    this.destroyLeafletMap();
+  }
+
+  get hasUnsavedChanges(): boolean {
+    return Object.values(this.dirtyForms).some(Boolean);
+  }
+
+  get selectedEnvironment() {
+    return getEnvironmentByKey(this.selectedEnvironmentKey);
+  }
+
+  get activeSearchHint(): string {
+    return 'Search by merchant ID.';
+  }
+
+  get hasLocalCatalogQuery(): boolean {
+    return false;
+  }
+
+  get visibleBranchGroups(): ProductBranchGroup[] {
+    return this.buildVisibleGroups();
+  }
+
+  get visibleProductCount(): number {
+    return this.visibleBranchGroups.reduce((count, group) => count + group.products.length, 0);
+  }
+
+  get visibleTableRows(): Array<{
+    merchantId: string;
+    merchantReference: string;
+    branchId: string | null;
+    branchName: string;
+    product: Product | null;
+  }> {
+    const merchant = this.selectedMerchant;
+    if (!merchant) {
+      return [];
+    }
+
+    return this.visibleBranchGroups.flatMap<{
+      merchantId: string;
+      merchantReference: string;
+      branchId: string | null;
+      branchName: string;
+      product: Product | null;
+    }>((group) => {
+      if (!group.products.length) {
+        return [
+          {
+            merchantId: merchant.applicationId,
+            merchantReference: merchant.applicationReference,
+            branchId: group.branchId,
+            branchName: group.branchLabel,
+            product: null
+          }
+        ];
+      }
+
+      return group.products.map((product) => ({
+        merchantId: merchant.applicationId,
+        merchantReference: merchant.applicationReference,
+        branchId: group.branchId,
+        branchName: group.branchLabel,
+        product
+      }));
+    });
+  }
+
+  get visibleProductRows(): Product[] {
+    if (!this.selectedBranch?.branchId) {
+      return [];
+    }
+
+    return this.products;
+  }
+
+  get branchProductCountMap(): Record<string, number> {
+    return this.visibleBranchGroups.reduce<Record<string, number>>((acc, group) => {
+      if (group.branchId) {
+        acc[group.branchId] = group.products.length;
+      }
+      return acc;
+    }, {});
+  }
+
+  merchantStatusTone(status: string): string {
+    const normalized = status.toLowerCase();
+    if (normalized === 'active') {
+      return 'status-tag-success';
+    }
+    if (normalized.includes('review') || normalized.includes('pending') || normalized.includes('screening')) {
+      return 'status-tag-warning';
+    }
+    if (normalized.includes('rejected') || normalized.includes('action_required')) {
+      return 'status-tag-danger';
+    }
+    return 'status-tag-neutral';
+  }
+
+  productStatusTone(product: Product): string {
+    return product.active ? 'status-tag-success' : 'status-tag-neutral';
+  }
+
+  productStatusLabel(product: Product): string {
+    return product.active ? 'Active' : 'Inactive';
+  }
+
+  branchStatusTone(branch: Branch): string {
+    return branch.active === false ? 'status-tag-neutral' : 'status-tag-success';
+  }
+
+  branchStatusLabel(branch: Branch): string {
+    return branch.active === false ? 'Inactive' : 'Active';
+  }
+
+  get hasBranchCoordinates(): boolean {
+    const latitude = this.toOptionalNumber(this.branchForm.latitude);
+    const longitude = this.toOptionalNumber(this.branchForm.longitude);
+    return latitude != null && longitude != null;
+  }
+
+  get branchMapLink(): string | null {
+    const latitude = this.toOptionalNumber(this.branchForm.latitude);
+    const longitude = this.toOptionalNumber(this.branchForm.longitude);
+    if (latitude == null || longitude == null) {
+      return null;
+    }
+
+    return `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`;
+  }
+
+  get branchGeofenceRadius(): number | null {
+    return this.toOptionalNumber(this.branchForm.geofenceRadiusMeters) ?? null;
+  }
+
+  onMerchantActiveToggle(active: boolean): void {
+    if (active) {
+      this.merchantForm.status = 'ACTIVE';
+    } else if (this.merchantForm.status === 'ACTIVE') {
+      this.merchantForm.status = 'SETUP';
+    }
+    this.dirtyForms.merchant = true;
+  }
+
+  onProductStatusToggle(active: boolean): void {
+    if (!this.selectedProduct) {
+      return;
+    }
+    this.productEditForm.active = active;
+    this.selectedProduct = { ...this.selectedProduct, active };
+    this.dirtyForms.editProduct = true;
+  }
+
+  refreshBranchMapPreview(): void {
+    this.scheduleLeafletRender();
+  }
+
+  hasChannel(selected: string[], channel: string): boolean {
+    return selected.includes(channel);
+  }
+
+  toggleMerchantChannel(channel: string, checked: boolean): void {
+    this.merchantForm.activePaymentChannels = checked
+      ? [...new Set([...this.merchantForm.activePaymentChannels, channel])]
+      : this.merchantForm.activePaymentChannels.filter((value) => value !== channel);
+    this.dirtyForms.merchant = true;
+  }
+
+  toggleBranchChannel(channel: string, checked: boolean): void {
+    this.branchForm.activePaymentChannels = checked
+      ? [...new Set([...this.branchForm.activePaymentChannels, channel])]
+      : this.branchForm.activePaymentChannels.filter((value) => value !== channel);
+    this.dirtyForms.branch = true;
+  }
+
+  runCatalogSearch(): void {
+    this.errorMessage = '';
+    this.statusMessage = '';
+
+    const searchTerm = this.catalogSearchTerm.trim();
+    if (!searchTerm) {
+      this.errorMessage = 'Enter a search value before searching.';
+      return;
+    }
+
+    this.loadMerchantById(searchTerm, 'Unable to find merchant by ID.');
+  }
+
+  clearCatalogSearch(): void {
+    this.catalogSearchTerm = '';
+    this.catalogSearchSummary = '';
+    this.errorMessage = '';
+    this.statusMessage = '';
+    this.selectedMerchant = null;
+    this.merchantLocation = null;
+    this.branches = [];
+    this.products = [];
+    this.selectedBranch = null;
+    this.merchantForm = this.emptyMerchantForm();
+    this.branchForm = this.emptyBranchForm();
+    this.closeMerchantDialog();
+    this.closeBranchDialog();
+    this.closeProductDialog(true);
+  }
+
+  openMerchantDialog(): void {
+    if (!this.selectedMerchant) {
+      return;
+    }
+    this.merchantForm = this.merchantFormFromEntity(this.selectedMerchant);
+    this.merchantDialogOpen = true;
+    this.dirtyForms.merchant = false;
+  }
+
+  closeMerchantDialog(): void {
+    this.merchantDialogOpen = false;
+  }
+
+  saveMerchant(): void {
+    if (!this.selectedMerchant) {
+      return;
+    }
+    if (
+      !this.merchantForm.legalBusinessName.trim() ||
+      !this.merchantForm.primaryBusinessAddress.trim() ||
+      !this.merchantForm.contactFullName.trim() ||
+      !this.merchantForm.contactEmail.trim() ||
+      !this.merchantForm.contactPhoneNumber.trim()
+    ) {
+      this.errorMessage = 'Merchant name, address, contact name, email, and phone are required.';
+      return;
+    }
+
+    const payload: UpdateMerchantRequest = {
+      legalBusinessName: this.merchantForm.legalBusinessName.trim(),
+      primaryBusinessAddress: this.merchantForm.primaryBusinessAddress.trim(),
+      contactFullName: this.merchantForm.contactFullName.trim(),
+      contactEmail: this.merchantForm.contactEmail.trim(),
+      contactPhoneNumber: this.merchantForm.contactPhoneNumber.trim(),
+      activePaymentChannels: [...this.merchantForm.activePaymentChannels],
+      status: this.merchantForm.status
+    };
+
+    this.loading = true;
+    this.merchantApi.updateMerchant(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, payload).subscribe({
+      next: (merchant) => {
+        this.loading = false;
+        this.selectedMerchant = merchant;
+        this.merchantForm = this.merchantFormFromEntity(merchant);
+        this.dirtyForms.merchant = false;
+        this.statusMessage = 'Merchant updated.';
+        this.closeMerchantDialog();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.errorMessage = this.toMessage(error, 'Unable to update merchant.');
+      }
+    });
+  }
+
+  saveLocation(): void {
+    if (!this.selectedMerchant) {
+      return;
+    }
+
+    const latitude = Number(this.locationForm.latitude);
+    const longitude = Number(this.locationForm.longitude);
+    const geofenceRadiusMeters = Number(this.locationForm.geofenceRadiusMeters);
+
+    if (Number.isNaN(latitude) || Number.isNaN(longitude) || Number.isNaN(geofenceRadiusMeters) || geofenceRadiusMeters <= 0) {
+      this.errorMessage = 'Valid latitude, longitude, and positive geofence radius are required.';
+      return;
+    }
+
+    this.loading = true;
+    this.merchantApi
+      .saveLocation(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, {
+        latitude,
+        longitude,
+        geofenceRadiusMeters,
+        googlePlaceId: this.locationForm.googlePlaceId,
+        addressLine1: this.locationForm.addressLine1,
+        addressLine2: this.locationForm.addressLine2,
+        city: this.locationForm.city,
+        postalCode: this.locationForm.postalCode,
+        country: this.locationForm.country
+      })
+      .subscribe({
+        next: (location) => {
+          this.loading = false;
+          this.merchantLocation = location;
+          this.locationForm = this.locationFromEntity(location);
+          this.dirtyForms.location = false;
+          this.statusMessage = 'Merchant location saved.';
+        },
+        error: (error) => {
+          this.loading = false;
+          this.errorMessage = this.toMessage(error, 'Unable to save merchant location.');
+        }
+      });
+  }
+
+  removeLocation(): void {
+    if (!this.selectedMerchant || !confirm('Remove merchant location?')) {
+      return;
+    }
+
+    this.loading = true;
+    this.merchantApi.removeLocation(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId).subscribe({
+      next: () => {
+        this.loading = false;
+        this.merchantLocation = null;
+        this.locationForm = this.emptyLocationForm();
+        this.dirtyForms.location = false;
+        this.statusMessage = 'Merchant location removed.';
+      },
+      error: (error) => {
+        this.loading = false;
+        this.errorMessage = this.toMessage(error, 'Unable to remove merchant location.');
+      }
+    });
+  }
+
+  selectBranch(branch: Branch): void {
+    if (!this.selectedMerchant) {
+      return;
+    }
+
+    const branchId = branch.branchId ?? branch.id;
+    if (!branchId) {
+      this.selectedBranch = this.normalizeBranch(branch);
+      return;
+    }
+
+    this.loading = true;
+    this.merchantApi.getBranch(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, branchId).subscribe({
+      next: (detail) => {
+        this.selectedBranch = this.normalizeBranch(detail);
+        this.loadProductsForSelectedBranch();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.errorMessage = this.toMessage(error, 'Unable to load branch details.');
+      }
+    });
+  }
+
+  openBranchDialog(branch: Branch): void {
+    if (!this.selectedMerchant) {
+      return;
+    }
+
+    const branchId = branch.branchId ?? branch.id;
+    if (!branchId) {
+      this.selectedBranch = this.normalizeBranch(branch);
+      this.branchForm = this.branchFormFromEntity(this.selectedBranch);
+      this.branchDialogOpen = true;
+      this.dirtyForms.branch = false;
+      return;
+    }
+
+    this.loading = true;
+    this.merchantApi.getBranch(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, branchId).subscribe({
+      next: (detail) => {
+        this.loading = false;
+        this.selectedBranch = this.normalizeBranch(detail);
+        this.branchForm = this.branchFormFromEntity(this.selectedBranch);
+        this.branchDialogOpen = true;
+        this.dirtyForms.branch = false;
+        this.scheduleLeafletRender();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.errorMessage = this.toMessage(error, 'Unable to load branch details.');
+      }
+    });
+  }
+
+  closeBranchDialog(): void {
+    this.branchDialogOpen = false;
+    this.destroyLeafletMap();
+  }
+
+  saveBranch(): void {
+    if (!this.selectedMerchant || !this.selectedBranch?.branchId) {
+      return;
+    }
+    if (!this.branchForm.name.trim()) {
+      this.errorMessage = 'Branch name is required.';
+      return;
+    }
+
+    const payload: UpdateBranchRequest = {
+      name: this.branchForm.name.trim(),
+      active: this.branchForm.active,
+      addressLine1: this.branchForm.addressLine1.trim() || undefined,
+      addressLine2: this.branchForm.addressLine2.trim() || undefined,
+      city: this.branchForm.city.trim() || undefined,
+      postalCode: this.branchForm.postalCode.trim() || undefined,
+      country: this.branchForm.country.trim() || undefined,
+      contactFullName: this.branchForm.contactFullName.trim() || undefined,
+      contactEmail: this.branchForm.contactEmail.trim() || undefined,
+      contactPhoneNumber: this.branchForm.contactPhoneNumber.trim() || undefined,
+      activePaymentChannels: [...this.branchForm.activePaymentChannels],
+      latitude: this.toOptionalNumber(this.branchForm.latitude),
+      longitude: this.toOptionalNumber(this.branchForm.longitude),
+      geofenceRadiusMeters: this.toOptionalNumber(this.branchForm.geofenceRadiusMeters),
+      googlePlaceId: this.branchForm.googlePlaceId.trim() || undefined
+    };
+
+    this.loading = true;
+    this.merchantApi
+      .updateBranch(
+        this.selectedEnvironment,
+        this.apiVersion,
+        this.selectedMerchant.applicationId,
+        this.selectedBranch.branchId,
+        payload
+      )
+      .subscribe({
+        next: (branch) => {
+          this.loading = false;
+          this.selectedBranch = this.normalizeBranch(branch);
+          this.branchForm = this.branchFormFromEntity(this.selectedBranch);
+          this.dirtyForms.branch = false;
+          this.statusMessage = 'Branch updated.';
+          this.scheduleLeafletRender();
+          this.closeBranchDialog();
+          this.refreshBranches();
+          this.loadProductsForSelectedBranch();
+        },
+        error: (error) => {
+          this.loading = false;
+          this.errorMessage = this.toMessage(error, 'Unable to update branch.');
+        }
+      });
+  }
+
+  removeBranch(branch: Branch): void {
+    if (!this.selectedMerchant || !branch.branchId) {
+      return;
+    }
+    if (!confirm(`Deactivate branch "${branch.name}"?`)) {
+      return;
+    }
+
+    this.loading = true;
+    this.merchantApi.deleteBranch(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, branch.branchId).subscribe({
+      next: () => {
+        this.loading = false;
+        this.statusMessage = `Branch "${branch.name}" deactivated.`;
+        this.branches = this.branches.map((b) =>
+          b.branchId === branch.branchId ? { ...b, active: false } : b
+        );
+        if (this.selectedBranch?.branchId === branch.branchId) {
+          this.selectedBranch = null;
+          this.products = [];
+          this.syncCatalogSearchSummary();
+        }
+        this.closeBranchDialog();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.errorMessage = this.toMessage(error, 'Unable to deactivate branch.');
+      }
+    });
+  }
+
+  openProduct(product: Product): void {
+    if (!this.selectedMerchant) {
+      return;
+    }
+
+    this.loading = true;
+    this.merchantApi
+      .getProduct(
+        this.selectedEnvironment,
+        this.apiVersion,
+        this.selectedMerchant.applicationId,
+        product.productId,
+        product.branchId ?? undefined
+      )
+      .subscribe({
+        next: (detail) => {
+          this.loading = false;
+          this.selectedProduct = detail;
+          this.productEditForm = {
+            name: detail.name,
+            active: detail.active,
+            unitPrice: String(detail.unitPrice),
+            branchId: detail.branchId ?? '',
+            description: detail.description ?? '',
+            imageFile: null
+          };
+          this.productDialogOpen = true;
+          this.dirtyForms.editProduct = false;
+        },
+        error: (error) => {
+          this.loading = false;
+          this.errorMessage = this.toMessage(error, 'Unable to load product details.');
+        }
+      });
+  }
+
+  closeProductDialog(force = false): void {
+    if (!force && this.dirtyForms.editProduct && !confirm('Close the product editor and discard unsaved changes?')) {
+      return;
+    }
+
+    this.productDialogOpen = false;
+    this.selectedProduct = null;
+    this.productEditForm = this.emptyProductForm();
+    this.dirtyForms.editProduct = false;
+  }
+
+  updateProduct(): void {
+    if (!this.selectedMerchant || !this.selectedProduct) {
+      return;
+    }
+
+    if (!this.productEditForm.name.trim() || !this.productEditForm.unitPrice.trim()) {
+      this.errorMessage = 'Product name and unit price are required.';
+      return;
+    }
+
+    const payload = this.buildProductPayload(this.productEditForm);
+    this.loading = true;
+    this.merchantApi
+      .updateProduct(
+        this.selectedEnvironment,
+        this.apiVersion,
+        this.selectedMerchant.applicationId,
+        this.selectedProduct.productId,
+        payload
+      )
+      .subscribe({
+        next: (updatedProduct) => {
+          const localProduct: Product = {
+            ...updatedProduct,
+            active: this.productEditForm.active
+          };
+          this.products = this.products.map((item) =>
+            item.productId === localProduct.productId ? localProduct : item
+          );
+          this.selectedProduct = localProduct;
+          this.syncCatalogSearchSummary();
+          this.statusMessage = 'Product updated.';
+          this.closeProductDialog(true);
+        },
+        error: (error) => {
+          this.loading = false;
+          this.errorMessage = this.toMessage(error, 'Unable to update product.');
+        }
+      });
+  }
+
+  removeProduct(product: Product): void {
+    if (!this.selectedMerchant || !confirm(`Soft-remove product "${product.name}"?`)) {
+      return;
+    }
+
+    this.loading = true;
+    this.merchantApi
+      .removeProduct(
+        this.selectedEnvironment,
+        this.apiVersion,
+        this.selectedMerchant.applicationId,
+        product.productId,
+        product.branchId ?? undefined
+      )
+      .subscribe({
+        next: () => {
+          this.loading = false;
+          this.statusMessage = 'Product marked inactive.';
+          this.products = this.products.map((item) =>
+            item.productId === product.productId ? { ...item, active: false } : item
+          );
+          if (this.selectedProduct?.productId === product.productId) {
+            this.selectedProduct = { ...this.selectedProduct, active: false };
+          }
+          this.syncCatalogSearchSummary();
+        },
+        error: (error) => {
+          this.loading = false;
+          this.errorMessage = this.toMessage(error, 'Unable to mark product inactive.');
+        }
+      });
+  }
+
+  saveLogo(): void {
+    if (!this.selectedMerchant) {
+      return;
+    }
+
+    if (!this.logoForm.storageKey.trim()) {
+      this.errorMessage = 'Logo storage key is required.';
+      return;
+    }
+
+    this.loading = true;
+    this.merchantApi
+      .updateLogo(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, {
+        storageKey: this.logoForm.storageKey.trim()
+      })
+      .subscribe({
+        next: (merchant) => {
+          this.loading = false;
+          this.selectedMerchant = merchant;
+          this.dirtyForms.logo = false;
+          this.statusMessage = 'Merchant logo updated.';
+        },
+        error: (error) => {
+          this.loading = false;
+          this.errorMessage = this.toMessage(error, 'Unable to save merchant logo.');
+        }
+      });
+  }
+
+  onProductImageError(productId: string): void {
+    this.failedProductImages.add(productId);
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.item(0) ?? null;
+    this.productEditForm.imageFile = file;
+    this.dirtyForms.editProduct = true;
+  }
+
+  private loadMerchantById(merchantId: string, fallbackMessage: string): void {
+    if (this.selectedMerchant && !this.confirmDirty('Open another merchant and discard unsaved form edits?')) {
+      return;
+    }
+
+    this.loading = true;
+    this.merchantApi.getMerchant(this.selectedEnvironment, this.apiVersion, merchantId).subscribe({
+      next: (merchant) => this.selectMerchant(merchant),
+      error: (error) => {
+        this.loading = false;
+        this.errorMessage = this.toMessage(error, fallbackMessage);
+      }
+    });
+  }
+
+  private selectMerchant(merchant: Merchant): void {
+    this.selectedMerchant = merchant;
+    this.merchantForm = this.merchantFormFromEntity(merchant);
+    this.logoForm.storageKey = merchant.logoStorageKey ?? '';
+    this.selectedBranch = null;
+    this.failedProductImages.clear();
+    this.closeMerchantDialog();
+    this.closeBranchDialog();
+    this.closeProductDialog(true);
+
+    forkJoin({
+      location: this.merchantApi
+        .getLocation(this.selectedEnvironment, this.apiVersion, merchant.applicationId)
+        .pipe(catchError(() => of(null))),
+      branches: this.merchantApi
+        .getBranches(this.selectedEnvironment, this.apiVersion, merchant.applicationId)
+        .pipe(catchError(() => of([])))
+    }).subscribe({
+      next: ({ location, branches }) => {
+        this.merchantLocation = location;
+        this.locationForm = location ? this.locationFromEntity(location) : this.emptyLocationForm();
+        this.branches = branches.map((branch) => this.normalizeBranch(branch));
+        this.selectedBranch = this.branches[0] ?? null;
+        this.products = [];
+        this.resetDirtyForms();
+        this.syncCatalogSearchSummary();
+        this.statusMessage = `Loaded merchant ${merchant.applicationReference}.`;
+        if (this.selectedBranch?.branchId) {
+          this.loadProductsForSelectedBranch();
+          return;
+        }
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+        this.errorMessage = 'Merchant loaded but one or more related sections failed to load.';
+      }
+    });
+  }
+
+  private refreshBranches(): void {
+    if (!this.selectedMerchant) {
+      return;
+    }
+
+    this.merchantApi.getBranches(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId).subscribe({
+      next: (branches) => {
+        this.loading = false;
+        this.branches = branches.map((branch) => this.normalizeBranch(branch));
+        this.syncCatalogSearchSummary();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.errorMessage = this.toMessage(error, 'Unable to refresh branches.');
+      }
+    });
+  }
+
+  private refreshProducts(): void {
+    if (!this.selectedMerchant || !this.selectedBranch?.branchId) {
+      this.products = [];
+      return;
+    }
+
+    this.merchantApi
+      .getProducts(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, this.selectedBranch.branchId)
+      .subscribe({
+      next: (products) => {
+        this.loading = false;
+        this.products = products;
+        this.syncCatalogSearchSummary();
+      },
+      error: (error) => {
+        this.loading = false;
+        this.errorMessage = this.toMessage(error, 'Unable to refresh products.');
+      }
+    });
+  }
+
+  private syncCatalogSearchSummary(): void {
+    if (!this.selectedMerchant) {
+      this.catalogSearchSummary = '';
+      return;
+    }
+
+    this.catalogSearchSummary = `Showing ${this.branches.length} branches and ${this.products.length} products for ${this.selectedMerchant.applicationReference}.`;
+  }
+
+  private loadProductsForSelectedBranch(): void {
+    if (!this.selectedMerchant || !this.selectedBranch?.branchId) {
+      this.loading = false;
+      this.products = [];
+      this.syncCatalogSearchSummary();
+      return;
+    }
+
+    this.loading = true;
+    this.merchantApi
+      .getProducts(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, this.selectedBranch.branchId)
+      .subscribe({
+        next: (products) => {
+          this.loading = false;
+          this.products = products;
+          this.syncCatalogSearchSummary();
+        },
+        error: (error) => {
+          this.loading = false;
+          this.products = [];
+          this.errorMessage = this.toMessage(error, 'Unable to load products for the selected branch.');
+        }
+      });
+  }
+
+  private scheduleLeafletRender(): void {
+    if (!this.branchDialogOpen) {
+      return;
+    }
+
+    this.clearLeafletTimer();
+    this.leafletRenderTimer = setTimeout(() => this.renderLeafletBranchMap(), 0);
+  }
+
+  private clearLeafletTimer(): void {
+    if (this.leafletRenderTimer) {
+      clearTimeout(this.leafletRenderTimer);
+      this.leafletRenderTimer = null;
+    }
+  }
+
+  private renderLeafletBranchMap(): void {
+    const container = this.leafletBranchMapElement?.nativeElement;
+    const latitude = this.toOptionalNumber(this.branchForm.latitude);
+    const longitude = this.toOptionalNumber(this.branchForm.longitude);
+    if (!container || latitude == null || longitude == null) {
+      this.destroyLeafletMap();
+      return;
+    }
+
+    if (!this.leafletMap) {
+      this.leafletMap = L.map(container, {
+        center: [latitude, longitude],
+        zoom: 16,
+        zoomControl: true
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(this.leafletMap);
+    }
+
+    if (!this.leafletMarker) {
+      this.leafletMarker = L.circleMarker([latitude, longitude], {
+        radius: 8,
+        color: '#1d4ed8',
+        weight: 2,
+        fillColor: '#3b82f6',
+        fillOpacity: 0.9
+      }).addTo(this.leafletMap);
+    } else {
+      this.leafletMarker.setLatLng([latitude, longitude]);
+    }
+
+    const radius = this.toOptionalNumber(this.branchForm.geofenceRadiusMeters);
+    if (radius != null && radius > 0) {
+      if (!this.leafletCircle) {
+        this.leafletCircle = L.circle([latitude, longitude], {
+          radius,
+          color: '#1d4ed8',
+          weight: 3,
+          fillColor: '#60a5fa',
+          fillOpacity: 0.22
+        }).addTo(this.leafletMap);
+      } else {
+        this.leafletCircle.setLatLng([latitude, longitude]);
+        this.leafletCircle.setRadius(radius);
+      }
+      this.leafletMap.fitBounds(this.leafletCircle.getBounds(), { padding: [24, 24] });
+    } else if (this.leafletCircle) {
+      this.leafletCircle.remove();
+      this.leafletCircle = null;
+    }
+
+    if (radius == null || radius <= 0) {
+      this.leafletMap.setView([latitude, longitude], 16);
+    }
+
+    setTimeout(() => this.leafletMap?.invalidateSize(), 0);
+  }
+
+  private destroyLeafletMap(): void {
+    this.clearLeafletTimer();
+    if (this.leafletCircle) {
+      this.leafletCircle.remove();
+      this.leafletCircle = null;
+    }
+    if (this.leafletMarker) {
+      this.leafletMarker.remove();
+      this.leafletMarker = null;
+    }
+    if (this.leafletMap) {
+      this.leafletMap.remove();
+      this.leafletMap = null;
+    }
+  }
+
+  private buildVisibleGroups(): ProductBranchGroup[] {
+    return this.buildBranchGroups();
+  }
+
+  private buildBranchGroups(): ProductBranchGroup[] {
+    const groups: ProductBranchGroup[] = this.branches.map((branch) => ({
+      branchId: branch.branchId ?? null,
+      branchLabel: branch.name,
+      branch,
+      products: []
+    }));
+
+    const groupsByBranchId = new Map(
+      groups.filter((group) => !!group.branchId).map((group) => [group.branchId as string, group])
+    );
+
+    let unassignedGroup: ProductBranchGroup | null = null;
+
+    for (const product of this.products) {
+      if (product.branchId) {
+        let group = groupsByBranchId.get(product.branchId);
+        if (!group) {
+          group = {
+            branchId: product.branchId,
+            branchLabel: `Branch ${product.branchId}`,
+            branch: null,
+            products: []
+          };
+          groups.push(group);
+          groupsByBranchId.set(product.branchId, group);
+        }
+        group.products.push(product);
+        continue;
+      }
+
+      if (!unassignedGroup) {
+        unassignedGroup = {
+          branchId: null,
+          branchLabel: 'Merchant-level products',
+          branch: null,
+          products: []
+        };
+      }
+      unassignedGroup.products.push(product);
+    }
+
+    if (unassignedGroup) {
+      groups.push(unassignedGroup);
+    }
+
+    return groups;
+  }
+
+  private emptyLocationForm(): LocationFormModel {
+    return {
+      latitude: '',
+      longitude: '',
+      geofenceRadiusMeters: '',
+      googlePlaceId: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      postalCode: '',
+      country: ''
+    };
+  }
+
+  private emptyBranchForm(): BranchFormModel {
+    return {
+      name: '',
+      active: true,
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      postalCode: '',
+      country: '',
+      contactFullName: '',
+      contactEmail: '',
+      contactPhoneNumber: '',
+      activePaymentChannels: [],
+      latitude: '',
+      longitude: '',
+      geofenceRadiusMeters: '',
+      googlePlaceId: ''
+    };
+  }
+
+  private emptyProductForm(): ProductFormModel {
+    return {
+      name: '',
+      active: true,
+      unitPrice: '',
+      branchId: '',
+      description: '',
+      imageFile: null
+    };
+  }
+
+  private emptyMerchantForm(): MerchantFormModel {
+    return {
+      legalBusinessName: '',
+      primaryBusinessAddress: '',
+      contactFullName: '',
+      contactEmail: '',
+      contactPhoneNumber: '',
+      activePaymentChannels: [],
+      status: 'DRAFT'
+    };
+  }
+
+  private locationFromEntity(location: MerchantLocation): LocationFormModel {
+    return {
+      latitude: String(location.latitude),
+      longitude: String(location.longitude),
+      geofenceRadiusMeters: String(location.geofenceRadiusMeters),
+      googlePlaceId: location.googlePlaceId ?? '',
+      addressLine1: location.addressLine1 ?? '',
+      addressLine2: location.addressLine2 ?? '',
+      city: location.city ?? '',
+      postalCode: location.postalCode ?? '',
+      country: location.country ?? ''
+    };
+  }
+
+  private merchantFormFromEntity(merchant: Merchant): MerchantFormModel {
+    return {
+      legalBusinessName: merchant.legalBusinessName ?? '',
+      primaryBusinessAddress: merchant.primaryBusinessAddress ?? '',
+      contactFullName: merchant.contactFullName ?? '',
+      contactEmail: merchant.contactEmail ?? '',
+      contactPhoneNumber: merchant.contactPhoneNumber ?? '',
+      activePaymentChannels: [...(merchant.activePaymentChannels ?? [])],
+      status: merchant.status
+    };
+  }
+
+  private branchFormFromEntity(branch: Branch): BranchFormModel {
+    return {
+      name: branch.name ?? '',
+      active: branch.active ?? true,
+      addressLine1: branch.addressLine1 ?? '',
+      addressLine2: branch.addressLine2 ?? '',
+      city: branch.city ?? '',
+      postalCode: branch.postalCode ?? '',
+      country: branch.country ?? '',
+      contactFullName: branch.contactFullName ?? '',
+      contactEmail: branch.contactEmail ?? '',
+      contactPhoneNumber: branch.contactPhoneNumber ?? '',
+      activePaymentChannels: [...(branch.activePaymentChannels ?? [])],
+      latitude: branch.latitude != null ? String(branch.latitude) : '',
+      longitude: branch.longitude != null ? String(branch.longitude) : '',
+      geofenceRadiusMeters: branch.geofenceRadiusMeters != null ? String(branch.geofenceRadiusMeters) : '',
+      googlePlaceId: branch.googlePlaceId ?? ''
+    };
+  }
+
+  private normalizeBranch(branch: Branch): Branch {
+    return {
+      ...branch,
+      branchId: branch.branchId ?? branch.id
+    };
+  }
+
+  private toOptionalNumber(value: string): number | undefined {
+    const parsed = value.trim() ? Number(value) : undefined;
+    return parsed === undefined || Number.isNaN(parsed) ? undefined : parsed;
+  }
+
+  private buildProductPayload(form: ProductFormModel): FormData {
+    const payload = new FormData();
+    payload.set('name', form.name.trim());
+    payload.set('unitPrice', form.unitPrice.trim());
+
+    if (form.branchId.trim()) {
+      payload.set('branchId', form.branchId.trim());
+    }
+
+    if (form.description.trim()) {
+      payload.set('description', form.description.trim());
+    }
+
+    if (form.imageFile) {
+      payload.set('image', form.imageFile);
+    }
+
+    return payload;
+  }
+
+  private resetDirtyForms(): void {
+    this.dirtyForms = {
+      location: false,
+      merchant: false,
+      branch: false,
+      editProduct: false,
+      logo: false
+    };
+  }
+
+  private confirmDirty(message: string): boolean {
+    return !this.hasUnsavedChanges || confirm(message);
+  }
+
+  private toMessage(error: unknown, fallback: string): string {
+    const maybeMessage = (error as { error?: { message?: string } })?.error?.message;
+    return maybeMessage || fallback;
+  }
+}

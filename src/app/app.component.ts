@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { MerchantCatalogComponent } from './merchant-catalog/merchant-catalog.component';
 
 type OnboardingTab = 'profile' | 'legal' | 'banking' | 'risk';
 type TrafficPeriod = 'Day' | 'Month' | 'Year';
-type MainSection = 'dashboard' | 'onboarding' | 'verification' | 'settlement';
+type MainSection = 'dashboard' | 'onboarding' | 'verification' | 'settlement' | 'merchantCatalog';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MerchantCatalogComponent],
   templateUrl: './app.component.html'
 })
 export class AppComponent {
@@ -98,7 +99,8 @@ export class AppComponent {
     dashboard: 'Dashboard',
     onboarding: 'Merchant Onboarding',
     verification: 'Verification Queue',
-    settlement: 'Settlement Setup'
+    settlement: 'Settlement Setup',
+    merchantCatalog: 'Merchant Catalog'
   };
 
   selectTab(tab: OnboardingTab): void {

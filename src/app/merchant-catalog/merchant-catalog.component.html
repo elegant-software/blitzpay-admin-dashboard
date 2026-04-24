@@ -1,0 +1,453 @@
+<div class="card mb-4">
+  <div class="card-header">Merchant Catalog</div>
+  <div class="card-body">
+    <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="alert alert-success mb-3" *ngIf="statusMessage">{{ statusMessage }}</div>
+
+    <div class="row g-3 align-items-start">
+      <div class="col-xl-8">
+        <h6>Search</h6>
+        <div class="catalog-search-grid datatable-toolbar">
+          <input
+            class="form-control"
+            [(ngModel)]="catalogSearchTerm"
+            placeholder="Enter merchant ID"
+          />
+          <button class="btn btn-primary" type="button" (click)="runCatalogSearch()">Search</button>
+          <button class="btn btn-outline-secondary" type="button" (click)="clearCatalogSearch()">Clear</button>
+        </div>
+        <div class="form-text">{{ activeSearchHint }}</div>
+        <div class="catalog-search-summary mt-2" *ngIf="catalogSearchSummary">{{ catalogSearchSummary }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-container *ngIf="selectedMerchant as merchant; else emptyState">
+  <div class="row g-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Merchant</span>
+          <span class="badge text-bg-light">1 row</span>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive datatable-shell">
+            <table class="table table-sm align-middle mb-0 merchant-results-table">
+              <thead>
+                <tr>
+                  <th>Merchant Name</th>
+                  <th>City</th>
+                  <th>Status</th>
+                  <th>Logo</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{{ merchant.legalBusinessName || merchant.applicationReference }}</td>
+                  <td>{{ merchantLocation?.city || '—' }}</td>
+                  <td>
+                    <span class="status-tag" [ngClass]="merchantStatusTone(merchant.status)">{{ merchant.status }}</span>
+                  </td>
+                  <td>
+                    <span class="result-status" [class.result-status-active]="!!merchant.logoStorageKey">
+                      {{ merchant.logoStorageKey ? 'Available' : 'Unavailable' }}
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    <button class="icon-action-btn" type="button" aria-label="Edit merchant" (click)="openMerchantDialog()">
+                      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Branches</span>
+          <span class="badge text-bg-light">{{ branches.length }} rows</span>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive datatable-shell">
+            <table class="table table-sm align-middle mb-0 merchant-results-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>City</th>
+                  <th>Address</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let branch of branches"
+                  [class.row-selected]="selectedBranch?.branchId === branch.branchId"
+                  (click)="selectBranch(branch)"
+                >
+                  <td>{{ branch.name }}</td>
+                  <td>{{ branch.city || '—' }}</td>
+                  <td>{{ branch.addressLine1 || branch.addressLine2 || '—' }}</td>
+                  <td>
+                    <span class="status-tag" [ngClass]="branchStatusTone(branch)">{{ branchStatusLabel(branch) }}</span>
+                  </td>
+                  <td class="text-end">
+                    <button class="icon-action-btn me-1" type="button" aria-label="Edit branch" (click)="openBranchDialog(branch); $event.stopPropagation()">
+                      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
+                    </button>
+                    <button class="icon-action-btn icon-action-btn-danger" type="button" aria-label="Delete branch" (click)="removeBranch(branch); $event.stopPropagation()">
+                      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="!branches.length">
+                  <td colspan="5" class="text-center text-body-secondary">No branches for this merchant.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <span>Click a branch row to drive the product table.</span>
+            <span>{{ selectedBranch?.name || 'No branch selected' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Products</span>
+          <span class="badge text-bg-light">{{ visibleProductRows.length }} rows</span>
+        </div>
+        <div class="card-body">
+          <div class="table-card-toolbar mb-3">
+            <div>
+              <div class="table-card-label">Branch Scope</div>
+              <div class="table-card-value">{{ selectedBranch?.name || 'Select a branch' }}</div>
+            </div>
+          </div>
+
+          <div class="table-responsive datatable-shell">
+            <table class="table table-sm align-middle mb-0 merchant-results-table">
+              <thead>
+                <tr>
+                  <th class="product-thumb-col"></th>
+                  <th>Product</th>
+                  <th>Status</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let product of visibleProductRows">
+                  <td class="product-thumb-col">
+                    <img
+                      *ngIf="product.imageUrl && !failedProductImages.has(product.productId)"
+                      [src]="product.imageUrl"
+                      [alt]="product.name"
+                      class="product-thumb"
+                      (error)="onProductImageError(product.productId)"
+                    />
+                    <div *ngIf="!product.imageUrl || failedProductImages.has(product.productId)" class="product-thumb-empty"></div>
+                  </td>
+                  <td>
+                    <div class="product-cell-title">{{ product.name }}</div>
+                    <div class="product-cell-subtitle">{{ product.description || 'No description' }}</div>
+                  </td>
+                  <td>
+                    <span class="status-tag" [ngClass]="productStatusTone(product)">{{ productStatusLabel(product) }}</span>
+                  </td>
+                  <td class="text-end action-cell">
+                    <button class="btn btn-sm btn-outline-primary me-2" type="button" aria-label="Edit product" (click)="openProduct(product)">
+                      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
+                      <span class="ms-1">Edit</span>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" type="button" aria-label="Delete product" (click)="removeProduct(product)">
+                      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                      <span class="ms-1">Delete</span>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="!visibleProductRows.length">
+                  <td colspan="3" class="text-center text-body-secondary">{{ selectedBranch ? 'No products for the selected branch.' : 'Select a branch to load products.' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<div class="product-dialog-backdrop" *ngIf="merchantDialogOpen">
+  <div class="product-dialog card" role="dialog" aria-modal="true" aria-labelledby="merchant-dialog-title">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 id="merchant-dialog-title" class="mb-0">Edit Merchant</h5>
+      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeMerchantDialog()">Close</button>
+    </div>
+    <div class="card-body" *ngIf="selectedMerchant as merchant">
+      <div class="dialog-meta">
+        <div><strong>Merchant:</strong> {{ merchant.legalBusinessName || merchant.applicationReference }}</div>
+        <div><strong>Merchant ID:</strong> {{ merchant.applicationId }}</div>
+        <div><strong>Updated:</strong> {{ merchant.lastUpdatedAt }}</div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <label class="form-label required">Merchant Name</label>
+          <input class="form-control" [(ngModel)]="merchantForm.legalBusinessName" (ngModelChange)="dirtyForms.merchant = true" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label d-block">Status</label>
+          <div class="form-check form-switch status-switch">
+            <input
+              id="merchant-active-toggle"
+              class="form-check-input"
+              type="checkbox"
+              [ngModel]="merchantForm.status === 'ACTIVE'"
+              (ngModelChange)="onMerchantActiveToggle($event)"
+              aria-label="Merchant active status"
+            />
+          </div>
+        </div>
+        <div class="col-12">
+          <label class="form-label required">Primary Business Address</label>
+          <input class="form-control" [(ngModel)]="merchantForm.primaryBusinessAddress" (ngModelChange)="dirtyForms.merchant = true" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label required">Contact Name</label>
+          <input class="form-control" [(ngModel)]="merchantForm.contactFullName" (ngModelChange)="dirtyForms.merchant = true" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label required">Contact Email</label>
+          <input class="form-control" [(ngModel)]="merchantForm.contactEmail" (ngModelChange)="dirtyForms.merchant = true" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label required">Contact Phone</label>
+          <input class="form-control" [(ngModel)]="merchantForm.contactPhoneNumber" (ngModelChange)="dirtyForms.merchant = true" />
+        </div>
+        <div class="col-12">
+          <label class="form-label">Active Payment Channels</label>
+          <div class="channel-list">
+            <label class="channel-option" *ngFor="let channel of paymentChannelOptions">
+              <input
+                type="checkbox"
+                [checked]="hasChannel(merchantForm.activePaymentChannels, channel)"
+                (change)="toggleMerchantChannel(channel, $any($event.target).checked)"
+              />
+              <span>{{ channel }}</span>
+            </label>
+          </div>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Logo Storage Key</label>
+          <input class="form-control" [(ngModel)]="logoForm.storageKey" (ngModelChange)="dirtyForms.logo = true" />
+        </div>
+      </div>
+
+      <div class="dialog-actions mt-3">
+        <button class="btn btn-primary" type="button" (click)="saveMerchant()">Save merchant</button>
+        <button class="btn btn-outline-primary" type="button" (click)="saveLogo()">Save logo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="product-dialog-backdrop" *ngIf="branchDialogOpen">
+  <div class="product-dialog card" role="dialog" aria-modal="true" aria-labelledby="branch-dialog-title">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 id="branch-dialog-title" class="mb-0">Edit Branch</h5>
+      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeBranchDialog()">Close</button>
+    </div>
+    <div class="card-body" *ngIf="selectedBranch as branch">
+      <div class="dialog-meta">
+        <div><strong>Branch:</strong> {{ branch.name }}</div>
+        <div><strong>Branch ID:</strong> {{ branch.branchId || branch.id || '—' }}</div>
+        <div><strong>Merchant ID:</strong> {{ branch.merchantId }}</div>
+        <div><strong>City:</strong> {{ branch.city || '—' }}</div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <label class="form-label">Name</label>
+          <input class="form-control" [(ngModel)]="branchForm.name" (ngModelChange)="dirtyForms.branch = true" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label d-block">Status</label>
+          <div class="form-check form-switch status-switch">
+            <input
+              id="branch-active-toggle"
+              class="form-check-input"
+              type="checkbox"
+              [(ngModel)]="branchForm.active"
+              (ngModelChange)="dirtyForms.branch = true"
+              aria-label="Branch active status"
+            />
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Address 1</label>
+          <input class="form-control" [(ngModel)]="branchForm.addressLine1" (ngModelChange)="dirtyForms.branch = true" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Address 2</label>
+          <input class="form-control" [(ngModel)]="branchForm.addressLine2" (ngModelChange)="dirtyForms.branch = true" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Post Code</label>
+          <input class="form-control" [(ngModel)]="branchForm.postalCode" (ngModelChange)="dirtyForms.branch = true" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">City</label>
+          <input class="form-control" [(ngModel)]="branchForm.city" (ngModelChange)="dirtyForms.branch = true" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Country</label>
+          <input class="form-control" [(ngModel)]="branchForm.country" (ngModelChange)="dirtyForms.branch = true" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Google Place ID</label>
+          <input class="form-control" [(ngModel)]="branchForm.googlePlaceId" (ngModelChange)="dirtyForms.branch = true" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Contact Name</label>
+          <input class="form-control" [(ngModel)]="branchForm.contactFullName" (ngModelChange)="dirtyForms.branch = true" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Contact Email</label>
+          <input class="form-control" [(ngModel)]="branchForm.contactEmail" (ngModelChange)="dirtyForms.branch = true" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Contact Phone</label>
+          <input class="form-control" [(ngModel)]="branchForm.contactPhoneNumber" (ngModelChange)="dirtyForms.branch = true" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Latitude</label>
+          <input class="form-control" [(ngModel)]="branchForm.latitude" (ngModelChange)="dirtyForms.branch = true; refreshBranchMapPreview()" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Longitude</label>
+          <input class="form-control" [(ngModel)]="branchForm.longitude" (ngModelChange)="dirtyForms.branch = true; refreshBranchMapPreview()" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Geofence</label>
+          <input class="form-control" [(ngModel)]="branchForm.geofenceRadiusMeters" (ngModelChange)="dirtyForms.branch = true; refreshBranchMapPreview()" />
+        </div>
+        <div class="col-12">
+          <label class="form-label">Active Payment Channels</label>
+          <div class="channel-list">
+            <label class="channel-option" *ngFor="let channel of paymentChannelOptions">
+              <input
+                type="checkbox"
+                [checked]="hasChannel(branchForm.activePaymentChannels, channel)"
+                (change)="toggleBranchChannel(channel, $any($event.target).checked)"
+              />
+              <span>{{ channel }}</span>
+            </label>
+          </div>
+        </div>
+        <div class="col-12" *ngIf="hasBranchCoordinates">
+          <label class="form-label">Map Preview</label>
+          <div class="map-overlay-note">
+            <strong>Overlay:</strong>
+            {{ branchGeofenceRadius && branchGeofenceRadius > 0 ? ('Geofence circle at ' + branchGeofenceRadius + ' meters') : 'No geofence radius set, so only the branch marker is shown.' }}
+          </div>
+          <div>
+            <div class="map-preview-label">Leaflet + OpenStreetMap</div>
+            <div class="branch-map-card">
+              <div #leafletBranchMap class="branch-map-frame branch-leaflet-map"></div>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap gap-3 align-items-center mt-2">
+            <button class="btn btn-sm btn-outline-secondary" type="button" (click)="refreshBranchMapPreview()">Refresh interactive map</button>
+            <div class="form-text m-0" *ngIf="branchMapLink">
+              <a [href]="branchMapLink" target="_blank" rel="noreferrer">Open full map</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dialog-actions mt-3">
+        <button class="btn btn-primary" type="button" (click)="saveBranch()">Save branch</button>
+        <button class="btn btn-outline-secondary" type="button" (click)="closeBranchDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="product-dialog-backdrop" *ngIf="productDialogOpen">
+  <div class="product-dialog card" role="dialog" aria-modal="true" aria-labelledby="product-dialog-title">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 id="product-dialog-title" class="mb-0">Edit Product</h5>
+      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeProductDialog()">Close</button>
+    </div>
+    <div class="card-body" *ngIf="selectedProduct as product">
+      <div class="dialog-meta">
+        <div><strong>Product ID:</strong> {{ product.productId }}</div>
+        <div><strong>Merchant ID:</strong> {{ product.merchantId }}</div>
+        <div><strong>Current branch:</strong> {{ product.branchId || 'Merchant-level product' }}</div>
+        <div><strong>Updated:</strong> {{ product.updatedAt }}</div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <label class="form-label required">Name</label>
+          <input class="form-control" [(ngModel)]="productEditForm.name" (ngModelChange)="dirtyForms.editProduct = true" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label d-block">Status</label>
+          <div class="form-check form-switch status-switch">
+            <input
+              id="product-active-toggle"
+              class="form-check-input"
+              type="checkbox"
+              [(ngModel)]="productEditForm.active"
+              (ngModelChange)="onProductStatusToggle($event)"
+              aria-label="Product active status"
+            />
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label required">Unit Price</label>
+          <input class="form-control" [(ngModel)]="productEditForm.unitPrice" (ngModelChange)="dirtyForms.editProduct = true" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Branch</label>
+          <select class="form-select" [(ngModel)]="productEditForm.branchId" (ngModelChange)="dirtyForms.editProduct = true">
+            <option value="">No branch</option>
+            <option *ngFor="let branch of branches" [value]="branch.branchId">{{ branch.name }}</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Image</label>
+          <input class="form-control" type="file" (change)="onFileSelected($event)" />
+        </div>
+        <div class="col-12">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" rows="4" [(ngModel)]="productEditForm.description" (ngModelChange)="dirtyForms.editProduct = true"></textarea>
+        </div>
+        <div class="col-12" *ngIf="product.imageUrl">
+          Current image:
+          <a [href]="product.imageUrl" target="_blank" rel="noreferrer">open</a>
+        </div>
+      </div>
+
+      <div class="dialog-actions mt-3">
+        <button class="btn btn-primary" type="button" (click)="updateProduct()">Save changes</button>
+        <button class="btn btn-outline-secondary" type="button" (click)="closeProductDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #emptyState>
+  <div class="empty-state mt-3">Search for a merchant to load the merchant, branch, and product tables.</div>
+</ng-template>
