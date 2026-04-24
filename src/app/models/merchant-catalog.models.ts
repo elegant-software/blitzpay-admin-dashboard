@@ -23,6 +23,7 @@ export interface Merchant {
   submittedAt?: string | null;
   lastUpdatedAt: string;
   logoStorageKey?: string | null;
+  logoUrl?: string | null;
 }
 
 export interface MerchantLocation {
@@ -167,6 +168,16 @@ export interface UpdateBranchRequest {
 
 export interface UpdateMerchantLogoRequest {
   storageKey: string;
+}
+
+export interface MerchantLogoUploadRequest {
+  contentType: string;
+}
+
+export interface MerchantLogoUploadResponse {
+  storageKey: string;
+  uploadUrl: string;
+  expiresAt: string;
 }
 
 export interface ImageAssetReference {

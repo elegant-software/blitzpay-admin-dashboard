@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { MerchantCatalogComponent } from './merchant-catalog/merchant-catalog.component';
+import { DisplayDatePipe } from './pipes/display-date.pipe';
 
 type OnboardingTab = 'profile' | 'legal' | 'banking' | 'risk';
 type TrafficPeriod = 'Day' | 'Month' | 'Year';
@@ -9,7 +10,7 @@ type MainSection = 'dashboard' | 'onboarding' | 'verification' | 'settlement' | 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, MerchantCatalogComponent],
+  imports: [CommonModule, MerchantCatalogComponent, DisplayDatePipe],
   templateUrl: './app.component.html'
 })
 export class AppComponent {

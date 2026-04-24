@@ -241,6 +241,48 @@
   flex-wrap: wrap;
 }
 
+.product-dialog-image-panel {
+  height: 100%;
+  padding: 0.85rem;
+  border: 1px solid #e6e8ef;
+  border-radius: 0.85rem;
+  background: #fafbfd;
+}
+
+.product-dialog-image-label {
+  margin-bottom: 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a93a5;
+}
+
+.product-dialog-image-link {
+  display: block;
+}
+
+.product-dialog-image-preview {
+  width: 100%;
+  max-height: 12rem;
+  object-fit: contain;
+  border-radius: 0.7rem;
+  border: 1px solid #dde3ec;
+  background: #fff;
+}
+
+.product-dialog-image-empty {
+  display: grid;
+  place-items: center;
+  min-height: 12rem;
+  padding: 1rem;
+  border: 1px dashed #d1d5db;
+  border-radius: 0.7rem;
+  background: #f8fafc;
+  color: #768192;
+  text-align: center;
+}
+
 .status-switch {
   display: flex;
   align-items: center;
@@ -252,6 +294,7 @@
 
 .status-switch .form-check-input {
   margin-top: 0;
+  margin-left: 0;
   float: none;
 }
 

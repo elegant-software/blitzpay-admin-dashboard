@@ -50,10 +50,15 @@
                   <td>
                     <span class="status-tag" [ngClass]="merchantStatusTone(merchant.status)">{{ merchant.status }}</span>
                   </td>
-                  <td>
-                    <span class="result-status" [class.result-status-active]="!!merchant.logoStorageKey">
-                      {{ merchant.logoStorageKey ? 'Available' : 'Unavailable' }}
-                    </span>
+                  <td class="product-thumb-col">
+                    <img
+                      *ngIf="merchant.logoUrl && !merchantTableLogoFailed"
+                      [src]="merchant.logoUrl"
+                      [alt]="merchant.legalBusinessName || merchant.applicationReference"
+                      class="product-thumb"
+                      (error)="onMerchantTableLogoError()"
+                    />
+                    <div *ngIf="!merchant.logoUrl || merchantTableLogoFailed" class="product-thumb-empty"></div>
                   </td>
                   <td class="text-end">
                     <button class="icon-action-btn" type="button" aria-label="Edit merchant" (click)="openMerchantDialog()">
@@ -197,7 +202,7 @@
       <div class="dialog-meta">
         <div><strong>Merchant:</strong> {{ merchant.legalBusinessName || merchant.applicationReference }}</div>
         <div><strong>Merchant ID:</strong> {{ merchant.applicationId }}</div>
-        <div><strong>Updated:</strong> {{ merchant.lastUpdatedAt }}</div>
+        <div><strong>Updated:</strong> {{ merchant.lastUpdatedAt | displayDate }}</div>
       </div>
 
       <div class="row g-3 mt-1">
@@ -214,8 +219,10 @@
               type="checkbox"
               [ngModel]="merchantForm.status === 'ACTIVE'"
               (ngModelChange)="onMerchantActiveToggle($event)"
-              aria-label="Merchant active status"
             />
+            <label class="form-check-label" for="merchant-active-toggle">
+              {{ merchantForm.status === 'ACTIVE' ? 'Active' : 'Inactive' }}
+            </label>
           </div>
         </div>
         <div class="col-12">
@@ -247,15 +254,44 @@
             </label>
           </div>
         </div>
+        <div class="col-md-7">
+          <label class="form-label">Logo File</label>
+          <input class="form-control" type="file" accept="image/*" (change)="onMerchantLogoFileSelected($event)" />
+          <div class="form-text mt-2" *ngIf="merchantLogoSelectedFileName">
+            Selected file: {{ merchantLogoSelectedFileName }}
+          </div>
+          <div class="dialog-note mt-3">
+            Saving uploads the selected file through the merchant logo upload flow, then stores the returned storage key with the merchant.
+          </div>
+        </div>
+        <div class="col-md-5">
+          <div class="product-dialog-image-panel">
+            <div class="product-dialog-image-label">Logo preview</div>
+            <ng-container *ngIf="merchantLogoImageUrl as imageUrl; else emptyMerchantLogoImage">
+              <a class="product-dialog-image-link" [href]="imageUrl" target="_blank" rel="noreferrer">
+                <img
+                  class="product-dialog-image-preview"
+                  [src]="imageUrl"
+                  [alt]="merchant.legalBusinessName || merchant.applicationReference"
+                  (error)="onMerchantLogoError()"
+                />
+              </a>
+            </ng-container>
+            <ng-template #emptyMerchantLogoImage>
+              <div class="product-dialog-image-empty">No logo available</div>
+            </ng-template>
+          </div>
+        </div>
         <div class="col-12">
           <label class="form-label">Logo Storage Key</label>
           <input class="form-control" [(ngModel)]="logoForm.storageKey" (ngModelChange)="dirtyForms.logo = true" />
+          <div class="form-text mt-2">Expected format: merchants/{{ merchant.applicationId }}/logo.&lt;ext&gt;</div>
         </div>
       </div>
 
       <div class="dialog-actions mt-3">
-        <button class="btn btn-primary" type="button" (click)="saveMerchant()">Save merchant</button>
-        <button class="btn btn-outline-primary" type="button" (click)="saveLogo()">Save logo</button>
+        <button class="btn btn-primary" type="button" (click)="saveMerchant()">Save changes</button>
+        <button class="btn btn-outline-secondary" type="button" (click)="closeMerchantDialog()">Cancel</button>
       </div>
     </div>
   </div>
@@ -289,8 +325,10 @@
               type="checkbox"
               [(ngModel)]="branchForm.active"
               (ngModelChange)="dirtyForms.branch = true"
-              aria-label="Branch active status"
             />
+            <label class="form-check-label" for="branch-active-toggle">
+              {{ branchForm.active ? 'Active' : 'Inactive' }}
+            </label>
           </div>
         </div>
         <div class="col-md-6">
@@ -394,7 +432,7 @@
         <div><strong>Product ID:</strong> {{ product.productId }}</div>
         <div><strong>Merchant ID:</strong> {{ product.merchantId }}</div>
         <div><strong>Current branch:</strong> {{ product.branchId || 'Merchant-level product' }}</div>
-        <div><strong>Updated:</strong> {{ product.updatedAt }}</div>
+        <div><strong>Updated:</strong> {{ product.updatedAt | displayDate }}</div>
       </div>
 
       <div class="row g-3 mt-1">
@@ -411,8 +449,10 @@
               type="checkbox"
               [(ngModel)]="productEditForm.active"
               (ngModelChange)="onProductStatusToggle($event)"
-              aria-label="Product active status"
             />
+            <label class="form-check-label" for="product-active-toggle">
+              {{ productEditForm.active ? 'Active' : 'Inactive' }}
+            </label>
           </div>
         </div>
         <div class="col-md-6">
@@ -426,17 +466,31 @@
             <option *ngFor="let branch of branches" [value]="branch.branchId">{{ branch.name }}</option>
           </select>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-7">
           <label class="form-label">Image</label>
-          <input class="form-control" type="file" (change)="onFileSelected($event)" />
+          <input class="form-control" type="file" accept="image/*" (change)="onFileSelected($event)" />
+        </div>
+        <div class="col-md-5">
+          <div class="product-dialog-image-panel">
+            <div class="product-dialog-image-label">Current image</div>
+            <ng-container *ngIf="productDialogImageUrl as imageUrl; else emptyProductDialogImage">
+              <a class="product-dialog-image-link" [href]="imageUrl" target="_blank" rel="noreferrer">
+                <img
+                  class="product-dialog-image-preview"
+                  [src]="imageUrl"
+                  [alt]="productEditForm.name || product.name"
+                  (error)="onProductDialogImageError()"
+                />
+              </a>
+            </ng-container>
+            <ng-template #emptyProductDialogImage>
+              <div class="product-dialog-image-empty">No image available</div>
+            </ng-template>
+          </div>
         </div>
         <div class="col-12">
           <label class="form-label">Description</label>
           <textarea class="form-control" rows="4" [(ngModel)]="productEditForm.description" (ngModelChange)="dirtyForms.editProduct = true"></textarea>
-        </div>
-        <div class="col-12" *ngIf="product.imageUrl">
-          Current image:
-          <a [href]="product.imageUrl" target="_blank" rel="noreferrer">open</a>
         </div>
       </div>
 

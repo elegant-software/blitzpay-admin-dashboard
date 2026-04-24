@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -6,6 +6,7 @@ import {
   Branch,
   CreateBranchRequest,
   Merchant,
+  MerchantLogoUploadResponse,
   MerchantLocation,
   Product,
   ProductListResponse,
@@ -137,6 +138,24 @@ export class MerchantApiService {
     payload: UpdateMerchantLogoRequest
   ): Observable<Merchant> {
     return this.http.put<Merchant>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/logo`, payload);
+  }
+
+  createLogoUploadUrl(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    contentType: string
+  ): Observable<MerchantLogoUploadResponse> {
+    return this.http.post<MerchantLogoUploadResponse>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/logo/upload-url`, {
+      contentType
+    });
+  }
+
+  uploadMerchantLogo(uploadUrl: string, file: File): Observable<string> {
+    return this.http.put(uploadUrl, file, {
+      headers: new HttpHeaders({ 'Content-Type': file.type || 'application/octet-stream' }),
+      responseType: 'text'
+    });
   }
 
   private base(environment: BackendEnvironment, apiVersion: string): string {

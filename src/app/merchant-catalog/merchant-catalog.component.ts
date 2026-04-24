@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import * as L from 'leaflet';
 import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import {
   Branch,
   BranchFormModel,
@@ -24,7 +25,7 @@ import { getEnvironmentByKey } from '../services/merchant-environment.service';
 @Component({
   selector: 'app-merchant-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DisplayDatePipe],
   templateUrl: './merchant-catalog.component.html',
   styleUrl: './merchant-catalog.component.css'
 })
@@ -47,7 +48,14 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   productDialogOpen = false;
   merchantDialogOpen = false;
   branchDialogOpen = false;
+  merchantTableLogoFailed = false;
   failedProductImages = new Set<string>();
+  productDialogPreviewUrl: string | null = null;
+  productDialogImageLoadFailed = false;
+  merchantLogoPreviewUrl: string | null = null;
+  merchantLogoImageLoadFailed = false;
+  merchantLogoSelectedFileName = '';
+  merchantLogoSelectedFile: File | null = null;
 
   locationForm: LocationFormModel = this.emptyLocationForm();
   merchantForm: MerchantFormModel = this.emptyMerchantForm();
@@ -98,6 +106,8 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.clearLeafletTimer();
     this.destroyLeafletMap();
+    this.clearProductDialogPreviewUrl();
+    this.clearMerchantLogoPreviewUrl();
   }
 
   get hasUnsavedChanges(): boolean {
@@ -306,12 +316,22 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     if (!this.selectedMerchant) {
       return;
     }
+    this.clearMerchantLogoPreviewUrl();
+    this.merchantLogoImageLoadFailed = false;
+    this.merchantLogoSelectedFileName = '';
+    this.merchantLogoSelectedFile = null;
     this.merchantForm = this.merchantFormFromEntity(this.selectedMerchant);
+    this.logoForm.storageKey = this.selectedMerchant.logoStorageKey ?? '';
     this.merchantDialogOpen = true;
     this.dirtyForms.merchant = false;
+    this.dirtyForms.logo = false;
   }
 
   closeMerchantDialog(): void {
+    this.clearMerchantLogoPreviewUrl();
+    this.merchantLogoImageLoadFailed = false;
+    this.merchantLogoSelectedFileName = '';
+    this.merchantLogoSelectedFile = null;
     this.merchantDialogOpen = false;
   }
 
@@ -340,15 +360,27 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       status: this.merchantForm.status
     };
 
+    const merchantId = this.selectedMerchant.applicationId;
+    const shouldSaveLogo =
+      this.dirtyForms.logo ||
+      this.merchantLogoSelectedFile !== null ||
+      this.logoForm.storageKey.trim() !== (this.selectedMerchant.logoStorageKey ?? '');
+
     this.loading = true;
-    this.merchantApi.updateMerchant(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, payload).subscribe({
+    this.merchantApi.updateMerchant(this.selectedEnvironment, this.apiVersion, merchantId, payload).subscribe({
       next: (merchant) => {
-        this.loading = false;
         this.selectedMerchant = merchant;
         this.merchantForm = this.merchantFormFromEntity(merchant);
         this.dirtyForms.merchant = false;
-        this.statusMessage = 'Merchant updated.';
-        this.closeMerchantDialog();
+
+        if (!shouldSaveLogo) {
+          this.loading = false;
+          this.statusMessage = 'Merchant updated.';
+          this.closeMerchantDialog();
+          return;
+        }
+
+        this.saveMerchantLogoAfterMerchantUpdate(merchantId);
       },
       error: (error) => {
         this.loading = false;
@@ -582,6 +614,8 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       .subscribe({
         next: (detail) => {
           this.loading = false;
+          this.clearProductDialogPreviewUrl();
+          this.productDialogImageLoadFailed = false;
           this.selectedProduct = detail;
           this.productEditForm = {
             name: detail.name,
@@ -607,6 +641,8 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     }
 
     this.productDialogOpen = false;
+    this.clearProductDialogPreviewUrl();
+    this.productDialogImageLoadFailed = false;
     this.selectedProduct = null;
     this.productEditForm = this.emptyProductForm();
     this.dirtyForms.editProduct = false;
@@ -622,26 +658,33 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
+    const merchantId = this.selectedMerchant.applicationId;
+    const productId = this.selectedProduct.productId;
+    const branchId = this.selectedProduct.branchId ?? undefined;
+    const wasActive = this.selectedProduct.active;
+    const willBeActive = this.productEditForm.active;
+    const shouldDeactivate = wasActive && !willBeActive;
+
     const payload = this.buildProductPayload(this.productEditForm);
     this.loading = true;
     this.merchantApi
-      .updateProduct(
-        this.selectedEnvironment,
-        this.apiVersion,
-        this.selectedMerchant.applicationId,
-        this.selectedProduct.productId,
-        payload
+      .updateProduct(this.selectedEnvironment, this.apiVersion, merchantId, productId, payload)
+      .pipe(
+        switchMap((updatedProduct) => {
+          if (!shouldDeactivate) {
+            return of({ ...updatedProduct, active: willBeActive });
+          }
+          return this.merchantApi
+            .removeProduct(this.selectedEnvironment, this.apiVersion, merchantId, productId, branchId)
+            .pipe(map(() => ({ ...updatedProduct, active: false })));
+        })
       )
       .subscribe({
-        next: (updatedProduct) => {
-          const localProduct: Product = {
-            ...updatedProduct,
-            active: this.productEditForm.active
-          };
+        next: (result) => {
           this.products = this.products.map((item) =>
-            item.productId === localProduct.productId ? localProduct : item
+            item.productId === result.productId ? result : item
           );
-          this.selectedProduct = localProduct;
+          this.selectedProduct = result;
           this.syncCatalogSearchSummary();
           this.statusMessage = 'Product updated.';
           this.closeProductDialog(true);
@@ -691,39 +734,77 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    if (!this.logoForm.storageKey.trim()) {
-      this.errorMessage = 'Logo storage key is required.';
-      return;
-    }
-
     this.loading = true;
-    this.merchantApi
-      .updateLogo(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, {
-        storageKey: this.logoForm.storageKey.trim()
-      })
-      .subscribe({
-        next: (merchant) => {
-          this.loading = false;
-          this.selectedMerchant = merchant;
-          this.dirtyForms.logo = false;
-          this.statusMessage = 'Merchant logo updated.';
-        },
-        error: (error) => {
-          this.loading = false;
-          this.errorMessage = this.toMessage(error, 'Unable to save merchant logo.');
-        }
-      });
+    this.saveMerchantLogoAfterMerchantUpdate(this.selectedMerchant.applicationId);
   }
 
   onProductImageError(productId: string): void {
     this.failedProductImages.add(productId);
   }
 
+  onMerchantLogoError(): void {
+    this.merchantLogoImageLoadFailed = true;
+  }
+
+  onMerchantTableLogoError(): void {
+    this.merchantTableLogoFailed = true;
+  }
+
+  onMerchantLogoFileSelected(event: Event): void {
+    if (!this.selectedMerchant) {
+      return;
+    }
+
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.item(0) ?? null;
+    this.clearMerchantLogoPreviewUrl();
+    this.merchantLogoImageLoadFailed = false;
+    this.merchantLogoSelectedFile = file;
+    this.merchantLogoSelectedFileName = file?.name ?? '';
+
+    if (!file) {
+      this.dirtyForms.logo = true;
+      return;
+    }
+
+    this.merchantLogoPreviewUrl = URL.createObjectURL(file);
+    const extension = this.fileExtension(file.name);
+    this.logoForm.storageKey = `merchants/${this.selectedMerchant.applicationId}/logo.${extension}`;
+    this.dirtyForms.logo = true;
+  }
+
+  onProductDialogImageError(): void {
+    this.productDialogImageLoadFailed = true;
+  }
+
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.item(0) ?? null;
+    this.clearProductDialogPreviewUrl();
+    this.productDialogImageLoadFailed = false;
+
+    if (file) {
+      this.productDialogPreviewUrl = URL.createObjectURL(file);
+    }
+
     this.productEditForm.imageFile = file;
     this.dirtyForms.editProduct = true;
+  }
+
+  get productDialogImageUrl(): string | null {
+    if (this.productDialogImageLoadFailed) {
+      return null;
+    }
+
+    return this.productDialogPreviewUrl || this.selectedProduct?.imageUrl || null;
+  }
+
+  get merchantLogoImageUrl(): string | null {
+    if (this.merchantLogoImageLoadFailed) {
+      return null;
+    }
+
+    return this.merchantLogoPreviewUrl || this.selectedMerchant?.logoUrl || null;
   }
 
   private loadMerchantById(merchantId: string, fallbackMessage: string): void {
@@ -746,6 +827,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.merchantForm = this.merchantFormFromEntity(merchant);
     this.logoForm.storageKey = merchant.logoStorageKey ?? '';
     this.selectedBranch = null;
+    this.merchantTableLogoFailed = false;
     this.failedProductImages.clear();
     this.closeMerchantDialog();
     this.closeBranchDialog();
@@ -1118,6 +1200,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     const payload = new FormData();
     payload.set('name', form.name.trim());
     payload.set('unitPrice', form.unitPrice.trim());
+    payload.set('active', String(form.active));
 
     if (form.branchId.trim()) {
       payload.set('branchId', form.branchId.trim());
@@ -1132,6 +1215,100 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     }
 
     return payload;
+  }
+
+  private saveMerchantLogoAfterMerchantUpdate(merchantId: string): void {
+    const storageKey = this.logoForm.storageKey.trim();
+
+    if (this.merchantLogoSelectedFile) {
+      this.merchantApi
+        .createLogoUploadUrl(
+          this.selectedEnvironment,
+          this.apiVersion,
+          merchantId,
+          this.merchantLogoSelectedFile.type || 'application/octet-stream'
+        )
+        .pipe(
+          switchMap((uploadTarget) => {
+            this.logoForm.storageKey = uploadTarget.storageKey;
+            return this.merchantApi.uploadMerchantLogo(uploadTarget.uploadUrl, this.merchantLogoSelectedFile!).pipe(
+              switchMap(() =>
+                this.merchantApi.updateLogo(this.selectedEnvironment, this.apiVersion, merchantId, {
+                  storageKey: uploadTarget.storageKey
+                })
+              )
+            );
+          })
+        )
+        .subscribe({
+          next: (merchant) => {
+            this.loading = false;
+            this.applySavedMerchantLogo(merchant);
+            this.statusMessage = 'Merchant and logo updated.';
+            this.closeMerchantDialog();
+          },
+          error: (error) => {
+            this.loading = false;
+            this.errorMessage = this.toMessage(error, 'Merchant details were saved, but the logo upload failed.');
+          }
+        });
+      return;
+    }
+
+    if (!storageKey) {
+      this.loading = false;
+      this.errorMessage = 'Merchant details were saved, but logo storage key is required to save the logo.';
+      return;
+    }
+
+    this.merchantApi
+      .updateLogo(this.selectedEnvironment, this.apiVersion, merchantId, {
+        storageKey
+      })
+      .subscribe({
+        next: (merchant) => {
+          this.loading = false;
+          this.applySavedMerchantLogo(merchant);
+          this.statusMessage = 'Merchant and logo updated.';
+          this.closeMerchantDialog();
+        },
+        error: (error) => {
+          this.loading = false;
+          this.errorMessage = this.toMessage(error, 'Merchant details were saved, but the logo update failed.');
+        }
+      });
+  }
+
+  private applySavedMerchantLogo(merchant: Merchant): void {
+    this.selectedMerchant = {
+      ...this.selectedMerchant,
+      ...merchant
+    };
+    this.clearMerchantLogoPreviewUrl();
+    this.merchantLogoImageLoadFailed = false;
+    this.merchantLogoSelectedFileName = '';
+    this.merchantLogoSelectedFile = null;
+    this.logoForm.storageKey = merchant.logoStorageKey ?? '';
+    this.dirtyForms.logo = false;
+  }
+
+  private clearProductDialogPreviewUrl(): void {
+    if (this.productDialogPreviewUrl) {
+      URL.revokeObjectURL(this.productDialogPreviewUrl);
+      this.productDialogPreviewUrl = null;
+    }
+  }
+
+  private clearMerchantLogoPreviewUrl(): void {
+    if (this.merchantLogoPreviewUrl) {
+      URL.revokeObjectURL(this.merchantLogoPreviewUrl);
+      this.merchantLogoPreviewUrl = null;
+    }
+  }
+
+  private fileExtension(fileName: string): string {
+    const extension = fileName.split('.').pop()?.trim().toLowerCase();
+    return extension || 'png';
   }
 
   private resetDirtyForms(): void {
