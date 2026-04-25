@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blitzpay-admin-dashboard
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - blitzpay-admin-dashboard.elegantsoftware.de
+      secretName: blitzpay-admin-dashboard-elegantsoftware-de-tls
+  rules:
+    - host: blitzpay-admin-dashboard.elegantsoftware.de
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: blitzpay-admin-dashboard
+                port:
+                  number: 80
