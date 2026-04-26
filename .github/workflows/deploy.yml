@@ -73,8 +73,12 @@ jobs:
       - name: Verify cluster connectivity
         run: kubectl cluster-info --request-timeout=10s
 
-      - name: Render Kubernetes manifest
-        run: sed "s|\${IMAGE}|${IMAGE_REFERENCE}|g" k8s/deployment.yaml > /tmp/deployment.yaml
+      - name: Render Kubernetes manifests
+        run: |
+          sed "s|\${IMAGE}|${IMAGE_REFERENCE}|g" k8s/deployment.yaml > /tmp/deployment.yaml
+          cp k8s/ingress.yaml /tmp/ingress.yaml
 
-      - name: Apply Kubernetes manifest
-        run: kubectl apply -f /tmp/deployment.yaml -n "$KUBE_NAMESPACE"
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f /tmp/deployment.yaml -n "$KUBE_NAMESPACE"
+          kubectl apply -f /tmp/ingress.yaml -n "$KUBE_NAMESPACE"
