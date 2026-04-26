@@ -16,7 +16,7 @@ This repository contains an **Angular admin dashboard** built with CoreUI styles
 - Merchant onboarding workspace with:
   - step summary cards
   - tabbed onboarding sections
-  - verification checklist and progress bar
+- verification checklist and progress bar
 - Data-capture sections for:
   - Business Profile
   - Legal & Ownership (including UBO)

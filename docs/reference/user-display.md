@@ -58,6 +58,42 @@ Relative/human-composed time strings (e.g. `"10 sec ago"`, `"Just now"`) are alr
 
 ---
 
+## Dialog Field Grouping
+
+### Rule
+
+Edit dialogs with more than a handful of fields **must** organise fields into named groups using the `.dialog-section` separator. Flat, ungrouped forms are not permitted.
+
+### Markup
+
+```html
+<div class="col-12"><div class="dialog-section">Group Name</div></div>
+```
+
+Place the separator `col-12` immediately before the first field of each group (except the very first group, which needs no separator). The `.dialog-section` element renders a small uppercase label with a trailing rule line.
+
+### CSS class
+
+```
+src/app/merchant-catalog/merchant-catalog.component.css  →  .dialog-section
+```
+
+### Standard group names
+
+| Dialog | Groups (in order) |
+| --- | --- |
+| Edit Merchant | *(identity)* · Address · Contact · Payment · Logo |
+| Edit Branch | *(identity)* · Address · Contact · Location · Payment |
+| Edit Product | *(identity)* · Pricing · Media · Details |
+
+The first group (Name + Status) carries no separator — the form header provides sufficient context.
+
+### What counts as a group
+
+Fields are in the same group when they describe the same facet of the entity (e.g. all address lines belong to Address; lat, lng, geofence radius, and map preview all belong to Location). Split on facet boundaries, not on visual row count.
+
+---
+
 ## Other Display Values
 
 Additional display conventions will be added here as they are standardised (currency formatting, status labels, etc.).

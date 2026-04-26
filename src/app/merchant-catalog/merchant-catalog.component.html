@@ -225,10 +225,12 @@
             </label>
           </div>
         </div>
+        <div class="col-12"><div class="dialog-section">Address</div></div>
         <div class="col-12">
           <label class="form-label required">Primary Business Address</label>
           <input class="form-control" [(ngModel)]="merchantForm.primaryBusinessAddress" (ngModelChange)="dirtyForms.merchant = true" />
         </div>
+        <div class="col-12"><div class="dialog-section">Contact</div></div>
         <div class="col-md-4">
           <label class="form-label required">Contact Name</label>
           <input class="form-control" [(ngModel)]="merchantForm.contactFullName" (ngModelChange)="dirtyForms.merchant = true" />
@@ -241,6 +243,7 @@
           <label class="form-label required">Contact Phone</label>
           <input class="form-control" [(ngModel)]="merchantForm.contactPhoneNumber" (ngModelChange)="dirtyForms.merchant = true" />
         </div>
+        <div class="col-12"><div class="dialog-section">Payment</div></div>
         <div class="col-12">
           <label class="form-label">Active Payment Channels</label>
           <div class="channel-list">
@@ -254,14 +257,12 @@
             </label>
           </div>
         </div>
+        <div class="col-12"><div class="dialog-section">Logo</div></div>
         <div class="col-md-7">
           <label class="form-label">Logo File</label>
           <input class="form-control" type="file" accept="image/*" (change)="onMerchantLogoFileSelected($event)" />
           <div class="form-text mt-2" *ngIf="merchantLogoSelectedFileName">
             Selected file: {{ merchantLogoSelectedFileName }}
-          </div>
-          <div class="dialog-note mt-3">
-            Saving uploads the selected file through the merchant logo upload flow, then stores the returned storage key with the merchant.
           </div>
         </div>
         <div class="col-md-5">
@@ -281,11 +282,6 @@
               <div class="product-dialog-image-empty">No logo available</div>
             </ng-template>
           </div>
-        </div>
-        <div class="col-12">
-          <label class="form-label">Logo Storage Key</label>
-          <input class="form-control" [(ngModel)]="logoForm.storageKey" (ngModelChange)="dirtyForms.logo = true" />
-          <div class="form-text mt-2">Expected format: merchants/{{ merchant.applicationId }}/logo.&lt;ext&gt;</div>
         </div>
       </div>
 
@@ -331,6 +327,7 @@
             </label>
           </div>
         </div>
+        <div class="col-12"><div class="dialog-section">Address</div></div>
         <div class="col-md-6">
           <label class="form-label">Address 1</label>
           <input class="form-control" [(ngModel)]="branchForm.addressLine1" (ngModelChange)="dirtyForms.branch = true" />
@@ -355,6 +352,7 @@
           <label class="form-label">Google Place ID</label>
           <input class="form-control" [(ngModel)]="branchForm.googlePlaceId" (ngModelChange)="dirtyForms.branch = true" />
         </div>
+        <div class="col-12"><div class="dialog-section">Contact</div></div>
         <div class="col-md-4">
           <label class="form-label">Contact Name</label>
           <input class="form-control" [(ngModel)]="branchForm.contactFullName" (ngModelChange)="dirtyForms.branch = true" />
@@ -367,6 +365,7 @@
           <label class="form-label">Contact Phone</label>
           <input class="form-control" [(ngModel)]="branchForm.contactPhoneNumber" (ngModelChange)="dirtyForms.branch = true" />
         </div>
+        <div class="col-12"><div class="dialog-section">Location</div></div>
         <div class="col-md-4">
           <label class="form-label">Latitude</label>
           <input class="form-control" [(ngModel)]="branchForm.latitude" (ngModelChange)="dirtyForms.branch = true; refreshBranchMapPreview()" />
@@ -378,19 +377,6 @@
         <div class="col-md-4">
           <label class="form-label">Geofence</label>
           <input class="form-control" [(ngModel)]="branchForm.geofenceRadiusMeters" (ngModelChange)="dirtyForms.branch = true; refreshBranchMapPreview()" />
-        </div>
-        <div class="col-12">
-          <label class="form-label">Active Payment Channels</label>
-          <div class="channel-list">
-            <label class="channel-option" *ngFor="let channel of paymentChannelOptions">
-              <input
-                type="checkbox"
-                [checked]="hasChannel(branchForm.activePaymentChannels, channel)"
-                (change)="toggleBranchChannel(channel, $any($event.target).checked)"
-              />
-              <span>{{ channel }}</span>
-            </label>
-          </div>
         </div>
         <div class="col-12" *ngIf="hasBranchCoordinates">
           <label class="form-label">Map Preview</label>
@@ -409,6 +395,20 @@
             <div class="form-text m-0" *ngIf="branchMapLink">
               <a [href]="branchMapLink" target="_blank" rel="noreferrer">Open full map</a>
             </div>
+          </div>
+        </div>
+        <div class="col-12"><div class="dialog-section">Payment</div></div>
+        <div class="col-12">
+          <label class="form-label">Active Payment Channels</label>
+          <div class="channel-list">
+            <label class="channel-option" *ngFor="let channel of paymentChannelOptions">
+              <input
+                type="checkbox"
+                [checked]="hasChannel(branchForm.activePaymentChannels, channel)"
+                (change)="toggleBranchChannel(channel, $any($event.target).checked)"
+              />
+              <span>{{ channel }}</span>
+            </label>
           </div>
         </div>
       </div>
@@ -455,6 +455,7 @@
             </label>
           </div>
         </div>
+        <div class="col-12"><div class="dialog-section">Pricing</div></div>
         <div class="col-md-6">
           <label class="form-label required">Unit Price</label>
           <input class="form-control" [(ngModel)]="productEditForm.unitPrice" (ngModelChange)="dirtyForms.editProduct = true" />
@@ -466,6 +467,7 @@
             <option *ngFor="let branch of branches" [value]="branch.branchId">{{ branch.name }}</option>
           </select>
         </div>
+        <div class="col-12"><div class="dialog-section">Media</div></div>
         <div class="col-md-7">
           <label class="form-label">Image</label>
           <input class="form-control" type="file" accept="image/*" (change)="onFileSelected($event)" />
@@ -488,6 +490,7 @@
             </ng-template>
           </div>
         </div>
+        <div class="col-12"><div class="dialog-section">Details</div></div>
         <div class="col-12">
           <label class="form-label">Description</label>
           <textarea class="form-control" rows="4" [(ngModel)]="productEditForm.description" (ngModelChange)="dirtyForms.editProduct = true"></textarea>
