@@ -2,13 +2,13 @@
   <aside class="sidebar sidebar-dark sidebar-fixed border-end app-sidebar" id="sidebar" [class.sidebar-narrow]="sidebarCollapsed">
     <div class="sidebar-header border-bottom px-3 py-3 d-flex align-items-center">
       <div class="sidebar-brand-wrap">
-        <svg class="sidebar-brand-logo" viewBox="0 0 312 115" aria-label="CoreUI Logo" role="img">
+        <svg class="sidebar-brand-logo" viewBox="0 0 312 115" aria-label="BlitzPay Logo" role="img">
           <use href="assets/coreui-logo.svg#full"></use>
         </svg>
         <div class="sidebar-brand-sub">BlitzPay Admin Panel</div>
       </div>
       <div class="sidebar-brand-mark">
-        <svg viewBox="0 0 102 115" aria-label="CoreUI Mark" role="img">
+        <svg viewBox="0 0 102 115" aria-label="BlitzPay Mark" role="img">
           <use href="assets/coreui-logo.svg#signet"></use>
         </svg>
       </div>
@@ -26,59 +26,15 @@
         </a>
       </li>
 
-      <li class="nav-title mt-3">Operations</li>
+      <li class="nav-title mt-2">Operations</li>
       <li class="nav-item">
-        <a class="nav-link" [class.active]="activeSection === 'onboarding'" href="javascript:void(0)" (click)="selectSection('onboarding')">
+        <a class="nav-link" [class.active]="activeSection === 'merchantCatalog'" href="javascript:void(0)" (click)="selectSection('merchantCatalog')">
           <span class="nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 5a2 2 0 0 1 2-2h4v6H3V5zm0 8h6v8H5a2 2 0 0 1-2-2v-6zm12-10h4a2 2 0 0 1 2 2v10h-6V3zm0 14h6v2a2 2 0 0 1-2 2h-4v-4zm-4-14h2v18h-2V3z"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 10H4v-2h11v2zm3-4H4V8h14v2z"/></svg>
           </span>
-          Merchant Onboarding
+          Merchants
+          <span class="badge bg-light text-dark ms-auto">LIVE</span>
         </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" [class.active]="activeSection === 'verification'" href="javascript:void(0)" (click)="selectSection('verification')">
-          <span class="nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M5 3h14a2 2 0 0 1 2 2v14l-4-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm2 4v2h10V7H7zm0 4v2h7v-2H7z"/></svg>
-          </span>
-          Verification Queue
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" [class.active]="activeSection === 'settlement'" href="javascript:void(0)" (click)="selectSection('settlement')">
-          <span class="nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M4 6h16v12H4V6zm2 2v8h12V8H6zm2 1h4v2H8V9zm0 3h8v2H8v-2z"/></svg>
-          </span>
-          Settlement Setup
-        </a>
-      </li>
-
-      <li class="nav-title mt-3">Components</li>
-      <li class="nav-group" [class.show]="complianceExpanded">
-        <a class="nav-link nav-group-toggle" href="javascript:void(0)" (click)="complianceExpanded = !complianceExpanded">
-          <span class="nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 2 4 5v6c0 5.25 3.4 10.16 8 11 4.6-.84 8-5.75 8-11V5l-8-3zm0 2.18 6 2.25V11c0 4.12-2.53 8.04-6 8.92C8.53 19.04 6 15.12 6 11V6.43l6-2.25zM11 7h2v5h-2V7zm0 6h2v2h-2v-2z"/></svg>
-          </span>
-          Compliance
-        </a>
-        <ul class="nav-group-items compact" *ngIf="complianceExpanded">
-          <li class="nav-item"><a class="nav-link" href="javascript:void(0)">KYC / AML</a></li>
-          <li class="nav-item"><a class="nav-link" href="javascript:void(0)">UBO Screening</a></li>
-          <li class="nav-item"><a class="nav-link" href="javascript:void(0)">Sanctions &amp; PEP</a></li>
-        </ul>
-      </li>
-
-      <li class="nav-group" [class.show]="riskExpanded">
-        <a class="nav-link nav-group-toggle" href="javascript:void(0)" (click)="riskExpanded = !riskExpanded">
-          <span class="nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 3 4 7v5c0 4.42 3.05 8.58 8 9.8 4.95-1.22 8-5.38 8-9.8V7l-8-4zm1 5h3v2h-3v3h-2v-3H8V8h3V5h2v3z"/></svg>
-          </span>
-          Risk Management
-        </a>
-        <ul class="nav-group-items compact" *ngIf="riskExpanded">
-          <li class="nav-item"><a class="nav-link" href="javascript:void(0)">MCC Review</a></li>
-          <li class="nav-item"><a class="nav-link" href="javascript:void(0)">Volume Limits</a></li>
-          <li class="nav-item"><a class="nav-link" href="javascript:void(0)">Reserve Policy</a></li>
-        </ul>
       </li>
     </ul>
 
@@ -518,6 +474,9 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="container-fluid px-4 pt-2 pb-4" *ngIf="activeSection === 'merchantCatalog'">
+        <app-merchant-catalog></app-merchant-catalog>
       </div>
     </div>
 

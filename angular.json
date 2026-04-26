@@ -53,8 +53,7 @@
               "extractLicenses": false,
               "sourceMap": true
             }
-          },
-          "defaultConfiguration": "production"
+          }
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
@@ -75,7 +74,7 @@
               "zone.js",
               "zone.js/testing"
             ],
-            "tsConfig": "tsconfig.app.json",
+            "tsConfig": "tsconfig.spec.json",
             "inlineStyleLanguage": "css",
             "assets": [
               {

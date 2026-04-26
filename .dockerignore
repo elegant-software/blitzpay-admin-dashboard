@@ -1,0 +1,12 @@
+.angular
+.claude
+.git
+.idea
+.specify
+dist
+node_modules
+out-tsc
+npm-debug.log
+Dockerfile
+README.md
+specs
