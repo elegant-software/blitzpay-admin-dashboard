@@ -38,7 +38,7 @@ jobs:
       IMAGE_REFERENCE: ${{ inputs.image_reference || github.event.inputs.image_reference }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Verify deployment manifests exist
         run: |
