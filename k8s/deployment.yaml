@@ -19,7 +19,7 @@ spec:
       containers:
         - name: blitzpay-admin-dashboard
           image: ${IMAGE}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
               name: http

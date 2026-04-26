@@ -21,6 +21,7 @@ import {
 } from '../models/merchant-catalog.models';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-merchant-catalog',
@@ -32,7 +33,7 @@ import { getEnvironmentByKey } from '../services/merchant-environment.service';
 export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   @ViewChild('leafletBranchMap') private leafletBranchMapElement?: ElementRef<HTMLDivElement>;
 
-  selectedEnvironmentKey: 'local' | 'staging' = 'local';
+  selectedEnvironmentKey: 'local' | 'staging' = environment.defaultEnvironmentKey;
   apiVersion = 'v1';
 
   catalogSearchTerm = '';
