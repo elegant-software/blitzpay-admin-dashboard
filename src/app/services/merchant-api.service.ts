@@ -23,6 +23,7 @@ export class MerchantApiService {
   constructor(private readonly http: HttpClient) {}
 
   getMerchant(environment: BackendEnvironment, apiVersion: string, merchantId: string): Observable<Merchant> {
+    // Bearer credentials are injected centrally by the auth interceptor.
     return this.http.get<Merchant>(`${this.base(environment, apiVersion)}/merchants/${merchantId}`);
   }
 
