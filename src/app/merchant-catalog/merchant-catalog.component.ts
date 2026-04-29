@@ -617,24 +617,14 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       )
       .subscribe({
         next: (detail) => {
-          this.loading = false;
-          this.clearProductDialogPreviewUrl();
-          this.productDialogImageLoadFailed = false;
-          this.selectedProduct = detail;
-          this.productEditForm = {
-            name: detail.name,
-            active: detail.active,
-            unitPrice: String(detail.unitPrice),
-            branchId: detail.branchId ?? '',
-            categoryId: detail.categoryId ?? '',
-            productCode: detail.productCode != null ? String(detail.productCode) : '',
-            description: detail.description ?? '',
-            imageFile: null
-          };
-          this.productDialogOpen = true;
-          this.dirtyForms.editProduct = false;
+          this.openProductDialogWithData(detail);
         },
         error: (error) => {
+          if (product.active === false) {
+            this.statusMessage = 'Loaded inactive product from the table because the detail endpoint did not return it.';
+            this.openProductDialogWithData(product);
+            return;
+          }
           this.loading = false;
           this.errorMessage = this.toMessage(error, 'Unable to load product details.');
         }
@@ -1040,6 +1030,25 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
   private buildVisibleGroups(): ProductBranchGroup[] {
     return this.buildBranchGroups();
+  }
+
+  private openProductDialogWithData(product: Product): void {
+    this.loading = false;
+    this.clearProductDialogPreviewUrl();
+    this.productDialogImageLoadFailed = false;
+    this.selectedProduct = product;
+    this.productEditForm = {
+      name: product.name,
+      active: product.active,
+      unitPrice: String(product.unitPrice),
+      branchId: product.branchId ?? '',
+      categoryId: product.categoryId ?? '',
+      productCode: product.productCode != null ? String(product.productCode) : '',
+      description: product.description ?? '',
+      imageFile: null
+    };
+    this.productDialogOpen = true;
+    this.dirtyForms.editProduct = false;
   }
 
   private buildBranchGroups(): ProductBranchGroup[] {
