@@ -1,0 +1,362 @@
+<section class="ops-shell">
+  <div class="ops-toolbar card border-0 shadow-sm">
+    <div class="card-body ops-toolbar-body">
+      <div class="ops-toolbar-block">
+        <div class="ops-toolbar-label">Transaction window</div>
+        <div class="ops-time-pills">
+          <button
+            *ngFor="let option of timeRangeOptions"
+            type="button"
+            class="time-pill"
+            [class.time-pill-active]="selectedTimeRange === option.key"
+            (click)="setTimeRange(option.key)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+      </div>
+      <div class="ops-toolbar-block ops-toolbar-custom" *ngIf="selectedTimeRange === 'custom'">
+        <label class="ops-date-field">
+          <span>From</span>
+          <input class="form-control" type="date" [(ngModel)]="customStart" />
+        </label>
+        <label class="ops-date-field">
+          <span>To</span>
+          <input class="form-control" type="date" [(ngModel)]="customEnd" />
+        </label>
+      </div>
+      <div class="ops-toolbar-meta">
+        <span class="mode-pill">Representative data</span>
+        <div class="ops-meta-line"><strong>Range:</strong> {{ activeTimeRangeLabel }}</div>
+        <div class="ops-meta-line"><strong>Snapshot:</strong> {{ snapshot.generatedAt | displayDate }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-1">
+    <div class="col-sm-6 col-xl-3">
+      <article class="metric-tile metric-tile-primary">
+        <div class="metric-kicker">Merchants</div>
+        <div class="metric-value">{{ portfolioSummary.merchantCount }}</div>
+        <div class="metric-detail">{{ portfolioSummary.activeMerchantCount }} active · {{ portfolioSummary.inactiveMerchantCount }} non-active</div>
+      </article>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <article class="metric-tile metric-tile-sand">
+        <div class="metric-kicker">Branches &amp; Products</div>
+        <div class="metric-value">{{ portfolioSummary.branchCount }} / {{ portfolioSummary.productCount }}</div>
+        <div class="metric-detail">Mixed-status inventory included</div>
+      </article>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <article class="metric-tile metric-tile-mint">
+        <div class="metric-kicker">Transactions</div>
+        <div class="metric-value">{{ portfolioSummary.transactionCount }}</div>
+        <div class="metric-detail">{{ formatAmount(portfolioSummary.paymentVolume, 'EUR') }} in selected range</div>
+      </article>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <article class="metric-tile metric-tile-ink">
+        <div class="metric-kicker">Channel Mix</div>
+        <div class="metric-value">{{ portfolioSummary.onlineUserCount }} / {{ portfolioSummary.mobileUserCount }}</div>
+        <div class="metric-detail">{{ portfolioSummary.approvalRate }}% captured approval rate</div>
+      </article>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-1">
+    <div class="col-12">
+      <div class="card ops-card">
+        <div class="card-header ops-card-header">
+          <div>
+            <div class="ops-card-title">Transaction Channels</div>
+            <div class="ops-card-subtitle">PayPal, Bank, and Card activity changes with the selected time range and current merchant context.</div>
+          </div>
+          <span class="card-badge">{{ activeTimeRangeLabel }}</span>
+        </div>
+        <div class="card-body">
+          <div class="payment-chart" *ngIf="paymentMethodBuckets.length; else noPaymentChart">
+            <div class="payment-chart-grid">
+              <div class="payment-chart-bucket" *ngFor="let bucket of paymentMethodBuckets; trackBy: trackByBucket">
+                <div class="payment-chart-bars">
+                  <div class="payment-bar payment-bar-paypal" [style.height.%]="paymentMethodBarHeight(bucket.paypalCount)" [attr.aria-label]="'PayPal ' + bucket.paypalCount"></div>
+                  <div class="payment-bar payment-bar-bank" [style.height.%]="paymentMethodBarHeight(bucket.bankCount)" [attr.aria-label]="'Bank ' + bucket.bankCount"></div>
+                  <div class="payment-bar payment-bar-card" [style.height.%]="paymentMethodBarHeight(bucket.cardCount)" [attr.aria-label]="'Card ' + bucket.cardCount"></div>
+                </div>
+                <div class="payment-chart-label">{{ bucket.label }}</div>
+              </div>
+            </div>
+            <div class="payment-legend">
+              <span class="payment-legend-item"><span class="payment-legend-dot payment-bar-paypal"></span>PayPal</span>
+              <span class="payment-legend-item"><span class="payment-legend-dot payment-bar-bank"></span>Bank</span>
+              <span class="payment-legend-item"><span class="payment-legend-dot payment-bar-card"></span>Card</span>
+            </div>
+          </div>
+          <ng-template #noPaymentChart>
+            <div class="empty-panel">
+              <div class="empty-title">No chart data for this range</div>
+              <div class="empty-copy">Try a wider time window or another merchant context to compare PayPal, Bank, and Card activity.</div>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-5">
+      <div class="card ops-card h-100">
+        <div class="card-header ops-card-header">
+          <div>
+            <div class="ops-card-title">Merchant Portfolio</div>
+            <div class="ops-card-subtitle">Select a merchant to reveal branch and product context.</div>
+          </div>
+          <span class="card-badge">{{ merchants.length }} merchants</span>
+        </div>
+        <div class="card-body">
+          <div class="merchant-list">
+            <button
+              *ngFor="let merchant of merchants; trackBy: trackByMerchant"
+              type="button"
+              class="merchant-item"
+              [class.merchant-item-active]="selection.selectedMerchantId === merchant.merchantId"
+              (click)="selectMerchant(merchant.merchantId)"
+            >
+              <div class="merchant-item-main">
+                <div class="merchant-item-title-row">
+                  <div class="merchant-item-title">{{ merchant.name }}</div>
+                  <span class="status-tag" [ngClass]="merchantStatusTone(merchant.status)">{{ merchant.status }}</span>
+                </div>
+                <div class="merchant-item-meta">{{ merchant.reference }} · {{ merchant.country || '—' }}</div>
+                <div class="merchant-item-grid">
+                  <span>{{ merchant.branchCount }} branches</span>
+                  <span>{{ merchant.productCount }} products</span>
+                  <span>{{ merchant.transactionCount }} payments</span>
+                </div>
+              </div>
+              <div class="merchant-item-side">
+                <div class="merchant-volume">{{ formatAmount(merchant.paymentVolume, merchant.country === 'United States' ? 'USD' : merchant.country === 'United Kingdom' ? 'GBP' : 'EUR') }}</div>
+                <div class="merchant-risk">{{ merchant.riskFlag || 'No risk flag' }}</div>
+                <div class="merchant-updated">{{ merchant.lastActivityAt | displayDate }}</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-7">
+      <div class="card ops-card h-100">
+        <div class="card-header ops-card-header">
+          <div>
+            <div class="ops-card-title">Context Snapshot</div>
+            <div class="ops-card-subtitle">
+              {{ selectedMerchant ? selectedMerchant.name : 'Select a merchant to inspect its operational footprint.' }}
+            </div>
+          </div>
+          <span class="card-badge">{{ selectedMerchant ? selectedMerchant.reference : 'Portfolio' }}</span>
+        </div>
+        <div class="card-body">
+          <div class="context-hero" *ngIf="selectedMerchant; else noMerchantContext">
+            <div class="context-chip-set">
+              <span class="context-chip">Branches: {{ selectedMerchant.branchCount }}</span>
+              <span class="context-chip">Products: {{ selectedMerchant.productCount }}</span>
+              <span class="context-chip">Online users: {{ selectedMerchant.onlineUserCount }}</span>
+              <span class="context-chip">Mobile users: {{ selectedMerchant.mobileUserCount }}</span>
+            </div>
+            <div class="context-summary-grid">
+              <article class="context-summary-tile">
+                <div class="context-summary-label">Last activity</div>
+                <div class="context-summary-value">{{ selectedMerchant.lastActivityAt | displayDate }}</div>
+              </article>
+              <article class="context-summary-tile">
+                <div class="context-summary-label">Payment volume</div>
+                <div class="context-summary-value">{{ formatAmount(selectedMerchant.paymentVolume, selectedMerchant.country === 'United States' ? 'USD' : selectedMerchant.country === 'United Kingdom' ? 'GBP' : 'EUR') }}</div>
+              </article>
+              <article class="context-summary-tile">
+                <div class="context-summary-label">Risk flag</div>
+                <div class="context-summary-value">{{ selectedMerchant.riskFlag || 'None' }}</div>
+              </article>
+            </div>
+          </div>
+          <ng-template #noMerchantContext>
+            <div class="empty-panel">
+              <div class="empty-title">No merchant selected</div>
+              <div class="empty-copy">The overview already includes all statuses. Pick any merchant to view every branch and product that contributes to its payment posture.</div>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-1">
+    <div class="col-xl-5">
+      <div class="card ops-card h-100">
+        <div class="card-header ops-card-header">
+          <div>
+            <div class="ops-card-title">Branch Context</div>
+            <div class="ops-card-subtitle">Every branch remains visible, including inactive locations.</div>
+          </div>
+          <span class="card-badge">{{ branches.length }} branches</span>
+        </div>
+        <div class="card-body">
+          <div class="branch-list" *ngIf="selectedMerchant && branches.length; else noBranches">
+            <button
+              *ngFor="let branch of branches; trackBy: trackByBranch"
+              type="button"
+              class="branch-item"
+              [class.branch-item-active]="selection.selectedBranchId === branch.branchId"
+              (click)="selectBranch(branch.branchId)"
+            >
+              <div class="branch-item-top">
+                <div class="branch-item-title">{{ branch.name }}</div>
+                <span class="status-tag" [ngClass]="entityStatusTone(branch.status)">{{ branch.status }}</span>
+              </div>
+              <div class="branch-item-meta">{{ branch.city || '—' }} · {{ branch.address || 'No address captured' }}</div>
+              <div class="branch-item-grid">
+                <span>{{ branch.productCount }} products</span>
+                <span>{{ branch.transactionCount }} payments</span>
+                <span>{{ formatAmount(branch.paymentVolume, selectedMerchant?.country === 'United States' ? 'USD' : selectedMerchant?.country === 'United Kingdom' ? 'GBP' : 'EUR') }}</span>
+              </div>
+              <div class="branch-item-footer">Last payment {{ branch.lastTransactionAt | displayDate }}</div>
+            </button>
+          </div>
+          <ng-template #noBranches>
+            <div class="empty-panel">
+              <div class="empty-title">{{ selectedMerchant ? 'No branches for this merchant' : 'Select a merchant first' }}</div>
+              <div class="empty-copy">{{ selectedMerchant ? 'This merchant is still in setup and has no branch network yet.' : 'Branch context appears here after a merchant is selected.' }}</div>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-7">
+      <div class="card ops-card h-100">
+        <div class="card-header ops-card-header">
+          <div>
+            <div class="ops-card-title">Product Context</div>
+            <div class="ops-card-subtitle">
+              {{ selectedBranch ? selectedBranch.name + ' product mix' : selectedMerchant ? 'Merchant-wide product mix' : 'Select a merchant to inspect products' }}
+            </div>
+          </div>
+          <span class="card-badge">{{ products.length }} products</span>
+        </div>
+        <div class="card-body">
+          <div class="product-grid" *ngIf="products.length; else noProducts">
+            <article class="product-card" *ngFor="let product of products; trackBy: trackByProduct">
+              <div class="product-card-top">
+                <div>
+                  <div class="product-card-title">{{ product.name }}</div>
+                  <div class="product-card-meta">{{ product.category || 'Uncategorised' }}</div>
+                </div>
+                <span class="status-tag" [ngClass]="entityStatusTone(product.status)">{{ product.status }}</span>
+              </div>
+              <div class="product-card-body">
+                <div class="product-stat">
+                  <span>Unit price</span>
+                  <strong>{{ formatAmount(product.unitPrice, selectedMerchant?.country === 'United States' ? 'USD' : selectedMerchant?.country === 'United Kingdom' ? 'GBP' : 'EUR') }}</strong>
+                </div>
+                <div class="product-stat">
+                  <span>Payments</span>
+                  <strong>{{ product.transactionCount }}</strong>
+                </div>
+                <div class="product-stat">
+                  <span>Value</span>
+                  <strong>{{ formatAmount(product.paymentVolume, selectedMerchant?.country === 'United States' ? 'USD' : selectedMerchant?.country === 'United Kingdom' ? 'GBP' : 'EUR') }}</strong>
+                </div>
+              </div>
+              <div class="product-card-footer">Last purchased {{ product.lastPurchasedAt | displayDate }}</div>
+            </article>
+          </div>
+          <ng-template #noProducts>
+            <div class="empty-panel">
+              <div class="empty-title">{{ selectedMerchant ? 'No products in this context' : 'Select a merchant first' }}</div>
+              <div class="empty-copy">{{ selectedMerchant ? 'Products remain visible across statuses, but this merchant or branch has no catalog entries yet.' : 'Product context appears after a merchant is selected.' }}</div>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-1">
+    <div class="col-xl-7">
+      <div class="card ops-card h-100">
+        <div class="card-header ops-card-header">
+          <div>
+            <div class="ops-card-title">Payment Activity</div>
+            <div class="ops-card-subtitle">Recent payment outcomes tied to the current portfolio, merchant, or branch context.</div>
+          </div>
+          <span class="card-badge">{{ transactions.length }} records</span>
+        </div>
+        <div class="card-body">
+          <div class="transaction-list" *ngIf="transactions.length; else noTransactions">
+            <article class="transaction-item" *ngFor="let transaction of transactions; trackBy: trackByTransaction">
+              <div class="transaction-main">
+                <div class="transaction-top">
+                  <span class="status-tag" [ngClass]="transactionStatusTone(transaction.status)">{{ transaction.status }}</span>
+                  <span class="channel-chip" [ngClass]="channelTone(transaction.channel)">{{ channelLabel(transaction.channel) }}</span>
+                </div>
+                <div class="transaction-entity">{{ relatedProductName(transaction) }}</div>
+                <div class="transaction-meta">{{ relatedBranchName(transaction) }} · {{ transaction.customerRegion || 'Region unavailable' }}</div>
+              </div>
+              <div class="transaction-side">
+                <div class="transaction-amount">{{ formatAmount(transaction.amount, transaction.currency) }}</div>
+                <div class="transaction-time">{{ transaction.createdAt | displayDate }}</div>
+              </div>
+            </article>
+          </div>
+          <ng-template #noTransactions>
+            <div class="empty-panel">
+              <div class="empty-title">No payment activity yet</div>
+              <div class="empty-copy">This context has no transactions in the mock dataset, but the section remains available so future live data can drop in without layout changes.</div>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-5">
+      <div class="card ops-card h-100">
+        <div class="card-header ops-card-header">
+          <div>
+            <div class="ops-card-title">Online vs Mobile</div>
+            <div class="ops-card-subtitle">Channel contribution stays visible even when one channel is at zero.</div>
+          </div>
+          <span class="card-badge">{{ channelSnapshots.length }} channels</span>
+        </div>
+        <div class="card-body">
+          <div class="channel-grid" *ngIf="channelSnapshots.length; else noChannels">
+            <article class="channel-card" *ngFor="let snapshot of channelSnapshots; trackBy: trackByChannel">
+              <div class="channel-card-top">
+                <span class="channel-chip" [ngClass]="channelTone(snapshot.channel)">{{ channelLabel(snapshot.channel) }}</span>
+                <strong>{{ snapshot.conversionRate ?? 0 }}%</strong>
+              </div>
+              <div class="channel-card-body">
+                <div class="channel-stat">
+                  <span>Users</span>
+                  <strong>{{ snapshot.userCount }}</strong>
+                </div>
+                <div class="channel-stat">
+                  <span>Payments</span>
+                  <strong>{{ snapshot.transactionCount }}</strong>
+                </div>
+                <div class="channel-stat">
+                  <span>Volume</span>
+                  <strong>{{ formatAmount(snapshot.paymentVolume, selectedMerchant?.country === 'United States' ? 'USD' : selectedMerchant?.country === 'United Kingdom' ? 'GBP' : 'EUR') }}</strong>
+                </div>
+              </div>
+              <div class="channel-card-footer">Last activity {{ snapshot.lastActivityAt | displayDate }}</div>
+            </article>
+          </div>
+          <ng-template #noChannels>
+            <div class="empty-panel">
+              <div class="empty-title">No channel snapshot</div>
+              <div class="empty-copy">Channel comparison will render here once online or mobile activity exists for the chosen context.</div>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

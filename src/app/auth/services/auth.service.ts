@@ -102,10 +102,16 @@ export class AuthService {
         redirectUri
       });
 
-      await keycloak.logout({
+      const logoutUrl = keycloak.createLogoutUrl({
         redirectUri
       });
-      console.log('[auth] logout() redirect started');
+
+      console.log('[auth] logout() redirect started', {
+        logoutUrl
+      });
+
+      window.location.assign(logoutUrl);
+      return;
     } catch (error) {
       console.error('[auth] logout() failed, falling back to local login route', error);
       this.authState.reset();
