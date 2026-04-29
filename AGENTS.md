@@ -1,8 +1,12 @@
 # blitzpay-admin-dashboard Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-23
+Auto-generated from all feature plans. Last updated: 2026-04-29
 
 ## Active Technologies
+- TypeScript 5.8 + Angular 20 standalone APIs, Angular Router, Angular Forms, Angular HttpClient, RxJS 7.8, CoreUI 5 CSS, `keycloak-js` (002-keycloak-sso-auth)
+- Browser memory for access and refresh tokens managed by the Keycloak adapter; environment files for non-secret identity configuration (002-keycloak-sso-auth)
+- TypeScript 5.8, Angular 20 + Angular standalone components, Angular Router, Angular forms, Angular HttpClient, RxJS 7.8, CoreUI 5 CSS, `keycloak-js` (002-keycloak-sso-auth)
+- In-memory mock data only for the redesigned dashboard; no new persistent storage (002-keycloak-sso-auth)
 
 - TypeScript 5.8, Angular 20 + Angular standalone components, Angular forms, Angular HttpClient, RxJS 7.8, CoreUI 5 CSS (001-merchant-catalog-page)
 
@@ -27,8 +31,10 @@ npm test
 TypeScript 5.8, Angular 20: Follow standard conventions
 
 ## Recent Changes
+- 002-keycloak-sso-auth: Added TypeScript 5.8, Angular 20 + Angular standalone components, Angular Router, Angular forms, Angular HttpClient, RxJS 7.8, CoreUI 5 CSS, `keycloak-js`
+- 002-keycloak-sso-auth: Added TypeScript 5.8 + Angular 20 standalone APIs, Angular Router, Angular Forms, Angular HttpClient, RxJS 7.8, CoreUI 5 CSS, `keycloak-js`
+- 002-keycloak-sso-auth: Added TypeScript 5.8 + Angular 20 standalone APIs, Angular Router, Angular Forms, Angular HttpClient, RxJS 7.8, CoreUI 5 CSS, `keycloak-js`
 
-- 001-merchant-catalog-page: Added TypeScript 5.8, Angular 20 + Angular standalone components, Angular forms, Angular HttpClient, RxJS 7.8, CoreUI 5 CSS
 
 <!-- MANUAL ADDITIONS START -->
 

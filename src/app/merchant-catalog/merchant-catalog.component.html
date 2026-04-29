@@ -107,9 +107,6 @@
                     <button class="icon-action-btn me-1" type="button" aria-label="Edit branch" (click)="openBranchDialog(branch); $event.stopPropagation()">
                       <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
                     </button>
-                    <button class="icon-action-btn icon-action-btn-danger" type="button" aria-label="Delete branch" (click)="removeBranch(branch); $event.stopPropagation()">
-                      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                    </button>
                   </td>
                 </tr>
                 <tr *ngIf="!branches.length">
@@ -146,6 +143,8 @@
                 <tr>
                   <th class="product-thumb-col"></th>
                   <th>Product</th>
+                  <th>Code</th>
+                  <th>Category</th>
                   <th>Status</th>
                   <th class="text-end">Actions</th>
                 </tr>
@@ -166,22 +165,20 @@
                     <div class="product-cell-title">{{ product.name }}</div>
                     <div class="product-cell-subtitle">{{ product.description || 'No description' }}</div>
                   </td>
+                  <td>{{ product.productCode ?? '—' }}</td>
+                  <td>{{ product.categoryName || '—' }}</td>
                   <td>
                     <span class="status-tag" [ngClass]="productStatusTone(product)">{{ productStatusLabel(product) }}</span>
                   </td>
                   <td class="text-end action-cell">
-                    <button class="btn btn-sm btn-outline-primary me-2" type="button" aria-label="Edit product" (click)="openProduct(product)">
+                    <button class="btn btn-sm btn-outline-primary" type="button" aria-label="Edit product" (click)="openProduct(product)">
                       <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
                       <span class="ms-1">Edit</span>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" type="button" aria-label="Delete product" (click)="removeProduct(product)">
-                      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                      <span class="ms-1">Delete</span>
                     </button>
                   </td>
                 </tr>
                 <tr *ngIf="!visibleProductRows.length">
-                  <td colspan="3" class="text-center text-body-secondary">{{ selectedBranch ? 'No products for the selected branch.' : 'Select a branch to load products.' }}</td>
+                  <td colspan="6" class="text-center text-body-secondary">{{ selectedBranch ? 'No products for the selected branch.' : 'Select a branch to load products.' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -431,6 +428,8 @@
       <div class="dialog-meta">
         <div><strong>Product ID:</strong> {{ product.productId }}</div>
         <div><strong>Merchant ID:</strong> {{ product.merchantId }}</div>
+        <div><strong>Product Code:</strong> {{ product.productCode ?? '—' }}</div>
+        <div><strong>Category:</strong> {{ product.categoryName || '—' }}</div>
         <div><strong>Current branch:</strong> {{ product.branchId || 'Merchant-level product' }}</div>
         <div><strong>Updated:</strong> {{ product.updatedAt | displayDate }}</div>
       </div>
@@ -459,6 +458,17 @@
         <div class="col-md-6">
           <label class="form-label required">Unit Price</label>
           <input class="form-control" [(ngModel)]="productEditForm.unitPrice" (ngModelChange)="dirtyForms.editProduct = true" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Product Code</label>
+          <input class="form-control" type="number" min="0" [(ngModel)]="productEditForm.productCode" (ngModelChange)="dirtyForms.editProduct = true" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Category</label>
+          <select class="form-select" [(ngModel)]="productEditForm.categoryId" (ngModelChange)="dirtyForms.editProduct = true">
+            <option value="">No category</option>
+            <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+          </select>
         </div>
         <div class="col-md-6">
           <label class="form-label">Branch</label>

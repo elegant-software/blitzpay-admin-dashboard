@@ -15,6 +15,7 @@ import {
   MerchantLocation,
   Product,
   ProductBranchGroup,
+  ProductCategory,
   ProductFormModel,
   UpdateBranchRequest,
   UpdateMerchantRequest
@@ -42,6 +43,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   selectedMerchant: Merchant | null = null;
   merchantLocation: MerchantLocation | null = null;
   branches: Branch[] = [];
+  categories: ProductCategory[] = [];
   selectedBranch: Branch | null = null;
   products: Product[] = [];
 
@@ -304,6 +306,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.selectedMerchant = null;
     this.merchantLocation = null;
     this.branches = [];
+    this.categories = [];
     this.products = [];
     this.selectedBranch = null;
     this.merchantForm = this.emptyMerchantForm();
@@ -614,22 +617,14 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       )
       .subscribe({
         next: (detail) => {
-          this.loading = false;
-          this.clearProductDialogPreviewUrl();
-          this.productDialogImageLoadFailed = false;
-          this.selectedProduct = detail;
-          this.productEditForm = {
-            name: detail.name,
-            active: detail.active,
-            unitPrice: String(detail.unitPrice),
-            branchId: detail.branchId ?? '',
-            description: detail.description ?? '',
-            imageFile: null
-          };
-          this.productDialogOpen = true;
-          this.dirtyForms.editProduct = false;
+          this.openProductDialogWithData(detail);
         },
         error: (error) => {
+          if (product.active === false) {
+            this.statusMessage = 'Loaded inactive product from the table because the detail endpoint did not return it.';
+            this.openProductDialogWithData(product);
+            return;
+          }
           this.loading = false;
           this.errorMessage = this.toMessage(error, 'Unable to load product details.');
         }
@@ -840,12 +835,16 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
         .pipe(catchError(() => of(null))),
       branches: this.merchantApi
         .getBranches(this.selectedEnvironment, this.apiVersion, merchant.applicationId)
+        .pipe(catchError(() => of([]))),
+      categories: this.merchantApi
+        .getProductCategories(this.selectedEnvironment, this.apiVersion, merchant.applicationId)
         .pipe(catchError(() => of([])))
     }).subscribe({
-      next: ({ location, branches }) => {
+      next: ({ location, branches, categories }) => {
         this.merchantLocation = location;
         this.locationForm = location ? this.locationFromEntity(location) : this.emptyLocationForm();
         this.branches = branches.map((branch) => this.normalizeBranch(branch));
+        this.categories = categories;
         this.selectedBranch = this.branches[0] ?? null;
         this.products = [];
         this.resetDirtyForms();
@@ -1033,6 +1032,25 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     return this.buildBranchGroups();
   }
 
+  private openProductDialogWithData(product: Product): void {
+    this.loading = false;
+    this.clearProductDialogPreviewUrl();
+    this.productDialogImageLoadFailed = false;
+    this.selectedProduct = product;
+    this.productEditForm = {
+      name: product.name,
+      active: product.active,
+      unitPrice: String(product.unitPrice),
+      branchId: product.branchId ?? '',
+      categoryId: product.categoryId ?? '',
+      productCode: product.productCode != null ? String(product.productCode) : '',
+      description: product.description ?? '',
+      imageFile: null
+    };
+    this.productDialogOpen = true;
+    this.dirtyForms.editProduct = false;
+  }
+
   private buildBranchGroups(): ProductBranchGroup[] {
     const groups: ProductBranchGroup[] = this.branches.map((branch) => ({
       branchId: branch.branchId ?? null,
@@ -1122,6 +1140,8 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       active: true,
       unitPrice: '',
       branchId: '',
+      categoryId: '',
+      productCode: '',
       description: '',
       imageFile: null
     };
@@ -1205,6 +1225,14 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
     if (form.branchId.trim()) {
       payload.set('branchId', form.branchId.trim());
+    }
+
+    if (form.categoryId.trim()) {
+      payload.set('categoryId', form.categoryId.trim());
+    }
+
+    if (form.productCode.trim()) {
+      payload.set('productCode', form.productCode.trim());
     }
 
     if (form.description.trim()) {

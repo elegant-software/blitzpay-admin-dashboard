@@ -1,0 +1,30 @@
+<div class="auth-page">
+  <div class="auth-card card shadow-sm border-0">
+    <div class="card-body p-4 p-lg-5">
+      <div class="auth-brand-eyebrow">BlitzPay Admin Dashboard</div>
+      <h1 class="auth-title">{{ title }}</h1>
+      <p class="auth-copy">{{ description }}</p>
+
+      <div class="auth-status-grid" *ngIf="session$ | async as session">
+        <div class="auth-status-item">
+          <span class="auth-status-label">Signed-in identity</span>
+          <strong>{{ session.displayName || session.email || 'Authenticated user' }}</strong>
+        </div>
+        <div class="auth-status-item">
+          <span class="auth-status-label">Provider</span>
+          <strong>{{ session.identityProvider || 'Keycloak' }}</strong>
+        </div>
+      </div>
+
+      <div class="auth-actions">
+        <button class="btn btn-primary btn-lg" type="button" (click)="retrySignIn()">Retry sign in</button>
+        <button class="btn btn-outline-primary btn-lg" type="button" (click)="continueRegistration()">Continue registration</button>
+      </div>
+
+      <div class="auth-secondary-actions">
+        <button class="btn btn-link ps-0" type="button" (click)="backToLogin()">Back to login</button>
+        <button class="btn btn-link text-danger" type="button" (click)="signOut()">Sign out</button>
+      </div>
+    </div>
+  </div>
+</div>

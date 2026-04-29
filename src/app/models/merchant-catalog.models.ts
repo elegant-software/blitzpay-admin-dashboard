@@ -82,6 +82,13 @@ export interface Branch {
   updatedAt?: string | null;
 }
 
+export interface ProductCategory {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Product {
   productId: string;
   merchantId: string;
@@ -91,6 +98,10 @@ export interface Product {
   unitPrice: number;
   imageUrl?: string | null;
   active: boolean;
+  status: string;
+  categoryId?: string | null;
+  categoryName?: string | null;
+  productCode?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -233,6 +244,8 @@ export interface ProductFormModel {
   active: boolean;
   unitPrice: string;
   branchId: string;
+  categoryId: string;
+  productCode: string;
   description: string;
   imageFile: File | null;
 }

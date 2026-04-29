@@ -10,3 +10,5 @@ npm-debug.log
 Dockerfile
 README.md
 specs
+.env*
+coverage/
