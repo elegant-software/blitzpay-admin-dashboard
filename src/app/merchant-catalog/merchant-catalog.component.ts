@@ -15,6 +15,7 @@ import {
   MerchantLocation,
   Product,
   ProductBranchGroup,
+  ProductCategory,
   ProductFormModel,
   UpdateBranchRequest,
   UpdateMerchantRequest
@@ -42,6 +43,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   selectedMerchant: Merchant | null = null;
   merchantLocation: MerchantLocation | null = null;
   branches: Branch[] = [];
+  categories: ProductCategory[] = [];
   selectedBranch: Branch | null = null;
   products: Product[] = [];
 
@@ -304,6 +306,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.selectedMerchant = null;
     this.merchantLocation = null;
     this.branches = [];
+    this.categories = [];
     this.products = [];
     this.selectedBranch = null;
     this.merchantForm = this.emptyMerchantForm();
@@ -623,6 +626,8 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
             active: detail.active,
             unitPrice: String(detail.unitPrice),
             branchId: detail.branchId ?? '',
+            categoryId: detail.categoryId ?? '',
+            productCode: detail.productCode != null ? String(detail.productCode) : '',
             description: detail.description ?? '',
             imageFile: null
           };
@@ -840,12 +845,16 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
         .pipe(catchError(() => of(null))),
       branches: this.merchantApi
         .getBranches(this.selectedEnvironment, this.apiVersion, merchant.applicationId)
+        .pipe(catchError(() => of([]))),
+      categories: this.merchantApi
+        .getProductCategories(this.selectedEnvironment, this.apiVersion, merchant.applicationId)
         .pipe(catchError(() => of([])))
     }).subscribe({
-      next: ({ location, branches }) => {
+      next: ({ location, branches, categories }) => {
         this.merchantLocation = location;
         this.locationForm = location ? this.locationFromEntity(location) : this.emptyLocationForm();
         this.branches = branches.map((branch) => this.normalizeBranch(branch));
+        this.categories = categories;
         this.selectedBranch = this.branches[0] ?? null;
         this.products = [];
         this.resetDirtyForms();
@@ -1122,6 +1131,8 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       active: true,
       unitPrice: '',
       branchId: '',
+      categoryId: '',
+      productCode: '',
       description: '',
       imageFile: null
     };
@@ -1205,6 +1216,14 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
     if (form.branchId.trim()) {
       payload.set('branchId', form.branchId.trim());
+    }
+
+    if (form.categoryId.trim()) {
+      payload.set('categoryId', form.categoryId.trim());
+    }
+
+    if (form.productCode.trim()) {
+      payload.set('productCode', form.productCode.trim());
     }
 
     if (form.description.trim()) {

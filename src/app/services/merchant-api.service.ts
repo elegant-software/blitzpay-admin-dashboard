@@ -9,6 +9,7 @@ import {
   MerchantLogoUploadResponse,
   MerchantLocation,
   Product,
+  ProductCategory,
   ProductListResponse,
   UpdateBranchRequest,
   UpdateMerchantRequest,
@@ -84,11 +85,24 @@ export class MerchantApiService {
     return this.http.delete<void>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/branches/${branchId}`);
   }
 
-  getProducts(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string): Observable<Product[]> {
-    const params = new HttpParams().set('branchId', branchId);
+  getProducts(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    branchId: string,
+    includeInactive = true
+  ): Observable<Product[]> {
+    let params = new HttpParams().set('branchId', branchId);
+    if (includeInactive) {
+      params = params.set('includeInactive', 'true');
+    }
     return this.http
       .get<ProductListResponse | Product[]>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/products`, { params })
       .pipe(map((response) => Array.isArray(response) ? response : (response.products ?? [])));
+  }
+
+  getProductCategories(environment: BackendEnvironment, apiVersion: string, merchantId: string): Observable<ProductCategory[]> {
+    return this.http.get<ProductCategory[]>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/product-categories`);
   }
 
   createProduct(
@@ -107,7 +121,10 @@ export class MerchantApiService {
     productId: string,
     branchId?: string
   ): Observable<Product> {
-    const params = branchId ? new HttpParams().set('branchId', branchId) : undefined;
+    let params = new HttpParams().set('includeInactive', 'true');
+    if (branchId) {
+      params = params.set('branchId', branchId);
+    }
     return this.http.get<Product>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/products/${productId}`, { params });
   }
 

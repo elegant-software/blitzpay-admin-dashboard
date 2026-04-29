@@ -146,6 +146,8 @@
                 <tr>
                   <th class="product-thumb-col"></th>
                   <th>Product</th>
+                  <th>Code</th>
+                  <th>Category</th>
                   <th>Status</th>
                   <th class="text-end">Actions</th>
                 </tr>
@@ -166,6 +168,8 @@
                     <div class="product-cell-title">{{ product.name }}</div>
                     <div class="product-cell-subtitle">{{ product.description || 'No description' }}</div>
                   </td>
+                  <td>{{ product.productCode ?? '—' }}</td>
+                  <td>{{ product.categoryName || '—' }}</td>
                   <td>
                     <span class="status-tag" [ngClass]="productStatusTone(product)">{{ productStatusLabel(product) }}</span>
                   </td>
@@ -181,7 +185,7 @@
                   </td>
                 </tr>
                 <tr *ngIf="!visibleProductRows.length">
-                  <td colspan="3" class="text-center text-body-secondary">{{ selectedBranch ? 'No products for the selected branch.' : 'Select a branch to load products.' }}</td>
+                  <td colspan="6" class="text-center text-body-secondary">{{ selectedBranch ? 'No products for the selected branch.' : 'Select a branch to load products.' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -431,6 +435,8 @@
       <div class="dialog-meta">
         <div><strong>Product ID:</strong> {{ product.productId }}</div>
         <div><strong>Merchant ID:</strong> {{ product.merchantId }}</div>
+        <div><strong>Product Code:</strong> {{ product.productCode ?? '—' }}</div>
+        <div><strong>Category:</strong> {{ product.categoryName || '—' }}</div>
         <div><strong>Current branch:</strong> {{ product.branchId || 'Merchant-level product' }}</div>
         <div><strong>Updated:</strong> {{ product.updatedAt | displayDate }}</div>
       </div>
@@ -459,6 +465,17 @@
         <div class="col-md-6">
           <label class="form-label required">Unit Price</label>
           <input class="form-control" [(ngModel)]="productEditForm.unitPrice" (ngModelChange)="dirtyForms.editProduct = true" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Product Code</label>
+          <input class="form-control" type="number" min="0" [(ngModel)]="productEditForm.productCode" (ngModelChange)="dirtyForms.editProduct = true" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Category</label>
+          <select class="form-select" [(ngModel)]="productEditForm.categoryId" (ngModelChange)="dirtyForms.editProduct = true">
+            <option value="">No category</option>
+            <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+          </select>
         </div>
         <div class="col-md-6">
           <label class="form-label">Branch</label>
