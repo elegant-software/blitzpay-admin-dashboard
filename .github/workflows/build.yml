@@ -1,15 +1,15 @@
-name: Build and publish frontend
+name: Frontend CI/CD
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
-  workflow_dispatch:
-  workflow_call:
-    inputs:
-      image_tag:
-        type: string
-        required: false
+  release:
+    types:
+      - published
 
 permissions:
   contents: read
@@ -18,10 +18,11 @@ permissions:
 env:
   NODE_VERSION: '20'
   IMAGE_REPOSITORY: ${{ format('ghcr.io/{0}', github.repository) }}
-  IMAGE_TAG: ${{ inputs.image_tag || github.sha }}
 
 jobs:
-  verify:
+  ci:
+    name: CI
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -42,8 +43,9 @@ jobs:
       - name: Build application
         run: npm run build -- --configuration production
 
-  build-image:
-    needs: verify
+  build-release-image:
+    name: Build release image
+    if: ${{ github.event_name == 'release' }}
     runs-on: ubuntu-latest
     outputs:
       image_reference: ${{ steps.compute-image.outputs.image_reference }}
@@ -51,32 +53,58 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
+      - name: Build application
+        run: npm run build -- --configuration production
+
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v4
 
       - name: Log in to GitHub Container Registry
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Compute image references
+      - name: Compute image reference
         id: compute-image
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          echo "IMAGE_REFERENCE=${IMAGE_REPOSITORY}:${IMAGE_TAG}" >> "$GITHUB_ENV"
-          echo "LATEST_IMAGE=${IMAGE_REPOSITORY}:latest" >> "$GITHUB_ENV"
-          echo "image_reference=${IMAGE_REPOSITORY}:${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "IMAGE_REFERENCE=${IMAGE_REPOSITORY}:${RELEASE_TAG}" >> "$GITHUB_ENV"
+          echo "image_reference=${IMAGE_REPOSITORY}:${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push image
         uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: |
-            ${{ env.IMAGE_REFERENCE }}
-            ${{ env.LATEST_IMAGE }}
+          push: true
+          tags: ${{ env.IMAGE_REFERENCE }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy-staging:
+    name: Deploy to staging
+    if: ${{ github.event_name == 'release' }}
+    needs: build-release-image
+    uses: ./.github/workflows/deploy.yml
+    with:
+      image_reference: ${{ needs.build-release-image.outputs.image_reference }}
+      kube_namespace: blitzpay-staging
+    secrets:
+      K8S_SERVER: ${{ secrets.K8S_SERVER }}
+      K8S_CA_CERT: ${{ secrets.K8S_CA_CERT }}
+      K8S_TOKEN: ${{ secrets.K8S_TOKEN }}
