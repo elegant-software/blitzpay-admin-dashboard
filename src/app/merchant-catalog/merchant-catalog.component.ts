@@ -1,12 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { InputTextModule } from 'primeng/inputtext';
+import { PaginatorModule } from 'primeng/paginator';
 import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import * as L from 'leaflet';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import {
   Branch,
+  BranchSortField,
+  BranchTableState,
   BranchFormModel,
   LogoFormModel,
   LocationFormModel,
@@ -14,12 +18,15 @@ import {
   MerchantFormModel,
   MerchantLocation,
   Product,
-  ProductBranchGroup,
   ProductCategory,
+  ProductSortField,
+  ProductTableState,
   ProductFormModel,
+  TableSortDirection,
   UpdateBranchRequest,
   UpdateMerchantRequest
 } from '../models/merchant-catalog.models';
+import { filterRowsByFields, hasActiveQuery, nextSortDirection, paginateRows, sortRows } from './merchant-catalog-table-state';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
@@ -27,7 +34,7 @@ import { environment } from '../../environments/environment';
 @Component({
   selector: 'app-merchant-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe],
+  imports: [CommonModule, FormsModule, DisplayDatePipe, InputTextModule, PaginatorModule],
   templateUrl: './merchant-catalog.component.html',
   styleUrl: './merchant-catalog.component.css'
 })
@@ -46,6 +53,8 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   categories: ProductCategory[] = [];
   selectedBranch: Branch | null = null;
   products: Product[] = [];
+  branchTableState: BranchTableState = this.createBranchTableState();
+  productTableState: ProductTableState = this.createProductTableState();
 
   selectedProduct: Product | null = null;
   productDialogOpen = false;
@@ -79,6 +88,8 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   };
 
   readonly paymentChannelOptions = ['PAYPAL', 'STRIPE', 'TRUELAYER'];
+  readonly branchFilterHint = 'Filter by branch name, country, city, or zipcode.';
+  readonly productFilterHint = 'Filter by product code, category, or name.';
   readonly merchantStatusOptions = [
     'DRAFT',
     'SUBMITTED',
@@ -129,70 +140,77 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     return false;
   }
 
-  get visibleBranchGroups(): ProductBranchGroup[] {
-    return this.buildVisibleGroups();
-  }
-
-  get visibleProductCount(): number {
-    return this.visibleBranchGroups.reduce((count, group) => count + group.products.length, 0);
-  }
-
-  get visibleTableRows(): Array<{
-    merchantId: string;
-    merchantReference: string;
-    branchId: string | null;
-    branchName: string;
-    product: Product | null;
-  }> {
-    const merchant = this.selectedMerchant;
-    if (!merchant) {
-      return [];
-    }
-
-    return this.visibleBranchGroups.flatMap<{
-      merchantId: string;
-      merchantReference: string;
-      branchId: string | null;
-      branchName: string;
-      product: Product | null;
-    }>((group) => {
-      if (!group.products.length) {
-        return [
-          {
-            merchantId: merchant.applicationId,
-            merchantReference: merchant.applicationReference,
-            branchId: group.branchId,
-            branchName: group.branchLabel,
-            product: null
-          }
-        ];
-      }
-
-      return group.products.map((product) => ({
-        merchantId: merchant.applicationId,
-        merchantReference: merchant.applicationReference,
-        branchId: group.branchId,
-        branchName: group.branchLabel,
-        product
-      }));
-    });
+  get visibleBranchRows(): Branch[] {
+    return this.branchTableState.visibleRows;
   }
 
   get visibleProductRows(): Product[] {
-    if (!this.selectedBranch?.branchId) {
-      return [];
-    }
-
-    return this.products;
+    return this.productTableState.visibleRows;
   }
 
-  get branchProductCountMap(): Record<string, number> {
-    return this.visibleBranchGroups.reduce<Record<string, number>>((acc, group) => {
-      if (group.branchId) {
-        acc[group.branchId] = group.products.length;
-      }
-      return acc;
-    }, {});
+  get branchVisibleCount(): number {
+    return this.branchTableState.pagination.totalRecords;
+  }
+
+  get productVisibleCount(): number {
+    return this.productTableState.pagination.totalRecords;
+  }
+
+  get branchFilterActive(): boolean {
+    return hasActiveQuery(this.branchTableState.filter.query);
+  }
+
+  get productFilterActive(): boolean {
+    return hasActiveQuery(this.productTableState.filter.query);
+  }
+
+  get branchPaginatorVisible(): boolean {
+    return this.branchVisibleCount > this.branchTableState.pagination.rows;
+  }
+
+  get productPaginatorVisible(): boolean {
+    return this.productVisibleCount > this.productTableState.pagination.rows;
+  }
+
+  get branchNameSortDirection(): TableSortDirection | null {
+    return this.branchTableState.sort.field === 'name' ? this.branchTableState.sort.direction : null;
+  }
+
+  get branchStatusSortDirection(): TableSortDirection | null {
+    return this.branchTableState.sort.field === 'status' ? this.branchTableState.sort.direction : null;
+  }
+
+  get productNameSortDirection(): TableSortDirection | null {
+    return this.productTableState.sort.field === 'name' ? this.productTableState.sort.direction : null;
+  }
+
+  get productCodeSortDirection(): TableSortDirection | null {
+    return this.productTableState.sort.field === 'productCode' ? this.productTableState.sort.direction : null;
+  }
+
+  get productCategorySortDirection(): TableSortDirection | null {
+    return this.productTableState.sort.field === 'categoryName' ? this.productTableState.sort.direction : null;
+  }
+
+  get productStatusSortDirection(): TableSortDirection | null {
+    return this.productTableState.sort.field === 'status' ? this.productTableState.sort.direction : null;
+  }
+
+  get productEmptyMessage(): string {
+    switch (this.productTableState.emptyStateKind) {
+      case 'no-filter-results':
+        return 'No products match the current filters.';
+      case 'no-data':
+        return 'No products for the selected branch.';
+      default:
+        return 'Select a branch to load products.';
+    }
+  }
+
+  get branchEmptyMessage(): string {
+    return this.branchTableState.emptyStateKind === 'no-filter-results'
+      ? 'No branches match the current filters.'
+      : 'No branches for this merchant.';
   }
 
   merchantStatusTone(status: string): string {
@@ -285,6 +303,88 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.dirtyForms.branch = true;
   }
 
+  onBranchFilterChange(): void {
+    this.branchTableState.pagination.first = 0;
+    this.syncBranchTableState();
+  }
+
+  onProductFilterChange(): void {
+    this.productTableState.pagination.first = 0;
+    this.syncProductTableState();
+  }
+
+  clearBranchFilters(): void {
+    this.branchTableState.filter.query = '';
+    this.branchTableState.pagination.first = 0;
+    this.syncBranchTableState();
+  }
+
+  clearProductFilters(): void {
+    this.productTableState.filter.query = '';
+    this.productTableState.pagination.first = 0;
+    this.syncProductTableState();
+  }
+
+  onBranchPageChange(event: { first?: number; rows?: number }): void {
+    this.branchTableState.pagination.first = event.first ?? 0;
+    this.branchTableState.pagination.rows = event.rows ?? this.branchTableState.pagination.rows;
+    this.syncBranchTableState();
+  }
+
+  onProductPageChange(event: { first?: number; rows?: number }): void {
+    this.productTableState.pagination.first = event.first ?? 0;
+    this.productTableState.pagination.rows = event.rows ?? this.productTableState.pagination.rows;
+    this.syncProductTableState();
+  }
+
+  toggleBranchSort(field: BranchSortField): void {
+    const isSameField = this.branchTableState.sort.field === field;
+    this.branchTableState.sort = {
+      field,
+      direction: nextSortDirection(this.branchTableState.sort.direction, isSameField)
+    };
+    this.syncBranchTableState();
+  }
+
+  toggleProductSort(field: ProductSortField): void {
+    const isSameField = this.productTableState.sort.field === field;
+    this.productTableState.sort = {
+      field,
+      direction: nextSortDirection(this.productTableState.sort.direction, isSameField)
+    };
+    this.syncProductTableState();
+  }
+
+  sortAriaSort(direction: TableSortDirection | null): 'ascending' | 'descending' | 'none' {
+    if (direction === 'asc') {
+      return 'ascending';
+    }
+    if (direction === 'desc') {
+      return 'descending';
+    }
+    return 'none';
+  }
+
+  sortButtonLabel(columnLabel: string, direction: TableSortDirection | null): string {
+    if (direction === 'asc') {
+      return `Sort ${columnLabel} descending`;
+    }
+    if (direction === 'desc') {
+      return `Sort ${columnLabel} ascending`;
+    }
+    return `Sort ${columnLabel} ascending`;
+  }
+
+  sortIconClass(direction: TableSortDirection | null): string {
+    if (direction === 'asc') {
+      return 'pi pi-sort-alpha-down';
+    }
+    if (direction === 'desc') {
+      return 'pi pi-sort-alpha-up';
+    }
+    return 'pi pi-sort-alt';
+  }
+
   runCatalogSearch(): void {
     this.errorMessage = '';
     this.statusMessage = '';
@@ -309,6 +409,8 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.categories = [];
     this.products = [];
     this.selectedBranch = null;
+    this.branchTableState = this.createBranchTableState();
+    this.productTableState = this.createProductTableState();
     this.merchantForm = this.emptyMerchantForm();
     this.branchForm = this.emptyBranchForm();
     this.closeMerchantDialog();
@@ -471,6 +573,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.merchantApi.getBranch(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, branchId).subscribe({
       next: (detail) => {
         this.selectedBranch = this.normalizeBranch(detail);
+        this.resetProductTableStateForBranch(this.selectedBranch.branchId ?? null);
         this.loadProductsForSelectedBranch();
       },
       error: (error) => {
@@ -587,9 +690,11 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
         this.branches = this.branches.map((b) =>
           b.branchId === branch.branchId ? { ...b, active: false } : b
         );
+        this.syncBranchTableState();
         if (this.selectedBranch?.branchId === branch.branchId) {
           this.selectedBranch = null;
           this.products = [];
+          this.resetProductTableStateForBranch(null);
           this.syncCatalogSearchSummary();
         }
         this.closeBranchDialog();
@@ -847,6 +952,10 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
         this.categories = categories;
         this.selectedBranch = this.branches[0] ?? null;
         this.products = [];
+        this.branchTableState = this.createBranchTableState();
+        this.productTableState = this.createProductTableState();
+        this.syncBranchTableState();
+        this.resetProductTableStateForBranch(this.selectedBranch?.branchId ?? null);
         this.resetDirtyForms();
         this.syncCatalogSearchSummary();
         this.statusMessage = `Loaded merchant ${merchant.applicationReference}.`;
@@ -871,7 +980,12 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.merchantApi.getBranches(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId).subscribe({
       next: (branches) => {
         this.loading = false;
+        const selectedBranchId = this.selectedBranch?.branchId ?? null;
         this.branches = branches.map((branch) => this.normalizeBranch(branch));
+        this.selectedBranch = selectedBranchId
+          ? this.branches.find((branch) => branch.branchId === selectedBranchId) ?? this.selectedBranch
+          : this.selectedBranch;
+        this.syncBranchTableState();
         this.syncCatalogSearchSummary();
       },
       error: (error) => {
@@ -893,6 +1007,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       next: (products) => {
         this.loading = false;
         this.products = products;
+        this.syncProductTableState();
         this.syncCatalogSearchSummary();
       },
       error: (error) => {
@@ -915,22 +1030,26 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     if (!this.selectedMerchant || !this.selectedBranch?.branchId) {
       this.loading = false;
       this.products = [];
+      this.resetProductTableStateForBranch(null);
       this.syncCatalogSearchSummary();
       return;
     }
 
     this.loading = true;
+    this.resetProductTableStateForBranch(this.selectedBranch.branchId);
     this.merchantApi
       .getProducts(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, this.selectedBranch.branchId)
       .subscribe({
         next: (products) => {
           this.loading = false;
           this.products = products;
+          this.syncProductTableState();
           this.syncCatalogSearchSummary();
         },
         error: (error) => {
           this.loading = false;
           this.products = [];
+          this.syncProductTableState();
           this.errorMessage = this.toMessage(error, 'Unable to load products for the selected branch.');
         }
       });
@@ -1028,10 +1147,6 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private buildVisibleGroups(): ProductBranchGroup[] {
-    return this.buildBranchGroups();
-  }
-
   private openProductDialogWithData(product: Product): void {
     this.loading = false;
     this.clearProductDialogPreviewUrl();
@@ -1051,53 +1166,94 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.dirtyForms.editProduct = false;
   }
 
-  private buildBranchGroups(): ProductBranchGroup[] {
-    const groups: ProductBranchGroup[] = this.branches.map((branch) => ({
-      branchId: branch.branchId ?? null,
-      branchLabel: branch.name,
-      branch,
-      products: []
-    }));
-
-    const groupsByBranchId = new Map(
-      groups.filter((group) => !!group.branchId).map((group) => [group.branchId as string, group])
-    );
-
-    let unassignedGroup: ProductBranchGroup | null = null;
-
-    for (const product of this.products) {
-      if (product.branchId) {
-        let group = groupsByBranchId.get(product.branchId);
-        if (!group) {
-          group = {
-            branchId: product.branchId,
-            branchLabel: `Branch ${product.branchId}`,
-            branch: null,
-            products: []
-          };
-          groups.push(group);
-          groupsByBranchId.set(product.branchId, group);
-        }
-        group.products.push(product);
-        continue;
+  private syncBranchTableState(): void {
+    const filteredRows = filterRowsByFields(this.branches, this.branchTableState.filter.query, (branch) => [
+      branch.name,
+      branch.country,
+      branch.city,
+      branch.postalCode
+    ]);
+    const sortedRows = sortRows(filteredRows, this.branchTableState.sort, (branch, field) => {
+      if (field === 'status') {
+        return this.branchStatusLabel(branch);
       }
 
-      if (!unassignedGroup) {
-        unassignedGroup = {
-          branchId: null,
-          branchLabel: 'Merchant-level products',
-          branch: null,
-          products: []
-        };
+      return branch[field];
+    });
+    const page = paginateRows(sortedRows, this.branchTableState.pagination);
+    this.branchTableState.pagination.totalRecords = page.totalRecords;
+    this.branchTableState.pagination.first = page.normalizedFirst;
+    this.branchTableState.visibleRows = page.pageRows;
+    this.branchTableState.emptyStateKind = this.branches.length === 0 ? 'no-data' : (page.totalRecords === 0 ? 'no-filter-results' : 'no-data');
+  }
+
+  private syncProductTableState(): void {
+    const filteredRows = filterRowsByFields(this.products, this.productTableState.filter.query, (product) => [
+      product.productCode,
+      product.categoryName,
+      product.name
+    ]);
+    const sortedRows = sortRows(filteredRows, this.productTableState.sort, (product, field) => {
+      if (field === 'status') {
+        return this.productStatusLabel(product);
       }
-      unassignedGroup.products.push(product);
+
+      return product[field];
+    });
+    const page = paginateRows(sortedRows, this.productTableState.pagination);
+    this.productTableState.pagination.totalRecords = page.totalRecords;
+    this.productTableState.pagination.first = page.normalizedFirst;
+    this.productTableState.visibleRows = page.pageRows;
+    this.productTableState.branchId = this.selectedBranch?.branchId ?? null;
+
+    if (!this.selectedBranch?.branchId) {
+      this.productTableState.emptyStateKind = 'no-branch-selected';
+      return;
     }
 
-    if (unassignedGroup) {
-      groups.push(unassignedGroup);
-    }
+    this.productTableState.emptyStateKind = this.products.length === 0 ? 'no-data' : (page.totalRecords === 0 ? 'no-filter-results' : 'no-data');
+  }
 
-    return groups;
+  private resetProductTableStateForBranch(branchId: string | null): void {
+    this.productTableState = this.createProductTableState(branchId);
+    this.syncProductTableState();
+  }
+
+  private createBranchTableState(): BranchTableState {
+    return {
+      filter: { query: '' },
+      sort: {
+        field: null,
+        direction: null
+      },
+      pagination: {
+        first: 0,
+        rows: 5,
+        rowsPerPageOptions: [5, 10, 20],
+        totalRecords: 0
+      },
+      visibleRows: [],
+      emptyStateKind: 'no-data'
+    };
+  }
+
+  private createProductTableState(branchId: string | null = null): ProductTableState {
+    return {
+      branchId,
+      filter: { query: '' },
+      sort: {
+        field: null,
+        direction: null
+      },
+      pagination: {
+        first: 0,
+        rows: 5,
+        rowsPerPageOptions: [5, 10, 20],
+        totalRecords: 0
+      },
+      visibleRows: [],
+      emptyStateKind: branchId ? 'no-data' : 'no-branch-selected'
+    };
   }
 
   private emptyLocationForm(): LocationFormModel {
