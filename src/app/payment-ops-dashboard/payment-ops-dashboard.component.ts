@@ -180,6 +180,16 @@ export class PaymentOpsDashboardComponent {
     return this.timeRangeOptions.find((option) => option.key === this.selectedTimeRange)?.label ?? 'Last week';
   }
 
+  get selectedCurrency(): string {
+    if (this.selectedMerchant?.country === 'United States') {
+      return 'USD';
+    }
+    if (this.selectedMerchant?.country === 'United Kingdom') {
+      return 'GBP';
+    }
+    return 'EUR';
+  }
+
   formatAmount(amount: number, currency = 'EUR'): string {
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',

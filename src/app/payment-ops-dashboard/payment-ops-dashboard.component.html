@@ -169,7 +169,7 @@
               </article>
               <article class="context-summary-tile">
                 <div class="context-summary-label">Payment volume</div>
-                <div class="context-summary-value">{{ formatAmount(selectedMerchant.paymentVolume, selectedMerchant.country === 'United States' ? 'USD' : selectedMerchant.country === 'United Kingdom' ? 'GBP' : 'EUR') }}</div>
+                <div class="context-summary-value">{{ formatAmount(selectedMerchant.paymentVolume, selectedCurrency) }}</div>
               </article>
               <article class="context-summary-tile">
                 <div class="context-summary-label">Risk flag</div>
@@ -215,7 +215,7 @@
               <div class="branch-item-grid">
                 <span>{{ branch.productCount }} products</span>
                 <span>{{ branch.transactionCount }} payments</span>
-                <span>{{ formatAmount(branch.paymentVolume, selectedMerchant?.country === 'United States' ? 'USD' : selectedMerchant?.country === 'United Kingdom' ? 'GBP' : 'EUR') }}</span>
+                <span>{{ formatAmount(branch.paymentVolume, selectedCurrency) }}</span>
               </div>
               <div class="branch-item-footer">Last payment {{ branch.lastTransactionAt | displayDate }}</div>
             </button>
@@ -254,7 +254,7 @@
               <div class="product-card-body">
                 <div class="product-stat">
                   <span>Unit price</span>
-                  <strong>{{ formatAmount(product.unitPrice, selectedMerchant?.country === 'United States' ? 'USD' : selectedMerchant?.country === 'United Kingdom' ? 'GBP' : 'EUR') }}</strong>
+                  <strong>{{ formatAmount(product.unitPrice, selectedCurrency) }}</strong>
                 </div>
                 <div class="product-stat">
                   <span>Payments</span>
@@ -262,7 +262,7 @@
                 </div>
                 <div class="product-stat">
                   <span>Value</span>
-                  <strong>{{ formatAmount(product.paymentVolume, selectedMerchant?.country === 'United States' ? 'USD' : selectedMerchant?.country === 'United Kingdom' ? 'GBP' : 'EUR') }}</strong>
+                  <strong>{{ formatAmount(product.paymentVolume, selectedCurrency) }}</strong>
                 </div>
               </div>
               <div class="product-card-footer">Last purchased {{ product.lastPurchasedAt | displayDate }}</div>
@@ -343,7 +343,7 @@
                 </div>
                 <div class="channel-stat">
                   <span>Volume</span>
-                  <strong>{{ formatAmount(snapshot.paymentVolume, selectedMerchant?.country === 'United States' ? 'USD' : selectedMerchant?.country === 'United Kingdom' ? 'GBP' : 'EUR') }}</strong>
+                  <strong>{{ formatAmount(snapshot.paymentVolume, selectedCurrency) }}</strong>
                 </div>
               </div>
               <div class="channel-card-footer">Last activity {{ snapshot.lastActivityAt | displayDate }}</div>
