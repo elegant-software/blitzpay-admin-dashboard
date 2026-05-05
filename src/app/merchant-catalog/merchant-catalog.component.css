@@ -16,6 +16,41 @@
   color: #4f5d73;
 }
 
+.table-filter-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.table-filter-input-wrap {
+  min-width: 0;
+}
+
+.table-filter-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a93a5;
+}
+
+.table-filter-input {
+  width: 100%;
+}
+
+.table-filter-clear {
+  white-space: nowrap;
+}
+
+.table-filter-action-wrap {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
 .table-card-toolbar {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -73,6 +108,39 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.sort-header-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+.sort-header-button:hover {
+  color: #111827;
+}
+
+.sort-header-button:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+  border-radius: 0.35rem;
+}
+
+.sort-header-icon {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+th[aria-sort='ascending'] .sort-header-icon,
+th[aria-sort='descending'] .sort-header-icon {
+  color: #2563eb;
 }
 
 .merchant-results-table tbody td {
@@ -167,6 +235,10 @@
   padding: 0.75rem 0.1rem 0;
   color: #6b7280;
   font-size: 0.82rem;
+}
+
+.table-paginator {
+  margin-top: 0.85rem;
 }
 
 .row-selected td {
@@ -320,6 +392,28 @@
   background: #fffbeb;
   color: #92400e;
   font-size: 0.9rem;
+}
+
+@media (max-width: 991.98px) {
+  .table-card-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .table-filter-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .table-filter-action-wrap {
+    justify-content: stretch;
+  }
+
+  .table-filter-clear {
+    width: 100%;
+  }
+
+  .table-footer {
+    flex-direction: column;
+  }
 }
 
 .branch-map-card {

@@ -1,4 +1,5 @@
 @import 'leaflet/dist/leaflet.css';
+@import 'primeicons/primeicons.css';
 
 :root {
   --cui-sidebar-bg: #303c54;
@@ -17,6 +18,10 @@ body {
   font-family: var(--cui-font-sans-serif, system-ui, sans-serif);
   background: var(--cui-body-bg, #f8f9fa);
   color: var(--cui-body-color, #212631);
+}
+
+html {
+  color-scheme: light;
 }
 
 a {

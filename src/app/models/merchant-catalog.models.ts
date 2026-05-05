@@ -253,3 +253,42 @@ export interface ProductFormModel {
 export interface LogoFormModel {
   storageKey: string;
 }
+
+export interface TableFilterState {
+  query: string;
+}
+
+export type TableSortDirection = 'asc' | 'desc';
+
+export interface TableSortState<TField extends string = string> {
+  field: TField | null;
+  direction: TableSortDirection | null;
+}
+
+export interface TablePaginationState {
+  first: number;
+  rows: number;
+  rowsPerPageOptions: number[];
+  totalRecords: number;
+}
+
+export type BranchSortField = 'name' | 'status';
+
+export interface BranchTableState {
+  filter: TableFilterState;
+  sort: TableSortState<BranchSortField>;
+  pagination: TablePaginationState;
+  visibleRows: Branch[];
+  emptyStateKind: 'no-data' | 'no-filter-results';
+}
+
+export type ProductSortField = 'name' | 'productCode' | 'categoryName' | 'status';
+
+export interface ProductTableState {
+  branchId: string | null;
+  filter: TableFilterState;
+  sort: TableSortState<ProductSortField>;
+  pagination: TablePaginationState;
+  visibleRows: Product[];
+  emptyStateKind: 'no-branch-selected' | 'no-data' | 'no-filter-results';
+}
