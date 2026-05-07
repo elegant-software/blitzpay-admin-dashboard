@@ -577,6 +577,12 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
         this.loadProductsForSelectedBranch();
       },
       error: (error) => {
+        if (branch.active === false) {
+          this.selectedBranch = this.normalizeBranch(branch);
+          this.resetProductTableStateForBranch(this.selectedBranch.branchId ?? null);
+          this.loadProductsForSelectedBranch();
+          return;
+        }
         this.loading = false;
         this.errorMessage = this.toMessage(error, 'Unable to load branch details.');
       }
@@ -599,15 +605,12 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
     this.loading = true;
     this.merchantApi.getBranch(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, branchId).subscribe({
-      next: (detail) => {
-        this.loading = false;
-        this.selectedBranch = this.normalizeBranch(detail);
-        this.branchForm = this.branchFormFromEntity(this.selectedBranch);
-        this.branchDialogOpen = true;
-        this.dirtyForms.branch = false;
-        this.scheduleLeafletRender();
-      },
+      next: (detail) => this.openBranchDialogWithData(detail),
       error: (error) => {
+        if (branch.active === false) {
+          this.openBranchDialogWithData(branch);
+          return;
+        }
         this.loading = false;
         this.errorMessage = this.toMessage(error, 'Unable to load branch details.');
       }
@@ -628,9 +631,13 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
+    const merchantId = this.selectedMerchant.applicationId;
+    const branchId = this.selectedBranch.branchId;
+    const willBeActive = this.branchForm.active;
+
     const payload: UpdateBranchRequest = {
       name: this.branchForm.name.trim(),
-      active: this.branchForm.active,
+      active: willBeActive,
       addressLine1: this.branchForm.addressLine1.trim() || undefined,
       addressLine2: this.branchForm.addressLine2.trim() || undefined,
       city: this.branchForm.city.trim() || undefined,
@@ -648,23 +655,21 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
     this.loading = true;
     this.merchantApi
-      .updateBranch(
-        this.selectedEnvironment,
-        this.apiVersion,
-        this.selectedMerchant.applicationId,
-        this.selectedBranch.branchId,
-        payload
-      )
+      .updateBranch(this.selectedEnvironment, this.apiVersion, merchantId, branchId, payload)
       .subscribe({
-        next: (branch) => {
+        next: (updatedBranch) => {
+          const branch = this.normalizeBranch({ ...updatedBranch, branchId, active: willBeActive });
           this.loading = false;
-          this.selectedBranch = this.normalizeBranch(branch);
-          this.branchForm = this.branchFormFromEntity(this.selectedBranch);
+          this.branches = this.branches.map((b) =>
+            b.branchId === branchId ? branch : b
+          );
+          this.selectedBranch = branch;
+          this.branchForm = this.branchFormFromEntity(branch);
           this.dirtyForms.branch = false;
           this.statusMessage = 'Branch updated.';
-          this.scheduleLeafletRender();
           this.closeBranchDialog();
-          this.refreshBranches();
+          this.syncBranchTableState();
+          this.syncCatalogSearchSummary();
           this.loadProductsForSelectedBranch();
         },
         error: (error) => {
@@ -972,27 +977,13 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  private refreshBranches(): void {
-    if (!this.selectedMerchant) {
-      return;
-    }
-
-    this.merchantApi.getBranches(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId).subscribe({
-      next: (branches) => {
-        this.loading = false;
-        const selectedBranchId = this.selectedBranch?.branchId ?? null;
-        this.branches = branches.map((branch) => this.normalizeBranch(branch));
-        this.selectedBranch = selectedBranchId
-          ? this.branches.find((branch) => branch.branchId === selectedBranchId) ?? this.selectedBranch
-          : this.selectedBranch;
-        this.syncBranchTableState();
-        this.syncCatalogSearchSummary();
-      },
-      error: (error) => {
-        this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Unable to refresh branches.');
-      }
-    });
+  private openBranchDialogWithData(branch: Branch): void {
+    this.loading = false;
+    this.selectedBranch = this.normalizeBranch(branch);
+    this.branchForm = this.branchFormFromEntity(this.selectedBranch);
+    this.branchDialogOpen = true;
+    this.dirtyForms.branch = false;
+    this.scheduleLeafletRender();
   }
 
   private refreshProducts(): void {

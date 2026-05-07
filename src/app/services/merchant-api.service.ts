@@ -55,8 +55,7 @@ export class MerchantApiService {
   }
 
   getBranches(environment: BackendEnvironment, apiVersion: string, merchantId: string): Observable<Branch[]> {
-    const params = new HttpParams().set('includeInactive', 'true');
-    return this.http.get<Branch[]>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/branches`, { params });
+    return this.http.get<Branch[]>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/branches`);
   }
 
   createBranch(
@@ -69,8 +68,7 @@ export class MerchantApiService {
   }
 
   getBranch(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string): Observable<Branch> {
-    const params = new HttpParams().set('includeInactive', 'true');
-    return this.http.get<Branch>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/branches/${branchId}`, { params });
+    return this.http.get<Branch>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/branches/${branchId}`);
   }
 
   updateBranch(
@@ -123,10 +121,7 @@ export class MerchantApiService {
     productId: string,
     branchId?: string
   ): Observable<Product> {
-    let params = new HttpParams().set('includeInactive', 'true');
-    if (branchId) {
-      params = params.set('branchId', branchId);
-    }
+    const params = branchId ? new HttpParams().set('branchId', branchId) : undefined;
     return this.http.get<Product>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/products/${productId}`, { params });
   }
 
