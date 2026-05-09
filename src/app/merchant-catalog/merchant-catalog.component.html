@@ -171,7 +171,85 @@
     </div>
 
     <div class="col-lg-7">
-      <div class="card h-100">
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Product Categories</span>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge text-bg-light">{{ categoryFilterActive ? categoryVisibleCount + ' / ' + categories.length : categories.length }} rows</span>
+            <button class="btn btn-sm btn-primary" type="button" (click)="openCreateCategoryDialog()">Add category</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-filter-toolbar mb-3">
+            <div class="table-filter-input-wrap">
+              <label class="table-filter-label" for="category-filter">Category Filters</label>
+              <input
+                id="category-filter"
+                pInputText
+                class="table-filter-input"
+                [(ngModel)]="categoryTableState.filter.query"
+                (ngModelChange)="onCategoryFilterChange()"
+                [placeholder]="categoryFilterHint"
+              />
+            </div>
+            <button class="btn btn-outline-secondary table-filter-clear" type="button" (click)="clearCategoryFilters()" [disabled]="!categoryFilterActive">
+              Clear
+            </button>
+          </div>
+
+          <div class="table-responsive datatable-shell">
+            <table class="table table-sm align-middle mb-0 merchant-results-table">
+              <thead>
+                <tr>
+                  <th [attr.aria-sort]="sortAriaSort(categoryNameSortDirection)">
+                    <button
+                      class="sort-header-button"
+                      type="button"
+                      [attr.aria-label]="sortButtonLabel('category name', categoryNameSortDirection)"
+                      (click)="toggleCategorySort('name')"
+                    >
+                      <span>Name</span>
+                      <i class="sort-header-icon" [ngClass]="sortIconClass(categoryNameSortDirection)" aria-hidden="true"></i>
+                    </button>
+                  </th>
+                  <th>Updated</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let category of visibleCategoryRows">
+                  <td>{{ category.name }}</td>
+                  <td>{{ category.updatedAt | displayDate }}</td>
+                  <td class="text-end">
+                    <button class="icon-action-btn me-1" type="button" aria-label="Edit category" (click)="openEditCategoryDialog(category)">
+                      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
+                    </button>
+                    <button class="icon-action-btn" type="button" aria-label="Delete category" (click)="removeCategory(category)">
+                      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm3.46-7.12 1.41-1.41L12 11.59l1.12-1.12 1.41 1.41L13.41 13l1.12 1.12-1.41 1.41L12 14.41l-1.12 1.12-1.41-1.41L10.59 13l-1.13-1.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="!visibleCategoryRows.length">
+                  <td colspan="3" class="text-center text-body-secondary">{{ categoryEmptyMessage }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p-paginator
+            *ngIf="categoryPaginatorVisible"
+            class="table-paginator"
+            [first]="categoryTableState.pagination.first"
+            [rows]="categoryTableState.pagination.rows"
+            [totalRecords]="categoryTableState.pagination.totalRecords"
+            [rowsPerPageOptions]="categoryTableState.pagination.rowsPerPageOptions"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords}"
+            (onPageChange)="onCategoryPageChange($event)"
+          />
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span>Products</span>
           <span class="badge text-bg-light">{{ productFilterActive ? productVisibleCount + ' / ' + products.length : products.length }} rows</span>
@@ -302,6 +380,30 @@
     </div>
   </div>
 </ng-container>
+
+<div class="product-dialog-backdrop" *ngIf="categoryDialogOpen">
+  <div class="product-dialog card" role="dialog" aria-modal="true" aria-labelledby="category-dialog-title">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 id="category-dialog-title" class="mb-0">{{ categoryDialogMode === 'create' ? 'Add Product Category' : 'Edit Product Category' }}</h5>
+      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeCategoryDialog()">Close</button>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label required">Name</label>
+          <input class="form-control" [(ngModel)]="categoryFormName" (ngModelChange)="dirtyForms.category = true" />
+        </div>
+      </div>
+
+      <div class="dialog-actions mt-3">
+        <button class="btn btn-primary" type="button" (click)="saveCategory()">
+          {{ categoryDialogMode === 'create' ? 'Create category' : 'Save category' }}
+        </button>
+        <button class="btn btn-outline-secondary" type="button" (click)="closeCategoryDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="product-dialog-backdrop" *ngIf="merchantDialogOpen">
   <div class="product-dialog card" role="dialog" aria-modal="true" aria-labelledby="merchant-dialog-title">

@@ -89,6 +89,14 @@ export interface ProductCategory {
   updatedAt: string;
 }
 
+export interface CreateProductCategoryRequest {
+  name: string;
+}
+
+export interface RenameProductCategoryRequest {
+  name: string;
+}
+
 export interface Product {
   productId: string;
   merchantId: string;
@@ -279,6 +287,16 @@ export interface BranchTableState {
   sort: TableSortState<BranchSortField>;
   pagination: TablePaginationState;
   visibleRows: Branch[];
+  emptyStateKind: 'no-data' | 'no-filter-results';
+}
+
+export type CategorySortField = 'name';
+
+export interface CategoryTableState {
+  filter: TableFilterState;
+  sort: TableSortState<CategorySortField>;
+  pagination: TablePaginationState;
+  visibleRows: ProductCategory[];
   emptyStateKind: 'no-data' | 'no-filter-results';
 }
 

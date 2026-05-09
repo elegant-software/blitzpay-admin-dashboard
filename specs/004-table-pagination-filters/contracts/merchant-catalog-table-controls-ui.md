@@ -1,11 +1,12 @@
 # UI Contract: Merchant Catalog Table Controls
 
-This contract defines the admin-facing behavior for pagination and filtering in the merchant catalog's branches and products tables.
+This contract defines the admin-facing behavior for pagination, filtering, and sorting in the merchant catalog's branches, product categories, and products tables.
 
 ## Entry Conditions
 
 - The admin has already loaded a merchant in the merchant catalog.
 - The first available branch is still auto-selected after merchant load.
+- The product categories table remains scoped to the selected merchant.
 - The products table remains scoped to the selected branch.
 
 ## Branches Table
@@ -37,6 +38,38 @@ Empty states:
 
 - No branch data: `No branches for this merchant.`
 - Filtered to zero rows: message explains that no branches match the current filters.
+
+## Product Categories Table
+
+Display:
+
+- The table remains in the right-side merchant-catalog column above the products card.
+- The card shows the total category count and the visible category count when filters are active.
+- The table continues to show category name, updated timestamp, and row actions.
+
+Controls:
+
+- A category filter input is available within the product categories card.
+- A category-name sort control is available from the category name column header.
+- Pagination controls are available when category rows exceed the active page size.
+- The admin can change page size from the same predefined options used by the branches and products tables.
+- A clear-filters action resets the categories table to its default merchant-scoped view.
+
+Behavior:
+
+- Filtering matches category name values shown in the table.
+- Sorting applies only to category name and supports ascending and descending order.
+- Category filtering, sorting, and pagination apply only to the currently loaded merchant-scoped category list.
+- Category table state is independent from the branch-driven products table state.
+- When merchant selection changes, the categories table resets to its default state for the newly loaded merchant.
+- After create, rename, or delete, active category filtering and sorting remain in place, while pagination is normalized only if the current page becomes invalid.
+- If a renamed category no longer matches the active filter, it disappears from the current filtered result immediately after save.
+- Editing or deleting a category from a paged or filtered result keeps the action available from that row context.
+
+Empty states:
+
+- No category data: `No product categories for this merchant.`
+- Filtered to zero rows: message explains that no product categories match the current filters.
 
 ## Products Table
 
@@ -85,5 +118,6 @@ Empty states:
 ## Non-Goals
 
 - No change to merchant search behavior.
+- No change to backend API contracts for merchant-scoped category browsing.
 - No change to backend API contracts for branch or product search.
-- No merged cross-table search across branches and products.
+- No merged cross-table search across branches, product categories, and products.

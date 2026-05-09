@@ -41,14 +41,21 @@ The merchant catalog lives at `src/app/merchant-catalog/`. The page is reached f
 └──────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────┐  ┌──────────────────────────────┐
-│ Branches (N rows)            │  │ Products (scoped to branch)  │
-│  Name │ City │ Address │ St │  │  [img] │ Name+Desc │ St │ ⚡ │
-│  …    │ …    │ …       │    │  │  …     │ …         │    │   │
+│ Branches (N rows)            │  │ Product Categories (N rows)  │
+│  Name │ City │ Address │ St │  │  Name │ Updated │ ⚡ │        │
+│  …    │ …    │ …       │    │  │  …    │ …       │   │        │
 └─────────────────────────────┘  └──────────────────────────────┘
+
+                               ┌──────────────────────────────┐
+                               │ Products (scoped to branch)  │
+                               │  [img] │ Name+Desc │ St │ ⚡ │
+                               │  …     │ …         │    │   │
+                               └──────────────────────────────┘
 ```
 
-- **Branches** occupies `col-lg-5`, **Products** occupies `col-lg-7`.
+- **Branches** occupies `col-lg-5`, while the right-side `col-lg-7` stacks **Product Categories** above **Products**.
 - Clicking a branch row reloads the products table for that branch.
+- Product categories remain merchant-scoped and do not inherit branch-driven table state from products.
 - Status tags use colored CSS classes — see §V.
 - Logo / product thumbnails are 40 × 40 px rounded images; a dashed empty box is shown as fallback.
 
@@ -59,6 +66,7 @@ The merchant catalog lives at `src/app/merchant-catalog/`. The page is reached f
 | Search field empty | Error alert: "Enter a search value before searching." |
 | Merchant not found | Error alert with API message or generic fallback. |
 | No branches for merchant | Branches table shows "No branches for this merchant." |
+| No product categories for merchant | Product Categories table shows "No product categories for this merchant." |
 | No products for selected branch | Products table shows "No products for the selected branch." |
 | No branch selected | Products table shows "Select a branch to load products." |
 | **Clear** pressed | All state reset; search term, tables, and forms cleared. |

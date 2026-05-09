@@ -1,10 +1,10 @@
-# Quickstart: Branch and Product Table Controls
+# Quickstart: Merchant Catalog Table Controls
 
 ## Prerequisites
 
 - Node.js/npm compatible with the existing Angular 20 project
 - Dependencies installed with `npm install`
-- Access to a merchant record that has multiple branches and at least one branch with many products
+- Access to a merchant record that has multiple branches, multiple product categories, and at least one branch with many products
 
 ## Planned Setup
 
@@ -21,13 +21,18 @@
 4. Clear the branch filter and verify the full branch list returns.
 5. Sort the branches table by branch name in both directions and verify filtering and page state still behave correctly.
 6. Move to a later branch-results page and verify branch selection still works from that page.
-7. Confirm the products card shows the selected branch name plus its own filter, sorting, and pagination controls.
-8. Enter a product filter that matches a known product code, category, or name and verify only matching products for the selected branch remain visible.
-9. Sort products by name, product code, and category in both directions and verify filtering and page state still behave correctly.
-10. Change the selected branch and verify the products table clears stale rows, reloads, and shows the new branch scope.
-11. Apply a product filter that returns no rows and verify the table explains that no products match the current filters.
-12. Change page size in each table and verify page counts and visible ranges update correctly without affecting the other table.
-13. Open branch and product edit actions from paged, filtered, and sorted rows to confirm action entry points remain intact.
+7. Confirm the product categories card shows its own filter, sorting, and pagination controls above the products card.
+8. Enter a category filter that matches a known category name and verify only matching product categories remain visible.
+9. Sort product categories by category name in both directions and verify filtering and page state still behave correctly.
+10. Create, rename, and delete categories from filtered or paged category results and verify filter/sort state persists while pagination normalizes only when needed.
+11. Confirm the products card shows the selected branch name plus its own filter, sorting, and pagination controls.
+12. Enter a product filter that matches a known product code, category, or name and verify only matching products for the selected branch remain visible.
+13. Sort products by name, product code, and category in both directions and verify filtering and page state still behave correctly.
+14. Change the selected branch and verify the products table clears stale rows, reloads, and shows the new branch scope without affecting the category table state.
+15. Change the selected merchant and verify the category table resets to its default state for the newly loaded merchant.
+16. Apply a product filter that returns no rows and verify the table explains that no products match the current filters.
+17. Change page size in each table and verify page counts and visible ranges update correctly without affecting the other tables.
+18. Open branch, category, and product edit actions from paged, filtered, and sorted rows to confirm action entry points remain intact.
 
 ## Build Check
 

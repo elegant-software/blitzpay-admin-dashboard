@@ -9,6 +9,8 @@ import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import {
   Branch,
+  CategorySortField,
+  CategoryTableState,
   BranchSortField,
   BranchTableState,
   BranchFormModel,
@@ -53,11 +55,14 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   categories: ProductCategory[] = [];
   selectedBranch: Branch | null = null;
   products: Product[] = [];
+  categoryTableState: CategoryTableState = this.createCategoryTableState();
   branchTableState: BranchTableState = this.createBranchTableState();
   productTableState: ProductTableState = this.createProductTableState();
 
   selectedProduct: Product | null = null;
+  selectedCategory: ProductCategory | null = null;
   productDialogOpen = false;
+  categoryDialogOpen = false;
   merchantDialogOpen = false;
   branchDialogOpen = false;
   merchantTableLogoFailed = false;
@@ -74,6 +79,8 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   branchForm: BranchFormModel = this.emptyBranchForm();
   productEditForm: ProductFormModel = this.emptyProductForm();
   logoForm: LogoFormModel = { storageKey: '' };
+  categoryFormName = '';
+  categoryDialogMode: 'create' | 'edit' = 'create';
 
   statusMessage = '';
   errorMessage = '';
@@ -84,11 +91,13 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     merchant: false,
     branch: false,
     editProduct: false,
-    logo: false
+    logo: false,
+    category: false
   };
 
   readonly paymentChannelOptions = ['PAYPAL', 'STRIPE', 'TRUELAYER'];
   readonly branchFilterHint = 'Filter by branch name, country, city, or zipcode.';
+  readonly categoryFilterHint = 'Filter by category name.';
   readonly productFilterHint = 'Filter by product code, category, or name.';
   readonly merchantStatusOptions = [
     'DRAFT',
@@ -144,12 +153,20 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     return this.branchTableState.visibleRows;
   }
 
+  get visibleCategoryRows(): ProductCategory[] {
+    return this.categoryTableState.visibleRows;
+  }
+
   get visibleProductRows(): Product[] {
     return this.productTableState.visibleRows;
   }
 
   get branchVisibleCount(): number {
     return this.branchTableState.pagination.totalRecords;
+  }
+
+  get categoryVisibleCount(): number {
+    return this.categoryTableState.pagination.totalRecords;
   }
 
   get productVisibleCount(): number {
@@ -160,12 +177,20 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     return hasActiveQuery(this.branchTableState.filter.query);
   }
 
+  get categoryFilterActive(): boolean {
+    return hasActiveQuery(this.categoryTableState.filter.query);
+  }
+
   get productFilterActive(): boolean {
     return hasActiveQuery(this.productTableState.filter.query);
   }
 
   get branchPaginatorVisible(): boolean {
     return this.branchVisibleCount > this.branchTableState.pagination.rows;
+  }
+
+  get categoryPaginatorVisible(): boolean {
+    return this.categoryVisibleCount > this.categoryTableState.pagination.rows;
   }
 
   get productPaginatorVisible(): boolean {
@@ -178,6 +203,10 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
   get branchStatusSortDirection(): TableSortDirection | null {
     return this.branchTableState.sort.field === 'status' ? this.branchTableState.sort.direction : null;
+  }
+
+  get categoryNameSortDirection(): TableSortDirection | null {
+    return this.categoryTableState.sort.field === 'name' ? this.categoryTableState.sort.direction : null;
   }
 
   get productNameSortDirection(): TableSortDirection | null {
@@ -211,6 +240,12 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     return this.branchTableState.emptyStateKind === 'no-filter-results'
       ? 'No branches match the current filters.'
       : 'No branches for this merchant.';
+  }
+
+  get categoryEmptyMessage(): string {
+    return this.categoryTableState.emptyStateKind === 'no-filter-results'
+      ? 'No product categories match the current filters.'
+      : 'No product categories for this merchant.';
   }
 
   merchantStatusTone(status: string): string {
@@ -308,6 +343,11 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.syncBranchTableState();
   }
 
+  onCategoryFilterChange(): void {
+    this.categoryTableState.pagination.first = 0;
+    this.syncCategoryTableState();
+  }
+
   onProductFilterChange(): void {
     this.productTableState.pagination.first = 0;
     this.syncProductTableState();
@@ -317,6 +357,12 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.branchTableState.filter.query = '';
     this.branchTableState.pagination.first = 0;
     this.syncBranchTableState();
+  }
+
+  clearCategoryFilters(): void {
+    this.categoryTableState.filter.query = '';
+    this.categoryTableState.pagination.first = 0;
+    this.syncCategoryTableState();
   }
 
   clearProductFilters(): void {
@@ -329,6 +375,12 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.branchTableState.pagination.first = event.first ?? 0;
     this.branchTableState.pagination.rows = event.rows ?? this.branchTableState.pagination.rows;
     this.syncBranchTableState();
+  }
+
+  onCategoryPageChange(event: { first?: number; rows?: number }): void {
+    this.categoryTableState.pagination.first = event.first ?? 0;
+    this.categoryTableState.pagination.rows = event.rows ?? this.categoryTableState.pagination.rows;
+    this.syncCategoryTableState();
   }
 
   onProductPageChange(event: { first?: number; rows?: number }): void {
@@ -344,6 +396,15 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       direction: nextSortDirection(this.branchTableState.sort.direction, isSameField)
     };
     this.syncBranchTableState();
+  }
+
+  toggleCategorySort(field: CategorySortField): void {
+    const isSameField = this.categoryTableState.sort.field === field;
+    this.categoryTableState.sort = {
+      field,
+      direction: nextSortDirection(this.categoryTableState.sort.direction, isSameField)
+    };
+    this.syncCategoryTableState();
   }
 
   toggleProductSort(field: ProductSortField): void {
@@ -410,11 +471,13 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.products = [];
     this.selectedBranch = null;
     this.branchTableState = this.createBranchTableState();
+    this.categoryTableState = this.createCategoryTableState();
     this.productTableState = this.createProductTableState();
     this.merchantForm = this.emptyMerchantForm();
     this.branchForm = this.emptyBranchForm();
     this.closeMerchantDialog();
     this.closeBranchDialog();
+    this.closeCategoryDialog(true);
     this.closeProductDialog(true);
   }
 
@@ -439,6 +502,108 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.merchantLogoSelectedFileName = '';
     this.merchantLogoSelectedFile = null;
     this.merchantDialogOpen = false;
+  }
+
+  openCreateCategoryDialog(): void {
+    if (!this.selectedMerchant) {
+      return;
+    }
+
+    this.selectedCategory = null;
+    this.categoryDialogMode = 'create';
+    this.categoryFormName = '';
+    this.categoryDialogOpen = true;
+    this.dirtyForms.category = false;
+  }
+
+  openEditCategoryDialog(category: ProductCategory): void {
+    this.selectedCategory = category;
+    this.categoryDialogMode = 'edit';
+    this.categoryFormName = category.name;
+    this.categoryDialogOpen = true;
+    this.dirtyForms.category = false;
+  }
+
+  closeCategoryDialog(force = false): void {
+    if (!force && this.dirtyForms.category && !confirm('Close the category editor and discard unsaved changes?')) {
+      return;
+    }
+
+    this.categoryDialogOpen = false;
+    this.selectedCategory = null;
+    this.categoryFormName = '';
+    this.categoryDialogMode = 'create';
+    this.dirtyForms.category = false;
+  }
+
+  saveCategory(): void {
+    if (!this.selectedMerchant) {
+      return;
+    }
+
+    const name = this.categoryFormName.trim();
+    if (!name) {
+      this.errorMessage = 'Category name is required.';
+      return;
+    }
+
+    this.loading = true;
+    this.errorMessage = '';
+
+    const request$ = this.categoryDialogMode === 'create'
+      ? this.merchantApi.createProductCategory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, { name })
+      : this.merchantApi.renameProductCategory(
+          this.selectedEnvironment,
+          this.apiVersion,
+          this.selectedMerchant.applicationId,
+          this.selectedCategory!.id,
+          { name }
+        );
+
+    request$.subscribe({
+      next: (category) => {
+        this.loading = false;
+        this.categories = this.upsertCategory(this.categories, category);
+        this.reconcileCategoryReferences();
+        this.syncCategoryTableState();
+        this.statusMessage = this.categoryDialogMode === 'create' ? 'Category created.' : 'Category renamed.';
+        this.closeCategoryDialog(true);
+      },
+      error: (error) => {
+        this.loading = false;
+        this.errorMessage = this.toMessage(
+          error,
+          this.categoryDialogMode === 'create' ? 'Unable to create category.' : 'Unable to rename category.'
+        );
+      }
+    });
+  }
+
+  removeCategory(category: ProductCategory): void {
+    if (!this.selectedMerchant || !confirm(`Delete category "${category.name}"?`)) {
+      return;
+    }
+
+    this.loading = true;
+    this.errorMessage = '';
+    this.merchantApi
+      .deleteProductCategory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, category.id)
+      .subscribe({
+        next: () => {
+          this.loading = false;
+          this.categories = this.categories.filter((item) => item.id !== category.id);
+          this.reconcileCategoryReferences();
+          this.syncCategoryTableState();
+          this.statusMessage = 'Category deleted.';
+          if (this.selectedCategory?.id === category.id) {
+            this.closeCategoryDialog(true);
+          }
+        },
+        error: (error) => {
+          this.loading = false;
+          this.errorMessage = this.toMessage(error, 'Unable to delete category.');
+        }
+      });
   }
 
   saveMerchant(): void {
@@ -937,6 +1102,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.failedProductImages.clear();
     this.closeMerchantDialog();
     this.closeBranchDialog();
+    this.closeCategoryDialog(true);
     this.closeProductDialog(true);
 
     forkJoin({
@@ -957,8 +1123,10 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
         this.categories = categories;
         this.selectedBranch = this.branches[0] ?? null;
         this.products = [];
+        this.categoryTableState = this.createCategoryTableState();
         this.branchTableState = this.createBranchTableState();
         this.productTableState = this.createProductTableState();
+        this.syncCategoryTableState();
         this.syncBranchTableState();
         this.resetProductTableStateForBranch(this.selectedBranch?.branchId ?? null);
         this.resetDirtyForms();
@@ -1178,6 +1346,18 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.branchTableState.emptyStateKind = this.branches.length === 0 ? 'no-data' : (page.totalRecords === 0 ? 'no-filter-results' : 'no-data');
   }
 
+  private syncCategoryTableState(): void {
+    const filteredRows = filterRowsByFields(this.categories, this.categoryTableState.filter.query, (category) => [
+      category.name
+    ]);
+    const sortedRows = sortRows(filteredRows, this.categoryTableState.sort, (category, field) => category[field]);
+    const page = paginateRows(sortedRows, this.categoryTableState.pagination);
+    this.categoryTableState.pagination.totalRecords = page.totalRecords;
+    this.categoryTableState.pagination.first = page.normalizedFirst;
+    this.categoryTableState.visibleRows = page.pageRows;
+    this.categoryTableState.emptyStateKind = this.categories.length === 0 ? 'no-data' : (page.totalRecords === 0 ? 'no-filter-results' : 'no-data');
+  }
+
   private syncProductTableState(): void {
     const filteredRows = filterRowsByFields(this.products, this.productTableState.filter.query, (product) => [
       product.productCode,
@@ -1211,6 +1391,24 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   }
 
   private createBranchTableState(): BranchTableState {
+    return {
+      filter: { query: '' },
+      sort: {
+        field: null,
+        direction: null
+      },
+      pagination: {
+        first: 0,
+        rows: 5,
+        rowsPerPageOptions: [5, 10, 20],
+        totalRecords: 0
+      },
+      visibleRows: [],
+      emptyStateKind: 'no-data'
+    };
+  }
+
+  private createCategoryTableState(): CategoryTableState {
     return {
       filter: { query: '' },
       sort: {
@@ -1359,6 +1557,31 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     };
   }
 
+  private upsertCategory(categories: ProductCategory[], category: ProductCategory): ProductCategory[] {
+    const existingIndex = categories.findIndex((item) => item.id === category.id);
+    if (existingIndex === -1) {
+      return [...categories, category];
+    }
+
+    return categories.map((item) => item.id === category.id ? category : item);
+  }
+
+  private reconcileCategoryReferences(): void {
+    const activeCategoryIds = new Set(this.categories.map((category) => category.id));
+
+    if (this.productEditForm.categoryId && !activeCategoryIds.has(this.productEditForm.categoryId)) {
+      this.productEditForm.categoryId = '';
+    }
+
+    if (this.selectedProduct?.categoryId && !activeCategoryIds.has(this.selectedProduct.categoryId)) {
+      this.selectedProduct = {
+        ...this.selectedProduct,
+        categoryId: null,
+        categoryName: null
+      };
+    }
+  }
+
   private toOptionalNumber(value: string): number | undefined {
     const parsed = value.trim() ? Number(value) : undefined;
     return parsed === undefined || Number.isNaN(parsed) ? undefined : parsed;
@@ -1493,7 +1716,8 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       merchant: false,
       branch: false,
       editProduct: false,
-      logo: false
+      logo: false,
+      category: false
     };
   }
 

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   Branch,
+  CreateProductCategoryRequest,
   CreateBranchRequest,
   Merchant,
   MerchantLogoUploadResponse,
@@ -11,6 +12,7 @@ import {
   Product,
   ProductCategory,
   ProductListResponse,
+  RenameProductCategoryRequest,
   UpdateBranchRequest,
   UpdateMerchantRequest,
   UpdateMerchantLocationRequest,
@@ -103,6 +105,37 @@ export class MerchantApiService {
 
   getProductCategories(environment: BackendEnvironment, apiVersion: string, merchantId: string): Observable<ProductCategory[]> {
     return this.http.get<ProductCategory[]>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/product-categories`);
+  }
+
+  createProductCategory(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    payload: CreateProductCategoryRequest
+  ): Observable<ProductCategory> {
+    return this.http.post<ProductCategory>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/product-categories`, payload);
+  }
+
+  renameProductCategory(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    categoryId: string,
+    payload: RenameProductCategoryRequest
+  ): Observable<ProductCategory> {
+    return this.http.put<ProductCategory>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/product-categories/${categoryId}`,
+      payload
+    );
+  }
+
+  deleteProductCategory(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    categoryId: string
+  ): Observable<void> {
+    return this.http.delete<void>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/product-categories/${categoryId}`);
   }
 
   createProduct(
