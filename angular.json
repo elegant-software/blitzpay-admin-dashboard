@@ -110,6 +110,14 @@
               "src/styles.css"
             ],
             "scripts": []
+          },
+          "configurations": {
+            "contract": {
+              "tsConfig": "tsconfig.contract.json",
+              "include": [
+                "src/contract-tests/**/*.contract-spec.ts"
+              ]
+            }
           }
         }
       }

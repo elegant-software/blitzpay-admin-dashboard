@@ -5,7 +5,7 @@
     "types": ["jasmine"]
   },
   "include": [
-    "src/**/*.spec.ts",
+    "src/app/**/*.spec.ts",
     "src/**/*.d.ts"
   ]
 }

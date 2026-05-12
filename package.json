@@ -5,7 +5,8 @@
   "scripts": {
     "start": "ng serve",
     "build": "ng build",
-    "test": "ng test"
+    "test": "ng test",
+    "test:contract": "ng test --configuration=contract --browsers=ChromeHeadless --watch=false"
   },
   "dependencies": {
     "@angular/animations": "^20.0.0",
