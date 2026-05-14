@@ -38,6 +38,20 @@ _Avoid_: Tag, label, type
 > **Dev:** "Where do admins manage a **Product Category**?"
 > **Domain expert:** "From a merchant-scoped **Product Categories** section in the catalog page, using the same explicit dialog style as other edits."
 
+## Key field distinctions
+
+**`merchantName` vs `legalBusinessName`**: A Merchant carries both. `merchantName` is the trading name shown in the dashboard and editable via the merchant dialog. `legalBusinessName` is the registered legal entity name, also editable. They are independent fields.
+
+**`merchantCode`**: A system-assigned read-only code on Merchant. Display-only — never sent in create or update requests.
+
+**`branchCode`**: A system-assigned read-only code on Branch. Display-only — never sent in create or update requests.
+
+**`status` (Merchant)**: The onboarding lifecycle status (`DRAFT | SUBMITTED | VERIFICATION | SCREENING | RISK_REVIEW | DECISION_PENDING | SETUP | ACTIVE | MONITORING | ACTION_REQUIRED | REJECTED`). This is the field the merchant dialog toggle controls. `merchantStatus` (`ACTIVE | INACTIVE`) is a separate operational flag returned by the API but not surfaced in the dashboard UI.
+
+**`offerings`**: A set of free-text strings on Merchant describing what the merchant offers. Editable via the merchant dialog and sent in `UpdateMerchantRequest`.
+
+**Contact info shape**: The API returns both flat fields (`contactFullName`, `contactEmail`, `contactPhoneNumber`) and a nested `contactInfo` object on `MerchantDetailsResponse`. The dashboard binds exclusively to the flat fields — the nested object is ignored.
+
 ## Flagged ambiguities
 
 - "category list on the catalog page" could have implied branch-level categories; resolved: **Product Categories** belong to the **Merchant** and are reusable across all **Branches**.

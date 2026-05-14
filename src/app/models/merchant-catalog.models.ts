@@ -10,15 +10,19 @@ export interface BackendEnvironment {
 export interface Merchant {
   applicationId: string;
   applicationReference: string;
+  merchantCode: string;
+  merchantName: string;
   registrationNumber: string;
   businessType?: string | null;
   operatingCountry?: string | null;
   legalBusinessName?: string | null;
   primaryBusinessAddress?: string | null;
+  website?: string | null;
   contactFullName?: string | null;
   contactEmail?: string | null;
   contactPhoneNumber?: string | null;
   activePaymentChannels?: string[] | null;
+  offerings: string[];
   status: string;
   submittedAt?: string | null;
   lastUpdatedAt: string;
@@ -58,13 +62,16 @@ export interface Branch {
   id?: string;
   branchId?: string;
   merchantId: string;
+  branchCode: string;
   name: string;
   active?: boolean | null;
+  status: string;
   addressLine1?: string | null;
   addressLine2?: string | null;
   city?: string | null;
   postalCode?: string | null;
   country?: string | null;
+  website?: string | null;
   contactFullName?: string | null;
   contactEmail?: string | null;
   contactPhoneNumber?: string | null;
@@ -78,6 +85,7 @@ export interface Branch {
   placeReviewCount?: number | null;
   placeEnrichmentStatus?: string | null;
   placeEnrichedAt?: string | null;
+  imageUrl?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 }
@@ -145,25 +153,27 @@ export interface CreateBranchRequest {
   city?: string;
   postalCode?: string;
   country?: string;
+  website?: string;
+  contactFullName?: string;
+  contactEmail?: string;
+  contactPhoneNumber?: string;
+  activePaymentChannels: string[];
   latitude?: number;
   longitude?: number;
   geofenceRadiusMeters?: number;
   googlePlaceId?: string;
-  stripeSecretKey?: string;
-  stripePublishableKey?: string;
-  braintreeMerchantId?: string;
-  braintreePublicKey?: string;
-  braintreePrivateKey?: string;
-  braintreeEnvironment?: string;
 }
 
 export interface UpdateMerchantRequest {
+  merchantName?: string;
   legalBusinessName: string;
   primaryBusinessAddress: string;
+  website?: string;
   contactFullName: string;
   contactEmail: string;
   contactPhoneNumber: string;
   activePaymentChannels: string[];
+  offerings?: string[];
   status?: string;
 }
 
@@ -191,6 +201,11 @@ export interface UpdateMerchantLogoRequest {
 
 export interface MerchantLogoUploadRequest {
   contentType: string;
+}
+
+export interface MerchantVerticalResponse {
+  code: string;
+  displayName: string;
 }
 
 export interface MerchantLogoUploadResponse {
@@ -238,12 +253,16 @@ export interface BranchFormModel {
 }
 
 export interface MerchantFormModel {
+  merchantName: string;
   legalBusinessName: string;
   primaryBusinessAddress: string;
+  website: string;
   contactFullName: string;
   contactEmail: string;
   contactPhoneNumber: string;
   activePaymentChannels: string[];
+  businessType: string;
+  services: string[];
   status: string;
 }
 

@@ -19,6 +19,7 @@ import {
   Merchant,
   MerchantFormModel,
   MerchantLocation,
+  MerchantVerticalResponse,
   Product,
   ProductCategory,
   ProductSortField,
@@ -95,7 +96,16 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     category: false
   };
 
+  verticals: MerchantVerticalResponse[] = [];
+  verticalsLoading = false;
+
   readonly paymentChannelOptions = ['PAYPAL', 'STRIPE', 'TRUELAYER'];
+  readonly serviceOptions = [
+    { code: 'PRE_ORDER', label: 'Pre-Order' },
+    { code: 'WALK_IN_ORDERING', label: 'Walk-In Ordering' },
+    { code: 'DEFERRED_PAYMENT', label: 'Deferred Payment' }
+  ];
+  private readonly serviceCodes = new Set(['PRE_ORDER', 'WALK_IN_ORDERING', 'DEFERRED_PAYMENT']);
   readonly branchFilterHint = 'Filter by branch name, country, city, or zipcode.';
   readonly categoryFilterHint = 'Filter by category name.';
   readonly productFilterHint = 'Filter by product code, category, or name.';
@@ -494,6 +504,17 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.merchantDialogOpen = true;
     this.dirtyForms.merchant = false;
     this.dirtyForms.logo = false;
+
+    if (!this.verticals.length && !this.verticalsLoading) {
+      this.verticalsLoading = true;
+      this.merchantApi.getVerticals(this.selectedEnvironment, this.apiVersion).subscribe({
+        next: (verticals) => {
+          this.verticals = verticals;
+          this.verticalsLoading = false;
+        },
+        error: () => { this.verticalsLoading = false; }
+      });
+    }
   }
 
   closeMerchantDialog(): void {
@@ -622,12 +643,15 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     }
 
     const payload: UpdateMerchantRequest = {
+      merchantName: this.merchantForm.merchantName.trim() || undefined,
       legalBusinessName: this.merchantForm.legalBusinessName.trim(),
       primaryBusinessAddress: this.merchantForm.primaryBusinessAddress.trim(),
+      website: this.merchantForm.website.trim() || undefined,
       contactFullName: this.merchantForm.contactFullName.trim(),
       contactEmail: this.merchantForm.contactEmail.trim(),
       contactPhoneNumber: this.merchantForm.contactPhoneNumber.trim(),
       activePaymentChannels: [...this.merchantForm.activePaymentChannels],
+      offerings: this.merchantForm.services.length > 0 ? [...this.merchantForm.services] : undefined,
       status: this.merchantForm.status
     };
 
@@ -1062,6 +1086,25 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.dirtyForms.editProduct = true;
   }
 
+  hasService(code: string): boolean {
+    return this.merchantForm.services.includes(code);
+  }
+
+  toggleService(code: string, checked: boolean): void {
+    this.merchantForm.services = checked
+      ? [...new Set([...this.merchantForm.services, code])]
+      : this.merchantForm.services.filter(s => s !== code);
+    this.dirtyForms.merchant = true;
+  }
+
+  serviceLabel(code: string): string {
+    return this.serviceOptions.find(s => s.code === code)?.label ?? code;
+  }
+
+  verticalDisplayName(code: string): string {
+    return this.verticals.find(v => v.code === code)?.displayName ?? code;
+  }
+
   get productDialogImageUrl(): string | null {
     if (this.productDialogImageLoadFailed) {
       return null;
@@ -1494,12 +1537,16 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
   private emptyMerchantForm(): MerchantFormModel {
     return {
+      merchantName: '',
       legalBusinessName: '',
       primaryBusinessAddress: '',
+      website: '',
       contactFullName: '',
       contactEmail: '',
       contactPhoneNumber: '',
       activePaymentChannels: [],
+      businessType: '',
+      services: [],
       status: 'DRAFT'
     };
   }
@@ -1520,12 +1567,16 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
   private merchantFormFromEntity(merchant: Merchant): MerchantFormModel {
     return {
+      merchantName: merchant.merchantName ?? '',
       legalBusinessName: merchant.legalBusinessName ?? '',
       primaryBusinessAddress: merchant.primaryBusinessAddress ?? '',
+      website: merchant.website ?? '',
       contactFullName: merchant.contactFullName ?? '',
       contactEmail: merchant.contactEmail ?? '',
       contactPhoneNumber: merchant.contactPhoneNumber ?? '',
       activePaymentChannels: [...(merchant.activePaymentChannels ?? [])],
+      businessType: merchant.businessType ?? '',
+      services: (merchant.offerings ?? []).filter(o => this.serviceCodes.has(o)),
       status: merchant.status
     };
   }

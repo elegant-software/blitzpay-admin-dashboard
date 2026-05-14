@@ -37,24 +37,35 @@
               <thead>
                 <tr>
                   <th>Merchant Name</th>
+                  <th>Merchant Code</th>
+                  <th>Business Type</th>
                   <th>City</th>
                   <th>Status</th>
+                  <th>Offerings</th>
                   <th>Logo</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>{{ merchant.legalBusinessName || merchant.applicationReference }}</td>
+                  <td>{{ merchant.merchantName || merchant.legalBusinessName || merchant.applicationReference }}</td>
+                  <td><code>{{ merchant.merchantCode || '—' }}</code></td>
+                  <td>{{ verticalDisplayName(merchant.businessType || '') || merchant.businessType || '—' }}</td>
                   <td>{{ merchantLocation?.city || '—' }}</td>
                   <td>
                     <span class="status-tag" [ngClass]="merchantStatusTone(merchant.status)">{{ merchant.status }}</span>
+                  </td>
+                  <td>
+                    <ng-container *ngIf="merchant.offerings?.length; else noOfferings">
+                      <span class="status-tag status-tag-neutral me-1" *ngFor="let offering of merchant.offerings">{{ serviceLabel(offering) }}</span>
+                    </ng-container>
+                    <ng-template #noOfferings>—</ng-template>
                   </td>
                   <td class="product-thumb-col">
                     <img
                       *ngIf="merchant.logoUrl && !merchantTableLogoFailed"
                       [src]="merchant.logoUrl"
-                      [alt]="merchant.legalBusinessName || merchant.applicationReference"
+                      [alt]="merchant.merchantName || merchant.legalBusinessName || merchant.applicationReference"
                       class="product-thumb"
                       (error)="onMerchantTableLogoError()"
                     />
@@ -111,6 +122,7 @@
                       <i class="sort-header-icon" [ngClass]="sortIconClass(branchNameSortDirection)" aria-hidden="true"></i>
                     </button>
                   </th>
+                  <th>Code</th>
                   <th>City</th>
                   <th>Address</th>
                   <th [attr.aria-sort]="sortAriaSort(branchStatusSortDirection)">
@@ -134,6 +146,7 @@
                   (click)="selectBranch(branch)"
                 >
                   <td>{{ branch.name }}</td>
+                  <td><code>{{ branch.branchCode || '—' }}</code></td>
                   <td>{{ branch.city || '—' }}</td>
                   <td>{{ branch.addressLine1 || branch.addressLine2 || '—' }}</td>
                   <td>
@@ -146,7 +159,7 @@
                   </td>
                 </tr>
                 <tr *ngIf="!visibleBranchRows.length">
-                  <td colspan="5" class="text-center text-body-secondary">{{ branchEmptyMessage }}</td>
+                  <td colspan="6" class="text-center text-body-secondary">{{ branchEmptyMessage }}</td>
                 </tr>
               </tbody>
             </table>
@@ -413,15 +426,16 @@
     </div>
     <div class="card-body" *ngIf="selectedMerchant as merchant">
       <div class="dialog-meta">
-        <div><strong>Merchant:</strong> {{ merchant.legalBusinessName || merchant.applicationReference }}</div>
+        <div><strong>Merchant:</strong> {{ merchant.merchantName || merchant.legalBusinessName || merchant.applicationReference }}</div>
+        <div><strong>Merchant Code:</strong> {{ merchant.merchantCode || '—' }}</div>
         <div><strong>Merchant ID:</strong> {{ merchant.applicationId }}</div>
         <div><strong>Updated:</strong> {{ merchant.lastUpdatedAt | displayDate }}</div>
       </div>
 
       <div class="row g-3 mt-1">
         <div class="col-md-6">
-          <label class="form-label required">Merchant Name</label>
-          <input class="form-control" [(ngModel)]="merchantForm.legalBusinessName" (ngModelChange)="dirtyForms.merchant = true" />
+          <label class="form-label required">Trading Name</label>
+          <input class="form-control" [(ngModel)]="merchantForm.merchantName" (ngModelChange)="dirtyForms.merchant = true" />
         </div>
         <div class="col-md-6">
           <label class="form-label d-block">Status</label>
@@ -437,6 +451,10 @@
               {{ merchantForm.status === 'ACTIVE' ? 'Active' : 'Inactive' }}
             </label>
           </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label required">Legal Business Name</label>
+          <input class="form-control" [(ngModel)]="merchantForm.legalBusinessName" (ngModelChange)="dirtyForms.merchant = true" />
         </div>
         <div class="col-12"><div class="dialog-section">Address</div></div>
         <div class="col-12">
@@ -455,6 +473,33 @@
         <div class="col-md-4">
           <label class="form-label required">Contact Phone</label>
           <input class="form-control" [(ngModel)]="merchantForm.contactPhoneNumber" (ngModelChange)="dirtyForms.merchant = true" />
+        </div>
+        <div class="col-12">
+          <label class="form-label">Website</label>
+          <input class="form-control" [(ngModel)]="merchantForm.website" (ngModelChange)="dirtyForms.merchant = true" />
+        </div>
+        <div class="col-12"><div class="dialog-section">Business Type</div></div>
+        <div class="col-md-6">
+          <label class="form-label">Business Type</label>
+          <select class="form-select" [(ngModel)]="merchantForm.businessType" (ngModelChange)="dirtyForms.merchant = true">
+            <option value="">Select business type</option>
+            <option *ngFor="let vertical of verticals" [value]="vertical.code">{{ vertical.displayName }}</option>
+          </select>
+          <div *ngIf="verticalsLoading" class="form-text">Loading options…</div>
+        </div>
+        <div class="col-12"><div class="dialog-section">Services</div></div>
+        <div class="col-12">
+          <label class="form-label">Services</label>
+          <div class="channel-list">
+            <label class="channel-option" *ngFor="let svc of serviceOptions">
+              <input
+                type="checkbox"
+                [checked]="hasService(svc.code)"
+                (change)="toggleService(svc.code, $any($event.target).checked)"
+              />
+              <span>{{ svc.label }}</span>
+            </label>
+          </div>
         </div>
         <div class="col-12"><div class="dialog-section">Payment</div></div>
         <div class="col-12">
@@ -515,9 +560,11 @@
     <div class="card-body" *ngIf="selectedBranch as branch">
       <div class="dialog-meta">
         <div><strong>Branch:</strong> {{ branch.name }}</div>
+        <div><strong>Branch Code:</strong> {{ branch.branchCode || '—' }}</div>
         <div><strong>Branch ID:</strong> {{ branch.branchId || branch.id || '—' }}</div>
         <div><strong>Merchant ID:</strong> {{ branch.merchantId }}</div>
         <div><strong>City:</strong> {{ branch.city || '—' }}</div>
+        <div *ngIf="branch.website"><strong>Website:</strong> {{ branch.website }}</div>
       </div>
 
       <div class="row g-3 mt-1">

@@ -9,6 +9,7 @@ import {
   Merchant,
   MerchantLogoUploadResponse,
   MerchantLocation,
+  MerchantVerticalResponse,
   Product,
   ProductCategory,
   ProductListResponse,
@@ -186,6 +187,10 @@ export class MerchantApiService {
     payload: UpdateMerchantLogoRequest
   ): Observable<Merchant> {
     return this.http.put<Merchant>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/logo`, payload);
+  }
+
+  getVerticals(environment: BackendEnvironment, apiVersion: string): Observable<MerchantVerticalResponse[]> {
+    return this.http.get<MerchantVerticalResponse[]>(`${this.base(environment, apiVersion)}/merchants/verticals`);
   }
 
   createLogoUploadUrl(
