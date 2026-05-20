@@ -86,9 +86,13 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   statusMessage = '';
   errorMessage = '';
   branchDialogError = '';
+  branchDialogSuccess = '';
   merchantDialogError = '';
+  merchantDialogSuccess = '';
   productDialogError = '';
+  productDialogSuccess = '';
   categoryDialogError = '';
+  categoryDialogSuccess = '';
   loading = false;
 
   dirtyForms = {
@@ -501,6 +505,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       return;
     }
     this.merchantDialogError = '';
+    this.merchantDialogSuccess = '';
     this.clearMerchantLogoPreviewUrl();
     this.merchantLogoImageLoadFailed = false;
     this.merchantLogoSelectedFileName = '';
@@ -525,6 +530,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
   closeMerchantDialog(): void {
     this.merchantDialogError = '';
+    this.merchantDialogSuccess = '';
     this.clearMerchantLogoPreviewUrl();
     this.merchantLogoImageLoadFailed = false;
     this.merchantLogoSelectedFileName = '';
@@ -541,6 +547,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.categoryDialogMode = 'create';
     this.categoryFormName = '';
     this.categoryDialogError = '';
+    this.categoryDialogSuccess = '';
     this.categoryDialogOpen = true;
     this.dirtyForms.category = false;
   }
@@ -550,6 +557,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.categoryDialogMode = 'edit';
     this.categoryFormName = category.name;
     this.categoryDialogError = '';
+    this.categoryDialogSuccess = '';
     this.categoryDialogOpen = true;
     this.dirtyForms.category = false;
   }
@@ -560,6 +568,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     }
 
     this.categoryDialogError = '';
+    this.categoryDialogSuccess = '';
     this.categoryDialogOpen = false;
     this.selectedCategory = null;
     this.categoryFormName = '';
@@ -597,8 +606,8 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
         this.categories = this.upsertCategory(this.categories, category);
         this.reconcileCategoryReferences();
         this.syncCategoryTableState();
-        this.statusMessage = this.categoryDialogMode === 'create' ? 'Category created.' : 'Category renamed.';
-        this.closeCategoryDialog(true);
+        this.categoryDialogSuccess = this.categoryDialogMode === 'create' ? 'Category created.' : 'Category renamed.';
+        this.dirtyForms.category = false;
       },
       error: (error) => {
         this.loading = false;
@@ -680,8 +689,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
         if (!shouldSaveLogo) {
           this.loading = false;
-          this.statusMessage = 'Merchant updated.';
-          this.closeMerchantDialog();
+          this.merchantDialogSuccess = 'Merchant updated.';
           return;
         }
 
@@ -727,7 +735,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
           this.merchantLocation = location;
           this.locationForm = this.locationFromEntity(location);
           this.dirtyForms.location = false;
-          this.statusMessage = 'Merchant location saved.';
+          this.merchantDialogSuccess = 'Merchant location saved.';
         },
         error: (error) => {
           this.loading = false;
@@ -748,7 +756,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
         this.merchantLocation = null;
         this.locationForm = this.emptyLocationForm();
         this.dirtyForms.location = false;
-        this.statusMessage = 'Merchant location removed.';
+        this.merchantDialogSuccess = 'Merchant location removed.';
       },
       error: (error) => {
         this.loading = false;
@@ -818,6 +826,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
   closeBranchDialog(): void {
     this.branchDialogError = '';
+    this.branchDialogSuccess = '';
     this.branchDialogOpen = false;
     this.destroyLeafletMap();
   }
@@ -866,8 +875,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
           this.selectedBranch = branch;
           this.branchForm = this.branchFormFromEntity(branch);
           this.dirtyForms.branch = false;
-          this.statusMessage = 'Branch updated.';
-          this.closeBranchDialog();
+          this.branchDialogSuccess = 'Branch updated.';
           this.syncBranchTableState();
           this.syncCatalogSearchSummary();
           this.loadProductsForSelectedBranch();
@@ -947,6 +955,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     }
 
     this.productDialogError = '';
+    this.productDialogSuccess = '';
     this.productDialogOpen = false;
     this.clearProductDialogPreviewUrl();
     this.productDialogImageLoadFailed = false;
@@ -988,13 +997,14 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       )
       .subscribe({
         next: (result) => {
+          this.loading = false;
           this.products = this.products.map((item) =>
             item.productId === result.productId ? result : item
           );
           this.selectedProduct = result;
+          this.dirtyForms.editProduct = false;
           this.syncCatalogSearchSummary();
-          this.statusMessage = 'Product updated.';
-          this.closeProductDialog(true);
+          this.productDialogSuccess = 'Product updated.';
         },
         error: (error) => {
           this.loading = false;
@@ -1203,6 +1213,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   private openBranchDialogWithData(branch: Branch): void {
     this.loading = false;
     this.branchDialogError = '';
+    this.branchDialogSuccess = '';
     this.selectedBranch = this.normalizeBranch(branch);
     this.branchForm = this.branchFormFromEntity(this.selectedBranch);
     this.branchDialogOpen = true;
@@ -1365,6 +1376,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   private openProductDialogWithData(product: Product): void {
     this.loading = false;
     this.productDialogError = '';
+    this.productDialogSuccess = '';
     this.clearProductDialogPreviewUrl();
     this.productDialogImageLoadFailed = false;
     this.selectedProduct = product;
@@ -1708,8 +1720,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
           next: (merchant) => {
             this.loading = false;
             this.applySavedMerchantLogo(merchant);
-            this.statusMessage = 'Merchant and logo updated.';
-            this.closeMerchantDialog();
+            this.merchantDialogSuccess = 'Merchant and logo updated.';
           },
           error: (error) => {
             this.loading = false;
@@ -1733,8 +1744,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
         next: (merchant) => {
           this.loading = false;
           this.applySavedMerchantLogo(merchant);
-          this.statusMessage = 'Merchant and logo updated.';
-          this.closeMerchantDialog();
+          this.merchantDialogSuccess = 'Merchant and logo updated.';
         },
         error: (error) => {
           this.loading = false;
