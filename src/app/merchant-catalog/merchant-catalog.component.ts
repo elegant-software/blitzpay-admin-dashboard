@@ -108,9 +108,9 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     { code: 'PRE_ORDER', label: 'Pre-Order' },
     { code: 'WALK_IN_ORDERING', label: 'Walk-In Ordering' },
     { code: 'DEFERRED_PAYMENT', label: 'Deferred Payment' },
-    { code: 'APPOINTMENT', label: 'Appointment' }
+    { code: 'APPOINTMENT_BOOKING', label: 'Appointment' }
   ];
-  private readonly serviceCodes = new Set(['PRE_ORDER', 'WALK_IN_ORDERING', 'DEFERRED_PAYMENT', 'APPOINTMENT']);
+  private readonly serviceCodes = new Set(['PRE_ORDER', 'WALK_IN_ORDERING', 'DEFERRED_PAYMENT', 'APPOINTMENT_BOOKING']);
   readonly branchFilterHint = 'Filter by branch name, country, city, or zipcode.';
   readonly categoryFilterHint = 'Filter by category name.';
   readonly productFilterHint = 'Filter by product code, category, or name.';
