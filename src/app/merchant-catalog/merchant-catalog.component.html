@@ -401,6 +401,7 @@
       <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeCategoryDialog()">Close</button>
     </div>
     <div class="card-body">
+      <div class="alert alert-danger mb-3" *ngIf="categoryDialogError">{{ categoryDialogError }}</div>
       <div class="row g-3">
         <div class="col-12">
           <label class="form-label required">Name</label>
@@ -543,6 +544,7 @@
         </div>
       </div>
 
+      <div class="alert alert-danger mt-3" *ngIf="merchantDialogError">{{ merchantDialogError }}</div>
       <div class="dialog-actions mt-3">
         <button class="btn btn-primary" type="button" (click)="saveMerchant()">Save changes</button>
         <button class="btn btn-outline-secondary" type="button" (click)="closeMerchantDialog()">Cancel</button>
@@ -673,6 +675,7 @@
         </div>
       </div>
 
+      <div class="alert alert-danger mt-3" *ngIf="branchDialogError">{{ branchDialogError }}</div>
       <div class="dialog-actions mt-3">
         <button class="btn btn-primary" type="button" (click)="saveBranch()">Save branch</button>
         <button class="btn btn-outline-secondary" type="button" (click)="closeBranchDialog()">Cancel</button>
@@ -770,6 +773,7 @@
         </div>
       </div>
 
+      <div class="alert alert-danger mt-3" *ngIf="productDialogError">{{ productDialogError }}</div>
       <div class="dialog-actions mt-3">
         <button class="btn btn-primary" type="button" (click)="updateProduct()">Save changes</button>
         <button class="btn btn-outline-secondary" type="button" (click)="closeProductDialog()">Cancel</button>

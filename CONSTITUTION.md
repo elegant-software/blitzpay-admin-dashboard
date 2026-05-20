@@ -229,7 +229,38 @@ See full rules → [`docs/reference/user-display.md`](docs/reference/user-displa
 
 ---
 
-## VIII. Governance
+## VIII. API Error Display Rules
+
+All API errors must be shown to the user in full — never silently swallowed. The displayed message must be the server's own detail, not a generic fallback, whenever the server provides one.
+
+### Error extraction priority
+
+When reading an error from an `HttpErrorResponse`, extract the message in this order:
+1. `error.error.detail` — preferred; this is the field used by the BlitzPay backend for structured validation errors.
+2. `error.error.message` — fallback for older or different backend shapes.
+3. The caller-supplied fallback string — used only when the response body carries neither.
+
+This is implemented in the shared `toMessage(error, fallback)` helper on `MerchantCatalogComponent`. All API error handling must go through that helper; never hard-code a fallback message as the final display string without calling it.
+
+### Dialog vs page-level errors
+
+Errors from operations initiated **inside a dialog** must be displayed **inside that dialog**, not in the page-level `errorMessage` banner which is hidden behind the backdrop.
+
+| Scope | State field | Rendered in |
+|---|---|---|
+| Page-level (search, table actions) | `errorMessage` | Top of page, above tables |
+| Branch dialog | `branchDialogError` | Inside branch dialog card-body |
+| Merchant dialog | `merchantDialogError` | Inside merchant dialog card-body |
+| Product dialog | `productDialogError` | Inside product dialog card-body |
+| Category dialog | `categoryDialogError` | Inside category dialog card-body |
+
+Each per-dialog error field **must** be cleared when the dialog opens and when it closes.
+
+The error alert **must** be placed immediately above the dialog's action buttons (Save / Cancel row), not at the top of the card-body. Dialogs can be long and scrollable; placing the error next to the button that triggered it ensures it is always in view.
+
+---
+
+## IX. Governance
 
 - This Constitution supersedes all spec, task, and plan files where there is a conflict.
 - Amendments require updating this file and notifying AGENTS.md / CLAUDE.md of the change.

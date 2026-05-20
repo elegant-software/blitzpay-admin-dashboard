@@ -85,6 +85,10 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
   statusMessage = '';
   errorMessage = '';
+  branchDialogError = '';
+  merchantDialogError = '';
+  productDialogError = '';
+  categoryDialogError = '';
   loading = false;
 
   dirtyForms = {
@@ -103,9 +107,10 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   readonly serviceOptions = [
     { code: 'PRE_ORDER', label: 'Pre-Order' },
     { code: 'WALK_IN_ORDERING', label: 'Walk-In Ordering' },
-    { code: 'DEFERRED_PAYMENT', label: 'Deferred Payment' }
+    { code: 'DEFERRED_PAYMENT', label: 'Deferred Payment' },
+    { code: 'APPOINTMENT', label: 'Appointment' }
   ];
-  private readonly serviceCodes = new Set(['PRE_ORDER', 'WALK_IN_ORDERING', 'DEFERRED_PAYMENT']);
+  private readonly serviceCodes = new Set(['PRE_ORDER', 'WALK_IN_ORDERING', 'DEFERRED_PAYMENT', 'APPOINTMENT']);
   readonly branchFilterHint = 'Filter by branch name, country, city, or zipcode.';
   readonly categoryFilterHint = 'Filter by category name.';
   readonly productFilterHint = 'Filter by product code, category, or name.';
@@ -495,6 +500,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     if (!this.selectedMerchant) {
       return;
     }
+    this.merchantDialogError = '';
     this.clearMerchantLogoPreviewUrl();
     this.merchantLogoImageLoadFailed = false;
     this.merchantLogoSelectedFileName = '';
@@ -518,6 +524,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   }
 
   closeMerchantDialog(): void {
+    this.merchantDialogError = '';
     this.clearMerchantLogoPreviewUrl();
     this.merchantLogoImageLoadFailed = false;
     this.merchantLogoSelectedFileName = '';
@@ -533,6 +540,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.selectedCategory = null;
     this.categoryDialogMode = 'create';
     this.categoryFormName = '';
+    this.categoryDialogError = '';
     this.categoryDialogOpen = true;
     this.dirtyForms.category = false;
   }
@@ -541,6 +549,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.selectedCategory = category;
     this.categoryDialogMode = 'edit';
     this.categoryFormName = category.name;
+    this.categoryDialogError = '';
     this.categoryDialogOpen = true;
     this.dirtyForms.category = false;
   }
@@ -550,6 +559,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
+    this.categoryDialogError = '';
     this.categoryDialogOpen = false;
     this.selectedCategory = null;
     this.categoryFormName = '';
@@ -564,12 +574,12 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
     const name = this.categoryFormName.trim();
     if (!name) {
-      this.errorMessage = 'Category name is required.';
+      this.categoryDialogError = 'Category name is required.';
       return;
     }
 
     this.loading = true;
-    this.errorMessage = '';
+    this.categoryDialogError = '';
 
     const request$ = this.categoryDialogMode === 'create'
       ? this.merchantApi.createProductCategory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, { name })
@@ -592,7 +602,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       },
       error: (error) => {
         this.loading = false;
-        this.errorMessage = this.toMessage(
+        this.categoryDialogError = this.toMessage(
           error,
           this.categoryDialogMode === 'create' ? 'Unable to create category.' : 'Unable to rename category.'
         );
@@ -638,7 +648,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       !this.merchantForm.contactEmail.trim() ||
       !this.merchantForm.contactPhoneNumber.trim()
     ) {
-      this.errorMessage = 'Merchant name, address, contact name, email, and phone are required.';
+      this.merchantDialogError = 'Merchant name, address, contact name, email, and phone are required.';
       return;
     }
 
@@ -679,7 +689,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       },
       error: (error) => {
         this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Unable to update merchant.');
+        this.merchantDialogError = this.toMessage(error, 'Unable to update merchant.');
       }
     });
   }
@@ -694,7 +704,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     const geofenceRadiusMeters = Number(this.locationForm.geofenceRadiusMeters);
 
     if (Number.isNaN(latitude) || Number.isNaN(longitude) || Number.isNaN(geofenceRadiusMeters) || geofenceRadiusMeters <= 0) {
-      this.errorMessage = 'Valid latitude, longitude, and positive geofence radius are required.';
+      this.merchantDialogError = 'Valid latitude, longitude, and positive geofence radius are required.';
       return;
     }
 
@@ -721,7 +731,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
         },
         error: (error) => {
           this.loading = false;
-          this.errorMessage = this.toMessage(error, 'Unable to save merchant location.');
+          this.merchantDialogError = this.toMessage(error, 'Unable to save merchant location.');
         }
       });
   }
@@ -742,7 +752,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       },
       error: (error) => {
         this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Unable to remove merchant location.');
+        this.merchantDialogError = this.toMessage(error, 'Unable to remove merchant location.');
       }
     });
   }
@@ -807,6 +817,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   }
 
   closeBranchDialog(): void {
+    this.branchDialogError = '';
     this.branchDialogOpen = false;
     this.destroyLeafletMap();
   }
@@ -816,7 +827,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       return;
     }
     if (!this.branchForm.name.trim()) {
-      this.errorMessage = 'Branch name is required.';
+      this.branchDialogError = 'Branch name is required.';
       return;
     }
 
@@ -838,7 +849,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       activePaymentChannels: [...this.branchForm.activePaymentChannels],
       latitude: this.toOptionalNumber(this.branchForm.latitude),
       longitude: this.toOptionalNumber(this.branchForm.longitude),
-      geofenceRadiusMeters: this.toOptionalNumber(this.branchForm.geofenceRadiusMeters),
+      geofenceRadiusMeters: this.toOptionalNumber(this.branchForm.geofenceRadiusMeters) ?? 0,
       googlePlaceId: this.branchForm.googlePlaceId.trim() || undefined
     };
 
@@ -863,7 +874,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
         },
         error: (error) => {
           this.loading = false;
-          this.errorMessage = this.toMessage(error, 'Unable to update branch.');
+          this.branchDialogError = this.toMessage(error, 'Unable to update branch.');
         }
       });
   }
@@ -935,6 +946,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
+    this.productDialogError = '';
     this.productDialogOpen = false;
     this.clearProductDialogPreviewUrl();
     this.productDialogImageLoadFailed = false;
@@ -949,7 +961,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     }
 
     if (!this.productEditForm.name.trim() || !this.productEditForm.unitPrice.trim()) {
-      this.errorMessage = 'Product name and unit price are required.';
+      this.productDialogError = 'Product name and unit price are required.';
       return;
     }
 
@@ -986,7 +998,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
         },
         error: (error) => {
           this.loading = false;
-          this.errorMessage = this.toMessage(error, 'Unable to update product.');
+          this.productDialogError = this.toMessage(error, 'Unable to update product.');
         }
       });
   }
@@ -1190,6 +1202,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
   private openBranchDialogWithData(branch: Branch): void {
     this.loading = false;
+    this.branchDialogError = '';
     this.selectedBranch = this.normalizeBranch(branch);
     this.branchForm = this.branchFormFromEntity(this.selectedBranch);
     this.branchDialogOpen = true;
@@ -1351,6 +1364,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
   private openProductDialogWithData(product: Product): void {
     this.loading = false;
+    this.productDialogError = '';
     this.clearProductDialogPreviewUrl();
     this.productDialogImageLoadFailed = false;
     this.selectedProduct = product;
@@ -1596,7 +1610,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       activePaymentChannels: [...(branch.activePaymentChannels ?? [])],
       latitude: branch.latitude != null ? String(branch.latitude) : '',
       longitude: branch.longitude != null ? String(branch.longitude) : '',
-      geofenceRadiusMeters: branch.geofenceRadiusMeters != null ? String(branch.geofenceRadiusMeters) : '',
+      geofenceRadiusMeters: String(branch.geofenceRadiusMeters ?? 0),
       googlePlaceId: branch.googlePlaceId ?? ''
     };
   }
@@ -1699,7 +1713,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
           },
           error: (error) => {
             this.loading = false;
-            this.errorMessage = this.toMessage(error, 'Merchant details were saved, but the logo upload failed.');
+            this.merchantDialogError = this.toMessage(error, 'Merchant details were saved, but the logo upload failed.');
           }
         });
       return;
@@ -1707,7 +1721,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
 
     if (!storageKey) {
       this.loading = false;
-      this.errorMessage = 'Merchant details were saved, but logo storage key is required to save the logo.';
+      this.merchantDialogError = 'Merchant details were saved, but logo storage key is required to save the logo.';
       return;
     }
 
@@ -1724,7 +1738,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
         },
         error: (error) => {
           this.loading = false;
-          this.errorMessage = this.toMessage(error, 'Merchant details were saved, but the logo update failed.');
+          this.merchantDialogError = this.toMessage(error, 'Merchant details were saved, but the logo update failed.');
         }
       });
   }
@@ -1777,7 +1791,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   }
 
   private toMessage(error: unknown, fallback: string): string {
-    const maybeMessage = (error as { error?: { message?: string } })?.error?.message;
-    return maybeMessage || fallback;
+    const body = (error as { error?: { detail?: string; message?: string } })?.error;
+    return body?.detail || body?.message || fallback;
   }
 }
