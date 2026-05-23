@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import {
   BackendEnvironment,
   CreateProductCategoryRequest,
+  Merchant,
   ProductCategory,
   RenameProductCategoryRequest
 } from '../models/merchant-catalog.models';
@@ -99,5 +100,57 @@ describe('MerchantApiService product category API', () => {
     request.flush(null);
 
     expect(completed).toBeTrue();
+  });
+
+  it('updates a merchant including business type and merchant mobility', () => {
+    const payload = {
+      merchantName: 'Cafe Roma',
+      legalBusinessName: 'Cafe Roma GmbH',
+      primaryBusinessAddress: 'Market Street 1',
+      website: 'https://cafe.example.com',
+      contactFullName: 'Jane Doe',
+      contactEmail: 'jane@example.com',
+      contactPhoneNumber: '+49123456789',
+      activePaymentChannels: ['STRIPE'],
+      businessType: 'CAFE',
+      merchantMobility: 'MOBILE',
+      offerings: ['PRE_ORDER'],
+      status: 'ACTIVE'
+    };
+    let response: Merchant | undefined;
+
+    service.updateMerchant(environment, apiVersion, merchantId, payload).subscribe((result) => {
+      response = result;
+    });
+
+    const request = httpTestingController.expectOne(
+      'http://localhost:8080/v1/merchants/merchant-123'
+    );
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual(payload);
+
+    request.flush({
+      applicationId: merchantId,
+      applicationReference: 'APP-123',
+      merchantCode: 'MRC-123',
+      merchantName: 'Cafe Roma',
+      registrationNumber: 'REG-1',
+      businessType: 'CAFE',
+      merchantMobility: 'MOBILE',
+      operatingCountry: 'DE',
+      legalBusinessName: 'Cafe Roma GmbH',
+      primaryBusinessAddress: 'Market Street 1',
+      website: 'https://cafe.example.com',
+      contactFullName: 'Jane Doe',
+      contactEmail: 'jane@example.com',
+      contactPhoneNumber: '+49123456789',
+      activePaymentChannels: ['STRIPE'],
+      offerings: ['PRE_ORDER'],
+      status: 'ACTIVE',
+      lastUpdatedAt: '2026-05-23T10:00:00.000Z'
+    } satisfies Merchant);
+
+    expect(response?.merchantMobility).toBe('MOBILE');
+    expect(response?.businessType).toBe('CAFE');
   });
 });

@@ -38,6 +38,7 @@
                 <tr>
                   <th>Merchant Name</th>
                   <th>Merchant Code</th>
+                  <th>Merchant Type</th>
                   <th>Business Type</th>
                   <th>City</th>
                   <th>Status</th>
@@ -50,6 +51,7 @@
                 <tr>
                   <td>{{ merchant.merchantName || merchant.legalBusinessName || merchant.applicationReference }}</td>
                   <td><code>{{ merchant.merchantCode || '—' }}</code></td>
+                  <td>{{ merchant.merchantMobility || '—' }}</td>
                   <td>{{ verticalDisplayName(merchant.businessType || '') || merchant.businessType || '—' }}</td>
                   <td>{{ merchantLocation?.city || '—' }}</td>
                   <td>
@@ -488,6 +490,12 @@
             <option *ngFor="let vertical of verticals" [value]="vertical.code">{{ vertical.displayName }}</option>
           </select>
           <div *ngIf="verticalsLoading" class="form-text">Loading options…</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Merchant Type</label>
+          <select class="form-select" [(ngModel)]="merchantForm.merchantMobility" (ngModelChange)="dirtyForms.merchant = true">
+            <option *ngFor="let mobility of merchantMobilityOptions" [value]="mobility">{{ mobility }}</option>
+          </select>
         </div>
         <div class="col-12"><div class="dialog-section">Services</div></div>
         <div class="col-12">

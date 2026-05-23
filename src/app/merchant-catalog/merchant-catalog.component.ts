@@ -131,6 +131,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     'ACTION_REQUIRED',
     'REJECTED'
   ];
+  readonly merchantMobilityOptions = ['BRICK_AND_MORTAR', 'MOBILE'];
 
   private leafletMap: L.Map | null = null;
   private leafletMarker: L.CircleMarker | null = null;
@@ -670,6 +671,8 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       contactEmail: this.merchantForm.contactEmail.trim(),
       contactPhoneNumber: this.merchantForm.contactPhoneNumber.trim(),
       activePaymentChannels: [...this.merchantForm.activePaymentChannels],
+      businessType: this.merchantForm.businessType.trim() || undefined,
+      merchantMobility: this.merchantForm.merchantMobility.trim() || undefined,
       offerings: this.merchantForm.services.length > 0 ? [...this.merchantForm.services] : undefined,
       status: this.merchantForm.status
     };
@@ -1572,6 +1575,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       contactPhoneNumber: '',
       activePaymentChannels: [],
       businessType: '',
+      merchantMobility: 'BRICK_AND_MORTAR',
       services: [],
       status: 'DRAFT'
     };
@@ -1602,6 +1606,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       contactPhoneNumber: merchant.contactPhoneNumber ?? '',
       activePaymentChannels: [...(merchant.activePaymentChannels ?? [])],
       businessType: merchant.businessType ?? '',
+      merchantMobility: merchant.merchantMobility ?? 'BRICK_AND_MORTAR',
       services: (merchant.offerings ?? []).filter(o => this.serviceCodes.has(o)),
       status: merchant.status
     };

@@ -14,6 +14,7 @@ export interface Merchant {
   merchantName: string;
   registrationNumber: string;
   businessType?: string | null;
+  merchantMobility?: string | null;
   operatingCountry?: string | null;
   legalBusinessName?: string | null;
   primaryBusinessAddress?: string | null;
@@ -175,6 +176,8 @@ export interface UpdateMerchantRequest {
   activePaymentChannels: string[];
   offerings?: string[];
   status?: string;
+  businessType?: string;
+  merchantMobility?: string;
 }
 
 export interface UpdateBranchRequest {
@@ -262,6 +265,7 @@ export interface MerchantFormModel {
   contactPhoneNumber: string;
   activePaymentChannels: string[];
   businessType: string;
+  merchantMobility: string;
   services: string[];
   status: string;
 }

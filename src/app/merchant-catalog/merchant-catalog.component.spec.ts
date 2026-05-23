@@ -11,7 +11,10 @@ describe('MerchantCatalogComponent product category management', () => {
   const merchant: Merchant = {
     applicationId: 'merchant-123',
     applicationReference: 'MERCHANT-123',
+    merchantCode: 'MRC-123',
+    merchantName: 'Merchant 123',
     registrationNumber: 'REG-123',
+    offerings: [],
     status: 'ACTIVE',
     lastUpdatedAt: '2026-05-10T10:00:00.000Z'
   };
