@@ -1,8 +1,11 @@
 .auth-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 2rem;
+  align-content: center;
+  padding: max(1.25rem, env(safe-area-inset-top)) 1.25rem max(1.25rem, env(safe-area-inset-bottom));
+  overflow-y: auto;
   background:
     radial-gradient(circle at top right, rgba(13, 110, 253, 0.16), transparent 28%),
     linear-gradient(180deg, #f7f9fc 0%, #eef3f9 100%);
@@ -11,6 +14,7 @@
 .auth-card {
   width: min(100%, 34rem);
   border-radius: 1.25rem;
+  margin-block: auto;
 }
 
 .auth-brand-eyebrow {
@@ -43,4 +47,25 @@
 .auth-support {
   font-size: 0.95rem;
   margin-top: 1rem;
+}
+
+@media (max-height: 820px) {
+  .auth-page {
+    place-items: start center;
+    align-content: start;
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .auth-card .card-body {
+    padding: 1.25rem !important;
+  }
+
+  .auth-title {
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+  }
+
+  .auth-actions {
+    margin-top: 1.25rem;
+  }
 }
