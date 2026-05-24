@@ -30,7 +30,7 @@ jobs:
         run: echo "release_sha=$(git rev-list -n 1 HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Ensure push CI succeeded for release commit
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           RELEASE_SHA: ${{ steps.resolve-release-sha.outputs.release_sha }}
         with:
