@@ -20,6 +20,7 @@ import {
   MerchantFormModel,
   MerchantLocation,
   MerchantVerticalResponse,
+  PaymentAccountStatus,
   Product,
   ProductCategory,
   ProductSortField,
@@ -82,6 +83,10 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   logoForm: LogoFormModel = { storageKey: '' };
   categoryFormName = '';
   categoryDialogMode: 'create' | 'edit' = 'create';
+
+  paymentAccountStatus: PaymentAccountStatus = 'loading';
+  paymentAccountActionLoading = false;
+  paymentAccountError: string | null = null;
 
   statusMessage = '';
   errorMessage = '';
@@ -1168,10 +1173,13 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     this.selectedBranch = null;
     this.merchantTableLogoFailed = false;
     this.failedProductImages.clear();
+    this.paymentAccountStatus = 'loading';
+    this.paymentAccountError = null;
     this.closeMerchantDialog();
     this.closeBranchDialog();
     this.closeCategoryDialog(true);
     this.closeProductDialog(true);
+    this.loadPaymentAccountStatus(merchant.applicationId);
 
     forkJoin({
       location: this.merchantApi
@@ -1209,6 +1217,49 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
       error: () => {
         this.loading = false;
         this.errorMessage = 'Merchant loaded but one or more related sections failed to load.';
+      }
+    });
+  }
+
+  loadPaymentAccountStatus(merchantId: string): void {
+    this.merchantApi.getStripeConnectStatus(this.selectedEnvironment, this.apiVersion, merchantId).subscribe({
+      next: (data) => {
+        if (data.connected && data.chargesEnabled) {
+          this.paymentAccountStatus = 'connected';
+        } else if (data.detailsSubmitted) {
+          this.paymentAccountStatus = 'verifying';
+        } else {
+          this.paymentAccountStatus = 'not_connected';
+        }
+      },
+      error: () => {
+        this.paymentAccountStatus = 'error';
+      }
+    });
+  }
+
+  handleStripeConnect(): void {
+    if (!this.selectedMerchant || this.paymentAccountActionLoading) return;
+    const merchantId = this.selectedMerchant.applicationId;
+    const origin = window.location.origin;
+    const base = `${origin}/stripe-connect/return?merchantId=${merchantId}&env=${this.selectedEnvironmentKey}&apiVersion=${this.apiVersion}`;
+    const returnUrl = base;
+    const refreshUrl = `${base}&refresh=true`;
+    this.paymentAccountActionLoading = true;
+    this.paymentAccountError = null;
+
+    const call$ = this.paymentAccountStatus === 'verifying'
+      ? this.merchantApi.refreshStripeConnect(this.selectedEnvironment, this.apiVersion, merchantId, returnUrl, refreshUrl)
+      : this.merchantApi.startStripeConnect(this.selectedEnvironment, this.apiVersion, merchantId, { returnUrl, refreshUrl });
+
+    call$.subscribe({
+      next: (res) => {
+        this.paymentAccountActionLoading = false;
+        window.open(res.onboardingUrl, '_blank');
+      },
+      error: (err) => {
+        this.paymentAccountActionLoading = false;
+        this.paymentAccountError = this.toMessage(err, 'Failed to start Stripe Connect onboarding.');
       }
     });
   }

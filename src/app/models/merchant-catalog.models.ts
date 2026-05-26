@@ -333,3 +333,16 @@ export interface ProductTableState {
   visibleRows: Product[];
   emptyStateKind: 'no-branch-selected' | 'no-data' | 'no-filter-results';
 }
+
+export interface StripeConnectStatusResponse {
+  connected: boolean;
+  chargesEnabled: boolean;
+  detailsSubmitted: boolean;
+}
+
+export type PaymentAccountStatus = 'loading' | 'not_connected' | 'verifying' | 'connected' | 'error';
+
+export interface StartStripeConnectRequest {
+  returnUrl: string;
+  refreshUrl: string;
+}

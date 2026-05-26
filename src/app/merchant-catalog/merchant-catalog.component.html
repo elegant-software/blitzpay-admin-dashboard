@@ -86,6 +86,55 @@
       </div>
     </div>
 
+    <!-- Payment Account -->
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Payment Account</span>
+          <ng-container [ngSwitch]="paymentAccountStatus">
+            <span *ngSwitchCase="'connected'" class="status-tag status-tag-success">Connected</span>
+            <span *ngSwitchCase="'verifying'" class="status-tag status-tag-warning">Verifying</span>
+            <span *ngSwitchCase="'not_connected'" class="status-tag status-tag-neutral">Not Connected</span>
+            <span *ngSwitchCase="'error'" class="status-tag status-tag-danger">Error</span>
+          </ng-container>
+        </div>
+        <div class="card-body d-flex flex-column gap-2">
+          <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'loading'">Loading payment account status…</p>
+          <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'not_connected'">
+            This merchant has not connected a Stripe Express account. Click <strong>Connect Stripe</strong> to begin onboarding.
+          </p>
+          <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'verifying'">
+            Stripe account details have been submitted and are under review. Click <strong>Continue Setup</strong> if the merchant needs to complete additional steps.
+          </p>
+          <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'connected'">
+            Stripe Express account is active and charges are enabled.
+          </p>
+          <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'error'">
+            Could not load payment account status.
+            <button class="btn btn-link btn-sm p-0 ms-1" type="button" (click)="loadPaymentAccountStatus(merchant.applicationId)">Retry</button>
+          </p>
+          <div *ngIf="paymentAccountError" class="alert alert-danger py-1 px-2 mb-0 small">{{ paymentAccountError }}</div>
+          <div *ngIf="paymentAccountStatus !== 'loading' && paymentAccountStatus !== 'error'">
+            <button
+              class="btn btn-primary btn-sm"
+              type="button"
+              [disabled]="paymentAccountStatus === 'connected' || paymentAccountActionLoading"
+              (click)="handleStripeConnect()"
+            >
+              <span *ngIf="paymentAccountActionLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
+              <ng-container *ngIf="!paymentAccountActionLoading">
+                <ng-container [ngSwitch]="paymentAccountStatus">
+                  <span *ngSwitchCase="'connected'">Connected</span>
+                  <span *ngSwitchCase="'verifying'">Continue Setup</span>
+                  <span *ngSwitchDefault>Connect Stripe</span>
+                </ng-container>
+              </ng-container>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="col-lg-5">
       <div class="card h-100">
         <div class="card-header d-flex justify-content-between align-items-center">

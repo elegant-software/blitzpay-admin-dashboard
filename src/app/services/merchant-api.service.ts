@@ -14,6 +14,8 @@ import {
   ProductCategory,
   ProductListResponse,
   RenameProductCategoryRequest,
+  StartStripeConnectRequest,
+  StripeConnectStatusResponse,
   UpdateBranchRequest,
   UpdateMerchantRequest,
   UpdateMerchantLocationRequest,
@@ -209,6 +211,42 @@ export class MerchantApiService {
       headers: new HttpHeaders({ 'Content-Type': file.type || 'application/octet-stream' }),
       responseType: 'text'
     });
+  }
+
+  getStripeConnectStatus(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string
+  ): Observable<StripeConnectStatusResponse> {
+    return this.http.get<StripeConnectStatusResponse>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/stripe-connect/status`
+    );
+  }
+
+  startStripeConnect(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    payload: StartStripeConnectRequest
+  ): Observable<{ onboardingUrl: string }> {
+    return this.http.post<{ onboardingUrl: string }>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/stripe-connect`,
+      payload
+    );
+  }
+
+  refreshStripeConnect(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    returnUrl: string,
+    refreshUrl: string
+  ): Observable<{ onboardingUrl: string }> {
+    const params = new HttpParams().set('returnUrl', returnUrl).set('refreshUrl', refreshUrl);
+    return this.http.get<{ onboardingUrl: string }>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/stripe-connect/refresh`,
+      { params }
+    );
   }
 
   private base(environment: BackendEnvironment, apiVersion: string): string {

@@ -52,6 +52,31 @@ _Avoid_: Tag, label, type
 
 **Contact info shape**: The API returns both flat fields (`contactFullName`, `contactEmail`, `contactPhoneNumber`) and a nested `contactInfo` object on `MerchantDetailsResponse`. The dashboard binds exclusively to the flat fields — the nested object is ignored.
 
+## Payment
+
+**Merchant Payment Account**:
+The merchant-level Stripe Express Connect account that enables a Merchant to accept payments and receive settlement through BlitzPay.
+_Avoid_: Branch account, checkout account, Stripe wallet
+
+**Stripe Connect Onboarding**:
+The admin-initiated flow that opens a Stripe-hosted Express account setup page in a new browser tab, allowing an admin to connect or complete a Merchant Payment Account on behalf of a searched Merchant. The admin supplies `return_url` and `refresh_url` in the initiation request; the backend passes them through to Stripe.
+_Avoid_: Merchant self-service onboarding, native in-app onboarding form, express checkout
+
+**Payment Account Status**:
+The four observable states of a Merchant Payment Account as reported by `GET /merchants/{id}/stripe-connect/status`: `not_connected`, `verifying`, `connected`, `error`. Derived from `connected`, `chargesEnabled`, and `detailsSubmitted` flags returned by the backend.
+_Avoid_: Raw Stripe status, payment channel flag
+
+**Stripe Connect Return Route**:
+The dedicated admin dashboard route (e.g. `/stripe-connect/return`) that Stripe redirects to after a merchant completes or abandons onboarding. It reads `merchantId` and an optional `refresh` query param. When `refresh=true`, it automatically fetches a new onboarding link and redirects the tab back to Stripe. Otherwise it displays the current Payment Account Status and a link back to the merchant catalog.
+_Avoid_: Callback page, webhook handler
+
+## Relationships (payment)
+
+- A **Merchant** has zero or one **Merchant Payment Account**
+- An admin initiates **Stripe Connect Onboarding** for a **Merchant** from the Payment Account section of the merchant catalog page
+- **Stripe Connect Onboarding** resolves to exactly one **Payment Account Status** on return
+- The **Stripe Connect Return Route** is the sole entry point for Stripe's redirect back into the admin dashboard
+
 ## Flagged ambiguities
 
 - "category list on the catalog page" could have implied branch-level categories; resolved: **Product Categories** belong to the **Merchant** and are reusable across all **Branches**.

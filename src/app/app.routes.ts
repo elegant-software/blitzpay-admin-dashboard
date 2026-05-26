@@ -19,6 +19,11 @@ export const appRoutes: Routes = [
     component: AuthShellComponent
   },
   {
+    path: 'stripe-connect/return',
+    canActivate: [authGuard],
+    loadComponent: () => import('./stripe-connect/stripe-connect-return.component').then(m => m.StripeConnectReturnComponent)
+  },
+  {
     path: '**',
     redirectTo: ''
   }
