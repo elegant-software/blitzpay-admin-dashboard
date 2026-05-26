@@ -15,6 +15,7 @@ import {
   Product,
   ProductCategory,
   ProductListResponse,
+  ProviderAccountResponse,
   RenameProductCategoryRequest,
   StartStripeConnectRequest,
   StripeConnectStatusResponse,
@@ -259,6 +260,39 @@ export class MerchantApiService {
     return this.http.post<MerchantSearchResponse>(
       `${this.base(environment, apiVersion)}/merchants/search`,
       request
+    );
+  }
+
+  listProviderAccounts(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string
+  ): Observable<ProviderAccountResponse[]> {
+    return this.http.get<ProviderAccountResponse[]>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/provider-accounts`
+    );
+  }
+
+  enableProviderAccount(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    pspCode: string
+  ): Observable<ProviderAccountResponse> {
+    return this.http.put<ProviderAccountResponse>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/provider-accounts/${pspCode}`,
+      {}
+    );
+  }
+
+  disableProviderAccount(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    pspCode: string
+  ): Observable<void> {
+    return this.http.delete<void>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/provider-accounts/${pspCode}`
     );
   }
 

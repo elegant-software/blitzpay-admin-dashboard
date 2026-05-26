@@ -22,7 +22,6 @@ export interface Merchant {
   contactFullName?: string | null;
   contactEmail?: string | null;
   contactPhoneNumber?: string | null;
-  activePaymentChannels?: string[] | null;
   offerings: string[];
   status: string;
   submittedAt?: string | null;
@@ -76,7 +75,6 @@ export interface Branch {
   contactFullName?: string | null;
   contactEmail?: string | null;
   contactPhoneNumber?: string | null;
-  activePaymentChannels?: string[] | null;
   latitude?: number | null;
   longitude?: number | null;
   geofenceRadiusMeters?: number | null;
@@ -158,7 +156,6 @@ export interface CreateBranchRequest {
   contactFullName?: string;
   contactEmail?: string;
   contactPhoneNumber?: string;
-  activePaymentChannels: string[];
   latitude?: number;
   longitude?: number;
   geofenceRadiusMeters?: number;
@@ -173,7 +170,6 @@ export interface UpdateMerchantRequest {
   contactFullName: string;
   contactEmail: string;
   contactPhoneNumber: string;
-  activePaymentChannels: string[];
   offerings?: string[];
   status?: string;
   businessType?: string;
@@ -191,7 +187,6 @@ export interface UpdateBranchRequest {
   contactFullName?: string;
   contactEmail?: string;
   contactPhoneNumber?: string;
-  activePaymentChannels: string[];
   latitude?: number;
   longitude?: number;
   geofenceRadiusMeters?: number;
@@ -248,7 +243,6 @@ export interface BranchFormModel {
   contactFullName: string;
   contactEmail: string;
   contactPhoneNumber: string;
-  activePaymentChannels: string[];
   latitude: string;
   longitude: string;
   geofenceRadiusMeters: string;
@@ -263,7 +257,6 @@ export interface MerchantFormModel {
   contactFullName: string;
   contactEmail: string;
   contactPhoneNumber: string;
-  activePaymentChannels: string[];
   businessType: string;
   merchantMobility: string;
   services: string[];
@@ -375,4 +368,12 @@ export interface MerchantSearchResponse {
   size: number;
   totalElements: number;
   totalPages: number;
+}
+
+export interface ProviderAccountResponse {
+  id: string;
+  pspCode: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

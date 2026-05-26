@@ -79,28 +79,37 @@ _Avoid_: Search facets, dropdowns, type filters, query params
 
 ## Payment
 
-**Merchant Payment Account**:
-The merchant-level Stripe Express Connect account that enables a Merchant to accept payments and receive settlement through BlitzPay.
-_Avoid_: Branch account, checkout account, Stripe wallet
+**Payment Service Provider (PSP)**:
+An external company that processes payments on behalf of Merchants (Stripe, TrueLayer, Adyen, Braintree, PayPal). Maintained as a seeded reference list — new PSPs require a code change and migration, not runtime configuration.
+_Avoid_: Payment Channel, Payment Gateway
+
+**Merchant Provider Account**:
+A Merchant's connection record for a specific PSP. One record exists per (Merchant, PSP) pair. A Merchant Provider Account with `enabled = true` is the single source of truth for which PSPs a Merchant has active. The record is never deleted — disabling sets `enabled = false`, preserving credentials for re-activation.
+_Avoid_: Payment Channel, activePaymentChannels, Merchant Payment Account (Stripe-specific legacy term)
+
+**Stripe Provider Account**:
+The Stripe-specific extension of a Merchant Provider Account. Holds the Stripe Express Connected Account ID, charges-enabled flag, details-submitted flag, and pay-by-bank flag. Created when an admin initiates Stripe Connect Onboarding for a Merchant.
+_Avoid_: MerchantStripeConnect, Merchant Payment Account
 
 **Stripe Connect Onboarding**:
-The admin-initiated flow that opens a Stripe-hosted Express account setup page in a new browser tab, allowing an admin to connect or complete a Merchant Payment Account on behalf of a searched Merchant. The admin supplies `return_url` and `refresh_url` in the initiation request; the backend passes them through to Stripe.
+The admin-initiated flow that opens a Stripe-hosted Express account setup page in a new browser tab, allowing an admin to connect or complete a Stripe Provider Account on behalf of a searched Merchant. The admin supplies `return_url` and `refresh_url` in the initiation request; the backend passes them through to Stripe.
 _Avoid_: Merchant self-service onboarding, native in-app onboarding form, express checkout
 
-**Payment Account Status**:
-The four observable states of a Merchant Payment Account as reported by `GET /merchants/{id}/stripe-connect/status`: `not_connected`, `verifying`, `connected`, `error`. Derived from `connected`, `chargesEnabled`, and `detailsSubmitted` flags returned by the backend.
-_Avoid_: Raw Stripe status, payment channel flag
+**Provider Account Status**:
+The four observable states of a Stripe Provider Account as reported by `GET /merchants/{id}/provider-accounts/STRIPE/status`: `not_connected`, `verifying`, `connected`, `error`. Derived from `connected`, `chargesEnabled`, and `detailsSubmitted` flags returned by the backend.
+_Avoid_: Payment Account Status, Raw Stripe status, payment channel flag
 
 **Stripe Connect Return Route**:
-The dedicated admin dashboard route (e.g. `/stripe-connect/return`) that Stripe redirects to after a merchant completes or abandons onboarding. It reads `merchantId` and an optional `refresh` query param. When `refresh=true`, it automatically fetches a new onboarding link and redirects the tab back to Stripe. Otherwise it displays the current Payment Account Status and a link back to the merchant catalog.
+The dedicated admin dashboard route (e.g. `/stripe-connect/return`) that Stripe redirects to after a merchant completes or abandons onboarding. It reads `merchantId` and an optional `refresh` query param. When `refresh=true`, it automatically fetches a new onboarding link and redirects the tab back to Stripe. Otherwise it displays the current Provider Account Status and a link back to the merchant catalog.
 _Avoid_: Callback page, webhook handler
 
 ## Relationships (payment)
 
-- A **Merchant** has zero or one **Merchant Payment Account**
-- An admin initiates **Stripe Connect Onboarding** for a **Merchant** from the Payment Account section of the merchant catalog page
-- **Stripe Connect Onboarding** resolves to exactly one **Payment Account Status** on return
+- A **Merchant** has zero or more **Merchant Provider Accounts**, one per **Payment Service Provider**
+- An admin initiates **Stripe Connect Onboarding** for a **Merchant** from the Provider Accounts section of the merchant catalog page
+- **Stripe Connect Onboarding** resolves to exactly one **Provider Account Status** on return
 - The **Stripe Connect Return Route** is the sole entry point for Stripe's redirect back into the admin dashboard
+- Branches do not have Provider Accounts — payment processing capability is always determined at the Merchant level
 
 ## Flagged ambiguities
 

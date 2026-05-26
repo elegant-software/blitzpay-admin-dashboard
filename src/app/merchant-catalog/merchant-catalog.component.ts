@@ -123,7 +123,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
   verticals: MerchantVerticalResponse[] = [];
   verticalsLoading = false;
 
-  readonly paymentChannelOptions = ['PAYPAL', 'STRIPE', 'TRUELAYER'];
   readonly serviceOptions = [
     { code: 'PRE_ORDER', label: 'Pre-Order' },
     { code: 'WALK_IN_ORDERING', label: 'Walk-In Ordering' },
@@ -358,24 +357,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
 
   refreshBranchMapPreview(): void {
     this.scheduleLeafletRender();
-  }
-
-  hasChannel(selected: string[], channel: string): boolean {
-    return selected.includes(channel);
-  }
-
-  toggleMerchantChannel(channel: string, checked: boolean): void {
-    this.merchantForm.activePaymentChannels = checked
-      ? [...new Set([...this.merchantForm.activePaymentChannels, channel])]
-      : this.merchantForm.activePaymentChannels.filter((value) => value !== channel);
-    this.dirtyForms.merchant = true;
-  }
-
-  toggleBranchChannel(channel: string, checked: boolean): void {
-    this.branchForm.activePaymentChannels = checked
-      ? [...new Set([...this.branchForm.activePaymentChannels, channel])]
-      : this.branchForm.activePaymentChannels.filter((value) => value !== channel);
-    this.dirtyForms.branch = true;
   }
 
   onBranchFilterChange(): void {
@@ -736,7 +717,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
       contactFullName: this.merchantForm.contactFullName.trim(),
       contactEmail: this.merchantForm.contactEmail.trim(),
       contactPhoneNumber: this.merchantForm.contactPhoneNumber.trim(),
-      activePaymentChannels: [...this.merchantForm.activePaymentChannels],
       businessType: this.merchantForm.businessType.trim() || undefined,
       merchantMobility: this.merchantForm.merchantMobility.trim() || undefined,
       offerings: this.merchantForm.services.length > 0 ? [...this.merchantForm.services] : undefined,
@@ -924,7 +904,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
       contactFullName: this.branchForm.contactFullName.trim() || undefined,
       contactEmail: this.branchForm.contactEmail.trim() || undefined,
       contactPhoneNumber: this.branchForm.contactPhoneNumber.trim() || undefined,
-      activePaymentChannels: [...this.branchForm.activePaymentChannels],
       latitude: this.toOptionalNumber(this.branchForm.latitude),
       longitude: this.toOptionalNumber(this.branchForm.longitude),
       geofenceRadiusMeters: this.toOptionalNumber(this.branchForm.geofenceRadiusMeters) ?? 0,
@@ -1654,7 +1633,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
       contactFullName: '',
       contactEmail: '',
       contactPhoneNumber: '',
-      activePaymentChannels: [],
       latitude: '',
       longitude: '',
       geofenceRadiusMeters: '',
@@ -1684,7 +1662,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
       contactFullName: '',
       contactEmail: '',
       contactPhoneNumber: '',
-      activePaymentChannels: [],
       businessType: '',
       merchantMobility: 'BRICK_AND_MORTAR',
       services: [],
@@ -1715,7 +1692,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
       contactFullName: merchant.contactFullName ?? '',
       contactEmail: merchant.contactEmail ?? '',
       contactPhoneNumber: merchant.contactPhoneNumber ?? '',
-      activePaymentChannels: [...(merchant.activePaymentChannels ?? [])],
       businessType: merchant.businessType ?? '',
       merchantMobility: merchant.merchantMobility ?? 'BRICK_AND_MORTAR',
       services: (merchant.offerings ?? []).filter(o => this.serviceCodes.has(o)),
@@ -1735,7 +1711,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
       contactFullName: branch.contactFullName ?? '',
       contactEmail: branch.contactEmail ?? '',
       contactPhoneNumber: branch.contactPhoneNumber ?? '',
-      activePaymentChannels: [...(branch.activePaymentChannels ?? [])],
       latitude: branch.latitude != null ? String(branch.latitude) : '',
       longitude: branch.longitude != null ? String(branch.longitude) : '',
       geofenceRadiusMeters: String(branch.geofenceRadiusMeters ?? 0),

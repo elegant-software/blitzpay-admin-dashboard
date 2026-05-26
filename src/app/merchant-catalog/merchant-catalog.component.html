@@ -636,20 +636,6 @@
             </label>
           </div>
         </div>
-        <div class="col-12"><div class="dialog-section">Payment</div></div>
-        <div class="col-12">
-          <label class="form-label">Active Payment Channels</label>
-          <div class="channel-list">
-            <label class="channel-option" *ngFor="let channel of paymentChannelOptions">
-              <input
-                type="checkbox"
-                [checked]="hasChannel(merchantForm.activePaymentChannels, channel)"
-                (change)="toggleMerchantChannel(channel, $any($event.target).checked)"
-              />
-              <span>{{ channel }}</span>
-            </label>
-          </div>
-        </div>
         <div class="col-12"><div class="dialog-section">Logo</div></div>
         <div class="col-md-7">
           <label class="form-label">Logo File</label>
@@ -792,20 +778,6 @@
             <div class="form-text m-0" *ngIf="branchMapLink">
               <a [href]="branchMapLink" target="_blank" rel="noreferrer">Open full map</a>
             </div>
-          </div>
-        </div>
-        <div class="col-12"><div class="dialog-section">Payment</div></div>
-        <div class="col-12">
-          <label class="form-label">Active Payment Channels</label>
-          <div class="channel-list">
-            <label class="channel-option" *ngFor="let channel of paymentChannelOptions">
-              <input
-                type="checkbox"
-                [checked]="hasChannel(branchForm.activePaymentChannels, channel)"
-                (change)="toggleBranchChannel(channel, $any($event.target).checked)"
-              />
-              <span>{{ channel }}</span>
-            </label>
           </div>
         </div>
       </div>
