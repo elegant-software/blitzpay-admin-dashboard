@@ -24,6 +24,7 @@ import {
   MerchantSearchResponse,
   MerchantVerticalResponse,
   PaymentAccountStatus,
+  ProviderAccountResponse,
   Product,
   ProductCategory,
   ProductSortField,
@@ -98,6 +99,11 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
   paymentAccountStatus: PaymentAccountStatus = 'loading';
   paymentAccountActionLoading = false;
   paymentAccountError: string | null = null;
+
+  providerAccounts: ProviderAccountResponse[] = [];
+  providerAccountsLoading = false;
+  providerAccountsError: string | null = null;
+  providerAccountActionLoading = new Set<string>();
 
   statusMessage = '';
   errorMessage = '';
@@ -1216,11 +1222,16 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
     this.failedProductImages.clear();
     this.paymentAccountStatus = 'loading';
     this.paymentAccountError = null;
+    this.providerAccounts = [];
+    this.providerAccountsLoading = false;
+    this.providerAccountsError = null;
+    this.providerAccountActionLoading.clear();
     this.closeMerchantDialog();
     this.closeBranchDialog();
     this.closeCategoryDialog(true);
     this.closeProductDialog(true);
     this.loadPaymentAccountStatus(merchant.applicationId);
+    this.loadProviderAccounts(merchant.applicationId);
 
     forkJoin({
       location: this.merchantApi
@@ -1303,6 +1314,70 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
         this.paymentAccountError = this.toMessage(err, 'Failed to start Stripe Connect onboarding.');
       }
     });
+  }
+
+  loadProviderAccounts(merchantId: string): void {
+    this.providerAccountsLoading = true;
+    this.providerAccountsError = null;
+    this.merchantApi.listProviderAccounts(this.selectedEnvironment, this.apiVersion, merchantId).subscribe({
+      next: (accounts) => {
+        this.providerAccounts = accounts;
+        this.providerAccountsLoading = false;
+      },
+      error: (err) => {
+        this.providerAccountsError = this.toMessage(err, 'Failed to load provider accounts.');
+        this.providerAccountsLoading = false;
+      }
+    });
+  }
+
+  enableProviderAccount(pspCode: string): void {
+    if (!this.selectedMerchant || this.providerAccountActionLoading.has(pspCode)) return;
+    this.providerAccountActionLoading.add(pspCode);
+    this.merchantApi.enableProviderAccount(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, pspCode).subscribe({
+      next: (account) => {
+        this.providerAccounts = this.upsertProviderAccount(this.providerAccounts, account);
+        this.providerAccountActionLoading.delete(pspCode);
+      },
+      error: (err) => {
+        this.providerAccountsError = this.toMessage(err, `Failed to enable ${pspCode}.`);
+        this.providerAccountActionLoading.delete(pspCode);
+      }
+    });
+  }
+
+  disableProviderAccount(pspCode: string): void {
+    if (!this.selectedMerchant || this.providerAccountActionLoading.has(pspCode)) return;
+    this.providerAccountActionLoading.add(pspCode);
+    this.merchantApi.disableProviderAccount(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, pspCode).subscribe({
+      next: () => {
+        this.providerAccounts = this.providerAccounts.map(a => a.pspCode === pspCode ? { ...a, enabled: false } : a);
+        this.providerAccountActionLoading.delete(pspCode);
+      },
+      error: (err) => {
+        this.providerAccountsError = this.toMessage(err, `Failed to disable ${pspCode}.`);
+        this.providerAccountActionLoading.delete(pspCode);
+      }
+    });
+  }
+
+  readonly knownPspCodes = ['STRIPE', 'TRUELAYER', 'ADYEN', 'PAYPAL'];
+
+  isProviderEnabled(pspCode: string): boolean {
+    return this.providerAccounts.some(a => a.pspCode === pspCode && a.enabled);
+  }
+
+  isProviderInList(pspCode: string): boolean {
+    return this.providerAccounts.some(a => a.pspCode === pspCode);
+  }
+
+  get stripeEnabled(): boolean {
+    return this.isProviderEnabled('STRIPE');
+  }
+
+  private upsertProviderAccount(accounts: ProviderAccountResponse[], account: ProviderAccountResponse): ProviderAccountResponse[] {
+    const idx = accounts.findIndex(a => a.pspCode === account.pspCode);
+    return idx === -1 ? [...accounts, account] : accounts.map((a, i) => i === idx ? account : a);
   }
 
   private openBranchDialogWithData(branch: Branch): void {

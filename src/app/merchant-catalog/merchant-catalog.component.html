@@ -162,51 +162,126 @@
       </div>
     </div>
 
-    <!-- Payment Account -->
+    <!-- Payment Providers -->
     <div class="col-12">
       <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span>Payment Account</span>
-          <ng-container [ngSwitch]="paymentAccountStatus">
-            <span *ngSwitchCase="'connected'" class="status-tag status-tag-success">Connected</span>
-            <span *ngSwitchCase="'verifying'" class="status-tag status-tag-warning">Verifying</span>
-            <span *ngSwitchCase="'not_connected'" class="status-tag status-tag-neutral">Not Connected</span>
-            <span *ngSwitchCase="'error'" class="status-tag status-tag-danger">Error</span>
-          </ng-container>
-        </div>
-        <div class="card-body d-flex flex-column gap-2">
-          <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'loading'">Loading payment account status…</p>
-          <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'not_connected'">
-            This merchant has not connected a Stripe Express account. Click <strong>Connect Stripe</strong> to begin onboarding.
-          </p>
-          <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'verifying'">
-            Stripe account details have been submitted and are under review. Click <strong>Continue Setup</strong> if the merchant needs to complete additional steps.
-          </p>
-          <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'connected'">
-            Stripe Express account is active and charges are enabled.
-          </p>
-          <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'error'">
-            Could not load payment account status.
-            <button class="btn btn-link btn-sm p-0 ms-1" type="button" (click)="loadPaymentAccountStatus(merchant.applicationId)">Retry</button>
-          </p>
-          <div *ngIf="paymentAccountError" class="alert alert-danger py-1 px-2 mb-0 small">{{ paymentAccountError }}</div>
-          <div *ngIf="paymentAccountStatus !== 'loading' && paymentAccountStatus !== 'error'">
-            <button
-              class="btn btn-primary btn-sm"
-              type="button"
-              [disabled]="paymentAccountStatus === 'connected' || paymentAccountActionLoading"
-              (click)="handleStripeConnect()"
-            >
-              <span *ngIf="paymentAccountActionLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
-              <ng-container *ngIf="!paymentAccountActionLoading">
-                <ng-container [ngSwitch]="paymentAccountStatus">
-                  <span *ngSwitchCase="'connected'">Connected</span>
-                  <span *ngSwitchCase="'verifying'">Continue Setup</span>
-                  <span *ngSwitchDefault>Connect Stripe</span>
-                </ng-container>
-              </ng-container>
-            </button>
+        <div class="card-header">Payment Providers</div>
+        <div class="card-body d-flex flex-column gap-3">
+
+          <!-- Provider accounts list -->
+          <div *ngIf="providerAccountsLoading" class="text-muted small">Loading provider accounts…</div>
+          <div *ngIf="providerAccountsError" class="alert alert-danger py-1 px-2 mb-0 small">
+            {{ providerAccountsError }}
+            <button class="btn btn-link btn-sm p-0 ms-1" type="button" (click)="loadProviderAccounts(selectedMerchant!.applicationId)">Retry</button>
           </div>
+          <div *ngIf="!providerAccountsLoading">
+            <table class="table table-sm mb-0" *ngIf="providerAccounts.length > 0; else noPsps">
+              <thead>
+                <tr>
+                  <th>PSP</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let pa of providerAccounts">
+                  <td class="align-middle">{{ pa.pspCode }}</td>
+                  <td class="align-middle">
+                    <span *ngIf="pa.enabled" class="status-tag status-tag-success">Enabled</span>
+                    <span *ngIf="!pa.enabled" class="status-tag status-tag-neutral">Disabled</span>
+                  </td>
+                  <td class="align-middle text-end">
+                    <button
+                      *ngIf="pa.enabled"
+                      class="btn btn-outline-secondary btn-sm"
+                      type="button"
+                      [disabled]="providerAccountActionLoading.has(pa.pspCode)"
+                      (click)="disableProviderAccount(pa.pspCode)"
+                    >
+                      <span *ngIf="providerAccountActionLoading.has(pa.pspCode)" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                      Disable
+                    </button>
+                    <button
+                      *ngIf="!pa.enabled"
+                      class="btn btn-outline-primary btn-sm"
+                      type="button"
+                      [disabled]="providerAccountActionLoading.has(pa.pspCode)"
+                      (click)="enableProviderAccount(pa.pspCode)"
+                    >
+                      <span *ngIf="providerAccountActionLoading.has(pa.pspCode)" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                      Enable
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <ng-template #noPsps>
+              <p class="mb-0 text-muted small">No payment providers enabled yet. Use the Enable buttons below to add one.</p>
+            </ng-template>
+
+            <!-- Quick-enable for PSPs not yet in the list -->
+            <div class="mt-2 d-flex flex-wrap gap-2" *ngIf="knownPspCodes.length > providerAccounts.length">
+              <ng-container *ngFor="let code of knownPspCodes">
+                <button
+                  *ngIf="!isProviderInList(code)"
+                  class="btn btn-outline-primary btn-sm"
+                  type="button"
+                  [disabled]="providerAccountActionLoading.has(code)"
+                  (click)="enableProviderAccount(code)"
+                >
+                  <span *ngIf="providerAccountActionLoading.has(code)" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                  Enable {{ code }}
+                </button>
+              </ng-container>
+            </div>
+          </div>
+
+          <!-- Stripe Connect subsection (visible only when STRIPE is enabled) -->
+          <ng-container *ngIf="stripeEnabled">
+            <hr class="my-1" />
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-semibold small">Stripe Connect</span>
+              <ng-container [ngSwitch]="paymentAccountStatus">
+                <span *ngSwitchCase="'connected'" class="status-tag status-tag-success">Connected</span>
+                <span *ngSwitchCase="'verifying'" class="status-tag status-tag-warning">Verifying</span>
+                <span *ngSwitchCase="'not_connected'" class="status-tag status-tag-neutral">Not Connected</span>
+                <span *ngSwitchCase="'loading'" class="status-tag status-tag-neutral">Loading…</span>
+                <span *ngSwitchCase="'error'" class="status-tag status-tag-danger">Error</span>
+              </ng-container>
+            </div>
+            <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'not_connected'">
+              This merchant has not connected a Stripe Express account. Click <strong>Connect Stripe</strong> to begin onboarding.
+            </p>
+            <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'verifying'">
+              Stripe account details submitted and under review. Click <strong>Continue Setup</strong> if additional steps are needed.
+            </p>
+            <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'connected'">
+              Stripe Express account is active and charges are enabled.
+            </p>
+            <p class="mb-0 text-muted small" *ngIf="paymentAccountStatus === 'error'">
+              Could not load Stripe Connect status.
+              <button class="btn btn-link btn-sm p-0 ms-1" type="button" (click)="loadPaymentAccountStatus(selectedMerchant!.applicationId)">Retry</button>
+            </p>
+            <div *ngIf="paymentAccountError" class="alert alert-danger py-1 px-2 mb-0 small">{{ paymentAccountError }}</div>
+            <div *ngIf="paymentAccountStatus !== 'loading' && paymentAccountStatus !== 'error'">
+              <button
+                class="btn btn-primary btn-sm"
+                type="button"
+                [disabled]="paymentAccountStatus === 'connected' || paymentAccountActionLoading"
+                (click)="handleStripeConnect()"
+              >
+                <span *ngIf="paymentAccountActionLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                <ng-container *ngIf="!paymentAccountActionLoading">
+                  <ng-container [ngSwitch]="paymentAccountStatus">
+                    <span *ngSwitchCase="'connected'">Connected</span>
+                    <span *ngSwitchCase="'verifying'">Continue Setup</span>
+                    <span *ngSwitchDefault>Connect Stripe</span>
+                  </ng-container>
+                </ng-container>
+              </button>
+            </div>
+          </ng-container>
+
         </div>
       </div>
     </div>
