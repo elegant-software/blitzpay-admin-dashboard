@@ -9,6 +9,8 @@ import {
   Merchant,
   MerchantLogoUploadResponse,
   MerchantLocation,
+  MerchantSearchRequest,
+  MerchantSearchResponse,
   MerchantVerticalResponse,
   Product,
   ProductCategory,
@@ -246,6 +248,17 @@ export class MerchantApiService {
     return this.http.get<{ onboardingUrl: string }>(
       `${this.base(environment, apiVersion)}/merchants/${merchantId}/stripe-connect/refresh`,
       { params }
+    );
+  }
+
+  searchMerchants(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    request: MerchantSearchRequest
+  ): Observable<MerchantSearchResponse> {
+    return this.http.post<MerchantSearchResponse>(
+      `${this.base(environment, apiVersion)}/merchants/search`,
+      request
     );
   }
 

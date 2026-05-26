@@ -4,26 +4,102 @@
     <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
     <div class="alert alert-success mb-3" *ngIf="statusMessage">{{ statusMessage }}</div>
 
-    <div class="row g-3 align-items-start">
-      <div class="col-xl-8">
-        <h6>Search</h6>
-        <div class="catalog-search-grid datatable-toolbar">
-          <input
-            class="form-control"
-            [(ngModel)]="catalogSearchTerm"
-            placeholder="Enter merchant ID"
-          />
-          <button class="btn btn-primary" type="button" (click)="runCatalogSearch()">Search</button>
-          <button class="btn btn-outline-secondary" type="button" (click)="clearCatalogSearch()">Clear</button>
-        </div>
-        <div class="form-text">{{ activeSearchHint }}</div>
-        <div class="catalog-search-summary mt-2" *ngIf="catalogSearchSummary">{{ catalogSearchSummary }}</div>
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label form-label-sm mb-1" for="merchant-search-query">Search</label>
+        <input
+          id="merchant-search-query"
+          class="form-control"
+          [(ngModel)]="searchQuery"
+          placeholder="Name, code, city, product…"
+          (keydown.enter)="runCatalogSearch()"
+        />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label form-label-sm mb-1" for="search-business-types">Business Type</label>
+        <select id="search-business-types" class="form-select form-select-sm" multiple size="3" [(ngModel)]="searchFilterBusinessTypes">
+          <option *ngFor="let v of verticals" [value]="v.code">{{ v.displayName }}</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label form-label-sm mb-1" for="search-mobilities">Merchant Type</label>
+        <select id="search-mobilities" class="form-select form-select-sm" multiple size="3" [(ngModel)]="searchFilterMobilities">
+          <option value="BRICK_AND_MORTAR">Brick &amp; Mortar</option>
+          <option value="MOBILE">Mobile</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label form-label-sm mb-1" for="search-statuses">Status</label>
+        <select id="search-statuses" class="form-select form-select-sm" multiple size="3" [(ngModel)]="searchFilterStatuses">
+          <option *ngFor="let s of merchantStatusOptions" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-2 align-items-end">
+        <button class="btn btn-primary" type="button" [disabled]="searchLoading" (click)="runCatalogSearch()">
+          <span *ngIf="searchLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
+          Search
+        </button>
+        <button class="btn btn-outline-secondary" type="button" (click)="clearCatalogSearch()">Clear</button>
       </div>
     </div>
+    <div class="form-text mt-1">{{ activeSearchHint }}</div>
   </div>
 </div>
 
-<ng-container *ngIf="selectedMerchant as merchant; else emptyState">
+<!-- Search Results -->
+<ng-container *ngIf="viewMode === 'results'">
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Search Results</span>
+      <span class="badge text-bg-light">{{ searchTotalElements }} merchant{{ searchTotalElements === 1 ? '' : 's' }}</span>
+    </div>
+    <div class="card-body p-0">
+      <div class="p-3 text-muted small" *ngIf="searchLoading">Loading…</div>
+      <div class="p-3 text-muted small" *ngIf="!searchLoading && searchResults.length === 0">No merchants found. Try a different search or clear the filters.</div>
+      <ng-container *ngIf="!searchLoading && searchResults.length > 0">
+        <div class="table-responsive datatable-shell">
+          <table class="table table-sm align-middle mb-0 merchant-results-table table-hover">
+            <thead>
+              <tr>
+                <th>Merchant Name</th>
+                <th>Legal Name</th>
+                <th>Code</th>
+                <th>Merchant Type</th>
+                <th>Business Type</th>
+                <th>City</th>
+                <th>Country</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of searchResults" style="cursor:pointer" (click)="selectSearchResult(item)">
+                <td>{{ item.merchantName || item.legalBusinessName }}</td>
+                <td class="text-muted small">{{ item.legalBusinessName }}</td>
+                <td><code>{{ item.merchantCode }}</code></td>
+                <td>{{ item.merchantMobility || '—' }}</td>
+                <td>{{ verticalDisplayName(item.businessType) || item.businessType || '—' }}</td>
+                <td>{{ item.city || '—' }}</td>
+                <td>{{ item.country || '—' }}</td>
+                <td><span class="status-tag" [ngClass]="merchantStatusTone(item.status)">{{ item.status }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="d-flex gap-2 align-items-center p-3 border-top" *ngIf="searchTotalPages > 1">
+          <button class="btn btn-outline-secondary btn-sm" type="button" [disabled]="searchPage === 0" (click)="goToSearchPage(searchPage - 1)">Previous</button>
+          <span class="text-muted small">Page {{ searchPage + 1 }} of {{ searchTotalPages }}</span>
+          <button class="btn btn-outline-secondary btn-sm" type="button" [disabled]="searchPage >= searchTotalPages - 1" (click)="goToSearchPage(searchPage + 1)">Next</button>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</ng-container>
+
+<!-- Merchant Detail -->
+<ng-container *ngIf="viewMode === 'detail' && selectedMerchant as merchant">
+  <button class="btn btn-link btn-sm mb-3 ps-0" type="button" (click)="backToResults()">
+    ← Back to results
+  </button>
   <div class="row g-4">
     <div class="col-12">
       <div class="card">
@@ -843,6 +919,4 @@
   </div>
 </div>
 
-<ng-template #emptyState>
-  <div class="empty-state mt-3">Search for a merchant to load the merchant, branch, and product tables.</div>
-</ng-template>
+<div *ngIf="viewMode === 'none'" class="empty-state mt-3">Search for a merchant to load the merchant, branch, and product tables.</div>

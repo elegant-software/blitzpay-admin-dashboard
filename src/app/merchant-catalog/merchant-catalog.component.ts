@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule } from 'primeng/paginator';
@@ -19,6 +19,9 @@ import {
   Merchant,
   MerchantFormModel,
   MerchantLocation,
+  MerchantSearchRequest,
+  MerchantSearchResultItem,
+  MerchantSearchResponse,
   MerchantVerticalResponse,
   PaymentAccountStatus,
   Product,
@@ -42,14 +45,22 @@ import { environment } from '../../environments/environment';
   templateUrl: './merchant-catalog.component.html',
   styleUrl: './merchant-catalog.component.css'
 })
-export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
+export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('leafletBranchMap') private leafletBranchMapElement?: ElementRef<HTMLDivElement>;
 
   selectedEnvironmentKey: 'local' | 'staging' = environment.defaultEnvironmentKey;
   apiVersion = 'v1';
 
-  catalogSearchTerm = '';
-  catalogSearchSummary = '';
+  searchQuery = '';
+  searchFilterBusinessTypes: string[] = [];
+  searchFilterMobilities: string[] = [];
+  searchFilterStatuses: string[] = [];
+  viewMode: 'none' | 'results' | 'detail' = 'none';
+  searchResults: MerchantSearchResultItem[] = [];
+  searchPage = 0;
+  searchTotalPages = 0;
+  searchTotalElements = 0;
+  searchLoading = false;
 
   selectedMerchant: Merchant | null = null;
   merchantLocation: MerchantLocation | null = null;
@@ -147,6 +158,14 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     private readonly merchantApi: MerchantApiService
   ) {}
 
+  ngOnInit(): void {
+    this.verticalsLoading = true;
+    this.merchantApi.getVerticals(this.selectedEnvironment, this.apiVersion).subscribe({
+      next: (verticals) => { this.verticals = verticals; this.verticalsLoading = false; },
+      error: () => { this.verticalsLoading = false; }
+    });
+  }
+
   ngAfterViewInit(): void {
     this.scheduleLeafletRender();
   }
@@ -167,11 +186,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   }
 
   get activeSearchHint(): string {
-    return 'Search by merchant ID.';
-  }
-
-  get hasLocalCatalogQuery(): boolean {
-    return false;
+    return 'Search by name, code, city, product, or apply filters. All fields are optional — leave blank to list recently updated merchants.';
   }
 
   get visibleBranchRows(): Branch[] {
@@ -471,22 +486,68 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
     return 'pi pi-sort-alt';
   }
 
-  runCatalogSearch(): void {
+  runCatalogSearch(page = 0): void {
     this.errorMessage = '';
     this.statusMessage = '';
+    this.searchLoading = true;
+    this.searchPage = page;
 
-    const searchTerm = this.catalogSearchTerm.trim();
-    if (!searchTerm) {
-      this.errorMessage = 'Enter a search value before searching.';
-      return;
-    }
+    const request: MerchantSearchRequest = {
+      q: this.searchQuery.trim() || undefined,
+      businessTypes: this.searchFilterBusinessTypes.length ? [...this.searchFilterBusinessTypes] : undefined,
+      merchantMobilities: this.searchFilterMobilities.length ? [...this.searchFilterMobilities] : undefined,
+      statuses: this.searchFilterStatuses.length ? [...this.searchFilterStatuses] : undefined,
+      page,
+      size: 50,
+    };
 
-    this.loadMerchantById(searchTerm, 'Unable to find merchant by ID.');
+    this.merchantApi.searchMerchants(this.selectedEnvironment, this.apiVersion, request).subscribe({
+      next: (response: MerchantSearchResponse) => {
+        this.searchResults = response.results;
+        this.searchPage = response.page;
+        this.searchTotalPages = response.totalPages;
+        this.searchTotalElements = response.totalElements;
+        this.searchLoading = false;
+        this.viewMode = 'results';
+      },
+      error: (error) => {
+        this.searchLoading = false;
+        this.errorMessage = this.toMessage(error, 'Search failed. Please try again.');
+      }
+    });
+  }
+
+  selectSearchResult(item: MerchantSearchResultItem): void {
+    this.loadMerchantById(item.applicationId, 'Unable to load merchant.');
+  }
+
+  backToResults(): void {
+    this.selectedMerchant = null;
+    this.merchantLocation = null;
+    this.branches = [];
+    this.categories = [];
+    this.products = [];
+    this.viewMode = 'results';
+    this.closeMerchantDialog();
+    this.closeBranchDialog();
+    this.closeCategoryDialog(true);
+    this.closeProductDialog(true);
+  }
+
+  goToSearchPage(page: number): void {
+    this.runCatalogSearch(page);
   }
 
   clearCatalogSearch(): void {
-    this.catalogSearchTerm = '';
-    this.catalogSearchSummary = '';
+    this.searchQuery = '';
+    this.searchFilterBusinessTypes = [];
+    this.searchFilterMobilities = [];
+    this.searchFilterStatuses = [];
+    this.searchResults = [];
+    this.searchPage = 0;
+    this.searchTotalPages = 0;
+    this.searchTotalElements = 0;
+    this.viewMode = 'none';
     this.errorMessage = '';
     this.statusMessage = '';
     this.selectedMerchant = null;
@@ -1167,6 +1228,7 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   }
 
   private selectMerchant(merchant: Merchant): void {
+    this.viewMode = 'detail';
     this.selectedMerchant = merchant;
     this.merchantForm = this.merchantFormFromEntity(merchant);
     this.logoForm.storageKey = merchant.logoStorageKey ?? '';
@@ -1298,12 +1360,10 @@ export class MerchantCatalogComponent implements AfterViewInit, OnDestroy {
   }
 
   private syncCatalogSearchSummary(): void {
-    if (!this.selectedMerchant) {
-      this.catalogSearchSummary = '';
-      return;
+    // summary shown as status message within the merchant detail view
+    if (this.selectedMerchant) {
+      this.statusMessage = `Showing ${this.branches.length} branches and ${this.products.length} products for ${this.selectedMerchant.applicationReference}.`;
     }
-
-    this.catalogSearchSummary = `Showing ${this.branches.length} branches and ${this.products.length} products for ${this.selectedMerchant.applicationReference}.`;
   }
 
   private loadProductsForSelectedBranch(): void {

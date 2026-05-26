@@ -346,3 +346,33 @@ export interface StartStripeConnectRequest {
   returnUrl: string;
   refreshUrl: string;
 }
+
+export interface MerchantSearchRequest {
+  q?: string;
+  businessTypes?: string[];
+  merchantMobilities?: string[];
+  statuses?: string[];
+  page?: number;
+  size?: number;
+}
+
+export interface MerchantSearchResultItem {
+  applicationId: string;
+  merchantName: string;
+  legalBusinessName: string;
+  merchantCode: string;
+  city: string | null;
+  country: string | null;
+  businessType: string;
+  merchantMobility: string;
+  status: string;
+  lastUpdatedAt: string;
+}
+
+export interface MerchantSearchResponse {
+  results: MerchantSearchResultItem[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}

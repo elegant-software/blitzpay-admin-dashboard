@@ -52,6 +52,31 @@ _Avoid_: Tag, label, type
 
 **Contact info shape**: The API returns both flat fields (`contactFullName`, `contactEmail`, `contactPhoneNumber`) and a nested `contactInfo` object on `MerchantDetailsResponse`. The dashboard binds exclusively to the flat fields — the nested object is ignored.
 
+## Search
+
+**Merchant Search**:
+The admin-facing capability to discover Merchants by submitting a text query and/or enum filters. Returns a paginated list of Merchant Search Results. Replaces the previous exact-ID lookup as the sole entry point to the merchant detail view.
+_Avoid_: Merchant lookup, ID search, merchant filter
+
+**Merchant Search Result**:
+The summary representation of a Merchant returned in a search result list. Contains enough fields to identify and disambiguate a merchant at a glance (`merchantName`/`legalBusinessName`, `merchantCode`, `city`, `country`, `businessType`, `merchantMobility`, `status`). Distinct from the full Merchant detail loaded when an admin clicks through.
+_Avoid_: Merchant row, search hit, merchant preview
+
+**Search Query (`q`)**:
+The optional free-text term submitted with a Merchant Search. Applied as a case-insensitive substring match across name, reference, code, email, and address fields on Merchants, their Branches, and their Products. Optional — a Merchant Search may be submitted with filters only and no `q`. When `q` is present and fewer than 3 characters, it is matched only against code and reference fields (not name or address text fields).
+_Avoid_: Search string, keyword, full-text query
+
+**Search Filters**:
+The optional multi-value filter sets submitted in the Merchant Search body alongside the Search Query. Each filter accepts one or more values (`businessTypes`, `merchantMobilities`, `statuses`). Applied as exact-match IN conditions independently of the Search Query. Any combination of filters and query is valid — including filter-only with no `q`.
+_Avoid_: Search facets, dropdowns, type filters, query params
+
+## Search relationships
+
+- A **Merchant Search** is submitted as a POST request with a JSON body carrying the Search Query and Search Filters
+- A **Merchant Search** produces zero or more **Merchant Search Results**, paginated (50 per page, sorted by `lastUpdatedAt` descending)
+- A **Merchant** surfaces in results if its own fields, any of its **Branch** names/addresses, or any of its **Product** names match the Search Query — but the result row always represents the Merchant, never the Branch or Product
+- Clicking a **Merchant Search Result** loads the full **Merchant** detail view; a "Back to results" action returns to the same result page without re-running the search
+
 ## Payment
 
 **Merchant Payment Account**:
