@@ -68,7 +68,7 @@ jobs:
       - name: Download blitz-pay stubs JAR
         run: |
           curl -fsSL \
-            --user "x-access-token:${{ secrets.RELEASE_PUBLISH_TOKEN }}" \
+            --user "x-access-token:${{ secrets.PACKAGE_READ_TOKEN }}" \
             -o blitz-pay-stubs.jar \
             "https://maven.pkg.github.com/elegant-software/blitz-pay/com/elegant/software/blitzpay/blitz-pay/${{ env.STUBS_VERSION }}/blitz-pay-${{ env.STUBS_VERSION }}-stubs.jar"
 
