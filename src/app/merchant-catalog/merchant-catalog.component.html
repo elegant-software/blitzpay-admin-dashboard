@@ -282,6 +282,46 @@
             </div>
           </ng-container>
 
+          <!-- Adyen Connect subsection (visible only when ADYEN is enabled) -->
+          <ng-container *ngIf="adyenEnabled">
+            <hr class="my-1" />
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <span class="fw-semibold small">Adyen for Platforms</span>
+              <ng-container [ngSwitch]="adyenPaymentAccountStatus">
+                <span *ngSwitchCase="'connected'" class="status-tag status-tag-success">Connected</span>
+                <span *ngSwitchCase="'verifying'" class="status-tag status-tag-warning">Verifying</span>
+                <span *ngSwitchCase="'not_connected'" class="status-tag status-tag-neutral">Not Connected</span>
+                <span *ngSwitchCase="'error'" class="status-tag status-tag-danger">Error</span>
+                <span *ngSwitchCase="'loading'" class="status-tag status-tag-neutral">Loading…</span>
+              </ng-container>
+            </div>
+            <p class="mb-0 text-muted small" *ngIf="adyenPaymentAccountStatus === 'not_connected'">
+              This merchant has not completed Adyen onboarding. Click <strong>Start Adyen Onboarding</strong> to begin.
+            </p>
+            <p class="mb-0 text-muted small" *ngIf="adyenPaymentAccountStatus === 'verifying'">
+              Adyen Account Holder details submitted and under review. Click <strong>Continue Setup</strong> if additional steps are needed.
+            </p>
+            <p class="mb-0 text-muted small" *ngIf="adyenPaymentAccountStatus === 'connected'">
+              Adyen Account Holder is verified and the Receive Payments capability is enabled.
+            </p>
+            <p class="mb-0 text-muted small" *ngIf="adyenPaymentAccountStatus === 'error'">
+              Could not load Adyen Connect status.
+              <button class="btn btn-link btn-sm p-0 ms-1" type="button" (click)="loadAdyenStatus(selectedMerchant!.applicationId)">Retry</button>
+            </p>
+            <div *ngIf="adyenPaymentAccountError" class="alert alert-danger py-1 px-2 mb-0 small">{{ adyenPaymentAccountError }}</div>
+            <div *ngIf="adyenPaymentAccountStatus !== 'loading' && adyenPaymentAccountStatus !== 'error'">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                [disabled]="adyenPaymentAccountStatus === 'connected' || adyenPaymentAccountActionLoading"
+                (click)="handleAdyenConnect()"
+              >
+                <span *ngIf="adyenPaymentAccountActionLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                {{ adyenPaymentAccountStatus === 'verifying' ? 'Continue Setup' : 'Start Adyen Onboarding' }}
+              </button>
+            </div>
+          </ng-container>
+
         </div>
       </div>
     </div>

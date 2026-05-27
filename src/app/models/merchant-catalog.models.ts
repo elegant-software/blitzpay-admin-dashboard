@@ -377,3 +377,15 @@ export interface ProviderAccountResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface AdyenConnectStatusResponse {
+  legalEntityId: string | null;
+  balanceAccountId: string | null;
+  receivePaymentsEnabled: boolean;
+  detailsSubmitted: boolean;
+}
+
+export interface StartAdyenOnboardingRequest {
+  returnUrl: string;
+  redirectUrl: string;
+}
