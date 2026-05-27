@@ -72,24 +72,53 @@ jobs:
             -o blitz-pay-stubs.jar \
             "https://maven.pkg.github.com/elegant-software/blitz-pay/com/elegant/software/blitzpay/blitz-pay/${{ env.STUBS_VERSION }}/blitz-pay-${{ env.STUBS_VERSION }}-stubs.jar"
 
-      - name: Extract mappings and start WireMock on :8089
+      - name: Extract mappings and start WireMock on :8088
         run: |
           mkdir -p stubs-dir
           (cd stubs-dir && jar xf ../blitz-pay-stubs.jar mappings/ 2>/dev/null || true)
           java -jar wiremock.jar \
-            --port 8089 \
+            --port 8088 \
             --root-dir stubs-dir \
             --no-request-journal \
             &>/tmp/wiremock.log &
 
       - name: Wait for WireMock to be ready
         run: |
-          echo "Waiting for WireMock on :8089..."
+          echo "Waiting for WireMock on :8088..."
           for i in $(seq 1 20); do
-            curl -sf http://localhost:8089/__admin/health && echo "WireMock is ready" && exit 0
+            curl -sf http://localhost:8088/__admin/health && echo "WireMock is ready" && exit 0
             sleep 0.5
           done
           echo "WireMock did not start in time — logs:" && cat /tmp/wiremock.log && exit 1
+
+      - name: Start CORS proxy on :8089
+        # ChromeHeadless enforces CORS: requests from localhost:9876 (Karma) to
+        # localhost:8089 (WireMock) are cross-origin. WireMock doesn't add CORS
+        # headers, so the browser silently drops all responses (0 Unknown Error).
+        # This Node.js proxy sits on :8089, forwards to WireMock on :8088, and
+        # injects Access-Control-Allow-Origin on every response.
+        run: |
+          cat > /tmp/cors-proxy.js << 'EOF'
+          const http = require('http');
+          const CORS = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type,Authorization,Accept',
+          };
+          http.createServer((req, res) => {
+            Object.entries(CORS).forEach(([k, v]) => res.setHeader(k, v));
+            if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+            const fwd = http.request(
+              { hostname: 'localhost', port: 8088, path: req.url, method: req.method, headers: req.headers },
+              (pr) => { res.writeHead(pr.statusCode, { ...pr.headers, ...CORS }); pr.pipe(res); }
+            );
+            fwd.on('error', () => { res.writeHead(502); res.end(); });
+            req.pipe(fwd);
+          }).listen(8089, () => process.stdout.write('CORS proxy listening on :8089\n'));
+          EOF
+          node /tmp/cors-proxy.js &
+          sleep 1
+          curl -sf http://localhost:8089/__admin/health && echo "CORS proxy ready"
 
       - name: Install dependencies
         run: npm ci
