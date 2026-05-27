@@ -99,13 +99,7 @@ jobs:
           echo "=== stub URL patterns (to align consumer test IDs) ==="
           find stubs-dir/mappings -name "*.json" | sort | while read f; do
             echo "--- $f ---"
-            python3 -c "
-import json, sys
-d = json.load(open('$f'))
-req = d.get('request', {})
-print('  method:', req.get('method', '?'))
-print('  url:', req.get('url', req.get('urlPattern', req.get('urlPath', req.get('urlPathPattern', '?')))))
-"
+            jq -r '.request | "  method: \(.method // "?")  url: \(.url // .urlPattern // .urlPath // .urlPathPattern // "?")"' "$f"
           done
 
           java -jar wiremock.jar \
