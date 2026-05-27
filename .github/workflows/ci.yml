@@ -74,8 +74,28 @@ jobs:
 
       - name: Extract mappings and start WireMock on :8088
         run: |
+          echo "=== stubs JAR contents ==="
+          jar tf blitz-pay-stubs.jar | head -40
+
           mkdir -p stubs-dir
-          (cd stubs-dir && jar xf ../blitz-pay-stubs.jar mappings/ 2>/dev/null || true)
+          # Extract the full JAR; mappings/ may be nested differently than expected
+          (cd stubs-dir && jar xf ../blitz-pay-stubs.jar)
+
+          echo "=== extracted structure ==="
+          find stubs-dir -type f | head -30
+
+          # WireMock needs mappings/ directly under --root-dir.
+          # If Spring Cloud Contract nested them (e.g. under a sub-directory),
+          # hoist them up so WireMock picks them up.
+          FOUND=$(find stubs-dir -type d -name mappings | head -1)
+          if [ -n "$FOUND" ] && [ "$FOUND" != "stubs-dir/mappings" ]; then
+            echo "Hoisting mappings from $FOUND to stubs-dir/mappings"
+            mv "$FOUND" stubs-dir/mappings
+          fi
+
+          echo "=== mappings to be served ==="
+          ls stubs-dir/mappings/ 2>/dev/null || echo "WARNING: no mappings found"
+
           java -jar wiremock.jar \
             --port 8088 \
             --root-dir stubs-dir \
