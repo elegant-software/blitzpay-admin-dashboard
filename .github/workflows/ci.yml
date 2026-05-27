@@ -10,13 +10,15 @@ on:
 
 permissions:
   contents: read
+  packages: read  # needed to pull blitz-pay stub from GitHub Packages
 
 env:
   NODE_VERSION: '20'
+  STUB_JAR_URL: https://maven.pkg.github.com/elegant-software/blitz-pay/com/elegant/software/blitzpay/blitz-pay/0.2.2/blitz-pay-0.2.2.jar
 
 jobs:
-  ci:
-    name: CI
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -31,8 +33,56 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test -- --watch=false --browsers=ChromeHeadless
+      - name: Run unit tests
+        run: npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox
 
       - name: Build application
         run: npm run build -- --configuration production
+
+  contract-tests:
+    name: Contract Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Download WireMock stub JAR
+        run: |
+          curl -fsSL \
+            --user "x-access-token:${{ secrets.GITHUB_TOKEN }}" \
+            -o blitz-pay-stub.jar \
+            "${{ env.STUB_JAR_URL }}"
+        # If the package lives in a different org than this repo, GITHUB_TOKEN
+        # won't have access. Create a PAT with read:packages scope, store it as
+        # secret GH_PACKAGES_TOKEN, and replace secrets.GITHUB_TOKEN above.
+
+      - name: Start WireMock stub on :8089
+        run: java -jar blitz-pay-stub.jar --port 8089 &
+
+      - name: Wait for stub to be ready
+        run: |
+          echo "Waiting for WireMock stub on :8089..."
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8089/__admin/ && echo "Stub is ready" && exit 0
+            sleep 1
+          done
+          echo "Stub did not start in time" && exit 1
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run contract tests
+        run: npm run test:contract

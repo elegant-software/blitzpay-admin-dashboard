@@ -109,7 +109,10 @@
               "node_modules/@coreui/coreui/dist/css/coreui.min.css",
               "src/styles.css"
             ],
-            "scripts": []
+            "scripts": [],
+            "include": [
+              "src/app/**/*.spec.ts"
+            ]
           }
         },
         "contract-test": {

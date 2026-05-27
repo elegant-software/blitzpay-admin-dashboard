@@ -6,7 +6,6 @@
   },
   "include": [
     "src/app/**/*.spec.ts",
-    "src/contract-tests/**/*.spec.ts",
     "src/**/*.d.ts"
   ]
 }
