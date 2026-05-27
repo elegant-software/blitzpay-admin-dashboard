@@ -114,7 +114,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
   productDialogError = '';
   productDialogSuccess = '';
   categoryDialogError = '';
-  categoryDialogSuccess = '';
   loading = false;
 
   dirtyForms = {
@@ -601,7 +600,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
     this.categoryDialogMode = 'create';
     this.categoryFormName = '';
     this.categoryDialogError = '';
-    this.categoryDialogSuccess = '';
     this.categoryDialogOpen = true;
     this.dirtyForms.category = false;
   }
@@ -611,7 +609,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
     this.categoryDialogMode = 'edit';
     this.categoryFormName = category.name;
     this.categoryDialogError = '';
-    this.categoryDialogSuccess = '';
     this.categoryDialogOpen = true;
     this.dirtyForms.category = false;
   }
@@ -622,7 +619,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     this.categoryDialogError = '';
-    this.categoryDialogSuccess = '';
     this.categoryDialogOpen = false;
     this.selectedCategory = null;
     this.categoryFormName = '';
@@ -656,12 +652,13 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
 
     request$.subscribe({
       next: (category) => {
+        const message = this.categoryDialogMode === 'create' ? 'Category created.' : 'Category renamed.';
         this.loading = false;
         this.categories = this.upsertCategory(this.categories, category);
         this.reconcileCategoryReferences();
         this.syncCategoryTableState();
-        this.categoryDialogSuccess = this.categoryDialogMode === 'create' ? 'Category created.' : 'Category renamed.';
-        this.dirtyForms.category = false;
+        this.closeCategoryDialog(true);
+        this.statusMessage = message;
       },
       error: (error) => {
         this.loading = false;
