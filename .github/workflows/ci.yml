@@ -96,6 +96,18 @@ jobs:
           echo "=== mappings to be served ==="
           ls stubs-dir/mappings/ 2>/dev/null || echo "WARNING: no mappings found"
 
+          echo "=== stub URL patterns (to align consumer test IDs) ==="
+          find stubs-dir/mappings -name "*.json" | sort | while read f; do
+            echo "--- $f ---"
+            python3 -c "
+import json, sys
+d = json.load(open('$f'))
+req = d.get('request', {})
+print('  method:', req.get('method', '?'))
+print('  url:', req.get('url', req.get('urlPattern', req.get('urlPath', req.get('urlPathPattern', '?')))))
+"
+          done
+
           java -jar wiremock.jar \
             --port 8088 \
             --root-dir stubs-dir \
