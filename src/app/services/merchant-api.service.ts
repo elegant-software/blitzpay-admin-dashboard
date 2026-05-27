@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
+  AdyenConnectStatusResponse,
   Branch,
   CreateProductCategoryRequest,
   CreateBranchRequest,
@@ -17,6 +18,7 @@ import {
   ProductListResponse,
   ProviderAccountResponse,
   RenameProductCategoryRequest,
+  StartAdyenOnboardingRequest,
   StartStripeConnectRequest,
   StripeConnectStatusResponse,
   UpdateBranchRequest,
@@ -248,6 +250,41 @@ export class MerchantApiService {
     const params = new HttpParams().set('returnUrl', returnUrl).set('refreshUrl', refreshUrl);
     return this.http.get<{ onboardingUrl: string }>(
       `${this.base(environment, apiVersion)}/merchants/${merchantId}/stripe-connect/refresh`,
+      { params }
+    );
+  }
+
+  getAdyenConnectStatus(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string
+  ): Observable<AdyenConnectStatusResponse> {
+    return this.http.get<AdyenConnectStatusResponse>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/adyen-connect/status`
+    );
+  }
+
+  startAdyenConnect(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    payload: StartAdyenOnboardingRequest
+  ): Observable<{ onboardingUrl: string }> {
+    return this.http.post<{ onboardingUrl: string }>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/adyen-connect/onboarding`,
+      payload
+    );
+  }
+
+  refreshAdyenConnect(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    returnUrl: string
+  ): Observable<{ onboardingUrl: string }> {
+    const params = new HttpParams().set('returnUrl', returnUrl);
+    return this.http.get<{ onboardingUrl: string }>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/adyen-connect/refresh`,
       { params }
     );
   }

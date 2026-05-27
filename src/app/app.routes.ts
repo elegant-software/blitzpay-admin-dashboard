@@ -24,6 +24,11 @@ export const appRoutes: Routes = [
     loadComponent: () => import('./stripe-connect/stripe-connect-return.component').then(m => m.StripeConnectReturnComponent)
   },
   {
+    path: 'adyen-connect/return',
+    canActivate: [authGuard],
+    loadComponent: () => import('./adyen-connect/adyen-connect-return.component').then(m => m.AdyenConnectReturnComponent)
+  },
+  {
     path: '**',
     redirectTo: ''
   }
