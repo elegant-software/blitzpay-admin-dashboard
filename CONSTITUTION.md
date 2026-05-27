@@ -260,7 +260,52 @@ The error alert **must** be placed immediately above the dialog's action buttons
 
 ---
 
-## IX. Governance
+## IX. Test-Driven Development
+
+TDD is the mandated development convention for all production code in this project.
+
+### Cycle
+
+**Red → Green → Refactor** — in that order, always.
+
+1. Write a failing test that describes the desired behaviour.
+2. Write the minimum production code needed to make it pass.
+3. Refactor freely while keeping the test suite green.
+
+Never commit a new feature or bug-fix without a corresponding test that was written before the implementation.
+
+### Test locations
+
+| Kind | Glob | Purpose |
+|---|---|---|
+| Unit / integration | `src/app/**/*.spec.ts` | Services, pipes, components — use Angular `TestBed` + `HttpTestingController` |
+| Contract | `src/contract-tests/**/*.spec.ts` | Live HTTP checks against a running backend; keyed by `CONTRACT_TEST_BASE_URL` / `CONTRACT_TEST_MERCHANT_ID` env vars |
+
+Both globs are included in `tsconfig.spec.json`. Contract tests run in their own CI step and must never be included in the standard unit-test run.
+
+### Coverage rules
+
+- Every **service method** that calls the API must have at least one unit test verifying the HTTP request (method, URL, body) and the mapped response.
+- Every **pipe** must have unit tests for all documented edge cases (null, empty string, valid input).
+- Every **component** that holds business logic (conditional rendering, event handlers, state transitions) must have unit tests for those code paths.
+- Bug fixes must be accompanied by a regression test that fails on the unfixed code.
+
+### What TDD is not
+
+- Do not write tests after the fact and call it TDD.
+- Do not write tests that only assert implementation details (internal private variables). Test observable behaviour.
+- Snapshot tests are not a substitute for behavioural tests.
+
+### Tooling
+
+- Test runner: **Karma + Jasmine** (configured via `karma.conf.js`).
+- HTTP: **`HttpTestingController`** from `@angular/common/http/testing` — never stub `HttpClient` manually.
+- Use `jasmine.createSpyObj` for service dependencies injected into components.
+- `process.env` is available in contract tests because `tsconfig.spec.json` includes the `node` type.
+
+---
+
+## X. Governance
 
 - This Constitution supersedes all spec, task, and plan files where there is a conflict.
 - Amendments require updating this file and notifying AGENTS.md / CLAUDE.md of the change.

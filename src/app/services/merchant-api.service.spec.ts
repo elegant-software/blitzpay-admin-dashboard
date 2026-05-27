@@ -144,7 +144,6 @@ describe('MerchantApiService product category API', () => {
       contactFullName: 'Jane Doe',
       contactEmail: 'jane@example.com',
       contactPhoneNumber: '+49123456789',
-      activePaymentChannels: ['STRIPE'],
       offerings: ['PRE_ORDER'],
       status: 'ACTIVE',
       lastUpdatedAt: '2026-05-23T10:00:00.000Z'

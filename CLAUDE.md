@@ -4,7 +4,7 @@ This file is read by Claude Code at the start of every session. It contains proj
 
 ## Constitution
 
-[`CONSTITUTION.md`](CONSTITUTION.md) is the **primary authority** for this project. It defines the search UI, all update dialog flows, API environment config, status display rules, and Angular component constraints. Read it first before making any changes to the merchant catalog or display layer.
+[`CONSTITUTION.md`](CONSTITUTION.md) is the **primary authority** for this project. It defines the search UI, all update dialog flows, API environment config, status display rules, Angular component constraints, and the TDD convention. Read it first before making any changes to the merchant catalog or display layer.
 
 ## Reference Documents
 
@@ -22,6 +22,14 @@ See → [`docs/reference/user-display.md`](docs/reference/user-display.md)
 
 ### Angular Components
 All components are standalone. Import pipes, directives, and modules explicitly in each component's `imports` array — no shared NgModule.
+
+### TDD
+All production code follows Red → Green → Refactor. Write the failing test first, then the minimum implementation.  
+See → [CONSTITUTION.md §IX](CONSTITUTION.md#ix-test-driven-development)
+
+- Unit/integration specs: `src/app/**/*.spec.ts` — `TestBed` + `HttpTestingController`.
+- Contract specs: `src/contract-tests/**/*.spec.ts` — live HTTP, separate CI step.
+- Never use `HttpClient` directly in tests; never stub it manually.
 
 ### API Layer
 - Product activation/deactivation uses `DELETE /products/{id}` (soft-delete), not the PUT payload.
