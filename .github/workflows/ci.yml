@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: read
-  packages: read  # needed to pull blitz-pay stub from GitHub Packages
 
 env:
   NODE_VERSION: '20'
@@ -62,12 +61,9 @@ jobs:
       - name: Download WireMock stub JAR
         run: |
           curl -fsSL \
-            --user "x-access-token:${{ secrets.GITHUB_TOKEN }}" \
+            --user "x-access-token:${{ secrets.RELEASE_PUBLISH_TOKEN }}" \
             -o blitz-pay-stub.jar \
             "${{ env.STUB_JAR_URL }}"
-        # If the package lives in a different org than this repo, GITHUB_TOKEN
-        # won't have access. Create a PAT with read:packages scope, store it as
-        # secret GH_PACKAGES_TOKEN, and replace secrets.GITHUB_TOKEN above.
 
       - name: Start WireMock stub on :8089
         run: java -jar blitz-pay-stub.jar --port 8089 &
