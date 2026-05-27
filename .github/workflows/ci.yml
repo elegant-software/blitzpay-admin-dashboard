@@ -13,7 +13,8 @@ permissions:
 
 env:
   NODE_VERSION: '20'
-  STUB_JAR_URL: https://maven.pkg.github.com/elegant-software/blitz-pay/com/elegant/software/blitzpay/blitz-pay/0.2.2/blitz-pay-0.2.2.jar
+  STUBS_VERSION: '0.2.2'
+  WIREMOCK_VERSION: '3.0.1'
 
 jobs:
   unit-tests:
@@ -58,24 +59,46 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Download WireMock stub JAR
+      - name: Authenticate to GitHub Packages
+        run: |
+          cat > "$HOME/.netrc" <<EOF
+          machine maven.pkg.github.com
+            login x-access-token
+            password ${{ secrets.RELEASE_PUBLISH_TOKEN }}
+          EOF
+          chmod 600 "$HOME/.netrc"
+
+      - name: Download WireMock standalone
         run: |
           curl -fsSL \
-            --user "x-access-token:${{ secrets.RELEASE_PUBLISH_TOKEN }}" \
-            -o blitz-pay-stub.jar \
-            "${{ env.STUB_JAR_URL }}"
+            -o wiremock.jar \
+            "https://repo1.maven.org/maven2/org/wiremock/wiremock-standalone/${{ env.WIREMOCK_VERSION }}/wiremock-standalone-${{ env.WIREMOCK_VERSION }}.jar"
 
-      - name: Start WireMock stub on :8089
-        run: java -jar blitz-pay-stub.jar --port 8089 &
-
-      - name: Wait for stub to be ready
+      - name: Download blitz-pay stubs JAR
         run: |
-          echo "Waiting for WireMock stub on :8089..."
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:8089/__admin/ && echo "Stub is ready" && exit 0
-            sleep 1
+          curl -fsSL \
+            --netrc \
+            -o blitz-pay-stubs.jar \
+            "https://maven.pkg.github.com/elegant-software/blitz-pay/com/elegant/software/blitzpay/blitz-pay/${{ env.STUBS_VERSION }}/blitz-pay-${{ env.STUBS_VERSION }}-stubs.jar"
+
+      - name: Extract mappings and start WireMock on :8089
+        run: |
+          mkdir -p stubs-dir
+          (cd stubs-dir && jar xf ../blitz-pay-stubs.jar mappings/ 2>/dev/null || true)
+          java -jar wiremock.jar \
+            --port 8089 \
+            --root-dir stubs-dir \
+            --no-request-journal \
+            &>/tmp/wiremock.log &
+
+      - name: Wait for WireMock to be ready
+        run: |
+          echo "Waiting for WireMock on :8089..."
+          for i in $(seq 1 20); do
+            curl -sf http://localhost:8089/__admin/health && echo "WireMock is ready" && exit 0
+            sleep 0.5
           done
-          echo "Stub did not start in time" && exit 1
+          echo "WireMock did not start in time — logs:" && cat /tmp/wiremock.log && exit 1
 
       - name: Install dependencies
         run: npm ci
