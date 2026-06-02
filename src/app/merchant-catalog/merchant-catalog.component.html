@@ -873,6 +873,11 @@
             </div>
           </div>
         </div>
+        <div class="col-12"><div class="dialog-section">Catalog QR for testing</div></div>
+        <div class="col-12">
+          <p class="form-text mb-2">Scan this Branch Catalog QR to open the public product page for this merchant location.</p>
+          <app-branch-catalog-qr [url]="branchCatalogUrl" />
+        </div>
       </div>
 
       <div class="alert alert-danger mt-3" *ngIf="branchDialogError">{{ branchDialogError }}</div>

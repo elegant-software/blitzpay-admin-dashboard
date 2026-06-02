@@ -8,7 +8,7 @@ const contractBaseUrl =
 
 const merchantId =
   (typeof process !== 'undefined' ? process.env['CONTRACT_TEST_MERCHANT_ID'] : undefined) ??
-  'test-merchant-id';
+  '11111111-1111-4111-8111-111111111111';
 
 describe('Merchant API — contract tests', () => {
   let http: HttpClient;

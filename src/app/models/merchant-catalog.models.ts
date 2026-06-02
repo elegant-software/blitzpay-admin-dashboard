@@ -5,6 +5,7 @@ export interface BackendEnvironment {
   key: EnvironmentKey;
   label: string;
   baseUrl: string;
+  storefrontUrl: string;
 }
 
 export interface Merchant {

@@ -1,0 +1,29 @@
+.branch-catalog-qr {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.9rem;
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.branch-catalog-qr img {
+  background: #fff;
+  border-radius: 0.45rem;
+  display: block;
+  height: 13rem;
+  width: 13rem;
+}
+
+.branch-catalog-url {
+  color: #4b5563;
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 575.98px) {
+  .branch-catalog-qr {
+    flex-direction: column;
+  }
+}

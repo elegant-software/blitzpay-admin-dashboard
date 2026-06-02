@@ -1,0 +1,9 @@
+{
+  "name": "blitz-pay-web",
+  "private": true,
+  "scripts": {
+    "start": "npm --prefix ../.. run start:storefront --",
+    "build": "npm --prefix ../.. run build:storefront --",
+    "test": "npm --prefix ../.. run test:storefront --"
+  }
+}

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { throwError, of } from 'rxjs';
 import { MerchantCatalogComponent } from './merchant-catalog.component';
 import { MerchantApiService } from '../services/merchant-api.service';
-import { Merchant, Product, ProductCategory } from '../models/merchant-catalog.models';
+import { Branch, Merchant, Product, ProductCategory } from '../models/merchant-catalog.models';
 
 describe('MerchantCatalogComponent product category management', () => {
   let component: MerchantCatalogComponent;
@@ -238,5 +238,22 @@ describe('MerchantCatalogComponent product category management', () => {
 
     expect(component.categoryTableState.filter.query).toBe('s');
     expect(component.categoryTableState.pagination.first).toBe(0);
+  });
+
+  it('builds a branch catalog QR URL using the selected storefront environment', () => {
+    component.selectedEnvironmentKey = 'local';
+    component.selectedBranch = {
+      id: 'branch-1',
+      branchId: 'branch-1',
+      merchantId: merchant.applicationId,
+      branchCode: 'BR-1',
+      name: 'Central',
+      status: 'ACTIVE',
+      active: true
+    } satisfies Branch;
+
+    expect(component.branchCatalogUrl).toBe(
+      'http://localhost:4201/m/merchant-123/b/branch-1'
+    );
   });
 });
