@@ -8,7 +8,6 @@ import * as L from 'leaflet';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import {
-  AdyenConnectStatusResponse,
   Branch,
   CategorySortField,
   CategoryTableState,
@@ -31,7 +30,6 @@ import {
   ProductSortField,
   ProductTableState,
   ProductFormModel,
-  StartAdyenOnboardingRequest,
   TableSortDirection,
   UpdateBranchRequest,
   UpdateMerchantRequest
@@ -101,10 +99,9 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
   paymentAccountStatus: PaymentAccountStatus = 'loading';
   paymentAccountActionLoading = false;
   paymentAccountError: string | null = null;
-
-  adyenPaymentAccountStatus: PaymentAccountStatus = 'loading';
-  adyenPaymentAccountActionLoading = false;
-  adyenPaymentAccountError: string | null = null;
+  tapToPayEnabled = false;
+  tapToPayActionLoading = false;
+  tapToPayError: string | null = null;
 
   providerAccounts: ProviderAccountResponse[] = [];
   providerAccountsLoading = false;
@@ -1226,9 +1223,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
     this.paymentAccountStatus = 'loading';
     this.paymentAccountActionLoading = false;
     this.paymentAccountError = null;
-    this.adyenPaymentAccountStatus = 'loading';
-    this.adyenPaymentAccountActionLoading = false;
-    this.adyenPaymentAccountError = null;
     this.providerAccounts = [];
     this.providerAccountsLoading = false;
     this.providerAccountsError = null;
@@ -1239,7 +1233,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
     this.closeProductDialog(true);
     this.loadPaymentAccountStatus(merchant.applicationId);
     this.loadProviderAccounts(merchant.applicationId);
-    this.loadAdyenStatus(merchant.applicationId);
 
     forkJoin({
       location: this.merchantApi
@@ -1291,9 +1284,29 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
         } else {
           this.paymentAccountStatus = 'not_connected';
         }
+        this.tapToPayEnabled = data.enabledPaymentFlows?.includes('TAP_TO_PAY') ?? false;
       },
       error: () => {
         this.paymentAccountStatus = 'error';
+      }
+    });
+  }
+
+  onTapToPayToggle(enabled: boolean, merchantId: string): void {
+    if (this.tapToPayActionLoading) return;
+    this.tapToPayActionLoading = true;
+    this.tapToPayError = null;
+    const call$ = enabled
+      ? this.merchantApi.enableTapToPay(this.selectedEnvironment, this.apiVersion, merchantId)
+      : this.merchantApi.disableTapToPay(this.selectedEnvironment, this.apiVersion, merchantId);
+    call$.subscribe({
+      next: (res) => {
+        this.tapToPayEnabled = res.tapToPayEnabled;
+        this.tapToPayActionLoading = false;
+      },
+      error: (err) => {
+        this.tapToPayError = this.toMessage(err, 'Failed to update Tap to Pay setting.');
+        this.tapToPayActionLoading = false;
       }
     });
   }
@@ -1369,7 +1382,7 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
     });
   }
 
-  readonly knownPspCodes = ['STRIPE', 'TRUELAYER', 'ADYEN', 'PAYPAL'];
+  readonly knownPspCodes = ['STRIPE', 'PAYPAL'];
 
   isProviderEnabled(pspCode: string): boolean {
     return this.providerAccounts.some(a => a.pspCode === pspCode && a.enabled);
@@ -1381,53 +1394,6 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
 
   get stripeEnabled(): boolean {
     return this.isProviderEnabled('STRIPE');
-  }
-
-  get adyenEnabled(): boolean {
-    return this.isProviderEnabled('ADYEN');
-  }
-
-  loadAdyenStatus(merchantId: string): void {
-    this.merchantApi.getAdyenConnectStatus(this.selectedEnvironment, this.apiVersion, merchantId).subscribe({
-      next: (data: AdyenConnectStatusResponse) => {
-        if (data.receivePaymentsEnabled) {
-          this.adyenPaymentAccountStatus = 'connected';
-        } else if (data.detailsSubmitted) {
-          this.adyenPaymentAccountStatus = 'verifying';
-        } else {
-          this.adyenPaymentAccountStatus = 'not_connected';
-        }
-      },
-      error: () => {
-        this.adyenPaymentAccountStatus = 'error';
-      }
-    });
-  }
-
-  handleAdyenConnect(): void {
-    if (!this.selectedMerchant || this.adyenPaymentAccountActionLoading) return;
-    const merchantId = this.selectedMerchant.applicationId;
-    const origin = window.location.origin;
-    const base = `${origin}/adyen-connect/return?merchantId=${merchantId}&env=${this.selectedEnvironmentKey}&apiVersion=${this.apiVersion}`;
-    const returnUrl = base;
-    const refreshUrl = `${base}&refresh=true`;
-    this.adyenPaymentAccountActionLoading = true;
-    this.adyenPaymentAccountError = null;
-
-    const call$ = this.adyenPaymentAccountStatus === 'verifying'
-      ? this.merchantApi.refreshAdyenConnect(this.selectedEnvironment, this.apiVersion, merchantId, returnUrl)
-      : this.merchantApi.startAdyenConnect(this.selectedEnvironment, this.apiVersion, merchantId, { returnUrl, redirectUrl: refreshUrl } as StartAdyenOnboardingRequest);
-
-    call$.subscribe({
-      next: (res) => {
-        this.adyenPaymentAccountActionLoading = false;
-        window.open(res.onboardingUrl, '_blank');
-      },
-      error: (err) => {
-        this.adyenPaymentAccountActionLoading = false;
-        this.adyenPaymentAccountError = this.toMessage(err, 'Failed to start Adyen onboarding.');
-      }
-    });
   }
 
   private upsertProviderAccount(accounts: ProviderAccountResponse[], account: ProviderAccountResponse): ProviderAccountResponse[] {
