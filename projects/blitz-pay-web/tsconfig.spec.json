@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/blitz-pay-web/spec",
+    "types": ["jasmine"]
+  },
+  "include": [
+    "src/app/**/*.spec.ts",
+    "src/**/*.d.ts"
+  ]
+}

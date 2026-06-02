@@ -17,7 +17,8 @@ describe('MerchantApiService product category API', () => {
   const environment: BackendEnvironment = {
     key: 'local',
     label: 'Local',
-    baseUrl: 'http://localhost:8080'
+    baseUrl: 'http://localhost:8080',
+    storefrontUrl: 'http://localhost:4201'
   };
   const apiVersion = 'v1';
   const merchantId = 'merchant-123';

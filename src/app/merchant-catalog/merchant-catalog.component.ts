@@ -38,11 +38,12 @@ import { filterRowsByFields, hasActiveQuery, nextSortDirection, paginateRows, so
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
+import { BranchCatalogQrComponent } from './branch-catalog-qr.component';
 
 @Component({
   selector: 'app-merchant-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe, InputTextModule, PaginatorModule],
+  imports: [CommonModule, FormsModule, DisplayDatePipe, InputTextModule, PaginatorModule, BranchCatalogQrComponent],
   templateUrl: './merchant-catalog.component.html',
   styleUrl: './merchant-catalog.component.css'
 })
@@ -190,6 +191,13 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
 
   get selectedEnvironment() {
     return getEnvironmentByKey(this.selectedEnvironmentKey);
+  }
+
+  get branchCatalogUrl(): string {
+    const merchantId = this.selectedMerchant?.applicationId;
+    const branchId = this.selectedBranch?.branchId ?? this.selectedBranch?.id;
+    if (!merchantId || !branchId) return '';
+    return `${this.selectedEnvironment.storefrontUrl}/m/${encodeURIComponent(merchantId)}/b/${encodeURIComponent(branchId)}`;
   }
 
   get activeSearchHint(): string {

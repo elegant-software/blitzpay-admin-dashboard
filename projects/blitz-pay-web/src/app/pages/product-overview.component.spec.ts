@@ -1,0 +1,49 @@
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
+import { of } from 'rxjs';
+import { StorefrontApiService } from '../services/storefront-api.service';
+import { ProductOverviewComponent } from './product-overview.component';
+
+describe('ProductOverviewComponent', () => {
+  const api = jasmine.createSpyObj<StorefrontApiService>('StorefrontApiService', ['getMerchant', 'getBranch', 'getProduct']);
+
+  beforeEach(async () => {
+    sessionStorage.clear();
+    api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'Brew House' }));
+    api.getBranch.and.returnValue(of({ id: 'branch-12', merchantId: 'merchant-44', name: 'Station Cafe' }));
+    api.getProduct.and.returnValue(of({
+      productId: 'p1', branchId: 'branch-12', name: 'Coffee Beans', description: 'Roasted locally', unitPrice: 12, active: true
+    }));
+    await TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: 'm/:merchantId/b/:branchId/p/:productId', component: ProductOverviewComponent }]),
+        { provide: StorefrontApiService, useValue: api }
+      ]
+    }).compileComponents();
+  });
+
+  it('renders shareable product detail and adds its selected quantity to the web cart', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/m/merchant-44/b/branch-12/p/p1');
+    harness.detectChanges();
+
+    expect(harness.routeNativeElement?.textContent).toContain('Coffee Beans');
+    expect(harness.routeNativeElement?.textContent).toContain('Roasted locally');
+    harness.routeNativeElement?.querySelector<HTMLButtonElement>('[data-testid="increase-quantity"]')?.click();
+    harness.routeNativeElement?.querySelector<HTMLButtonElement>('[data-testid="add-product"]')?.click();
+    harness.detectChanges();
+
+    expect(harness.routeNativeElement?.textContent).toContain('2 items');
+  });
+
+  it('does not allow a direct product link to order from an inactive branch', async () => {
+    api.getBranch.and.returnValue(of({ id: 'branch-12', merchantId: 'merchant-44', name: 'Station Cafe', active: false }));
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/m/merchant-44/b/branch-12/p/p1');
+    harness.detectChanges();
+
+    expect(harness.routeNativeElement?.textContent).toContain('This product is not currently available.');
+    expect(harness.routeNativeElement?.querySelector('[data-testid="add-product"]')).toBeNull();
+  });
+});

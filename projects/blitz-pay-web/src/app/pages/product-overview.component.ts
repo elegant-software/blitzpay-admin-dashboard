@@ -1,0 +1,96 @@
+import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { finalize, forkJoin } from 'rxjs';
+import { environment } from '../../environments/environment';
+import { WebCartComponent } from '../components/web-cart.component';
+import { StorefrontBranch, StorefrontMerchant, StorefrontProduct } from '../models/storefront.models';
+import { StorefrontApiService } from '../services/storefront-api.service';
+import { StorefrontSessionService } from '../services/storefront-session.service';
+
+@Component({
+  selector: 'product-overview',
+  standalone: true,
+  imports: [CommonModule, RouterLink, WebCartComponent],
+  template: `
+    <section class="merchant-hero compact">
+      <div class="merchant-logo"><span>{{ (merchant?.merchantName || 'M').charAt(0) }}</span></div>
+      <div>
+        <p class="eyebrow">Shop online</p>
+        <h1>{{ merchant?.merchantName || 'Product' }}</h1>
+        <p class="fulfillment-label" *ngIf="branch">Fulfilled by {{ branch.name }}</p>
+      </div>
+    </section>
+    <p class="storefront-alert" *ngIf="errorMessage">{{ errorMessage }}</p>
+    <section class="shop-layout product-layout" *ngIf="!loading">
+      <article class="surface product-overview" *ngIf="product?.active && branch?.active !== false; else unavailable">
+        <a class="back-link" [routerLink]="['/m', merchantId, 'b', branchId]">Back to products</a>
+        <div class="overview-grid">
+          <div class="overview-image product-image">
+            <img *ngIf="product?.imageUrl" [src]="product?.imageUrl" [alt]="product?.name" />
+            <span *ngIf="!product?.imageUrl">Product image</span>
+          </div>
+          <div class="overview-copy">
+            <p class="surface-label" *ngIf="product?.categoryName">{{ product?.categoryName }}</p>
+            <h2>{{ product?.name }}</h2>
+            <strong class="overview-price">{{ product?.unitPrice | currency: currency }}</strong>
+            <p class="muted">{{ product?.description || 'Available for guest checkout.' }}</p>
+            <div class="overview-actions">
+              <div class="quantity">
+                <button type="button" (click)="quantity = quantity > 1 ? quantity - 1 : 1">-</button>
+                <span>{{ quantity }}</span>
+                <button type="button" data-testid="increase-quantity" (click)="quantity = quantity + 1">+</button>
+              </div>
+              <button class="add-button" type="button" data-testid="add-product" (click)="addProduct()">Add to cart</button>
+            </div>
+          </div>
+        </div>
+      </article>
+      <ng-template #unavailable>
+        <article class="surface unavailable">
+          <p class="eyebrow">Product Unavailable</p>
+          <h2>This product is not currently available.</h2>
+          <a class="back-link" [routerLink]="['/m', merchantId, 'b', branchId]">Return to catalog</a>
+        </article>
+      </ng-template>
+      <web-cart [merchantId]="merchantId" [branchId]="branchId" />
+    </section>
+  `
+})
+export class ProductOverviewComponent implements OnInit {
+  private readonly route = inject(ActivatedRoute);
+  private readonly api = inject(StorefrontApiService);
+  private readonly cart = inject(StorefrontSessionService);
+  readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
+  readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
+  readonly productId = this.route.snapshot.paramMap.get('productId') ?? '';
+  readonly currency = environment.currency;
+  merchant: StorefrontMerchant | null = null;
+  branch: StorefrontBranch | null = null;
+  product: StorefrontProduct | null = null;
+  quantity = 1;
+  loading = true;
+  errorMessage = '';
+
+  ngOnInit(): void {
+    this.cart.useScope(this.merchantId, this.branchId);
+    forkJoin({
+      merchant: this.api.getMerchant(this.merchantId),
+      branch: this.api.getBranch(this.merchantId, this.branchId),
+      product: this.api.getProduct(this.merchantId, this.branchId, this.productId)
+    }).pipe(finalize(() => this.loading = false)).subscribe({
+      next: (result) => {
+        this.merchant = result.merchant;
+        this.branch = result.branch;
+        this.product = result.product;
+      },
+      error: () => this.errorMessage = 'Unable to load this product.'
+    });
+  }
+
+  addProduct(): void {
+    if (this.product?.active && this.branch?.active !== false && this.cart.useScope(this.merchantId, this.branchId)) {
+      this.cart.add(this.product, this.quantity);
+    }
+  }
+}

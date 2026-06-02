@@ -8,11 +8,11 @@ const contractBaseUrl =
 
 const merchantId =
   (typeof process !== 'undefined' ? process.env['CONTRACT_TEST_MERCHANT_ID'] : undefined) ??
-  'test-merchant-id';
+  '11111111-1111-4111-8111-111111111111';
 
 const branchId =
   (typeof process !== 'undefined' ? process.env['CONTRACT_TEST_BRANCH_ID'] : undefined) ??
-  'test-branch-id';
+  '22222222-2222-4222-8222-222222222222';
 
 const productId =
   (typeof process !== 'undefined' ? process.env['CONTRACT_TEST_PRODUCT_ID'] : undefined) ??
