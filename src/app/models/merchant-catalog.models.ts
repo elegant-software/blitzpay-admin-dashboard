@@ -327,10 +327,13 @@ export interface ProductTableState {
   emptyStateKind: 'no-branch-selected' | 'no-data' | 'no-filter-results';
 }
 
+export type ConnectPaymentFlow = 'CARD' | 'PAY_BY_BANK' | 'TAP_TO_PAY';
+
 export interface StripeConnectStatusResponse {
   connected: boolean;
   chargesEnabled: boolean;
   detailsSubmitted: boolean;
+  enabledPaymentFlows?: ConnectPaymentFlow[];
 }
 
 export type PaymentAccountStatus = 'loading' | 'not_connected' | 'verifying' | 'connected' | 'error';
@@ -376,16 +379,4 @@ export interface ProviderAccountResponse {
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface AdyenConnectStatusResponse {
-  legalEntityId: string | null;
-  balanceAccountId: string | null;
-  receivePaymentsEnabled: boolean;
-  detailsSubmitted: boolean;
-}
-
-export interface StartAdyenOnboardingRequest {
-  returnUrl: string;
-  redirectUrl: string;
 }

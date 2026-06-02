@@ -3,7 +3,6 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
-  AdyenConnectStatusResponse,
   Branch,
   CreateProductCategoryRequest,
   CreateBranchRequest,
@@ -18,7 +17,6 @@ import {
   ProductListResponse,
   ProviderAccountResponse,
   RenameProductCategoryRequest,
-  StartAdyenOnboardingRequest,
   StartStripeConnectRequest,
   StripeConnectStatusResponse,
   UpdateBranchRequest,
@@ -254,38 +252,24 @@ export class MerchantApiService {
     );
   }
 
-  getAdyenConnectStatus(
+  enableTapToPay(
     environment: BackendEnvironment,
     apiVersion: string,
     merchantId: string
-  ): Observable<AdyenConnectStatusResponse> {
-    return this.http.get<AdyenConnectStatusResponse>(
-      `${this.base(environment, apiVersion)}/merchants/${merchantId}/adyen-connect/status`
+  ): Observable<{ tapToPayEnabled: boolean }> {
+    return this.http.post<{ tapToPayEnabled: boolean }>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/stripe-connect/tap-to-pay/enable`,
+      {}
     );
   }
 
-  startAdyenConnect(
+  disableTapToPay(
     environment: BackendEnvironment,
     apiVersion: string,
-    merchantId: string,
-    payload: StartAdyenOnboardingRequest
-  ): Observable<{ onboardingUrl: string }> {
-    return this.http.post<{ onboardingUrl: string }>(
-      `${this.base(environment, apiVersion)}/merchants/${merchantId}/adyen-connect/onboarding`,
-      payload
-    );
-  }
-
-  refreshAdyenConnect(
-    environment: BackendEnvironment,
-    apiVersion: string,
-    merchantId: string,
-    returnUrl: string
-  ): Observable<{ onboardingUrl: string }> {
-    const params = new HttpParams().set('returnUrl', returnUrl);
-    return this.http.get<{ onboardingUrl: string }>(
-      `${this.base(environment, apiVersion)}/merchants/${merchantId}/adyen-connect/refresh`,
-      { params }
+    merchantId: string
+  ): Observable<{ tapToPayEnabled: boolean }> {
+    return this.http.delete<{ tapToPayEnabled: boolean }>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/stripe-connect/tap-to-pay`
     );
   }
 
