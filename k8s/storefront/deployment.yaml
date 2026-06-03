@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blitz-pay-web
+  labels:
+    app: blitz-pay-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blitz-pay-web
+  template:
+    metadata:
+      labels:
+        app: blitz-pay-web
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: blitz-pay-web
+          image: ${IMAGE}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blitz-pay-web
+spec:
+  selector:
+    app: blitz-pay-web
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

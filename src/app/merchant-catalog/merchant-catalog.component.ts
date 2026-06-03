@@ -200,6 +200,13 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
     return `${this.selectedEnvironment.storefrontUrl}/m/${encodeURIComponent(merchantId)}/b/${encodeURIComponent(branchId)}`;
   }
 
+  branchWebCatalogUrl(branch: Branch): string {
+    const merchantId = this.selectedMerchant?.applicationId;
+    const branchId = branch.branchId ?? branch.id;
+    if (!merchantId || !branchId) return '';
+    return `${this.selectedEnvironment.storefrontUrl}/m/${encodeURIComponent(merchantId)}/b/${encodeURIComponent(branchId)}`;
+  }
+
   get activeSearchHint(): string {
     return 'Search by name, code, city, product, or apply filters. All fields are optional — leave blank to list recently updated merchants.';
   }

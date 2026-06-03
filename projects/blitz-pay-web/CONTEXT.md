@@ -85,6 +85,7 @@ _Avoid_: Inferred country currency, post-order currency guess
 - A **Branch Catalog QR** remains reusable as Product availability changes because its **Web Catalog** presents the Branch's current active Products
 - A **Branch Catalog QR** is distributed by the merchant app for the operator's selected Branch; the admin dashboard may render the QR inside the Branch edit dialog solely for scanning and testing the storefront journey
 - A Branch edit dialog testing QR targets the Web Storefront environment paired with the admin-selected Branch data environment
+- Each Branch row in the admin dashboard provides a direct **Web Catalog Link** — a browser link that opens the Branch's **Web Catalog** in a new tab using the same environment-paired storefront domain; this is a navigation convenience for admins distinct from the scannable **Branch Catalog QR**
 - The Web Storefront and admin testing QR may be delivered before the separate merchant app adopts **Branch Catalog QR** and HTTPS **Merchant Order QR** generation
 - A **Branch Catalog QR** resolves to the **Web Catalog** regardless of whether the customer has installed the native BlitzPay app
 - A customer entering through a **Branch Catalog QR** remains scoped to its encoded Branch for browsing, cart, and checkout; the Web Storefront does not offer Branch switching in that journey

@@ -10,6 +10,10 @@ on:
         description: Kubernetes namespace
         required: true
         default: blitzpay-staging
+      manifests_dir:
+        description: Path to directory containing deployment.yaml and ingress.yaml
+        required: false
+        default: k8s
   workflow_call:
     inputs:
       image_reference:
@@ -19,6 +23,10 @@ on:
         type: string
         required: false
         default: blitzpay-staging
+      manifests_dir:
+        type: string
+        required: false
+        default: k8s
     secrets:
       K8S_SERVER:
         required: true
@@ -36,14 +44,15 @@ jobs:
     env:
       KUBE_NAMESPACE: ${{ inputs.kube_namespace || github.event.inputs.kube_namespace }}
       IMAGE_REFERENCE: ${{ inputs.image_reference || github.event.inputs.image_reference }}
+      MANIFESTS_DIR: ${{ inputs.manifests_dir || github.event.inputs.manifests_dir || 'k8s' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
       - name: Verify deployment manifests exist
         run: |
-          if [ ! -f k8s/deployment.yaml ]; then
-            echo "::error file=k8s/deployment.yaml::Missing Kubernetes deployment manifest"
+          if [ ! -f "${MANIFESTS_DIR}/deployment.yaml" ]; then
+            echo "::error file=${MANIFESTS_DIR}/deployment.yaml::Missing Kubernetes deployment manifest"
             exit 1
           fi
 
@@ -75,8 +84,8 @@ jobs:
 
       - name: Render Kubernetes manifests
         run: |
-          sed "s|\${IMAGE}|${IMAGE_REFERENCE}|g" k8s/deployment.yaml > /tmp/deployment.yaml
-          cp k8s/ingress.yaml /tmp/ingress.yaml
+          sed "s|\${IMAGE}|${IMAGE_REFERENCE}|g" "${MANIFESTS_DIR}/deployment.yaml" > /tmp/deployment.yaml
+          cp "${MANIFESTS_DIR}/ingress.yaml" /tmp/ingress.yaml
 
       - name: Apply Kubernetes manifests
         run: |

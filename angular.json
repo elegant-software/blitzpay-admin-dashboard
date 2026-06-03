@@ -197,6 +197,9 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "proxyConfig": "projects/blitz-pay-web/proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "blitz-pay-web:build:production"
