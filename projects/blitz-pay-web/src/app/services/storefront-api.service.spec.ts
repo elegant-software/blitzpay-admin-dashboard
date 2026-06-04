@@ -25,7 +25,7 @@ describe('StorefrontApiService', () => {
     });
 
     const request = http.expectOne(
-      'http://localhost:8080/v1/merchants/merchant-44/products?branchId=branch-12'
+      '/v1/merchants/merchant-44/products?branchId=branch-12'
     );
     expect(request.request.method).toBe('GET');
     request.flush([
@@ -41,9 +41,9 @@ describe('StorefrontApiService', () => {
     service.getMerchant('merchant-44').subscribe();
     service.getBranch('merchant-44', 'branch-12').subscribe();
 
-    expect(http.expectOne('http://localhost:8080/v1/merchants/merchant-44').request.method).toBe('GET');
+    expect(http.expectOne('/v1/merchants/merchant-44').request.method).toBe('GET');
     expect(
-      http.expectOne('http://localhost:8080/v1/merchants/merchant-44/branches/branch-12').request.method
+      http.expectOne('/v1/merchants/merchant-44/branches/branch-12').request.method
     ).toBe('GET');
   });
 
@@ -51,7 +51,7 @@ describe('StorefrontApiService', () => {
     service.getProduct('merchant-44', 'branch-12', 'p1').subscribe();
 
     const request = http.expectOne(
-      'http://localhost:8080/v1/merchants/merchant-44/products/p1?branchId=branch-12'
+      '/v1/merchants/merchant-44/products/p1?branchId=branch-12'
     );
     expect(request.request.method).toBe('GET');
     request.flush({ productId: 'p1', branchId: 'branch-12', name: 'Coffee', unitPrice: 3.5, active: true });
@@ -68,7 +68,7 @@ describe('StorefrontApiService', () => {
 
     service.createOrder(payload).subscribe();
 
-    const request = http.expectOne('http://localhost:8080/v1/orders');
+    const request = http.expectOne('/v1/orders');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual(payload);
   });
@@ -76,14 +76,14 @@ describe('StorefrontApiService', () => {
   it('loads an order reached through a universal order URL', () => {
     service.getOrder('order-200').subscribe();
 
-    const request = http.expectOne('http://localhost:8080/v1/orders/order-200');
+    const request = http.expectOne('/v1/orders/order-200');
     expect(request.request.method).toBe('GET');
   });
 
   it('loads hosted browser payment availability for the merchant', () => {
     service.getPaymentCapabilities('merchant-44').subscribe();
 
-    const request = http.expectOne('http://localhost:8080/v1/merchants/merchant-44/stripe-connect/status');
+    const request = http.expectOne('/v1/merchants/merchant-44/stripe-connect/status');
     expect(request.request.method).toBe('GET');
   });
 
@@ -99,7 +99,7 @@ describe('StorefrontApiService', () => {
 
     service.createPayByBankCheckout(payload).subscribe();
 
-    const request = http.expectOne('http://localhost:8080/v1/payments/stripe/pay-by-bank/create-checkout-session');
+    const request = http.expectOne('/v1/payments/stripe/pay-by-bank/create-checkout-session');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual(payload);
   });
