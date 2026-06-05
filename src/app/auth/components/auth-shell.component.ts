@@ -2,16 +2,17 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { MerchantCatalogComponent } from '../../merchant-catalog/merchant-catalog.component';
 import { PaymentOpsDashboardComponent } from '../../payment-ops-dashboard/payment-ops-dashboard.component';
+import { UserManagementComponent } from '../../user-management/user-management.component';
 import { AuthService } from '../services/auth.service';
 import { AuthStateService } from '../services/auth-state.service';
 
 type OnboardingTab = 'profile' | 'legal' | 'banking' | 'risk';
-type MainSection = 'dashboard' | 'onboarding' | 'verification' | 'settlement' | 'merchantCatalog';
+type MainSection = 'dashboard' | 'onboarding' | 'verification' | 'settlement' | 'merchantCatalog' | 'userManagement';
 
 @Component({
   selector: 'app-auth-shell',
   standalone: true,
-  imports: [CommonModule, MerchantCatalogComponent, PaymentOpsDashboardComponent],
+  imports: [CommonModule, MerchantCatalogComponent, PaymentOpsDashboardComponent, UserManagementComponent],
   templateUrl: './auth-shell.component.html',
   styleUrl: './auth-shell.component.css'
 })
@@ -67,7 +68,8 @@ export class AuthShellComponent {
     onboarding: 'Merchant Onboarding',
     verification: 'Verification Queue',
     settlement: 'Settlement Setup',
-    merchantCatalog: 'Merchant Catalog'
+    merchantCatalog: 'Merchant Catalog',
+    userManagement: 'User Management',
   };
 
   selectTab(tab: OnboardingTab): void {

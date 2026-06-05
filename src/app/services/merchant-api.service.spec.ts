@@ -5,6 +5,7 @@ import {
   BackendEnvironment,
   CreateProductCategoryRequest,
   Merchant,
+  MerchantSearchResponse,
   ProductCategory,
   RenameProductCategoryRequest
 } from '../models/merchant-catalog.models';
@@ -152,5 +153,34 @@ describe('MerchantApiService product category API', () => {
 
     expect(response?.merchantMobility).toBe('MOBILE');
     expect(response?.businessType).toBe('CAFE');
+  });
+
+  it('adds required default pagination fields to merchant search requests', () => {
+    const searchResponse: MerchantSearchResponse = {
+      results: [],
+      page: 0,
+      size: 50,
+      totalElements: 0,
+      totalPages: 0
+    };
+    let response: MerchantSearchResponse | undefined;
+
+    service.searchMerchants(environment, apiVersion, { q: 'BLTZ-FD9458FD', page: 0 }).subscribe((result) => {
+      response = result;
+    });
+
+    const request = httpTestingController.expectOne(
+      'http://localhost:8080/v1/merchants/search'
+    );
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({
+      q: 'BLTZ-FD9458FD',
+      page: 0,
+      size: 50
+    });
+
+    request.flush(searchResponse);
+
+    expect(response).toEqual(searchResponse);
   });
 });

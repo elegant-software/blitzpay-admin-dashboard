@@ -111,6 +111,48 @@ _Avoid_: Callback page, webhook handler
 - The **Stripe Connect Return Route** is the sole entry point for Stripe's redirect back into the admin dashboard
 - Branches do not have Provider Accounts — payment processing capability is always determined at the Merchant level
 
+## User Management
+
+**Platform User**:
+A Keycloak user fetched from the identity provider and represented in the admin dashboard by their Keycloak UUID plus display data (name, email). The dashboard stores no profile data — only the UUID is retained as a foreign key.
+_Avoid_: Admin user, system user, dashboard user (those refer to the internal operator, not a merchant-side user)
+
+**User Search**:
+The admin-facing capability to discover Platform Users by submitting a name or email query, proxied through the backend to Keycloak. Returns a paginated list of User Search Results.
+_Avoid_: User lookup, Keycloak search, user filter
+
+**User Search Result**:
+The summary representation of a Platform User returned in a search result list. Contains enough fields to identify the user at a glance (display name, email, Keycloak UUID).
+_Avoid_: User row, search hit
+
+**Merchant User Assignment**:
+The combined act of placing a Platform User into a Merchant's Keycloak group (and optionally a branch sub-group) and recording their Merchant Operations Role in BlitzPay. Written atomically by the `/user-management` backend API. The BlitzPay record is merchant-scoped even when Keycloak placement is at branch level.
+_Avoid_: Group assignment only, role assignment only, raw Keycloak group membership
+
+**Merchant Operations Role**:
+The appointment and calendar permission role a Platform User holds within a Merchant: **Merchant Manager** (merchant-wide) or **Merchant Employee** (branch-scoped, linked to one Employee).
+_Avoid_: Keycloak role, realm role, onboarding role
+
+**Merchant Manager**:
+A Platform User with a Merchant Operations Role that grants merchant-wide appointment and calendar permissions. Placed in the Keycloak merchant group (`/merchants/merchant_<uuid>`).
+_Avoid_: Merchant admin, owner, manager role only
+
+**Merchant Employee**:
+A Platform User with a Merchant Operations Role scoped to one Employee record. Placed in a Keycloak branch sub-group (`/merchants/merchant_<uuid>/branch_<uuid>`) and linked to an existing Employee within that merchant.
+_Avoid_: Branch user, staff login, employee account
+
+## User Management Relationships
+
+- A **Platform User** is identified by their Keycloak UUID; the dashboard stores only this UUID
+- A **User Search** produces zero or more **User Search Results**
+- A **Platform User** may have zero or more **Merchant User Assignments**
+- A **Merchant User Assignment** belongs to exactly one **Merchant** and one **Platform User**
+- A **Merchant User Assignment** carries exactly one **Merchant Operations Role** (Merchant Manager or Merchant Employee)
+- A **Merchant Employee** assignment is linked to exactly one existing **Employee** within that **Merchant**
+- A **Merchant Manager** assignment is placed in the Keycloak merchant group; a **Merchant Employee** assignment is placed in a Keycloak branch sub-group
+- The `/user-management` backend API is the sole write path for **Merchant User Assignment** — it writes Keycloak group membership and the BlitzPay domain record atomically
+- The admin dashboard calls the `/user-management` API only; it never calls Keycloak directly
+
 ## Flagged ambiguities
 
 - "category list on the catalog page" could have implied branch-level categories; resolved: **Product Categories** belong to the **Merchant** and are reusable across all **Branches**.

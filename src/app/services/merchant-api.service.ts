@@ -280,7 +280,7 @@ export class MerchantApiService {
   ): Observable<MerchantSearchResponse> {
     return this.http.post<MerchantSearchResponse>(
       `${this.base(environment, apiVersion)}/merchants/search`,
-      request
+      this.normalizeMerchantSearchRequest(request)
     );
   }
 
@@ -319,5 +319,13 @@ export class MerchantApiService {
 
   private base(environment: BackendEnvironment, apiVersion: string): string {
     return buildApiBaseUrl(environment, apiVersion);
+  }
+
+  private normalizeMerchantSearchRequest(request: MerchantSearchRequest): MerchantSearchRequest {
+    return {
+      ...request,
+      page: request.page ?? 0,
+      size: request.size ?? 50
+    };
   }
 }

@@ -1,0 +1,184 @@
+<div class="card h-100">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div>
+      <span class="fw-semibold">{{ user.displayName }}</span>
+      <span class="badge rounded-pill ms-2" [class.bg-success]="user.enabled" [class.bg-secondary]="!user.enabled">
+        {{ user.enabled ? 'Active' : 'Inactive' }}
+      </span>
+      <div class="small text-muted mt-1">{{ user.email ?? '—' }}</div>
+    </div>
+    <button class="btn btn-sm btn-primary" type="button" (click)="openDialog()">+ Add Assignment</button>
+  </div>
+
+  <div class="card-body p-0">
+    <div *ngIf="revokeError" class="alert alert-danger rounded-0 mb-0 px-3 py-2 small" role="alert">
+      {{ revokeError }}
+    </div>
+
+    <div *ngIf="loading" class="d-flex justify-content-center align-items-center py-5">
+      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading…</span></div>
+    </div>
+
+    <div *ngIf="!loading && assignments.length === 0" class="text-center text-muted py-5 px-4">
+      <svg viewBox="0 0 24 24" width="40" height="40" class="mb-3 opacity-25"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+      <p class="mb-0">No assigned groups yet.</p>
+    </div>
+
+    <div *ngIf="!loading && assignments.length > 0" class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Merchant group</th>
+            <th>Branch group</th>
+            <th>Role</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of assignments">
+            <td class="align-middle fw-semibold">{{ a.merchantName }}</td>
+            <td class="align-middle text-muted">{{ a.branchName ?? '—' }}</td>
+            <td class="align-middle">
+              <span class="badge" [class.bg-primary]="a.role === 'MERCHANT_MANAGER'" [class.bg-secondary]="a.role === 'MERCHANT_EMPLOYEE'">
+                {{ roleLabel[a.role] }}
+              </span>
+            </td>
+            <td class="align-middle text-end">
+              <button
+                class="btn btn-sm btn-outline-danger"
+                type="button"
+                (click)="revoke(a)"
+                [disabled]="revoking === a.id"
+              >
+                <span *ngIf="revoking === a.id" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                Revoke
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add Assignment Dialog -->
+<div *ngIf="dialog.open" class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="assignDialogTitle">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="assignDialogTitle">Add Merchant Assignment</h5>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeDialog()"></button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="dialog.error" class="alert alert-danger" role="alert">{{ dialog.error }}</div>
+
+        <!-- Merchant search -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Merchant</label>
+          <div class="input-group mb-2">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Merchant name or code…"
+              [(ngModel)]="dialog.merchantQuery"
+              (keyup.enter)="searchMerchants()"
+              aria-label="Search merchants"
+            />
+            <button class="btn btn-outline-secondary" type="button" (click)="searchMerchants()">Search</button>
+          </div>
+          <ul *ngIf="dialog.merchantResults.length" class="list-group mb-2" style="max-height: 200px; overflow-y: auto;">
+            <li
+              *ngFor="let m of dialog.merchantResults"
+              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+              [class.active]="dialog.selectedMerchant?.applicationId === m.applicationId"
+              style="cursor: pointer"
+              (click)="selectMerchant(m)"
+            >
+              <span>
+                <span class="d-block fw-semibold">{{ m.merchantName || m.legalBusinessName }}</span>
+                <span class="d-block small text-muted">{{ m.merchantCode }} · {{ m.city ?? '—' }}{{ m.country ? ', ' + m.country : '' }}</span>
+              </span>
+              <span class="badge bg-light text-dark border">{{ m.status }}</span>
+            </li>
+          </ul>
+          <div *ngIf="dialog.selectedMerchant" class="alert alert-info py-2 px-3 small mb-0">
+            Selected: <strong>{{ dialog.selectedMerchant.merchantName || dialog.selectedMerchant.legalBusinessName }}</strong>
+            <span class="text-muted">({{ dialog.selectedMerchant.merchantCode }})</span>
+          </div>
+        </div>
+
+        <!-- Branch selection -->
+        <div class="mb-3" *ngIf="dialog.selectedMerchant">
+          <label class="form-label fw-semibold">Branch <span class="text-muted fw-normal">(optional)</span></label>
+          <div *ngIf="dialog.loadingBranches" class="d-flex align-items-center gap-2 small text-muted">
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Loading branches
+          </div>
+          <input
+            *ngIf="!dialog.loadingBranches"
+            type="text"
+            class="form-control mb-2"
+            placeholder="Search branch name or code…"
+            [(ngModel)]="dialog.branchQuery"
+            [disabled]="dialog.branches.length === 0"
+            aria-label="Filter branches"
+          />
+          <select
+            *ngIf="!dialog.loadingBranches"
+            class="form-select"
+            [(ngModel)]="dialog.branchId"
+            [disabled]="!dialog.selectedMerchant || filteredBranches.length === 0"
+            aria-label="Select branch"
+          >
+            <option [ngValue]="null">No branch</option>
+            <option *ngFor="let branch of filteredBranches" [ngValue]="branchIdentity(branch)">
+              {{ branch.name }} · {{ branch.branchCode || '—' }}
+            </option>
+          </select>
+          <div *ngIf="dialog.selectedMerchant && !dialog.loadingBranches && dialog.branches.length > 0 && filteredBranches.length === 0" class="small text-muted mt-1">
+            No branches match that name or code.
+          </div>
+          <div *ngIf="dialog.selectedMerchant && !dialog.loadingBranches && dialog.branches.length === 0" class="small text-muted mt-1">
+            No active branches found for this merchant.
+          </div>
+        </div>
+
+        <!-- Role selection -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Role</label>
+          <select class="form-select" [ngModel]="dialog.role" (ngModelChange)="onRoleChanged($event)" aria-label="Select role">
+            <option value="MERCHANT_MANAGER">Merchant Manager</option>
+            <option value="MERCHANT_EMPLOYEE">Merchant Employee</option>
+          </select>
+        </div>
+
+        <!-- Employee ID (optional) -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Employee ID <span class="text-muted fw-normal">(optional)</span></label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Employee UUID"
+            [(ngModel)]="dialog.employeeId"
+            aria-label="Employee ID"
+          />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" (click)="closeDialog()">Cancel</button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="saveAssignment()"
+          [disabled]="dialog.saving || !dialog.selectedMerchant"
+        >
+          <span *ngIf="dialog.saving" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          Save Assignment
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div *ngIf="dialog.open" class="modal-backdrop fade show"></div>
