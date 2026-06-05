@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { AppointmentManagementComponent } from '../../appointments/appointment-management.component';
 import { MerchantCatalogComponent } from '../../merchant-catalog/merchant-catalog.component';
 import { PaymentOpsDashboardComponent } from '../../payment-ops-dashboard/payment-ops-dashboard.component';
 import { UserManagementComponent } from '../../user-management/user-management.component';
@@ -7,12 +8,25 @@ import { AuthService } from '../services/auth.service';
 import { AuthStateService } from '../services/auth-state.service';
 
 type OnboardingTab = 'profile' | 'legal' | 'banking' | 'risk';
-type MainSection = 'dashboard' | 'onboarding' | 'verification' | 'settlement' | 'merchantCatalog' | 'userManagement';
+type MainSection =
+  | 'dashboard'
+  | 'onboarding'
+  | 'verification'
+  | 'settlement'
+  | 'merchantCatalog'
+  | 'appointments'
+  | 'userManagement';
 
 @Component({
   selector: 'app-auth-shell',
   standalone: true,
-  imports: [CommonModule, MerchantCatalogComponent, PaymentOpsDashboardComponent, UserManagementComponent],
+  imports: [
+    CommonModule,
+    AppointmentManagementComponent,
+    MerchantCatalogComponent,
+    PaymentOpsDashboardComponent,
+    UserManagementComponent
+  ],
   templateUrl: './auth-shell.component.html',
   styleUrl: './auth-shell.component.css'
 })
@@ -69,6 +83,7 @@ export class AuthShellComponent {
     verification: 'Verification Queue',
     settlement: 'Settlement Setup',
     merchantCatalog: 'Merchant Catalog',
+    appointments: 'Appointments',
     userManagement: 'User Management',
   };
 
