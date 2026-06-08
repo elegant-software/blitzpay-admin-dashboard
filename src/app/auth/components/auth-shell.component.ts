@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { AppointmentManagementComponent } from '../../appointments/appointment-management.component';
+import { AppointmentPolicyComponent } from '../../appointments/appointment-policy.component';
+import { BranchCalendarComponent } from '../../appointments/branch-calendar.component';
 import { MerchantCatalogComponent } from '../../merchant-catalog/merchant-catalog.component';
 import { PaymentOpsDashboardComponent } from '../../payment-ops-dashboard/payment-ops-dashboard.component';
 import { UserManagementComponent } from '../../user-management/user-management.component';
@@ -15,7 +17,11 @@ type MainSection =
   | 'settlement'
   | 'merchantCatalog'
   | 'appointments'
+  | 'branchCalendar'
+  | 'appointmentPolicy'
   | 'userManagement';
+
+type AppointmentsSubSection = 'merchant' | 'branchCalendar' | 'policy';
 
 @Component({
   selector: 'app-auth-shell',
@@ -23,6 +29,8 @@ type MainSection =
   imports: [
     CommonModule,
     AppointmentManagementComponent,
+    AppointmentPolicyComponent,
+    BranchCalendarComponent,
     MerchantCatalogComponent,
     PaymentOpsDashboardComponent,
     UserManagementComponent
@@ -33,6 +41,7 @@ type MainSection =
 export class AuthShellComponent {
   activeSection: MainSection = 'dashboard';
   activeTab: OnboardingTab = 'profile';
+  appointmentsSubSection: AppointmentsSubSection = 'merchant';
   sidebarCollapsed = false;
   chatOpen = false;
   profileMenuOpen = false;
@@ -84,6 +93,8 @@ export class AuthShellComponent {
     settlement: 'Settlement Setup',
     merchantCatalog: 'Merchant Catalog',
     appointments: 'Appointments',
+    branchCalendar: 'Appointments',
+    appointmentPolicy: 'Appointments',
     userManagement: 'User Management',
   };
 
@@ -93,6 +104,15 @@ export class AuthShellComponent {
 
   selectSection(section: MainSection): void {
     this.activeSection = section;
+  }
+
+  selectAppointmentsSubSection(sub: AppointmentsSubSection): void {
+    this.appointmentsSubSection = sub;
+    this.activeSection = 'appointments';
+  }
+
+  get isAppointmentsSection(): boolean {
+    return this.activeSection === 'appointments' || this.activeSection === 'branchCalendar' || this.activeSection === 'appointmentPolicy';
   }
 
   toggleSidebar(): void {

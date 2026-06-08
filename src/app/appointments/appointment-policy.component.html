@@ -1,0 +1,158 @@
+<!-- Toolbar -->
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Appointment Policy</span>
+    <div class="d-flex gap-2 align-items-center">
+      <label class="form-label form-label-sm mb-0 me-1" for="ap-env">Env</label>
+      <select id="ap-env" class="form-select form-select-sm" style="width:auto" [(ngModel)]="selectedEnvironmentKey">
+        <option value="local">Local</option>
+        <option value="staging">Staging</option>
+      </select>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="support-action-banner mb-3">
+      <svg viewBox="0 0 24 24" width="18" height="18" class="me-2 flex-shrink-0"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <span><strong>Support action.</strong> Editing this policy changes booking behaviour on behalf of the merchant. Coordinate with the merchant before making changes.</span>
+    </div>
+
+    <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="alert alert-success mb-3" *ngIf="statusMessage">{{ statusMessage }}</div>
+
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label form-label-sm mb-1 required" for="ap-merchant-id">Merchant ID</label>
+        <input
+          id="ap-merchant-id"
+          class="form-control"
+          type="text"
+          [(ngModel)]="merchantIdInput"
+          placeholder="e.g. merchant-uuid"
+          (keydown.enter)="loadPolicy()"
+        />
+      </div>
+      <div class="col-md-4 d-flex gap-2 align-items-end">
+        <button class="btn btn-primary" type="button" [disabled]="loading || !canLoad" (click)="loadPolicy()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
+          Load Policy
+        </button>
+        <button class="btn btn-outline-secondary" type="button" (click)="clearSearch()">Clear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Policy view / edit -->
+<ng-container *ngIf="merchantId">
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>
+        Policy for <code>{{ merchantId }}</code>
+      </span>
+      <div class="d-flex gap-2" *ngIf="policy && !editMode">
+        <button class="btn btn-sm btn-outline-primary" type="button" (click)="startEdit()">Edit Policy</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="p-3 text-muted small" *ngIf="loading">Loading policy…</div>
+
+      <!-- View mode -->
+      <ng-container *ngIf="policy && !editMode">
+        <div class="policy-grid">
+          <div class="policy-field">
+            <div class="policy-label">Booking Interval</div>
+            <div class="policy-value">{{ policy.bookingIntervalMinutes }} min</div>
+            <div class="policy-hint">Minimum time slot between bookings.</div>
+          </div>
+          <div class="policy-field">
+            <div class="policy-label">Lead Time</div>
+            <div class="policy-value">{{ policy.leadTimeMinutes }} min</div>
+            <div class="policy-hint">Minimum advance notice required to book.</div>
+          </div>
+          <div class="policy-field">
+            <div class="policy-label">Booking Horizon</div>
+            <div class="policy-value">{{ policy.bookingHorizonDays }} days</div>
+            <div class="policy-hint">How far in advance shoppers can book.</div>
+          </div>
+          <div class="policy-field">
+            <div class="policy-label">Reminder Lead Time</div>
+            <div class="policy-value">{{ policy.reminderLeadTimeMinutes }} min</div>
+            <div class="policy-hint">How many minutes before appointment to send a reminder.</div>
+          </div>
+        </div>
+        <div class="policy-meta mt-3">
+          Last updated: {{ policy.updatedAt | displayDate }}
+        </div>
+      </ng-container>
+
+      <!-- Edit mode -->
+      <ng-container *ngIf="editMode">
+        <div class="support-action-banner mb-3">
+          <svg viewBox="0 0 24 24" width="16" height="16" class="me-2 flex-shrink-0"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+          <span>You are editing the appointment policy on behalf of a merchant. Changes take effect immediately.</span>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label required" for="ap-interval">Booking Interval (minutes)</label>
+            <input
+              id="ap-interval"
+              class="form-control"
+              type="number"
+              min="1"
+              [(ngModel)]="form.bookingIntervalMinutes"
+              placeholder="e.g. 30"
+            />
+            <div class="form-text">Minimum time slot between bookings.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label required" for="ap-lead-time">Lead Time (minutes)</label>
+            <input
+              id="ap-lead-time"
+              class="form-control"
+              type="number"
+              min="0"
+              [(ngModel)]="form.leadTimeMinutes"
+              placeholder="e.g. 60"
+            />
+            <div class="form-text">Minimum advance notice required to book.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label required" for="ap-horizon">Booking Horizon (days)</label>
+            <input
+              id="ap-horizon"
+              class="form-control"
+              type="number"
+              min="1"
+              [(ngModel)]="form.bookingHorizonDays"
+              placeholder="e.g. 60"
+            />
+            <div class="form-text">How far in advance shoppers can book.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label required" for="ap-reminder">Reminder Lead Time (minutes)</label>
+            <input
+              id="ap-reminder"
+              class="form-control"
+              type="number"
+              min="0"
+              [(ngModel)]="form.reminderLeadTimeMinutes"
+              placeholder="e.g. 60"
+            />
+            <div class="form-text">Minutes before appointment to send a reminder notification.</div>
+          </div>
+        </div>
+
+        <div class="alert alert-danger mt-3 mb-0" *ngIf="formError">{{ formError }}</div>
+
+        <div class="d-flex gap-2 justify-content-end mt-3">
+          <button class="btn btn-light" type="button" (click)="cancelEdit()">Cancel</button>
+          <button class="btn btn-warning" type="button" [disabled]="saving" (click)="savePolicy()">
+            <span *ngIf="saving" class="spinner-border spinner-border-sm me-1" role="status"></span>
+            Save Policy
+          </button>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</ng-container>

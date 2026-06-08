@@ -132,6 +132,14 @@
                 <td class="action-cell">
                   <div class="d-flex gap-1 flex-wrap">
                     <button
+                      class="icon-action-btn"
+                      type="button"
+                      title="View detail"
+                      (click)="openDetailDialog(appt)"
+                    >
+                      <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    </button>
+                    <button
                       *ngIf="appt.status === 'BOOKED'"
                       class="icon-action-btn"
                       type="button"
@@ -257,6 +265,123 @@
   </div>
 </div>
 
+<!-- Detail Dialog -->
+<div class="product-dialog-backdrop" *ngIf="activeDialog === 'detail' && selectedAppointment" (click)="closeDialog()">
+  <div class="product-dialog card" (click)="$event.stopPropagation()">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Appointment Detail</span>
+      <button class="icon-action-btn" type="button" aria-label="Close dialog" (click)="closeDialog()">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="card-body">
+      <div class="detail-grid mb-3">
+        <div>
+          <div class="appt-meta-label">Appointment ID</div>
+          <div><code>{{ selectedAppointment.id }}</code></div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Status</div>
+          <div>
+            <span class="status-tag" [ngClass]="appointmentStatusTone(selectedAppointment.status)">
+              {{ appointmentStatusLabel(selectedAppointment.status) }}
+            </span>
+          </div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Start Time</div>
+          <div>{{ selectedAppointment.startTime | displayDate }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">End Time</div>
+          <div>{{ selectedAppointment.endTime | displayDate }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Product</div>
+          <div>{{ selectedAppointment.productName }}</div>
+          <div class="product-cell-subtitle"><code>{{ selectedAppointment.productId }}</code></div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Employee</div>
+          <div>{{ selectedAppointment.employeeName || '—' }}</div>
+          <div class="product-cell-subtitle" *ngIf="selectedAppointment.employeeId"><code>{{ selectedAppointment.employeeId }}</code></div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Merchant ID</div>
+          <div><code>{{ selectedAppointment.merchantId }}</code></div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Branch ID</div>
+          <div><code>{{ selectedAppointment.branchId }}</code></div>
+        </div>
+      </div>
+
+      <div class="detail-section-title">Contact Information</div>
+      <div class="detail-grid mb-3">
+        <div>
+          <div class="appt-meta-label">Contact Type</div>
+          <div><span class="badge text-bg-light">{{ selectedAppointment.contactType }}</span></div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Shopper Account ID</div>
+          <div>
+            <code *ngIf="selectedAppointment.shopperAccountId">{{ selectedAppointment.shopperAccountId }}</code>
+            <span *ngIf="!selectedAppointment.shopperAccountId" class="text-muted">—</span>
+          </div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Name</div>
+          <div>{{ selectedAppointment.contactName }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Email</div>
+          <div>{{ selectedAppointment.contactEmail || '—' }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Phone</div>
+          <div>{{ selectedAppointment.contactPhone || '—' }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Note</div>
+          <div>{{ selectedAppointment.note || '—' }}</div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedAppointment.contactType === 'SHOPPER_OWNED'" class="dialog-note mb-3">
+        SHOPPER_OWNED contact details are read-only and cannot be edited.
+      </div>
+
+      <div class="d-flex gap-2 justify-content-end">
+        <button
+          *ngIf="selectedAppointment.status === 'BOOKED'"
+          class="btn btn-outline-secondary btn-sm"
+          type="button"
+          (click)="openNoteEditDialog(selectedAppointment)"
+        >
+          Edit Note / Contact
+        </button>
+        <button
+          *ngIf="selectedAppointment.status === 'BOOKED'"
+          class="btn btn-warning btn-sm"
+          type="button"
+          (click)="openOverrideDialog(selectedAppointment)"
+        >
+          Support Override
+        </button>
+        <button
+          *ngIf="selectedAppointment.status === 'BOOKED'"
+          class="btn btn-outline-danger btn-sm"
+          type="button"
+          (click)="cancelAppointment(selectedAppointment); closeDialog()"
+        >
+          Cancel
+        </button>
+        <button class="btn btn-light btn-sm" type="button" (click)="closeDialog()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Reschedule Dialog -->
 <div class="product-dialog-backdrop" *ngIf="activeDialog === 'reschedule' && selectedAppointment" (click)="closeDialog()">
   <div class="product-dialog card" (click)="$event.stopPropagation()">
@@ -312,6 +437,71 @@
         <button class="btn btn-primary" type="button" [disabled]="loading" (click)="rescheduleAppointment()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
           Reschedule
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Note / Contact Dialog -->
+<div class="product-dialog-backdrop" *ngIf="activeDialog === 'editNote' && selectedAppointment" (click)="closeDialog()">
+  <div class="product-dialog card" (click)="$event.stopPropagation()">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Edit Note / Contact</span>
+      <button class="icon-action-btn" type="button" aria-label="Close dialog" (click)="closeDialog()">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="card-body">
+      <div class="dialog-meta mb-3">
+        <div>
+          <div class="appt-meta-label">Contact</div>
+          <div>{{ selectedAppointment.contactName }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Contact Type</div>
+          <div><span class="badge text-bg-light">{{ selectedAppointment.contactType }}</span></div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedAppointment.contactType === 'SHOPPER_OWNED'" class="dialog-note mb-3">
+        SHOPPER_OWNED contact details (name, email, phone) are read-only. Only the note field can be updated.
+      </div>
+
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label" for="note-edit-note">Note</label>
+          <textarea
+            id="note-edit-note"
+            class="form-control"
+            rows="3"
+            [(ngModel)]="noteEditForm.note"
+            placeholder="Optional note for this appointment…"
+          ></textarea>
+        </div>
+        <ng-container *ngIf="selectedAppointment.contactType === 'MERCHANT_CAPTURED'">
+          <div class="col-md-6">
+            <label class="form-label required" for="note-edit-name">Contact Name</label>
+            <input id="note-edit-name" class="form-control" type="text" [(ngModel)]="noteEditForm.contactName" placeholder="Full name" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="note-edit-email">Contact Email</label>
+            <input id="note-edit-email" class="form-control" type="email" [(ngModel)]="noteEditForm.contactEmail" placeholder="email@example.com" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="note-edit-phone">Contact Phone</label>
+            <input id="note-edit-phone" class="form-control" type="tel" [(ngModel)]="noteEditForm.contactPhone" placeholder="+44 7700 900000" />
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="alert alert-danger mt-3 mb-0" *ngIf="dialogError">{{ dialogError }}</div>
+
+      <div class="d-flex gap-2 justify-content-end mt-3">
+        <button class="btn btn-light" type="button" (click)="closeDialog()">Cancel</button>
+        <button class="btn btn-primary" type="button" [disabled]="loading" (click)="saveNoteEdit()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
+          Save Changes
         </button>
       </div>
     </div>

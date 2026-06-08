@@ -6,3 +6,33 @@
 .dashboard-shell-host {
   background: linear-gradient(180deg, #f5f2eb 0%, #f8fafc 28%, #ffffff 100%);
 }
+
+.appointments-sub-nav {
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.appointments-sub-nav .nav-link {
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  color: #6b7280;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  background: none;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.appointments-sub-nav .nav-link:hover {
+  color: #374151;
+  border-bottom-color: #d1d5db;
+}
+
+.appointments-sub-nav .nav-link.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  font-weight: 600;
+}
