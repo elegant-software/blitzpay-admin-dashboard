@@ -3,10 +3,12 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
+  AppointmentResponse,
   Branch,
   CreateProductCategoryRequest,
   CreateBranchRequest,
   Merchant,
+  MerchantBookAppointmentRequest,
   MerchantLogoUploadResponse,
   MerchantLocation,
   MerchantSearchRequest,
@@ -17,8 +19,10 @@ import {
   ProductListResponse,
   ProviderAccountResponse,
   RenameProductCategoryRequest,
+  RescheduleAppointmentRequest,
   StartStripeConnectRequest,
   StripeConnectStatusResponse,
+  SupportOverrideAppointmentRequest,
   UpdateBranchRequest,
   UpdateMerchantRequest,
   UpdateMerchantLocationRequest,
@@ -314,6 +318,96 @@ export class MerchantApiService {
   ): Observable<void> {
     return this.http.delete<void>(
       `${this.base(environment, apiVersion)}/merchants/${merchantId}/provider-accounts/${pspCode}`
+    );
+  }
+
+  listAppointments(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    from: string,
+    to: string
+  ): Observable<AppointmentResponse[]> {
+    const params = new HttpParams().set('from', from).set('to', to);
+    return this.http.get<AppointmentResponse[]>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/appointments`,
+      { params }
+    );
+  }
+
+  listAppointmentsByEmployee(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    employeeId: string,
+    from: string,
+    to: string
+  ): Observable<AppointmentResponse[]> {
+    const params = new HttpParams().set('from', from).set('to', to);
+    return this.http.get<AppointmentResponse[]>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/appointments/employee/${employeeId}`,
+      { params }
+    );
+  }
+
+  createAppointment(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    payload: MerchantBookAppointmentRequest
+  ): Observable<AppointmentResponse> {
+    return this.http.post<AppointmentResponse>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/appointments`,
+      payload
+    );
+  }
+
+  cancelAppointment(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    appointmentId: string
+  ): Observable<void> {
+    return this.http.delete<void>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/appointments/${appointmentId}`
+    );
+  }
+
+  completeAppointment(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    appointmentId: string
+  ): Observable<AppointmentResponse> {
+    return this.http.put<AppointmentResponse>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/appointments/${appointmentId}/complete`,
+      {}
+    );
+  }
+
+  rescheduleAppointment(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    appointmentId: string,
+    payload: RescheduleAppointmentRequest
+  ): Observable<AppointmentResponse> {
+    return this.http.put<AppointmentResponse>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/appointments/${appointmentId}/reschedule`,
+      payload
+    );
+  }
+
+  overrideAppointment(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    appointmentId: string,
+    payload: SupportOverrideAppointmentRequest
+  ): Observable<AppointmentResponse> {
+    return this.http.put<AppointmentResponse>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/appointments/${appointmentId}/override`,
+      payload
     );
   }
 
