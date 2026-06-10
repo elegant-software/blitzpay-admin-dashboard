@@ -1,0 +1,226 @@
+<div class="container-fluid px-0">
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Merchant</label>
+          <ng-container *ngIf="!selectedMerchant">
+            <div class="input-group mb-1">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Merchant name or code…"
+                [(ngModel)]="merchantQuery"
+                (keyup.enter)="searchMerchants()"
+                aria-label="Search merchants"
+              />
+              <button class="btn btn-outline-secondary" type="button" (click)="searchMerchants()">Search</button>
+            </div>
+            <ul *ngIf="merchantResults.length" class="list-group" style="max-height:200px;overflow-y:auto;position:absolute;z-index:100;width:33%">
+              <li
+                *ngFor="let m of merchantResults"
+                class="list-group-item list-group-item-action"
+                style="cursor:pointer"
+                (click)="selectMerchant(m)"
+              >
+                <span class="d-block fw-semibold">{{ m.merchantName || m.legalBusinessName }}</span>
+                <span class="d-block small text-muted">{{ m.merchantCode }} · {{ m.city ?? '—' }}</span>
+              </li>
+            </ul>
+          </ng-container>
+          <div *ngIf="selectedMerchant" class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary fs-6 fw-normal px-3 py-2">{{ selectedMerchant.merchantName || selectedMerchant.legalBusinessName }}</span>
+            <span class="text-muted small">{{ selectedMerchant.merchantCode }}</span>
+            <button class="btn btn-sm btn-outline-secondary ms-auto" type="button" (click)="clearMerchant()">Change</button>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">From</label>
+          <input class="form-control" type="date" [(ngModel)]="from" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">To</label>
+          <input class="form-control" type="date" [(ngModel)]="to" />
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary w-100" (click)="load()" [disabled]="!selectedMerchant">
+            Load
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary KPIs -->
+  <div class="row g-3 mb-4" *ngIf="summary || loadingSummary || errorSummary">
+    <ng-container *ngIf="loadingSummary">
+      <div class="col-12 text-center py-3">
+        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+        Loading summary…
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="errorSummary">
+      <div class="col-12">
+        <div class="alert alert-danger mb-0">{{ errorSummary }}</div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="summary && !loadingSummary">
+      <div class="col-md-3">
+        <div class="card border-0 bg-light h-100">
+          <div class="card-body">
+            <div class="text-muted small fw-semibold mb-1">Transactions</div>
+            <div class="fs-3 fw-bold">{{ summary.transactionCount }}</div>
+            <div class="text-muted small">{{ summary.from }} – {{ summary.to }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 bg-light h-100">
+          <div class="card-body">
+            <div class="text-muted small fw-semibold mb-1">Gross Revenue</div>
+            <div class="fs-3 fw-bold">{{ formatMinor(summary.grossAmountMinor, summary.currency) }}</div>
+            <div class="text-muted small">{{ summary.currency }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 bg-light h-100">
+          <div class="card-body">
+            <div class="text-muted small fw-semibold mb-1">Processing Fees</div>
+            <div class="fs-3 fw-bold text-warning">{{ formatMinor(summary.processingFeeMinor, summary.currency) }}</div>
+            <div class="text-muted small">Stripe fee</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 bg-light h-100">
+          <div class="card-body">
+            <div class="text-muted small fw-semibold mb-1">Net to Merchant</div>
+            <div class="fs-3 fw-bold text-success">{{ formatMinor(summary.netAmountMinor, summary.currency) }}</div>
+            <div class="text-muted small">After all fees</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- By payment method -->
+      <div class="col-12" *ngIf="summary.byPaymentMethod.length > 0">
+        <div class="card border-0 bg-light">
+          <div class="card-body py-3">
+            <div class="fw-semibold small text-muted mb-2">BY PAYMENT METHOD</div>
+            <div class="d-flex flex-wrap gap-3">
+              <div *ngFor="let m of summary.byPaymentMethod" class="d-flex align-items-center gap-2">
+                <span class="badge bg-secondary">{{ m.paymentMethod }}</span>
+                <span class="fw-bold">{{ m.transactionCount }}</span>
+                <span class="text-muted small">{{ formatMinor(m.grossAmountMinor, summary.currency) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- Settlements table -->
+  <div class="card" *ngIf="page || loadingList || errorList">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span class="fw-semibold">Settlements</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted small" *ngIf="page">{{ totalElements }} total</span>
+        <button
+          class="btn btn-sm btn-outline-primary"
+          type="button"
+          (click)="refreshVisible()"
+          [disabled]="refreshing || loadingList || visibleStripeRows.length === 0"
+        >
+          <i *ngIf="!refreshing" class="pi pi-refresh me-1"></i>
+          <span *ngIf="refreshing" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          {{ refreshing ? 'Refreshing…' : 'Refresh settlement data' }}
+        </button>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="refreshMessage" class="alert alert-success m-3 mb-0">{{ refreshMessage }}</div>
+      <div *ngIf="refreshError" class="alert alert-danger m-3 mb-0">{{ refreshError }}</div>
+
+      <ng-container *ngIf="loadingList">
+        <div class="text-center py-4">
+          <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+          Loading transactions…
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="errorList">
+        <div class="alert alert-danger m-3 mb-0">{{ errorList }}</div>
+      </ng-container>
+
+      <ng-container *ngIf="page && !loadingList">
+        <div class="table-responsive">
+          <table class="table table-hover table-sm mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Settled At</th>
+                <th>Funds Available</th>
+                <th>Order</th>
+                <th>Provider</th>
+                <th>Method</th>
+                <th class="text-end">Gross</th>
+                <th class="text-end">Processing Fee</th>
+                <th class="text-end">Platform Fee</th>
+                <th class="text-end">Net</th>
+                <th>Stripe</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of rows">
+                <td class="text-nowrap">{{ row.settledAt | displayDate }}</td>
+                <td class="text-nowrap">{{ row.fundsAvailableAt | displayDate }}</td>
+                <td class="font-monospace small">{{ row.orderId }}</td>
+                <td>
+                  <span class="badge bg-info text-dark">{{ row.provider }}</span>
+                </td>
+                <td>{{ row.paymentMethod }}<small *ngIf="row.paymentMethodDetail" class="text-muted ms-1">{{ row.paymentMethodDetail }}</small></td>
+                <td class="text-end text-nowrap">{{ formatMinor(row.grossAmountMinor, row.currency) }}</td>
+                <td class="text-end text-nowrap text-warning">{{ formatMinor(row.processingFeeMinor, row.currency) }}</td>
+                <td class="text-end text-nowrap text-secondary">{{ formatMinor(row.platformFeeMinor, row.currency) }}</td>
+                <td class="text-end text-nowrap fw-semibold text-success">{{ formatMinor(row.netAmountMinor, row.currency) }}</td>
+                <td class="small">
+                  <a
+                    *ngIf="row.providerDashboardUrl"
+                    [href]="row.providerDashboardUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >Open payment</a>
+                  <span *ngIf="!row.providerDashboardUrl" class="text-muted">—</span>
+                  <div *ngIf="row.providerPaymentReference" class="font-monospace text-muted">
+                    {{ row.providerPaymentReference }}
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="rows.length === 0">
+                <td colspan="10" class="text-center text-muted py-4">No settlements found for this period.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top" *ngIf="totalPages > 1">
+          <span class="text-muted small">Page {{ currentPage + 1 }} of {{ totalPages }}</span>
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-secondary" [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)">
+              &lsaquo; Prev
+            </button>
+            <button class="btn btn-outline-secondary" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(currentPage + 1)">
+              Next &rsaquo;
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+</div>
