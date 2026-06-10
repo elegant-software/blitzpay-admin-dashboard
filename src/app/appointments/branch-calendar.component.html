@@ -15,16 +15,50 @@
     <div class="alert alert-success mb-3" *ngIf="statusMessage">{{ statusMessage }}</div>
 
     <div class="row g-2 align-items-end">
-      <div class="col-md-3">
-        <label class="form-label form-label-sm mb-1 required" for="bc-branch-id">Branch ID</label>
-        <input
-          id="bc-branch-id"
-          class="form-control"
-          type="text"
-          [(ngModel)]="branchIdInput"
-          placeholder="e.g. branch-uuid"
-          (keydown.enter)="loadAppointments()"
-        />
+      <div class="col-md-5">
+        <label class="form-label form-label-sm mb-1 required" for="bc-merchant-search">Merchant &amp; Branch</label>
+        <ng-container *ngIf="!selectedMerchantItem">
+          <div class="input-group">
+            <input
+              id="bc-merchant-search"
+              type="text"
+              class="form-control"
+              placeholder="Merchant name or code…"
+              [(ngModel)]="merchantQuery"
+              (keyup.enter)="searchMerchantsForFilter()"
+            />
+            <button class="btn btn-outline-secondary" type="button" (click)="searchMerchantsForFilter()">Search</button>
+          </div>
+          <ul *ngIf="merchantResults.length" class="list-group mt-1" style="max-height:200px;overflow-y:auto;position:absolute;z-index:100;width:40%">
+            <li
+              *ngFor="let m of merchantResults"
+              class="list-group-item list-group-item-action"
+              style="cursor:pointer"
+              (click)="selectMerchantForFilter(m)"
+            >
+              <span class="d-block fw-semibold small">{{ m.merchantName || m.legalBusinessName }}</span>
+              <span class="d-block small text-muted">{{ m.merchantCode }}</span>
+            </li>
+          </ul>
+        </ng-container>
+        <ng-container *ngIf="selectedMerchantItem && !selectedBranch">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge bg-secondary fw-normal">{{ selectedMerchantItem.merchantName || selectedMerchantItem.legalBusinessName }}</span>
+            <button class="btn btn-sm btn-link p-0 text-secondary" type="button" (click)="clearMerchantFilter()">Change merchant</button>
+          </div>
+          <div *ngIf="loadingBranches" class="small text-muted d-flex align-items-center gap-1">
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading branches…
+          </div>
+          <select *ngIf="!loadingBranches" class="form-select form-select-sm" (ngModelChange)="selectBranch($event)" [ngModel]="selectedBranch" [disabled]="filteredBranches.length === 0">
+            <option [ngValue]="null">— Select branch —</option>
+            <option *ngFor="let b of filteredBranches" [ngValue]="b">{{ b.name }}{{ b.branchCode ? ' · ' + b.branchCode : '' }}</option>
+          </select>
+        </ng-container>
+        <div *ngIf="selectedBranch" class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="badge bg-primary fw-normal px-2 py-1">{{ selectedBranch.name }}</span>
+          <span *ngIf="selectedBranch.branchCode" class="text-muted small">{{ selectedBranch.branchCode }}</span>
+          <button class="btn btn-sm btn-link p-0 ms-auto text-secondary" type="button" (click)="clearMerchantFilter()">Change</button>
+        </div>
       </div>
       <div class="col-md-2">
         <label class="form-label form-label-sm mb-1 required" for="bc-from">From</label>
@@ -50,7 +84,7 @@
   <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
       <span>
-        Appointments for Branch <code>{{ branchId }}</code>
+        Appointments
         <span class="badge text-bg-light ms-1">{{ filteredAppointments.length }}</span>
       </span>
       <div class="d-flex align-items-center gap-2">
@@ -97,7 +131,6 @@
                 </td>
                 <td>
                   <div>{{ appt.productName }}</div>
-                  <div class="product-cell-subtitle"><code>{{ appt.productId }}</code></div>
                 </td>
                 <td>
                   <span *ngIf="appt.employeeName">{{ appt.employeeName }}</span>
@@ -166,8 +199,8 @@
     <div class="card-body">
       <div class="detail-grid mb-3">
         <div>
-          <div class="appt-meta-label">Appointment ID</div>
-          <div><code>{{ selectedAppointment.id }}</code></div>
+          <div class="appt-meta-label">Service</div>
+          <div>{{ selectedAppointment.productName }}</div>
         </div>
         <div>
           <div class="appt-meta-label">Status</div>
@@ -186,22 +219,8 @@
           <div>{{ selectedAppointment.endTime | displayDate }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Product</div>
-          <div>{{ selectedAppointment.productName }}</div>
-          <div class="product-cell-subtitle"><code>{{ selectedAppointment.productId }}</code></div>
-        </div>
-        <div>
           <div class="appt-meta-label">Employee</div>
           <div>{{ selectedAppointment.employeeName || '—' }}</div>
-          <div class="product-cell-subtitle" *ngIf="selectedAppointment.employeeId"><code>{{ selectedAppointment.employeeId }}</code></div>
-        </div>
-        <div>
-          <div class="appt-meta-label">Merchant ID</div>
-          <div><code>{{ selectedAppointment.merchantId }}</code></div>
-        </div>
-        <div>
-          <div class="appt-meta-label">Branch ID</div>
-          <div><code>{{ selectedAppointment.branchId }}</code></div>
         </div>
       </div>
 
@@ -211,13 +230,6 @@
           <div class="appt-meta-label">Contact Type</div>
           <div>
             <span class="badge text-bg-light">{{ selectedAppointment.contactType }}</span>
-          </div>
-        </div>
-        <div>
-          <div class="appt-meta-label">Shopper Account ID</div>
-          <div>
-            <code *ngIf="selectedAppointment.shopperAccountId">{{ selectedAppointment.shopperAccountId }}</code>
-            <span *ngIf="!selectedAppointment.shopperAccountId" class="text-muted">—</span>
           </div>
         </div>
         <div>
@@ -281,12 +293,12 @@
 
       <div class="dialog-meta mb-3">
         <div>
-          <div class="appt-meta-label">Appointment ID</div>
-          <div><code>{{ selectedAppointment.id }}</code></div>
-        </div>
-        <div>
           <div class="appt-meta-label">Contact</div>
           <div>{{ selectedAppointment.contactName }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Service</div>
+          <div>{{ selectedAppointment.productName }}</div>
         </div>
         <div>
           <div class="appt-meta-label">Current Start</div>
@@ -304,20 +316,20 @@
 
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label required" for="bc-override-product">New Product ID</label>
-          <input id="bc-override-product" class="form-control" type="text" [(ngModel)]="overrideForm.newProductId" placeholder="Product UUID" />
+          <label class="form-label required" for="bc-override-product">New Product</label>
+          <input id="bc-override-product" class="form-control" type="text" [(ngModel)]="overrideForm.newProductId" placeholder="Product ID" />
         </div>
         <div class="col-md-6">
-          <label class="form-label required" for="bc-override-category">New Product Category ID</label>
-          <input id="bc-override-category" class="form-control" type="text" [(ngModel)]="overrideForm.newProductCategoryId" placeholder="Category UUID" />
+          <label class="form-label required" for="bc-override-category">New Product Category</label>
+          <input id="bc-override-category" class="form-control" type="text" [(ngModel)]="overrideForm.newProductCategoryId" placeholder="Category ID" />
         </div>
         <div class="col-md-6">
           <label class="form-label required" for="bc-override-start">New Start Time</label>
           <input id="bc-override-start" class="form-control" type="datetime-local" [(ngModel)]="overrideForm.newStartTime" />
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="bc-override-employee">New Employee ID (optional)</label>
-          <input id="bc-override-employee" class="form-control" type="text" [(ngModel)]="overrideForm.newEmployeeId" placeholder="Employee UUID" />
+          <label class="form-label" for="bc-override-employee">New Employee (optional)</label>
+          <input id="bc-override-employee" class="form-control" type="text" [(ngModel)]="overrideForm.newEmployeeId" placeholder="Employee ID" />
         </div>
         <div class="col-12">
           <label class="form-label required" for="bc-override-reason">Override Reason</label>

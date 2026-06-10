@@ -6,6 +6,7 @@ import {
   AppointmentPolicy,
   AppointmentPolicyFormModel,
   EnvironmentKey,
+  MerchantSearchResultItem,
   UpdateAppointmentPolicyRequest
 } from '../models/merchant-catalog.models';
 import { MerchantApiService } from '../services/merchant-api.service';
@@ -25,6 +26,9 @@ export class AppointmentPolicyComponent {
 
   merchantIdInput = '';
   merchantId = '';
+  merchantQuery = '';
+  merchantResults: MerchantSearchResultItem[] = [];
+  selectedMerchantItem: MerchantSearchResultItem | null = null;
 
   policy: AppointmentPolicy | null = null;
   form: AppointmentPolicyFormModel = this.emptyForm();
@@ -43,14 +47,38 @@ export class AppointmentPolicyComponent {
     return getEnvironmentByKey(this.selectedEnvironmentKey);
   }
 
+  searchMerchantsForFilter(): void {
+    const q = this.merchantQuery.trim();
+    if (!q) return;
+    this.merchantApi.searchMerchants(this.selectedEnvironment, this.apiVersion, { q, page: 0 }).subscribe({
+      next: response => { this.merchantResults = response.results; },
+    });
+  }
+
+  selectMerchantForFilter(m: MerchantSearchResultItem): void {
+    this.selectedMerchantItem = m;
+    this.merchantIdInput = m.applicationId;
+    this.merchantResults = [];
+  }
+
+  clearMerchantFilter(): void {
+    this.selectedMerchantItem = null;
+    this.merchantIdInput = '';
+    this.merchantId = '';
+    this.merchantQuery = '';
+    this.merchantResults = [];
+    this.policy = null;
+    this.editMode = false;
+  }
+
   get canLoad(): boolean {
-    return this.merchantIdInput.trim().length > 0;
+    return !!this.selectedMerchantItem;
   }
 
   loadPolicy(): void {
     const merchantId = this.merchantIdInput.trim();
     if (!merchantId) {
-      this.errorMessage = 'Enter a Merchant ID before loading.';
+      this.errorMessage = 'Select a merchant before loading.';
       return;
     }
 
@@ -77,6 +105,9 @@ export class AppointmentPolicyComponent {
   clearSearch(): void {
     this.merchantIdInput = '';
     this.merchantId = '';
+    this.merchantQuery = '';
+    this.merchantResults = [];
+    this.selectedMerchantItem = null;
     this.policy = null;
     this.editMode = false;
     this.form = this.emptyForm();

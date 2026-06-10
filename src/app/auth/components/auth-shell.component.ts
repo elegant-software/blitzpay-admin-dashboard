@@ -5,6 +5,7 @@ import { AppointmentPolicyComponent } from '../../appointments/appointment-polic
 import { BranchCalendarComponent } from '../../appointments/branch-calendar.component';
 import { MerchantCatalogComponent } from '../../merchant-catalog/merchant-catalog.component';
 import { PaymentOpsDashboardComponent } from '../../payment-ops-dashboard/payment-ops-dashboard.component';
+import { SettlementReportingComponent } from '../../settlements/settlement-reporting.component';
 import { UserManagementComponent } from '../../user-management/user-management.component';
 import { AuthService } from '../services/auth.service';
 import { AuthStateService } from '../services/auth-state.service';
@@ -15,6 +16,7 @@ type MainSection =
   | 'onboarding'
   | 'verification'
   | 'settlement'
+  | 'settlementReporting'
   | 'merchantCatalog'
   | 'appointments'
   | 'branchCalendar'
@@ -33,6 +35,7 @@ type AppointmentsSubSection = 'merchant' | 'branchCalendar' | 'policy';
     BranchCalendarComponent,
     MerchantCatalogComponent,
     PaymentOpsDashboardComponent,
+    SettlementReportingComponent,
     UserManagementComponent
   ],
   templateUrl: './auth-shell.component.html',
@@ -91,6 +94,7 @@ export class AuthShellComponent {
     onboarding: 'Merchant Onboarding',
     verification: 'Verification Queue',
     settlement: 'Settlement Setup',
+    settlementReporting: 'Settlement Reporting',
     merchantCatalog: 'Merchant Catalog',
     appointments: 'Appointments',
     branchCalendar: 'Appointments',

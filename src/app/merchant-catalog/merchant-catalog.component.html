@@ -661,7 +661,6 @@
       <div class="dialog-meta">
         <div><strong>Merchant:</strong> {{ merchant.merchantName || merchant.legalBusinessName || merchant.applicationReference }}</div>
         <div><strong>Merchant Code:</strong> {{ merchant.merchantCode || '—' }}</div>
-        <div><strong>Merchant ID:</strong> {{ merchant.applicationId }}</div>
         <div><strong>Updated:</strong> {{ merchant.lastUpdatedAt | displayDate }}</div>
       </div>
 
@@ -788,8 +787,6 @@
       <div class="dialog-meta">
         <div><strong>Branch:</strong> {{ branch.name }}</div>
         <div><strong>Branch Code:</strong> {{ branch.branchCode || '—' }}</div>
-        <div><strong>Branch ID:</strong> {{ branch.branchId || branch.id || '—' }}</div>
-        <div><strong>Merchant ID:</strong> {{ branch.merchantId }}</div>
         <div><strong>City:</strong> {{ branch.city || '—' }}</div>
         <div *ngIf="branch.website"><strong>Website:</strong> {{ branch.website }}</div>
       </div>
@@ -909,11 +906,9 @@
     </div>
     <div class="card-body" *ngIf="selectedProduct as product">
       <div class="dialog-meta">
-        <div><strong>Product ID:</strong> {{ product.productId }}</div>
-        <div><strong>Merchant ID:</strong> {{ product.merchantId }}</div>
         <div><strong>Product Code:</strong> {{ product.productCode ?? '—' }}</div>
         <div><strong>Category:</strong> {{ product.categoryName || '—' }}</div>
-        <div><strong>Current branch:</strong> {{ product.branchId || 'Merchant-level product' }}</div>
+        <div><strong>Current branch:</strong> {{ getBranchNameForProduct(product) }}</div>
         <div><strong>Updated:</strong> {{ product.updatedAt | displayDate }}</div>
       </div>
 

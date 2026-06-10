@@ -21,15 +21,36 @@
 
     <div class="row g-2 align-items-end">
       <div class="col-md-4">
-        <label class="form-label form-label-sm mb-1 required" for="ap-merchant-id">Merchant ID</label>
-        <input
-          id="ap-merchant-id"
-          class="form-control"
-          type="text"
-          [(ngModel)]="merchantIdInput"
-          placeholder="e.g. merchant-uuid"
-          (keydown.enter)="loadPolicy()"
-        />
+        <label class="form-label form-label-sm mb-1 required" for="ap-merchant-search">Merchant</label>
+        <ng-container *ngIf="!selectedMerchantItem">
+          <div class="input-group">
+            <input
+              id="ap-merchant-search"
+              type="text"
+              class="form-control"
+              placeholder="Merchant name or code…"
+              [(ngModel)]="merchantQuery"
+              (keyup.enter)="searchMerchantsForFilter()"
+            />
+            <button class="btn btn-outline-secondary" type="button" (click)="searchMerchantsForFilter()">Search</button>
+          </div>
+          <ul *ngIf="merchantResults.length" class="list-group mt-1" style="max-height:200px;overflow-y:auto;position:absolute;z-index:100;width:33%">
+            <li
+              *ngFor="let m of merchantResults"
+              class="list-group-item list-group-item-action"
+              style="cursor:pointer"
+              (click)="selectMerchantForFilter(m)"
+            >
+              <span class="d-block fw-semibold small">{{ m.merchantName || m.legalBusinessName }}</span>
+              <span class="d-block small text-muted">{{ m.merchantCode }}</span>
+            </li>
+          </ul>
+        </ng-container>
+        <div *ngIf="selectedMerchantItem" class="d-flex align-items-center gap-2">
+          <span class="badge bg-primary fw-normal px-2 py-1">{{ selectedMerchantItem.merchantName || selectedMerchantItem.legalBusinessName }}</span>
+          <span class="text-muted small">{{ selectedMerchantItem.merchantCode }}</span>
+          <button class="btn btn-sm btn-link p-0 ms-auto text-secondary" type="button" (click)="clearMerchantFilter()">Change</button>
+        </div>
       </div>
       <div class="col-md-4 d-flex gap-2 align-items-end">
         <button class="btn btn-primary" type="button" [disabled]="loading || !canLoad" (click)="loadPolicy()">
@@ -46,9 +67,7 @@
 <ng-container *ngIf="merchantId">
   <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-      <span>
-        Policy for <code>{{ merchantId }}</code>
-      </span>
+      <span>Appointment Policy</span>
       <div class="d-flex gap-2" *ngIf="policy && !editMode">
         <button class="btn btn-sm btn-outline-primary" type="button" (click)="startEdit()">Edit Policy</button>
       </div>

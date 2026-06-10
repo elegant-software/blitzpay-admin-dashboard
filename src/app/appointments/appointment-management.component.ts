@@ -8,6 +8,7 @@ import {
   AppointmentStatus,
   Branch,
   MerchantBookAppointmentRequest,
+  MerchantSearchResultItem,
   NoteEditFormModel,
   OverrideFormModel,
   Product,
@@ -39,6 +40,9 @@ export class AppointmentManagementComponent implements OnInit {
 
   merchantIdInput = '';
   merchantId = '';
+  merchantQuery = '';
+  merchantResults: MerchantSearchResultItem[] = [];
+  selectedMerchantItem: MerchantSearchResultItem | null = null;
   employeeIdFilter = '';
 
   fromDate = '';
@@ -93,14 +97,36 @@ export class AppointmentManagementComponent implements OnInit {
     return getEnvironmentByKey(this.selectedEnvironmentKey);
   }
 
+  searchMerchantsForFilter(): void {
+    const q = this.merchantQuery.trim();
+    if (!q) return;
+    this.merchantApi.searchMerchants(this.selectedEnvironment, this.apiVersion, { q, page: 0 }).subscribe({
+      next: response => { this.merchantResults = response.results; },
+    });
+  }
+
+  selectMerchantForFilter(m: MerchantSearchResultItem): void {
+    this.selectedMerchantItem = m;
+    this.merchantIdInput = m.applicationId;
+    this.merchantResults = [];
+  }
+
+  clearMerchantFilter(): void {
+    this.selectedMerchantItem = null;
+    this.merchantIdInput = '';
+    this.merchantId = '';
+    this.merchantQuery = '';
+    this.merchantResults = [];
+  }
+
   get canSearch(): boolean {
-    return this.merchantIdInput.trim().length > 0 && this.fromDate.length > 0 && this.toDate.length > 0;
+    return !!this.selectedMerchantItem && this.fromDate.length > 0 && this.toDate.length > 0;
   }
 
   loadAppointments(): void {
     const merchantId = this.merchantIdInput.trim();
     if (!merchantId) {
-      this.errorMessage = 'Enter a merchant ID before searching.';
+      this.errorMessage = 'Select a merchant before searching.';
       return;
     }
     if (!this.fromDate || !this.toDate) {
@@ -150,6 +176,9 @@ export class AppointmentManagementComponent implements OnInit {
   clearSearch(): void {
     this.merchantIdInput = '';
     this.merchantId = '';
+    this.merchantQuery = '';
+    this.merchantResults = [];
+    this.selectedMerchantItem = null;
     this.employeeIdFilter = '';
     this.statusFilter = '';
     this.appointments = [];

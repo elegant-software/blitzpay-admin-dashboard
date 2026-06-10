@@ -16,15 +16,37 @@
 
     <div class="row g-2 align-items-end">
       <div class="col-md-3">
-        <label class="form-label form-label-sm mb-1 required" for="appt-merchant-id">Merchant ID</label>
-        <input
-          id="appt-merchant-id"
-          class="form-control"
-          type="text"
-          [(ngModel)]="merchantIdInput"
-          placeholder="e.g. merchant-uuid"
-          (keydown.enter)="loadAppointments()"
-        />
+        <label class="form-label form-label-sm mb-1 required" for="appt-merchant-search">Merchant</label>
+        <ng-container *ngIf="!selectedMerchantItem">
+          <div class="input-group">
+            <input
+              id="appt-merchant-search"
+              type="text"
+              class="form-control"
+              placeholder="Merchant name or code…"
+              [(ngModel)]="merchantQuery"
+              (keyup.enter)="searchMerchantsForFilter()"
+              aria-label="Search merchants"
+            />
+            <button class="btn btn-outline-secondary" type="button" (click)="searchMerchantsForFilter()">Search</button>
+          </div>
+          <ul *ngIf="merchantResults.length" class="list-group mt-1" style="max-height:200px;overflow-y:auto;position:absolute;z-index:100;width:25%">
+            <li
+              *ngFor="let m of merchantResults"
+              class="list-group-item list-group-item-action"
+              style="cursor:pointer"
+              (click)="selectMerchantForFilter(m)"
+            >
+              <span class="d-block fw-semibold small">{{ m.merchantName || m.legalBusinessName }}</span>
+              <span class="d-block small text-muted">{{ m.merchantCode }}</span>
+            </li>
+          </ul>
+        </ng-container>
+        <div *ngIf="selectedMerchantItem" class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="badge bg-primary fw-normal px-2 py-1">{{ selectedMerchantItem.merchantName || selectedMerchantItem.legalBusinessName }}</span>
+          <span class="text-muted small">{{ selectedMerchantItem.merchantCode }}</span>
+          <button class="btn btn-sm btn-link p-0 ms-auto text-secondary" type="button" (click)="clearMerchantFilter()">Change</button>
+        </div>
       </div>
       <div class="col-md-2">
         <label class="form-label form-label-sm mb-1 required" for="appt-from">From</label>
@@ -35,7 +57,7 @@
         <input id="appt-to" class="form-control" type="date" [(ngModel)]="toDate" />
       </div>
       <div class="col-md-2">
-        <label class="form-label form-label-sm mb-1" for="appt-employee-filter">Employee ID (optional)</label>
+        <label class="form-label form-label-sm mb-1" for="appt-employee-filter">Employee (optional)</label>
         <input
           id="appt-employee-filter"
           class="form-control"
@@ -115,7 +137,6 @@
                 </td>
                 <td>
                   <div>{{ appt.productName }}</div>
-                  <div class="product-cell-subtitle"><code>{{ appt.productId }}</code></div>
                 </td>
                 <td>
                   <span *ngIf="appt.employeeName">{{ appt.employeeName }}</span>
@@ -222,17 +243,16 @@
             class="form-control"
             type="text"
             [(ngModel)]="createForm.productId"
-            placeholder="Product UUID"
+            placeholder="Product ID"
           />
-          <div class="form-text text-muted">Enter the product UUID directly.</div>
         </div>
         <div class="col-md-6">
           <label class="form-label required" for="create-start-time">Start Time</label>
           <input id="create-start-time" class="form-control" type="datetime-local" [(ngModel)]="createForm.startTime" />
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="create-employee">Employee ID (optional)</label>
-          <input id="create-employee" class="form-control" type="text" [(ngModel)]="createForm.employeeId" placeholder="Employee UUID" />
+          <label class="form-label" for="create-employee">Employee (optional)</label>
+          <input id="create-employee" class="form-control" type="text" [(ngModel)]="createForm.employeeId" placeholder="Employee ID" />
         </div>
         <div class="col-md-6">
           <label class="form-label required" for="create-contact-name">Contact Name</label>
@@ -277,8 +297,8 @@
     <div class="card-body">
       <div class="detail-grid mb-3">
         <div>
-          <div class="appt-meta-label">Appointment ID</div>
-          <div><code>{{ selectedAppointment.id }}</code></div>
+          <div class="appt-meta-label">Service</div>
+          <div>{{ selectedAppointment.productName }}</div>
         </div>
         <div>
           <div class="appt-meta-label">Status</div>
@@ -297,22 +317,8 @@
           <div>{{ selectedAppointment.endTime | displayDate }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Product</div>
-          <div>{{ selectedAppointment.productName }}</div>
-          <div class="product-cell-subtitle"><code>{{ selectedAppointment.productId }}</code></div>
-        </div>
-        <div>
           <div class="appt-meta-label">Employee</div>
           <div>{{ selectedAppointment.employeeName || '—' }}</div>
-          <div class="product-cell-subtitle" *ngIf="selectedAppointment.employeeId"><code>{{ selectedAppointment.employeeId }}</code></div>
-        </div>
-        <div>
-          <div class="appt-meta-label">Merchant ID</div>
-          <div><code>{{ selectedAppointment.merchantId }}</code></div>
-        </div>
-        <div>
-          <div class="appt-meta-label">Branch ID</div>
-          <div><code>{{ selectedAppointment.branchId }}</code></div>
         </div>
       </div>
 
@@ -321,13 +327,6 @@
         <div>
           <div class="appt-meta-label">Contact Type</div>
           <div><span class="badge text-bg-light">{{ selectedAppointment.contactType }}</span></div>
-        </div>
-        <div>
-          <div class="appt-meta-label">Shopper Account ID</div>
-          <div>
-            <code *ngIf="selectedAppointment.shopperAccountId">{{ selectedAppointment.shopperAccountId }}</code>
-            <span *ngIf="!selectedAppointment.shopperAccountId" class="text-muted">—</span>
-          </div>
         </div>
         <div>
           <div class="appt-meta-label">Name</div>
@@ -413,20 +412,20 @@
 
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label required" for="reschedule-product">New Product ID</label>
-          <input id="reschedule-product" class="form-control" type="text" [(ngModel)]="rescheduleForm.newProductId" placeholder="Product UUID" />
+          <label class="form-label required" for="reschedule-product">New Product</label>
+          <input id="reschedule-product" class="form-control" type="text" [(ngModel)]="rescheduleForm.newProductId" placeholder="Product ID" />
         </div>
         <div class="col-md-6">
-          <label class="form-label required" for="reschedule-category">New Product Category ID</label>
-          <input id="reschedule-category" class="form-control" type="text" [(ngModel)]="rescheduleForm.newProductCategoryId" placeholder="Category UUID" />
+          <label class="form-label required" for="reschedule-category">New Product Category</label>
+          <input id="reschedule-category" class="form-control" type="text" [(ngModel)]="rescheduleForm.newProductCategoryId" placeholder="Category ID" />
         </div>
         <div class="col-md-6">
           <label class="form-label required" for="reschedule-start">New Start Time</label>
           <input id="reschedule-start" class="form-control" type="datetime-local" [(ngModel)]="rescheduleForm.newStartTime" />
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="reschedule-employee">New Employee ID (optional)</label>
-          <input id="reschedule-employee" class="form-control" type="text" [(ngModel)]="rescheduleForm.newEmployeeId" placeholder="Employee UUID" />
+          <label class="form-label" for="reschedule-employee">New Employee (optional)</label>
+          <input id="reschedule-employee" class="form-control" type="text" [(ngModel)]="rescheduleForm.newEmployeeId" placeholder="Employee ID" />
         </div>
       </div>
 
@@ -524,12 +523,12 @@
 
       <div class="dialog-meta mb-3">
         <div>
-          <div class="appt-meta-label">Appointment ID</div>
-          <div><code>{{ selectedAppointment.id }}</code></div>
-        </div>
-        <div>
           <div class="appt-meta-label">Contact</div>
           <div>{{ selectedAppointment.contactName }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Service</div>
+          <div>{{ selectedAppointment.productName }}</div>
         </div>
         <div>
           <div class="appt-meta-label">Current Start</div>
@@ -547,20 +546,20 @@
 
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label required" for="override-product">New Product ID</label>
-          <input id="override-product" class="form-control" type="text" [(ngModel)]="overrideForm.newProductId" placeholder="Product UUID" />
+          <label class="form-label required" for="override-product">New Product</label>
+          <input id="override-product" class="form-control" type="text" [(ngModel)]="overrideForm.newProductId" placeholder="Product ID" />
         </div>
         <div class="col-md-6">
-          <label class="form-label required" for="override-category">New Product Category ID</label>
-          <input id="override-category" class="form-control" type="text" [(ngModel)]="overrideForm.newProductCategoryId" placeholder="Category UUID" />
+          <label class="form-label required" for="override-category">New Product Category</label>
+          <input id="override-category" class="form-control" type="text" [(ngModel)]="overrideForm.newProductCategoryId" placeholder="Category ID" />
         </div>
         <div class="col-md-6">
           <label class="form-label required" for="override-start">New Start Time</label>
           <input id="override-start" class="form-control" type="datetime-local" [(ngModel)]="overrideForm.newStartTime" />
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="override-employee">New Employee ID (optional)</label>
-          <input id="override-employee" class="form-control" type="text" [(ngModel)]="overrideForm.newEmployeeId" placeholder="Employee UUID" />
+          <label class="form-label" for="override-employee">New Employee (optional)</label>
+          <input id="override-employee" class="form-control" type="text" [(ngModel)]="overrideForm.newEmployeeId" placeholder="Employee ID" />
         </div>
         <div class="col-12">
           <label class="form-label required" for="override-reason">Override Reason</label>

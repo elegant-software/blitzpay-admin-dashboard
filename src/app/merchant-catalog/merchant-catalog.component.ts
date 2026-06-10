@@ -1829,6 +1829,12 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
     };
   }
 
+  getBranchNameForProduct(product: Product): string {
+    if (!product.branchId) return 'Merchant-level product';
+    const branch = this.branches.find(b => (b.branchId ?? b.id) === product.branchId);
+    return branch ? branch.name : 'Merchant-level product';
+  }
+
   private normalizeBranch(branch: Branch): Branch {
     return {
       ...branch,

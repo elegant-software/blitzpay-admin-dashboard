@@ -5,7 +5,9 @@ import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import {
   AppointmentResponse,
   AppointmentStatus,
+  Branch,
   EnvironmentKey,
+  MerchantSearchResultItem,
   OverrideFormModel,
   SupportOverrideAppointmentRequest
 } from '../models/merchant-catalog.models';
@@ -28,6 +30,14 @@ export class BranchCalendarComponent implements OnInit {
 
   branchIdInput = '';
   branchId = '';
+
+  merchantQuery = '';
+  merchantResults: MerchantSearchResultItem[] = [];
+  selectedMerchantItem: MerchantSearchResultItem | null = null;
+  branches: Branch[] = [];
+  branchQuery = '';
+  selectedBranch: Branch | null = null;
+  loadingBranches = false;
 
   fromDate = '';
   toDate = '';
@@ -63,14 +73,63 @@ export class BranchCalendarComponent implements OnInit {
     return getEnvironmentByKey(this.selectedEnvironmentKey);
   }
 
+  searchMerchantsForFilter(): void {
+    const q = this.merchantQuery.trim();
+    if (!q) return;
+    this.merchantApi.searchMerchants(this.selectedEnvironment, this.apiVersion, { q, page: 0 }).subscribe({
+      next: response => { this.merchantResults = response.results; },
+    });
+  }
+
+  selectMerchantForFilter(m: MerchantSearchResultItem): void {
+    this.selectedMerchantItem = m;
+    this.merchantResults = [];
+    this.selectedBranch = null;
+    this.branchIdInput = '';
+    this.branches = [];
+    this.branchQuery = '';
+    this.loadingBranches = true;
+    this.merchantApi.getBranches(this.selectedEnvironment, this.apiVersion, m.applicationId).subscribe({
+      next: branches => {
+        this.branches = branches.filter(b => b.active !== false);
+        this.loadingBranches = false;
+      },
+      error: () => { this.loadingBranches = false; }
+    });
+  }
+
+  get filteredBranches(): Branch[] {
+    const q = this.branchQuery.trim().toLowerCase();
+    if (!q) return this.branches;
+    return this.branches.filter(b =>
+      b.name.toLowerCase().includes(q) || (b.branchCode ?? '').toLowerCase().includes(q)
+    );
+  }
+
+  selectBranch(b: Branch): void {
+    this.selectedBranch = b;
+    this.branchIdInput = b.branchId ?? b.id ?? '';
+  }
+
+  clearMerchantFilter(): void {
+    this.selectedMerchantItem = null;
+    this.merchantQuery = '';
+    this.merchantResults = [];
+    this.branches = [];
+    this.branchQuery = '';
+    this.selectedBranch = null;
+    this.branchIdInput = '';
+    this.branchId = '';
+  }
+
   get canSearch(): boolean {
-    return this.branchIdInput.trim().length > 0 && this.fromDate.length > 0 && this.toDate.length > 0;
+    return !!this.selectedBranch && this.fromDate.length > 0 && this.toDate.length > 0;
   }
 
   loadAppointments(): void {
     const branchId = this.branchIdInput.trim();
     if (!branchId) {
-      this.errorMessage = 'Enter a Branch ID before searching.';
+      this.errorMessage = 'Select a branch before loading the calendar.';
       return;
     }
     if (!this.fromDate || !this.toDate) {
@@ -107,6 +166,12 @@ export class BranchCalendarComponent implements OnInit {
   clearSearch(): void {
     this.branchIdInput = '';
     this.branchId = '';
+    this.merchantQuery = '';
+    this.merchantResults = [];
+    this.selectedMerchantItem = null;
+    this.branches = [];
+    this.branchQuery = '';
+    this.selectedBranch = null;
     this.statusFilter = '';
     this.appointments = [];
     this.filteredAppointments = [];
