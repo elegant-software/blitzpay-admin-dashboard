@@ -16,15 +16,37 @@
 
     <div class="row g-2 align-items-end">
       <div class="col-md-3">
-        <label class="form-label form-label-sm mb-1 required" for="appt-merchant-id">Merchant ID</label>
-        <input
-          id="appt-merchant-id"
-          class="form-control"
-          type="text"
-          [(ngModel)]="merchantIdInput"
-          placeholder="e.g. merchant-uuid"
-          (keydown.enter)="loadAppointments()"
-        />
+        <label class="form-label form-label-sm mb-1 required" for="appt-merchant-search">Merchant</label>
+        <ng-container *ngIf="!selectedMerchantItem">
+          <div class="input-group">
+            <input
+              id="appt-merchant-search"
+              type="text"
+              class="form-control"
+              placeholder="Merchant name or code…"
+              [(ngModel)]="merchantQuery"
+              (keyup.enter)="searchMerchantsForFilter()"
+              aria-label="Search merchants"
+            />
+            <button class="btn btn-outline-secondary" type="button" (click)="searchMerchantsForFilter()">Search</button>
+          </div>
+          <ul *ngIf="merchantResults.length" class="list-group mt-1" style="max-height:200px;overflow-y:auto;position:absolute;z-index:100;width:25%">
+            <li
+              *ngFor="let m of merchantResults"
+              class="list-group-item list-group-item-action"
+              style="cursor:pointer"
+              (click)="selectMerchantForFilter(m)"
+            >
+              <span class="d-block fw-semibold small">{{ m.merchantName || m.legalBusinessName }}</span>
+              <span class="d-block small text-muted">{{ m.merchantCode }}</span>
+            </li>
+          </ul>
+        </ng-container>
+        <div *ngIf="selectedMerchantItem" class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="badge bg-primary fw-normal px-2 py-1">{{ selectedMerchantItem.merchantName || selectedMerchantItem.legalBusinessName }}</span>
+          <span class="text-muted small">{{ selectedMerchantItem.merchantCode }}</span>
+          <button class="btn btn-sm btn-link p-0 ms-auto text-secondary" type="button" (click)="clearMerchantFilter()">Change</button>
+        </div>
       </div>
       <div class="col-md-2">
         <label class="form-label form-label-sm mb-1 required" for="appt-from">From</label>
@@ -35,7 +57,7 @@
         <input id="appt-to" class="form-control" type="date" [(ngModel)]="toDate" />
       </div>
       <div class="col-md-2">
-        <label class="form-label form-label-sm mb-1" for="appt-employee-filter">Employee ID (optional)</label>
+        <label class="form-label form-label-sm mb-1" for="appt-employee-filter">Employee (optional)</label>
         <input
           id="appt-employee-filter"
           class="form-control"
@@ -115,7 +137,6 @@
                 </td>
                 <td>
                   <div>{{ appt.productName }}</div>
-                  <div class="product-cell-subtitle"><code>{{ appt.productId }}</code></div>
                 </td>
                 <td>
                   <span *ngIf="appt.employeeName">{{ appt.employeeName }}</span>
@@ -131,6 +152,14 @@
                 </td>
                 <td class="action-cell">
                   <div class="d-flex gap-1 flex-wrap">
+                    <button
+                      class="icon-action-btn"
+                      type="button"
+                      title="View detail"
+                      (click)="openDetailDialog(appt)"
+                    >
+                      <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    </button>
                     <button
                       *ngIf="appt.status === 'BOOKED'"
                       class="icon-action-btn"
@@ -214,17 +243,16 @@
             class="form-control"
             type="text"
             [(ngModel)]="createForm.productId"
-            placeholder="Product UUID"
+            placeholder="Product ID"
           />
-          <div class="form-text text-muted">Enter the product UUID directly.</div>
         </div>
         <div class="col-md-6">
           <label class="form-label required" for="create-start-time">Start Time</label>
           <input id="create-start-time" class="form-control" type="datetime-local" [(ngModel)]="createForm.startTime" />
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="create-employee">Employee ID (optional)</label>
-          <input id="create-employee" class="form-control" type="text" [(ngModel)]="createForm.employeeId" placeholder="Employee UUID" />
+          <label class="form-label" for="create-employee">Employee (optional)</label>
+          <input id="create-employee" class="form-control" type="text" [(ngModel)]="createForm.employeeId" placeholder="Employee ID" />
         </div>
         <div class="col-md-6">
           <label class="form-label required" for="create-contact-name">Contact Name</label>
@@ -252,6 +280,102 @@
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
           Create Appointment
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Dialog -->
+<div class="product-dialog-backdrop" *ngIf="activeDialog === 'detail' && selectedAppointment" (click)="closeDialog()">
+  <div class="product-dialog card" (click)="$event.stopPropagation()">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Appointment Detail</span>
+      <button class="icon-action-btn" type="button" aria-label="Close dialog" (click)="closeDialog()">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="card-body">
+      <div class="detail-grid mb-3">
+        <div>
+          <div class="appt-meta-label">Service</div>
+          <div>{{ selectedAppointment.productName }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Status</div>
+          <div>
+            <span class="status-tag" [ngClass]="appointmentStatusTone(selectedAppointment.status)">
+              {{ appointmentStatusLabel(selectedAppointment.status) }}
+            </span>
+          </div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Start Time</div>
+          <div>{{ selectedAppointment.startTime | displayDate }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">End Time</div>
+          <div>{{ selectedAppointment.endTime | displayDate }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Employee</div>
+          <div>{{ selectedAppointment.employeeName || '—' }}</div>
+        </div>
+      </div>
+
+      <div class="detail-section-title">Contact Information</div>
+      <div class="detail-grid mb-3">
+        <div>
+          <div class="appt-meta-label">Contact Type</div>
+          <div><span class="badge text-bg-light">{{ selectedAppointment.contactType }}</span></div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Name</div>
+          <div>{{ selectedAppointment.contactName }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Email</div>
+          <div>{{ selectedAppointment.contactEmail || '—' }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Phone</div>
+          <div>{{ selectedAppointment.contactPhone || '—' }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Note</div>
+          <div>{{ selectedAppointment.note || '—' }}</div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedAppointment.contactType === 'SHOPPER_OWNED'" class="dialog-note mb-3">
+        SHOPPER_OWNED contact details are read-only and cannot be edited.
+      </div>
+
+      <div class="d-flex gap-2 justify-content-end">
+        <button
+          *ngIf="selectedAppointment.status === 'BOOKED'"
+          class="btn btn-outline-secondary btn-sm"
+          type="button"
+          (click)="openNoteEditDialog(selectedAppointment)"
+        >
+          Edit Note / Contact
+        </button>
+        <button
+          *ngIf="selectedAppointment.status === 'BOOKED'"
+          class="btn btn-warning btn-sm"
+          type="button"
+          (click)="openOverrideDialog(selectedAppointment)"
+        >
+          Support Override
+        </button>
+        <button
+          *ngIf="selectedAppointment.status === 'BOOKED'"
+          class="btn btn-outline-danger btn-sm"
+          type="button"
+          (click)="cancelAppointment(selectedAppointment); closeDialog()"
+        >
+          Cancel
+        </button>
+        <button class="btn btn-light btn-sm" type="button" (click)="closeDialog()">Close</button>
       </div>
     </div>
   </div>
@@ -288,20 +412,20 @@
 
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label required" for="reschedule-product">New Product ID</label>
-          <input id="reschedule-product" class="form-control" type="text" [(ngModel)]="rescheduleForm.newProductId" placeholder="Product UUID" />
+          <label class="form-label required" for="reschedule-product">New Product</label>
+          <input id="reschedule-product" class="form-control" type="text" [(ngModel)]="rescheduleForm.newProductId" placeholder="Product ID" />
         </div>
         <div class="col-md-6">
-          <label class="form-label required" for="reschedule-category">New Product Category ID</label>
-          <input id="reschedule-category" class="form-control" type="text" [(ngModel)]="rescheduleForm.newProductCategoryId" placeholder="Category UUID" />
+          <label class="form-label required" for="reschedule-category">New Product Category</label>
+          <input id="reschedule-category" class="form-control" type="text" [(ngModel)]="rescheduleForm.newProductCategoryId" placeholder="Category ID" />
         </div>
         <div class="col-md-6">
           <label class="form-label required" for="reschedule-start">New Start Time</label>
           <input id="reschedule-start" class="form-control" type="datetime-local" [(ngModel)]="rescheduleForm.newStartTime" />
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="reschedule-employee">New Employee ID (optional)</label>
-          <input id="reschedule-employee" class="form-control" type="text" [(ngModel)]="rescheduleForm.newEmployeeId" placeholder="Employee UUID" />
+          <label class="form-label" for="reschedule-employee">New Employee (optional)</label>
+          <input id="reschedule-employee" class="form-control" type="text" [(ngModel)]="rescheduleForm.newEmployeeId" placeholder="Employee ID" />
         </div>
       </div>
 
@@ -312,6 +436,71 @@
         <button class="btn btn-primary" type="button" [disabled]="loading" (click)="rescheduleAppointment()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
           Reschedule
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Note / Contact Dialog -->
+<div class="product-dialog-backdrop" *ngIf="activeDialog === 'editNote' && selectedAppointment" (click)="closeDialog()">
+  <div class="product-dialog card" (click)="$event.stopPropagation()">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Edit Note / Contact</span>
+      <button class="icon-action-btn" type="button" aria-label="Close dialog" (click)="closeDialog()">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="card-body">
+      <div class="dialog-meta mb-3">
+        <div>
+          <div class="appt-meta-label">Contact</div>
+          <div>{{ selectedAppointment.contactName }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Contact Type</div>
+          <div><span class="badge text-bg-light">{{ selectedAppointment.contactType }}</span></div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedAppointment.contactType === 'SHOPPER_OWNED'" class="dialog-note mb-3">
+        SHOPPER_OWNED contact details (name, email, phone) are read-only. Only the note field can be updated.
+      </div>
+
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label" for="note-edit-note">Note</label>
+          <textarea
+            id="note-edit-note"
+            class="form-control"
+            rows="3"
+            [(ngModel)]="noteEditForm.note"
+            placeholder="Optional note for this appointment…"
+          ></textarea>
+        </div>
+        <ng-container *ngIf="selectedAppointment.contactType === 'MERCHANT_CAPTURED'">
+          <div class="col-md-6">
+            <label class="form-label required" for="note-edit-name">Contact Name</label>
+            <input id="note-edit-name" class="form-control" type="text" [(ngModel)]="noteEditForm.contactName" placeholder="Full name" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="note-edit-email">Contact Email</label>
+            <input id="note-edit-email" class="form-control" type="email" [(ngModel)]="noteEditForm.contactEmail" placeholder="email@example.com" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="note-edit-phone">Contact Phone</label>
+            <input id="note-edit-phone" class="form-control" type="tel" [(ngModel)]="noteEditForm.contactPhone" placeholder="+44 7700 900000" />
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="alert alert-danger mt-3 mb-0" *ngIf="dialogError">{{ dialogError }}</div>
+
+      <div class="d-flex gap-2 justify-content-end mt-3">
+        <button class="btn btn-light" type="button" (click)="closeDialog()">Cancel</button>
+        <button class="btn btn-primary" type="button" [disabled]="loading" (click)="saveNoteEdit()">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
+          Save Changes
         </button>
       </div>
     </div>
@@ -334,12 +523,12 @@
 
       <div class="dialog-meta mb-3">
         <div>
-          <div class="appt-meta-label">Appointment ID</div>
-          <div><code>{{ selectedAppointment.id }}</code></div>
-        </div>
-        <div>
           <div class="appt-meta-label">Contact</div>
           <div>{{ selectedAppointment.contactName }}</div>
+        </div>
+        <div>
+          <div class="appt-meta-label">Service</div>
+          <div>{{ selectedAppointment.productName }}</div>
         </div>
         <div>
           <div class="appt-meta-label">Current Start</div>
@@ -357,20 +546,20 @@
 
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label required" for="override-product">New Product ID</label>
-          <input id="override-product" class="form-control" type="text" [(ngModel)]="overrideForm.newProductId" placeholder="Product UUID" />
+          <label class="form-label required" for="override-product">New Product</label>
+          <input id="override-product" class="form-control" type="text" [(ngModel)]="overrideForm.newProductId" placeholder="Product ID" />
         </div>
         <div class="col-md-6">
-          <label class="form-label required" for="override-category">New Product Category ID</label>
-          <input id="override-category" class="form-control" type="text" [(ngModel)]="overrideForm.newProductCategoryId" placeholder="Category UUID" />
+          <label class="form-label required" for="override-category">New Product Category</label>
+          <input id="override-category" class="form-control" type="text" [(ngModel)]="overrideForm.newProductCategoryId" placeholder="Category ID" />
         </div>
         <div class="col-md-6">
           <label class="form-label required" for="override-start">New Start Time</label>
           <input id="override-start" class="form-control" type="datetime-local" [(ngModel)]="overrideForm.newStartTime" />
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="override-employee">New Employee ID (optional)</label>
-          <input id="override-employee" class="form-control" type="text" [(ngModel)]="overrideForm.newEmployeeId" placeholder="Employee UUID" />
+          <label class="form-label" for="override-employee">New Employee (optional)</label>
+          <input id="override-employee" class="form-control" type="text" [(ngModel)]="overrideForm.newEmployeeId" placeholder="Employee ID" />
         </div>
         <div class="col-12">
           <label class="form-label required" for="override-reason">Override Reason</label>

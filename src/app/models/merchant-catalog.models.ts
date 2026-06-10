@@ -459,3 +459,40 @@ export interface OverrideFormModel {
   newEmployeeId: string;
   reason: string;
 }
+
+export interface UpdateAppointmentNoteRequest {
+  note?: string | null;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+}
+
+export interface AppointmentPolicy {
+  merchantId: string;
+  bookingIntervalMinutes: number;
+  leadTimeMinutes: number;
+  bookingHorizonDays: number;
+  reminderLeadTimeMinutes: number;
+  updatedAt: string;
+}
+
+export interface UpdateAppointmentPolicyRequest {
+  bookingIntervalMinutes: number;
+  leadTimeMinutes: number;
+  bookingHorizonDays: number;
+  reminderLeadTimeMinutes: number;
+}
+
+export interface AppointmentPolicyFormModel {
+  bookingIntervalMinutes: string;
+  leadTimeMinutes: string;
+  bookingHorizonDays: string;
+  reminderLeadTimeMinutes: string;
+}
+
+export interface NoteEditFormModel {
+  note: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+}

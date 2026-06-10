@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
+  AppointmentPolicy,
   AppointmentResponse,
   Branch,
   CreateProductCategoryRequest,
@@ -23,6 +24,8 @@ import {
   StartStripeConnectRequest,
   StripeConnectStatusResponse,
   SupportOverrideAppointmentRequest,
+  UpdateAppointmentNoteRequest,
+  UpdateAppointmentPolicyRequest,
   UpdateBranchRequest,
   UpdateMerchantRequest,
   UpdateMerchantLocationRequest,
@@ -407,6 +410,55 @@ export class MerchantApiService {
   ): Observable<AppointmentResponse> {
     return this.http.put<AppointmentResponse>(
       `${this.base(environment, apiVersion)}/merchants/${merchantId}/appointments/${appointmentId}/override`,
+      payload
+    );
+  }
+
+  patchAppointment(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    appointmentId: string,
+    payload: UpdateAppointmentNoteRequest
+  ): Observable<AppointmentResponse> {
+    return this.http.patch<AppointmentResponse>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/appointments/${appointmentId}`,
+      payload
+    );
+  }
+
+  getBranchCalendarAppointments(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    branchId: string,
+    from: string,
+    to: string
+  ): Observable<AppointmentResponse[]> {
+    const params = new HttpParams().set('from', from).set('to', to);
+    return this.http.get<AppointmentResponse[]>(
+      `${this.base(environment, apiVersion)}/admin/branches/${branchId}/appointments`,
+      { params }
+    );
+  }
+
+  getAppointmentPolicy(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string
+  ): Observable<AppointmentPolicy> {
+    return this.http.get<AppointmentPolicy>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/appointment-policy`
+    );
+  }
+
+  updateAppointmentPolicy(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    payload: UpdateAppointmentPolicyRequest
+  ): Observable<AppointmentPolicy> {
+    return this.http.patch<AppointmentPolicy>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/appointment-policy`,
       payload
     );
   }

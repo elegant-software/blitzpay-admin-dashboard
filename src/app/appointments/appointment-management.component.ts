@@ -8,12 +8,15 @@ import {
   AppointmentStatus,
   Branch,
   MerchantBookAppointmentRequest,
+  MerchantSearchResultItem,
+  NoteEditFormModel,
   OverrideFormModel,
   Product,
   ProductCategory,
   RescheduleAppointmentRequest,
   RescheduleFormModel,
-  SupportOverrideAppointmentRequest
+  SupportOverrideAppointmentRequest,
+  UpdateAppointmentNoteRequest
 } from '../models/merchant-catalog.models';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
@@ -22,7 +25,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { EnvironmentKey } from '../models/merchant-catalog.models';
 
-type AppointmentDialog = 'create' | 'reschedule' | 'override' | null;
+type AppointmentDialog = 'create' | 'detail' | 'reschedule' | 'override' | 'editNote' | null;
 
 @Component({
   selector: 'app-appointment-management',
@@ -37,6 +40,9 @@ export class AppointmentManagementComponent implements OnInit {
 
   merchantIdInput = '';
   merchantId = '';
+  merchantQuery = '';
+  merchantResults: MerchantSearchResultItem[] = [];
+  selectedMerchantItem: MerchantSearchResultItem | null = null;
   employeeIdFilter = '';
 
   fromDate = '';
@@ -71,6 +77,9 @@ export class AppointmentManagementComponent implements OnInit {
   // Override form
   overrideForm: OverrideFormModel = this.emptyOverrideForm();
 
+  // Note/contact edit form
+  noteEditForm: NoteEditFormModel = this.emptyNoteEditForm();
+
   ngOnInit(): void {
     const today = new Date();
     const weekAgo = new Date(today);
@@ -88,14 +97,36 @@ export class AppointmentManagementComponent implements OnInit {
     return getEnvironmentByKey(this.selectedEnvironmentKey);
   }
 
+  searchMerchantsForFilter(): void {
+    const q = this.merchantQuery.trim();
+    if (!q) return;
+    this.merchantApi.searchMerchants(this.selectedEnvironment, this.apiVersion, { q, page: 0 }).subscribe({
+      next: response => { this.merchantResults = response.results; },
+    });
+  }
+
+  selectMerchantForFilter(m: MerchantSearchResultItem): void {
+    this.selectedMerchantItem = m;
+    this.merchantIdInput = m.applicationId;
+    this.merchantResults = [];
+  }
+
+  clearMerchantFilter(): void {
+    this.selectedMerchantItem = null;
+    this.merchantIdInput = '';
+    this.merchantId = '';
+    this.merchantQuery = '';
+    this.merchantResults = [];
+  }
+
   get canSearch(): boolean {
-    return this.merchantIdInput.trim().length > 0 && this.fromDate.length > 0 && this.toDate.length > 0;
+    return !!this.selectedMerchantItem && this.fromDate.length > 0 && this.toDate.length > 0;
   }
 
   loadAppointments(): void {
     const merchantId = this.merchantIdInput.trim();
     if (!merchantId) {
-      this.errorMessage = 'Enter a merchant ID before searching.';
+      this.errorMessage = 'Select a merchant before searching.';
       return;
     }
     if (!this.fromDate || !this.toDate) {
@@ -145,6 +176,9 @@ export class AppointmentManagementComponent implements OnInit {
   clearSearch(): void {
     this.merchantIdInput = '';
     this.merchantId = '';
+    this.merchantQuery = '';
+    this.merchantResults = [];
+    this.selectedMerchantItem = null;
     this.employeeIdFilter = '';
     this.statusFilter = '';
     this.appointments = [];
@@ -201,6 +235,26 @@ export class AppointmentManagementComponent implements OnInit {
     this.activeDialog = 'reschedule';
   }
 
+  openDetailDialog(appointment: AppointmentResponse): void {
+    this.selectedAppointment = appointment;
+    this.dialogError = '';
+    this.dialogSuccess = '';
+    this.activeDialog = 'detail';
+  }
+
+  openNoteEditDialog(appointment: AppointmentResponse): void {
+    this.selectedAppointment = appointment;
+    this.noteEditForm = {
+      note: appointment.note ?? '',
+      contactName: appointment.contactType === 'MERCHANT_CAPTURED' ? appointment.contactName : '',
+      contactEmail: appointment.contactType === 'MERCHANT_CAPTURED' ? (appointment.contactEmail ?? '') : '',
+      contactPhone: appointment.contactType === 'MERCHANT_CAPTURED' ? (appointment.contactPhone ?? '') : ''
+    };
+    this.dialogError = '';
+    this.dialogSuccess = '';
+    this.activeDialog = 'editNote';
+  }
+
   openOverrideDialog(appointment: AppointmentResponse): void {
     this.selectedAppointment = appointment;
     this.overrideForm = {
@@ -223,6 +277,43 @@ export class AppointmentManagementComponent implements OnInit {
     this.createForm = this.emptyCreateForm();
     this.rescheduleForm = this.emptyRescheduleForm();
     this.overrideForm = this.emptyOverrideForm();
+    this.noteEditForm = this.emptyNoteEditForm();
+  }
+
+  saveNoteEdit(): void {
+    if (!this.selectedAppointment) return;
+    this.dialogError = '';
+
+    const isMerchantCaptured = this.selectedAppointment.contactType === 'MERCHANT_CAPTURED';
+    const payload: UpdateAppointmentNoteRequest = {
+      note: this.noteEditForm.note.trim() || null
+    };
+
+    if (isMerchantCaptured) {
+      if (!this.noteEditForm.contactName.trim()) {
+        this.dialogError = 'Contact name is required for Merchant Captured contacts.';
+        return;
+      }
+      payload.contactName = this.noteEditForm.contactName.trim();
+      payload.contactEmail = this.noteEditForm.contactEmail.trim() || null;
+      payload.contactPhone = this.noteEditForm.contactPhone.trim() || null;
+    }
+
+    this.loading = true;
+    this.merchantApi
+      .patchAppointment(this.selectedEnvironment, this.apiVersion, this.merchantId, this.selectedAppointment.id, payload)
+      .subscribe({
+        next: (updated) => {
+          this.loading = false;
+          this.updateAppointmentInList(updated);
+          this.closeDialog(true);
+          this.statusMessage = 'Appointment updated.';
+        },
+        error: (error) => {
+          this.loading = false;
+          this.dialogError = this.toMessage(error, 'Unable to update appointment.');
+        }
+      });
   }
 
   createAppointment(): void {
@@ -479,6 +570,10 @@ export class AppointmentManagementComponent implements OnInit {
       newEmployeeId: '',
       reason: ''
     };
+  }
+
+  private emptyNoteEditForm(): NoteEditFormModel {
+    return { note: '', contactName: '', contactEmail: '', contactPhone: '' };
   }
 
   private toDateInputValue(date: Date): string {

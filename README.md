@@ -2,6 +2,15 @@
 
 This repository contains an **Angular admin dashboard** built with CoreUI styles/components, including merchant onboarding and a merchant catalog workspace.
 
+## Related Repositories
+
+| Repository | Description |
+|---|---|
+| blitz-pay (backend) | Spring Boot / Kotlin backend — payments, merchants, orders |
+| blitzpay-admin-dashboard | Angular admin dashboard |
+| blitz-pay-merchant | React Native merchant app |
+| blitz-pay (shopper app) | React Native shopper app |
+
 ## What is implemented
 
 - CoreUI-styled sidebar navigation for onboarding operations, compliance, risk management, and merchant catalog management.
