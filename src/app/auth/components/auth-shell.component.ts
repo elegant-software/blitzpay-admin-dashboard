@@ -4,7 +4,7 @@ import { AppointmentManagementComponent } from '../../appointments/appointment-m
 import { AppointmentPolicyComponent } from '../../appointments/appointment-policy.component';
 import { BranchCalendarComponent } from '../../appointments/branch-calendar.component';
 import { MerchantCatalogComponent } from '../../merchant-catalog/merchant-catalog.component';
-import { PaymentOpsDashboardComponent } from '../../payment-ops-dashboard/payment-ops-dashboard.component';
+import { PlatformKpiDashboardComponent } from '../../platform-kpi-dashboard/platform-kpi-dashboard.component';
 import { SettlementReportingComponent } from '../../settlements/settlement-reporting.component';
 import { UserManagementComponent } from '../../user-management/user-management.component';
 import { AuthService } from '../services/auth.service';
@@ -34,7 +34,7 @@ type AppointmentsSubSection = 'merchant' | 'branchCalendar' | 'policy';
     AppointmentPolicyComponent,
     BranchCalendarComponent,
     MerchantCatalogComponent,
-    PaymentOpsDashboardComponent,
+    PlatformKpiDashboardComponent,
     SettlementReportingComponent,
     UserManagementComponent
   ],

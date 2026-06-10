@@ -1,0 +1,298 @@
+<div class="container-fluid px-0">
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">From</label>
+          <input class="form-control" type="date" [(ngModel)]="from" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">To</label>
+          <input class="form-control" type="date" [(ngModel)]="to" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Merchant <span class="text-muted fw-normal">(optional — drill-down)</span></label>
+          <select class="form-select" [(ngModel)]="selectedMerchantId">
+            <option value="">Platform-wide (all merchants)</option>
+            <option *ngFor="let m of merchants" [value]="m.applicationId">
+              {{ m.merchantName }}<ng-container *ngIf="m.merchantCode"> · {{ m.merchantCode }}</ng-container>
+            </option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary w-100" type="button" (click)="load()" [disabled]="loading">
+            <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            {{ loading ? 'Loading…' : 'Load' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error state -->
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <!-- Loading placeholder (no data yet) -->
+  <div *ngIf="loading && !report" class="text-center py-5 text-muted">
+    <div class="spinner-border text-primary me-2" role="status" aria-hidden="true"></div>
+    Loading KPI data…
+  </div>
+
+  <!-- KPI sections -->
+  <ng-container *ngIf="report && !loading">
+
+    <!-- Period label -->
+    <p class="text-muted small mb-3">
+      Period: <strong>{{ report.from }}</strong> – <strong>{{ report.to }}</strong>
+      <span *ngIf="isDrillDown" class="ms-2 badge bg-info text-dark">Merchant: {{ selectedMerchantName }}</span>
+    </p>
+
+    <!-- Revenue -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Revenue</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3 col-sm-6">
+            <div class="card border-0 bg-light h-100">
+              <div class="card-body">
+                <div class="text-muted small fw-semibold mb-1">Gross Revenue</div>
+                <div class="fs-3 fw-bold">{{ formatMinor(report.revenue.grossAmountMinor, report.revenue.currency) }}</div>
+                <div class="text-muted small">{{ report.revenue.currency }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-sm-6">
+            <div class="card border-0 bg-light h-100">
+              <div class="card-body">
+                <div class="text-muted small fw-semibold mb-1">Processing Fees</div>
+                <div class="fs-3 fw-bold text-warning">{{ formatMinor(report.revenue.processingFeeMinor, report.revenue.currency) }}</div>
+                <div class="text-muted small">Processor cost</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-sm-6">
+            <div class="card border-0 bg-light h-100">
+              <div class="card-body">
+                <div class="text-muted small fw-semibold mb-1">Platform Fees</div>
+                <div class="fs-3 fw-bold text-secondary">{{ formatMinor(report.revenue.platformFeeMinor, report.revenue.currency) }}</div>
+                <div class="text-muted small">BlitzPay take rate</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-sm-6">
+            <div class="card border-0 bg-light h-100">
+              <div class="card-body">
+                <div class="text-muted small fw-semibold mb-1">Net Revenue</div>
+                <div class="fs-3 fw-bold text-success">{{ formatMinor(report.revenue.netAmountMinor, report.revenue.currency) }}</div>
+                <div class="text-muted small">After all fees</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="d-flex align-items-center gap-2">
+              <span class="text-muted small fw-semibold">Settled Transactions:</span>
+              <span class="fs-5 fw-bold">{{ report.revenue.settledTransactionCount }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Orders</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4 col-sm-6">
+            <div class="card border-0 bg-light h-100">
+              <div class="card-body">
+                <div class="text-muted small fw-semibold mb-1">Paid</div>
+                <div class="fs-3 fw-bold text-success">{{ report.orders.paidCount }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 col-sm-6">
+            <div class="card border-0 bg-light h-100">
+              <div class="card-body">
+                <div class="text-muted small fw-semibold mb-1">Pending</div>
+                <div class="fs-3 fw-bold text-warning">{{ report.orders.pendingCount }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 col-sm-6">
+            <div class="card border-0 bg-light h-100">
+              <div class="card-body">
+                <div class="text-muted small fw-semibold mb-1">Failed / Cancelled</div>
+                <div class="fs-3 fw-bold text-danger">{{ report.orders.failedOrCancelledCount }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order type breakdown -->
+          <div class="col-12" *ngIf="report.orders.byOrderType.length > 0">
+            <div class="card border-0 bg-light">
+              <div class="card-body py-3">
+                <div class="fw-semibold small text-muted mb-2">BY ORDER TYPE</div>
+                <div class="d-flex flex-wrap gap-3">
+                  <div
+                    *ngFor="let ot of report.orders.byOrderType; trackBy: trackByOrderType"
+                    class="d-flex align-items-center gap-2"
+                  >
+                    <span class="badge bg-secondary">{{ ot.orderType }}</span>
+                    <span class="fw-bold">{{ ot.count }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Appointments -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Appointments</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4 col-sm-6">
+            <div class="card border-0 bg-light h-100">
+              <div class="card-body">
+                <div class="text-muted small fw-semibold mb-1">Booked</div>
+                <div class="fs-3 fw-bold">{{ report.appointments.bookedCount }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 col-sm-6">
+            <div class="card border-0 bg-light h-100">
+              <div class="card-body">
+                <div class="text-muted small fw-semibold mb-1">Completed</div>
+                <div class="fs-3 fw-bold text-success">{{ report.appointments.completedCount }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 col-sm-6">
+            <div class="card border-0 bg-light h-100">
+              <div class="card-body">
+                <div class="text-muted small fw-semibold mb-1">Cancelled</div>
+                <div class="fs-3 fw-bold text-danger">{{ report.appointments.cancelledCount }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Method Frequency -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Payment Method Frequency</div>
+      <div class="card-body">
+        <div *ngIf="report.paymentMethodFrequency.length === 0" class="text-muted text-center py-3">
+          No payment method data for this period.
+        </div>
+        <div class="table-responsive" *ngIf="report.paymentMethodFrequency.length > 0">
+          <table class="table table-sm mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Payment Method</th>
+                <th class="text-end">Transactions</th>
+                <th class="text-end">Share</th>
+                <th style="min-width:160px">Share Chart</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of report.paymentMethodFrequency; trackBy: trackByMethod">
+                <td><span class="badge bg-secondary">{{ m.paymentMethod }}</span></td>
+                <td class="text-end fw-bold">{{ m.transactionCount }}</td>
+                <td class="text-end">{{ m.sharePercent | number:'1.1-1' }}%</td>
+                <td>
+                  <div class="progress" style="height:10px">
+                    <div
+                      class="progress-bar"
+                      role="progressbar"
+                      [style.width.%]="m.sharePercent"
+                      [attr.aria-valuenow]="m.sharePercent"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    ></div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Platform Counts (hidden in merchant drill-down mode) -->
+    <ng-container *ngIf="!isDrillDown && report.merchantCounts && report.branchCounts">
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">Platform Counts</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <!-- Merchants -->
+            <div class="col-12">
+              <div class="fw-semibold small text-muted mb-2">MERCHANTS</div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <div class="text-muted small fw-semibold mb-1">Total</div>
+                  <div class="fs-3 fw-bold">{{ report.merchantCounts.totalCount }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <div class="text-muted small fw-semibold mb-1">Active</div>
+                  <div class="fs-3 fw-bold text-success">{{ report.merchantCounts.activeCount }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <div class="text-muted small fw-semibold mb-1">New This Period</div>
+                  <div class="fs-3 fw-bold text-info">{{ report.merchantCounts.newInPeriodCount }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Branches -->
+            <div class="col-12 mt-2">
+              <div class="fw-semibold small text-muted mb-2">BRANCHES</div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <div class="text-muted small fw-semibold mb-1">Total</div>
+                  <div class="fs-3 fw-bold">{{ report.branchCounts.totalCount }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <div class="text-muted small fw-semibold mb-1">Active</div>
+                  <div class="fs-3 fw-bold text-success">{{ report.branchCounts.activeCount }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <div class="text-muted small fw-semibold mb-1">New This Period</div>
+                  <div class="fs-3 fw-bold text-info">{{ report.branchCounts.newInPeriodCount }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+  </ng-container>
+
+</div>
