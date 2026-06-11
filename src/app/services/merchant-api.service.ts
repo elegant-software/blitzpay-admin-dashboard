@@ -5,6 +5,9 @@ import { map } from 'rxjs/operators';
 import {
   AppointmentPolicy,
   AppointmentResponse,
+  AppearanceHistoryPage,
+  AppearanceHistoryStatus,
+  OperationalAppearanceItem,
   Branch,
   CreateProductCategoryRequest,
   CreateBranchRequest,
@@ -71,6 +74,35 @@ export class MerchantApiService {
 
   getBranches(environment: BackendEnvironment, apiVersion: string, merchantId: string): Observable<Branch[]> {
     return this.http.get<Branch[]>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/branches`);
+  }
+
+  getAppearanceOperational(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+  ): Observable<OperationalAppearanceItem[]> {
+    return this.http.get<OperationalAppearanceItem[]>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/appearances/operational`
+    );
+  }
+
+  getAppearanceHistory(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    filter: { branchId?: string; status?: AppearanceHistoryStatus; from: string; to: string; page: number; size?: number }
+  ): Observable<AppearanceHistoryPage> {
+    let params = new HttpParams()
+      .set('from', filter.from)
+      .set('to', filter.to)
+      .set('page', filter.page)
+      .set('size', filter.size ?? 20);
+    if (filter.branchId) params = params.set('branchId', filter.branchId);
+    if (filter.status) params = params.set('status', filter.status);
+    return this.http.get<AppearanceHistoryPage>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/appearances/history`,
+      { params }
+    );
   }
 
   createBranch(

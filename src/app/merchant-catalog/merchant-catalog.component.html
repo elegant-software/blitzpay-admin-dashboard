@@ -162,6 +162,117 @@
       </div>
     </div>
 
+    <div class="col-12" *ngIf="merchant.merchantMobility === 'MOBILE'">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Appearances</span>
+          <button class="btn btn-outline-secondary btn-sm" type="button" (click)="loadAppearanceOperational(); loadAppearanceHistory(0)">Refresh</button>
+        </div>
+        <div class="card-body">
+
+          <!-- Current & Upcoming -->
+          <h6 class="text-body-secondary mb-2">Active &amp; Upcoming</h6>
+          <div *ngIf="appearanceOperationalLoading" class="text-muted small">Loading…</div>
+          <div *ngIf="appearanceOperationalError" class="alert alert-danger py-1 px-2 small">{{ appearanceOperationalError }}</div>
+          <div class="table-responsive" *ngIf="!appearanceOperationalLoading && !appearanceOperationalError">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr><th>Name</th><th>Branch</th><th>Status</th><th>Start</th><th>End</th><th>Location</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let a of appearanceOperational">
+                  <td>{{ a.name }}</td>
+                  <td>{{ a.branchName }}</td>
+                  <td>
+                    <span class="status-tag" [ngClass]="a.status === 'ACTIVE' ? 'status-tag-success' : 'status-tag-warning'">
+                      {{ a.status }}
+                    </span>
+                  </td>
+                  <td>{{ a.startTime | displayDate }}</td>
+                  <td>{{ a.endTime | displayDate }}</td>
+                  <td>
+                    <a [href]="'https://www.google.com/maps?q=' + a.effectiveLatitude + ',' + a.effectiveLongitude"
+                       target="_blank" rel="noopener noreferrer" class="text-decoration-none small">
+                      📍 {{ a.effectiveLatitude.toFixed(4) }}, {{ a.effectiveLongitude.toFixed(4) }}
+                    </a>
+                  </td>
+                </tr>
+                <tr *ngIf="appearanceOperational.length === 0">
+                  <td colspan="6" class="text-center text-body-secondary small">No active or upcoming appearances.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <hr class="my-3" />
+
+          <!-- History -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="text-body-secondary mb-0">History</h6>
+            <span class="badge text-bg-light">{{ appearanceHistoryTotalElements }} records</span>
+          </div>
+          <div class="row g-2 align-items-end mb-3">
+            <div class="col-md-3">
+              <label class="form-label" for="appearance-branch">Branch</label>
+              <select id="appearance-branch" class="form-select" [(ngModel)]="appearanceHistoryBranchId">
+                <option value="">All branches</option>
+                <option *ngFor="let branch of branches" [value]="branch.branchId || branch.id">{{ branch.name }}</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label" for="appearance-status">Status</label>
+              <select id="appearance-status" class="form-select" [(ngModel)]="appearanceHistoryStatus">
+                <option value="">All statuses</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label" for="appearance-from">From</label>
+              <input id="appearance-from" class="form-control" type="date" [(ngModel)]="appearanceHistoryFrom" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label" for="appearance-to">To</label>
+              <input id="appearance-to" class="form-control" type="date" [(ngModel)]="appearanceHistoryTo" />
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-primary" type="button" (click)="applyAppearanceHistoryFilters()">Apply filters</button>
+            </div>
+          </div>
+          <div *ngIf="appearanceHistoryLoading" class="text-muted small">Loading history…</div>
+          <div *ngIf="appearanceHistoryError" class="alert alert-danger py-1 px-2 small">{{ appearanceHistoryError }}</div>
+          <div class="table-responsive" *ngIf="!appearanceHistoryLoading && !appearanceHistoryError">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th>Name</th><th>Branch</th><th>Status</th><th>Start</th><th>End</th><th>Cancelled</th><th>Location</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let appearance of appearanceHistory">
+                  <td>{{ appearance.name }}</td>
+                  <td>{{ appearance.branchName }}</td>
+                  <td><span class="status-tag" [ngClass]="appearance.status === 'COMPLETED' ? 'status-tag-success' : 'status-tag-neutral'">{{ appearance.status }}</span></td>
+                  <td>{{ appearance.startTime | displayDate }}</td>
+                  <td>{{ appearance.endTime | displayDate }}</td>
+                  <td>{{ appearance.cancelledAt | displayDate }}</td>
+                  <td>
+                    <a [href]="'https://www.google.com/maps?q=' + appearance.declaredLatitude + ',' + appearance.declaredLongitude"
+                       target="_blank" rel="noopener noreferrer" class="text-decoration-none small">
+                      📍 {{ appearance.declaredLatitude.toFixed(4) }}, {{ appearance.declaredLongitude.toFixed(4) }}
+                    </a>
+                  </td>
+                </tr>
+                <tr *ngIf="appearanceHistory.length === 0"><td colspan="7" class="text-center text-body-secondary small">No appearance history found.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="appearanceHistoryTotalPages > 1">
+            <button class="btn btn-outline-secondary btn-sm" [disabled]="appearanceHistoryPage === 0" (click)="loadAppearanceHistory(appearanceHistoryPage - 1)">Previous</button>
+            <span class="text-muted small">Page {{ appearanceHistoryPage + 1 }} of {{ appearanceHistoryTotalPages }}</span>
+            <button class="btn btn-outline-secondary btn-sm" [disabled]="appearanceHistoryPage + 1 >= appearanceHistoryTotalPages" (click)="loadAppearanceHistory(appearanceHistoryPage + 1)">Next</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
     <!-- Payment Providers -->
     <div class="col-12">
       <div class="card">

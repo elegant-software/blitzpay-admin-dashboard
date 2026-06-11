@@ -183,4 +183,25 @@ describe('MerchantApiService product category API', () => {
 
     expect(response).toEqual(searchResponse);
   });
+
+  it('loads filtered appearance history for a mobile merchant', () => {
+    service.getAppearanceHistory(environment, apiVersion, merchantId, {
+      branchId: 'branch-1',
+      status: 'CANCELLED',
+      from: '2026-01-01T00:00:00.000Z',
+      to: '2026-06-11T23:59:59.000Z',
+      page: 1,
+      size: 20
+    }).subscribe();
+
+    const request = httpTestingController.expectOne(req =>
+      req.url === `http://localhost:8080/v1/merchants/${merchantId}/appearances/history`
+    );
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('branchId')).toBe('branch-1');
+    expect(request.request.params.get('status')).toBe('CANCELLED');
+    expect(request.request.params.get('page')).toBe('1');
+    expect(request.request.params.get('size')).toBe('20');
+    request.flush({ content: [], page: 1, size: 20, totalElements: 0, totalPages: 0 });
+  });
 });

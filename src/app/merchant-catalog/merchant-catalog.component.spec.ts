@@ -46,6 +46,7 @@ describe('MerchantCatalogComponent product category management', () => {
       'saveLocation',
       'removeLocation',
       'getBranches',
+      'getAppearanceHistory',
       'createBranch',
       'getBranch',
       'updateBranch',

@@ -8,6 +8,9 @@ import * as L from 'leaflet';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import {
+  AppearanceHistoryItem,
+  AppearanceHistoryStatus,
+  OperationalAppearanceItem,
   Branch,
   CategorySortField,
   CategoryTableState,
@@ -70,6 +73,20 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
   categories: ProductCategory[] = [];
   selectedBranch: Branch | null = null;
   products: Product[] = [];
+  appearanceOperational: OperationalAppearanceItem[] = [];
+  appearanceOperationalLoading = false;
+  appearanceOperationalError = '';
+
+  appearanceHistory: AppearanceHistoryItem[] = [];
+  appearanceHistoryLoading = false;
+  appearanceHistoryError = '';
+  appearanceHistoryBranchId = '';
+  appearanceHistoryStatus: AppearanceHistoryStatus | '' = '';
+  appearanceHistoryFrom = this.isoDateDaysAgo(365);
+  appearanceHistoryTo = this.isoDateDaysAgo(0);
+  appearanceHistoryPage = 0;
+  appearanceHistoryTotalElements = 0;
+  appearanceHistoryTotalPages = 0;
   categoryTableState: CategoryTableState = this.createCategoryTableState();
   branchTableState: BranchTableState = this.createBranchTableState();
   productTableState: ProductTableState = this.createProductTableState();
@@ -531,6 +548,7 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
     this.branches = [];
     this.categories = [];
     this.products = [];
+    this.resetAppearanceHistory();
     this.viewMode = 'results';
     this.closeMerchantDialog();
     this.closeBranchDialog();
@@ -559,6 +577,7 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
     this.branches = [];
     this.categories = [];
     this.products = [];
+    this.resetAppearanceHistory();
     this.selectedBranch = null;
     this.branchTableState = this.createBranchTableState();
     this.categoryTableState = this.createCategoryTableState();
@@ -1212,6 +1231,68 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
     return this.merchantLogoPreviewUrl || this.selectedMerchant?.logoUrl || null;
   }
 
+  loadAppearanceOperational(): void {
+    if (!this.selectedMerchant || this.selectedMerchant.merchantMobility !== 'MOBILE') {
+      return;
+    }
+    this.appearanceOperationalLoading = true;
+    this.appearanceOperationalError = '';
+    this.merchantApi.getAppearanceOperational(
+      this.selectedEnvironment,
+      this.apiVersion,
+      this.selectedMerchant.applicationId
+    ).subscribe({
+      next: result => {
+        this.appearanceOperational = result;
+        this.appearanceOperationalLoading = false;
+      },
+      error: error => {
+        this.appearanceOperational = [];
+        this.appearanceOperationalLoading = false;
+        this.appearanceOperationalError = this.toMessage(error, 'Operational appearances could not be loaded.');
+      }
+    });
+  }
+
+  loadAppearanceHistory(page = this.appearanceHistoryPage): void {
+    if (!this.selectedMerchant || this.selectedMerchant.merchantMobility !== 'MOBILE') {
+      return;
+    }
+    this.appearanceHistoryLoading = true;
+    this.appearanceHistoryError = '';
+    this.appearanceHistoryPage = page;
+    this.merchantApi.getAppearanceHistory(
+      this.selectedEnvironment,
+      this.apiVersion,
+      this.selectedMerchant.applicationId,
+      {
+        branchId: this.appearanceHistoryBranchId || undefined,
+        status: this.appearanceHistoryStatus || undefined,
+        from: new Date(`${this.appearanceHistoryFrom}T00:00:00`).toISOString(),
+        to: new Date(`${this.appearanceHistoryTo}T23:59:59`).toISOString(),
+        page,
+        size: 20
+      }
+    ).subscribe({
+      next: result => {
+        this.appearanceHistory = result.content;
+        this.appearanceHistoryPage = result.page;
+        this.appearanceHistoryTotalElements = result.totalElements;
+        this.appearanceHistoryTotalPages = result.totalPages;
+        this.appearanceHistoryLoading = false;
+      },
+      error: error => {
+        this.appearanceHistory = [];
+        this.appearanceHistoryLoading = false;
+        this.appearanceHistoryError = this.toMessage(error, 'Appearance history could not be loaded.');
+      }
+    });
+  }
+
+  applyAppearanceHistoryFilters(): void {
+    this.loadAppearanceHistory(0);
+  }
+
   private loadMerchantById(merchantId: string, fallbackMessage: string): void {
     if (this.selectedMerchant && !this.confirmDirty('Open another merchant and discard unsaved form edits?')) {
       return;
@@ -1242,12 +1323,17 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
     this.providerAccountsLoading = false;
     this.providerAccountsError = null;
     this.providerAccountActionLoading.clear();
+    this.resetAppearanceHistory();
     this.closeMerchantDialog();
     this.closeBranchDialog();
     this.closeCategoryDialog(true);
     this.closeProductDialog(true);
     this.loadPaymentAccountStatus(merchant.applicationId);
     this.loadProviderAccounts(merchant.applicationId);
+    if (merchant.merchantMobility === 'MOBILE') {
+      this.loadAppearanceOperational();
+      this.loadAppearanceHistory();
+    }
 
     forkJoin({
       location: this.merchantApi
@@ -1979,6 +2065,26 @@ export class MerchantCatalogComponent implements OnInit, AfterViewInit, OnDestro
       URL.revokeObjectURL(this.productDialogPreviewUrl);
       this.productDialogPreviewUrl = null;
     }
+  }
+
+  private resetAppearanceHistory(): void {
+    this.appearanceOperational = [];
+    this.appearanceOperationalLoading = false;
+    this.appearanceOperationalError = '';
+    this.appearanceHistory = [];
+    this.appearanceHistoryLoading = false;
+    this.appearanceHistoryError = '';
+    this.appearanceHistoryBranchId = '';
+    this.appearanceHistoryStatus = '';
+    this.appearanceHistoryFrom = this.isoDateDaysAgo(365);
+    this.appearanceHistoryTo = this.isoDateDaysAgo(0);
+    this.appearanceHistoryPage = 0;
+    this.appearanceHistoryTotalElements = 0;
+    this.appearanceHistoryTotalPages = 0;
+  }
+
+  private isoDateDaysAgo(days: number): string {
+    return new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
   }
 
   private clearMerchantLogoPreviewUrl(): void {

@@ -31,6 +31,49 @@ export interface Merchant {
   logoUrl?: string | null;
 }
 
+export type AppearanceHistoryStatus = 'COMPLETED' | 'CANCELLED';
+export type OperationalAppearanceStatus = 'ACTIVE' | 'UPCOMING';
+
+export interface OperationalAppearanceItem {
+  id: string;
+  branchId: string;
+  branchName: string;
+  merchantId: string;
+  name: string;
+  declaredLatitude: number;
+  declaredLongitude: number;
+  effectiveLatitude: number;
+  effectiveLongitude: number;
+  startTime: string;
+  endTime: string;
+  createdAt: string;
+  cancelledAt?: string | null;
+  status: OperationalAppearanceStatus;
+}
+
+export interface AppearanceHistoryItem {
+  id: string;
+  branchId: string;
+  branchName: string;
+  merchantId: string;
+  name: string;
+  declaredLatitude: number;
+  declaredLongitude: number;
+  startTime: string;
+  endTime: string;
+  createdAt: string;
+  cancelledAt?: string | null;
+  status: AppearanceHistoryStatus;
+}
+
+export interface AppearanceHistoryPage {
+  content: AppearanceHistoryItem[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
 export interface MerchantLocation {
   merchantId: string;
   latitude: number;
