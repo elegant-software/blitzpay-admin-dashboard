@@ -1,14 +1,7 @@
 <!-- Search/Filter toolbar -->
 <div class="card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
+  <div class="card-header">
     <span>Appointment Management</span>
-    <div class="d-flex gap-2 align-items-center">
-      <label class="form-label form-label-sm mb-0 me-1" for="appt-env">Env</label>
-      <select id="appt-env" class="form-select form-select-sm" style="width:auto" [(ngModel)]="selectedEnvironmentKey">
-        <option value="local">Local</option>
-        <option value="staging">Staging</option>
-      </select>
-    </div>
   </div>
   <div class="card-body">
     <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>

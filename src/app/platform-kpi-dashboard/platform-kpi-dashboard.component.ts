@@ -25,8 +25,9 @@ export class PlatformKpiDashboardComponent implements OnInit {
 
   from: string;
   to: string;
-  selectedMerchantId = '';
-  merchants: MerchantSearchResultItem[] = [];
+  merchantQuery = '';
+  merchantResults: MerchantSearchResultItem[] = [];
+  selectedMerchant: MerchantSearchResultItem | null = null;
 
   report: PlatformKpiReport | null = null;
   loading = false;
@@ -43,16 +44,26 @@ export class PlatformKpiDashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.merchantApiService
-      .searchMerchants(this.environment, this.apiVersion, { size: 200 })
-      .subscribe({
-        next: (response) => {
-          this.merchants = response.results.sort((a, b) =>
-            a.merchantName.localeCompare(b.merchantName)
-          );
-        },
-      });
     this.load();
+  }
+
+  searchMerchants(): void {
+    const q = this.merchantQuery.trim();
+    if (!q) return;
+    this.merchantApiService.searchMerchants(this.environment, this.apiVersion, { q, page: 0 }).subscribe({
+      next: (response) => { this.merchantResults = response.results; },
+    });
+  }
+
+  selectMerchant(m: MerchantSearchResultItem): void {
+    this.selectedMerchant = m;
+    this.merchantResults = [];
+  }
+
+  clearMerchant(): void {
+    this.selectedMerchant = null;
+    this.merchantQuery = '';
+    this.merchantResults = [];
   }
 
   load(): void {
@@ -64,7 +75,7 @@ export class PlatformKpiDashboardComponent implements OnInit {
         this.apiVersion,
         this.from,
         this.to,
-        this.selectedMerchantId || undefined,
+        this.selectedMerchant?.applicationId || undefined,
       )
       .subscribe({
         next: (data) => {
@@ -83,7 +94,7 @@ export class PlatformKpiDashboardComponent implements OnInit {
   }
 
   get selectedMerchantName(): string {
-    return this.merchants.find(m => m.applicationId === this.selectedMerchantId)?.merchantName ?? '';
+    return this.selectedMerchant?.merchantName ?? '';
   }
 
   formatMinor(minor: number, currency: string): string {

@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { throwError, of } from 'rxjs';
-import { MerchantCatalogComponent } from './merchant-catalog.component';
+import { MerchantDetailComponent } from './merchant-detail.component';
 import { MerchantApiService } from '../services/merchant-api.service';
-import { Branch, Merchant, Product, ProductCategory } from '../models/merchant-catalog.models';
+import { Branch, Merchant, ProductCategory } from '../models/merchant-catalog.models';
 
-describe('MerchantCatalogComponent product category management', () => {
-  let component: MerchantCatalogComponent;
+describe('MerchantDetailComponent product category management', () => {
+  let component: MerchantDetailComponent;
   let merchantApi: jasmine.SpyObj<MerchantApiService>;
 
   const merchant: Merchant = {
@@ -47,6 +48,7 @@ describe('MerchantCatalogComponent product category management', () => {
       'removeLocation',
       'getBranches',
       'getAppearanceHistory',
+      'getAppearanceOperational',
       'createBranch',
       'getBranch',
       'updateBranch',
@@ -62,31 +64,31 @@ describe('MerchantCatalogComponent product category management', () => {
       'removeProduct',
       'updateLogo',
       'createLogoUploadUrl',
-      'uploadMerchantLogo'
+      'uploadMerchantLogo',
+      'getVerticals',
+      'getStripeConnectStatus',
+      'startStripeConnect',
+      'refreshStripeConnect',
+      'listProviderAccounts',
+      'enableProviderAccount',
+      'disableProviderAccount',
+      'enableTapToPay',
+      'disableTapToPay',
+      'searchMerchants',
     ]);
 
     await TestBed.configureTestingModule({
-      imports: [MerchantCatalogComponent],
-      providers: [{ provide: MerchantApiService, useValue: merchantApi }]
+      imports: [MerchantDetailComponent],
+      providers: [
+        { provide: MerchantApiService, useValue: merchantApi },
+        provideRouter([])
+      ]
     }).compileComponents();
 
-    component = TestBed.createComponent(MerchantCatalogComponent).componentInstance;
+    component = TestBed.createComponent(MerchantDetailComponent).componentInstance;
     component.selectedMerchant = merchant;
     component.categories = [beverages];
     component['syncCategoryTableState']();
-    component.selectedProduct = {
-      productId: 'product-1',
-      merchantId: merchant.applicationId,
-      branchId: 'branch-1',
-      name: 'Cola',
-      unitPrice: 12,
-      active: true,
-      status: 'ACTIVE',
-      categoryId: beverages.id,
-      categoryName: beverages.name,
-      createdAt: '2026-05-10T10:00:00.000Z',
-      updatedAt: '2026-05-10T10:00:00.000Z'
-    } satisfies Product;
   });
 
   it('creates a new product category and closes the dialog', () => {
@@ -211,18 +213,13 @@ describe('MerchantCatalogComponent product category management', () => {
     expect(component.categories).toEqual([beverages]);
   });
 
-  it('clears the selected product category reference after a successful delete', () => {
+  it('removes the category from the list and reports success after a successful delete', () => {
     spyOn(window, 'confirm').and.returnValue(true);
     merchantApi.deleteProductCategory.and.returnValue(of(void 0));
-
-    component.productEditForm.categoryId = beverages.id;
 
     component.removeCategory(beverages);
 
     expect(component.categories).toEqual([]);
-    expect(component.productEditForm.categoryId).toBe('');
-    expect(component.selectedProduct?.categoryId).toBeNull();
-    expect(component.selectedProduct?.categoryName).toBeNull();
     expect(component.statusMessage).toBe('Category deleted.');
   });
 

@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import { environment as appEnv } from '../../environments/environment';
-import { BackendEnvironment, MerchantSearchResultItem } from '../models/merchant-catalog.models';
+import { BackendEnvironment, Merchant, MerchantSearchResultItem } from '../models/merchant-catalog.models';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { SettlementReportingService } from '../services/settlement-reporting.service';
@@ -20,7 +21,7 @@ import {
   imports: [CommonModule, FormsModule, DisplayDatePipe],
   templateUrl: './settlement-reporting.component.html',
 })
-export class SettlementReportingComponent {
+export class SettlementReportingComponent implements OnInit {
   readonly environment: BackendEnvironment;
   readonly apiVersion = 'v1';
 
@@ -49,11 +50,24 @@ export class SettlementReportingComponent {
   constructor(
     private readonly reportingService: SettlementReportingService,
     private readonly merchantApi: MerchantApiService,
+    private readonly route: ActivatedRoute,
   ) {
     this.environment = getEnvironmentByKey(appEnv.defaultEnvironmentKey);
     const now = new Date();
     this.to = this.toIsoDate(now);
     this.from = this.toIsoDate(new Date(now.getFullYear(), now.getMonth(), 1));
+  }
+
+  ngOnInit(): void {
+    const merchantId = this.route.snapshot.queryParamMap.get('merchantId');
+    if (merchantId) {
+      this.merchantApi.getMerchant(this.environment, this.apiVersion, merchantId).subscribe({
+        next: (merchant) => {
+          this.selectMerchant(this.merchantToSearchItem(merchant));
+          this.load();
+        },
+      });
+    }
   }
 
   get rows(): SettlementRow[] {
@@ -181,6 +195,21 @@ export class SettlementReportingComponent {
           this.loadingList = false;
         },
       });
+  }
+
+  private merchantToSearchItem(merchant: Merchant): MerchantSearchResultItem {
+    return {
+      applicationId: merchant.applicationId,
+      merchantName: merchant.merchantName,
+      legalBusinessName: merchant.legalBusinessName ?? '',
+      merchantCode: merchant.merchantCode,
+      city: null,
+      country: null,
+      businessType: merchant.businessType ?? '',
+      merchantMobility: merchant.merchantMobility ?? '',
+      status: merchant.status,
+      lastUpdatedAt: merchant.lastUpdatedAt,
+    };
   }
 
   private toIsoDate(d: Date): string {

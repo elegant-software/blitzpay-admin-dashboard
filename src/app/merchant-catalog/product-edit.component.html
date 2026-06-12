@@ -1,0 +1,76 @@
+<div class="container-fluid px-4 pt-2 pb-4">
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <a class="btn btn-link btn-sm ps-0" [routerLink]="['/merchants', merchantId]">← Back to merchant</a>
+  </div>
+
+  <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div *ngIf="loading" class="text-center py-5 text-muted">Loading…</div>
+
+  <ng-container *ngIf="!loading && product">
+    <div class="card mb-4">
+      <div class="card-header">Edit Product — {{ product.name }}</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label required">Product Name</label>
+            <input class="form-control" [(ngModel)]="form.name" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label required">Unit Price</label>
+            <div class="input-group">
+              <span class="input-group-text">€</span>
+              <input class="form-control" [(ngModel)]="form.unitPrice" type="number" step="0.01" min="0" />
+            </div>
+            <div class="form-text">Price in major currency units (e.g. 9.99)</div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Product Code</label>
+            <input class="form-control" [(ngModel)]="form.productCode" />
+          </div>
+          <div class="col-md-8">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" [(ngModel)]="form.description" rows="3"></textarea>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Category</label>
+            <select class="form-select" [(ngModel)]="form.categoryId">
+              <option value="">No category</option>
+              <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label d-block">Active</label>
+            <div class="form-check form-switch mt-2">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="form.active" />
+              <label class="form-check-label">{{ form.active ? 'Active' : 'Inactive' }}</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header">Product Image</div>
+      <div class="card-body">
+        <div class="d-flex align-items-start gap-3 flex-wrap">
+          <div>
+            <img *ngIf="imagePreviewUrl && !imageFailed" [src]="imagePreviewUrl" alt="Product image preview" style="max-width:120px; max-height:120px; object-fit:contain; border:1px solid #dee2e6; border-radius:6px;" (error)="imageFailed = true" />
+            <div *ngIf="!imagePreviewUrl || imageFailed" class="product-thumb-empty" style="width:80px; height:80px;"></div>
+          </div>
+          <div class="flex-grow-1">
+            <label class="form-label">Upload new image (replaces existing)</label>
+            <input class="form-control" type="file" accept="image/*" (change)="onImageFileChange($event)" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" type="button" [disabled]="saving" (click)="save()">
+        <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
+        {{ saving ? 'Saving…' : 'Save changes' }}
+      </button>
+      <button class="btn btn-outline-secondary" type="button" (click)="cancel()">Cancel</button>
+    </div>
+  </ng-container>
+</div>

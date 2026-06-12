@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import {
   AppointmentPolicy,
@@ -192,7 +193,11 @@ export class AppointmentPolicyComponent {
   }
 
   toMessage(error: unknown, fallback: string): string {
-    const body = (error as { error?: { detail?: string; message?: string } })?.error;
+    const httpError = error as HttpErrorResponse;
+    if (httpError?.status === 403) {
+      return 'Access denied: your account does not have the appointment management role for this merchant. Ask a platform engineer to grant it via the backend, or check that this merchant has the Appointment Booking offering enabled.';
+    }
+    const body = httpError?.error as { detail?: string; message?: string } | undefined;
     return body?.detail || body?.message || fallback;
   }
 }

@@ -13,13 +13,36 @@
           <input class="form-control" type="date" [(ngModel)]="to" />
         </div>
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Merchant <span class="text-muted fw-normal">(optional — drill-down)</span></label>
-          <select class="form-select" [(ngModel)]="selectedMerchantId">
-            <option value="">Platform-wide (all merchants)</option>
-            <option *ngFor="let m of merchants" [value]="m.applicationId">
-              {{ m.merchantName }}<ng-container *ngIf="m.merchantCode"> · {{ m.merchantCode }}</ng-container>
-            </option>
-          </select>
+          <label class="form-label fw-semibold">Merchant <span class="text-muted fw-normal">(optional)</span></label>
+          <ng-container *ngIf="!selectedMerchant">
+            <div class="input-group mb-1">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Merchant name or code…"
+                [(ngModel)]="merchantQuery"
+                (keyup.enter)="searchMerchants()"
+                aria-label="Search merchants"
+              />
+              <button class="btn btn-outline-secondary" type="button" (click)="searchMerchants()">Search</button>
+            </div>
+            <ul *ngIf="merchantResults.length" class="list-group" style="max-height:200px;overflow-y:auto;position:absolute;z-index:100;width:33%">
+              <li
+                *ngFor="let m of merchantResults"
+                class="list-group-item list-group-item-action"
+                style="cursor:pointer"
+                (click)="selectMerchant(m)"
+              >
+                <span class="d-block fw-semibold">{{ m.merchantName || m.legalBusinessName }}</span>
+                <span class="d-block small text-muted">{{ m.merchantCode }} · {{ m.city ?? '—' }}</span>
+              </li>
+            </ul>
+          </ng-container>
+          <div *ngIf="selectedMerchant" class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary fs-6 fw-normal px-3 py-2">{{ selectedMerchant.merchantName || selectedMerchant.legalBusinessName }}</span>
+            <span class="text-muted small">{{ selectedMerchant.merchantCode }}</span>
+            <button class="btn btn-sm btn-outline-secondary ms-auto" type="button" (click)="clearMerchant()">Change</button>
+          </div>
         </div>
         <div class="col-md-2">
           <button class="btn btn-primary w-100" type="button" (click)="load()" [disabled]="loading">
@@ -77,7 +100,7 @@
               <div class="card-body">
                 <div class="text-muted small fw-semibold mb-1">Platform Fees</div>
                 <div class="fs-3 fw-bold text-secondary">{{ formatMinor(report.revenue.platformFeeMinor, report.revenue.currency) }}</div>
-                <div class="text-muted small">BlitzPay take rate</div>
+                <div class="text-muted small">ZackPay take rate</div>
               </div>
             </div>
           </div>

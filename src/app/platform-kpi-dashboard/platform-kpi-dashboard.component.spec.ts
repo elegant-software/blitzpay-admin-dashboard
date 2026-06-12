@@ -45,13 +45,7 @@ describe('PlatformKpiDashboardComponent', () => {
 
     const fixture = TestBed.createComponent(PlatformKpiDashboardComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges(); // triggers ngOnInit → searchMerchants + load()
-
-    // Flush merchant list first, then the KPI report.
-    const merchantReq = httpTestingController.expectOne((r) =>
-      r.url.includes('/merchants/search'),
-    );
-    merchantReq.flush({ results: [], page: 0, size: 200, totalElements: 0, totalPages: 0 });
+    fixture.detectChanges(); // triggers ngOnInit → load()
 
     const kpiReq = httpTestingController.expectOne((r) =>
       r.url.includes('/reporting/dashboard/platform'),

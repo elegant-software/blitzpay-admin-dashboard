@@ -272,7 +272,7 @@ a {
 .profile-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1095;
+  z-index: 1025;
 }
 
 .profile-menu-header,

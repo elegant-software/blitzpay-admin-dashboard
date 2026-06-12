@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import {
   AppointmentFormModel,
@@ -89,9 +91,34 @@ export class AppointmentManagementComponent implements OnInit {
 
     this.fromDate = this.toDateInputValue(weekAgo);
     this.toDate = this.toDateInputValue(nextWeek);
+
+    const merchantId = this.route.snapshot.queryParamMap.get('merchantId');
+    if (merchantId) {
+      this.merchantApi.getMerchant(this.selectedEnvironment, this.apiVersion, merchantId).subscribe({
+        next: (merchant) => {
+          const item: MerchantSearchResultItem = {
+            applicationId: merchant.applicationId,
+            merchantName: merchant.merchantName,
+            legalBusinessName: merchant.legalBusinessName ?? '',
+            merchantCode: merchant.merchantCode,
+            city: null,
+            country: null,
+            businessType: merchant.businessType ?? '',
+            merchantMobility: merchant.merchantMobility ?? '',
+            status: merchant.status,
+            lastUpdatedAt: merchant.lastUpdatedAt,
+          };
+          this.selectMerchantForFilter(item);
+          this.loadAppointments();
+        },
+      });
+    }
   }
 
-  constructor(private readonly merchantApi: MerchantApiService) {}
+  constructor(
+    private readonly merchantApi: MerchantApiService,
+    private readonly route: ActivatedRoute,
+  ) {}
 
   get selectedEnvironment() {
     return getEnvironmentByKey(this.selectedEnvironmentKey);
@@ -597,7 +624,11 @@ export class AppointmentManagementComponent implements OnInit {
   }
 
   toMessage(error: unknown, fallback: string): string {
-    const body = (error as { error?: { detail?: string; message?: string } })?.error;
+    const httpError = error as HttpErrorResponse;
+    if (httpError?.status === 403) {
+      return 'Access denied: your account does not have the appointment management role for this merchant. Ask a platform engineer to grant it via the backend.';
+    }
+    const body = httpError?.error as { detail?: string; message?: string } | undefined;
     return body?.detail || body?.message || fallback;
   }
 }

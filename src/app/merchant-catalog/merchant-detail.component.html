@@ -1,0 +1,532 @@
+<div class="container-fluid px-4 pt-2 pb-4">
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <a class="btn btn-link btn-sm ps-0" routerLink="/merchants">← Back to search</a>
+    <div class="ms-auto d-flex gap-2" *ngIf="selectedMerchant">
+      <button class="btn btn-sm btn-outline-primary" type="button" (click)="viewSettlements()">
+        <svg viewBox="0 0 24 24" width="14" height="14" class="me-1"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        View Settlements
+      </button>
+      <button class="btn btn-sm btn-outline-primary" type="button" (click)="viewAppointments()">
+        <svg viewBox="0 0 24 24" width="14" height="14" class="me-1"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>
+        View Appointments
+      </button>
+    </div>
+  </div>
+
+  <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="alert alert-success mb-3" *ngIf="statusMessage">{{ statusMessage }}</div>
+
+  <div *ngIf="loading && !selectedMerchant" class="text-center py-5 text-muted">Loading merchant…</div>
+
+  <ng-container *ngIf="selectedMerchant as merchant">
+    <!-- Anchor tabs -->
+    <ul class="nav nav-tabs detail-anchor-tabs mb-4">
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activeDetailTab === 'info'" type="button" (click)="activeDetailTab = 'info'">
+          Info
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activeDetailTab === 'branches-products'" type="button" (click)="activeDetailTab = 'branches-products'">
+          Branches &amp; Products
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activeDetailTab === 'payment'" type="button" (click)="activeDetailTab = 'payment'">
+          Payment
+        </button>
+      </li>
+      <li class="nav-item" *ngIf="merchant.merchantMobility === 'MOBILE'">
+        <button class="nav-link" [class.active]="activeDetailTab === 'appearances'" type="button" (click)="activeDetailTab = 'appearances'">
+          Appearances
+        </button>
+      </li>
+    </ul>
+
+    <!-- INFO TAB -->
+    <div *ngIf="activeDetailTab === 'info'">
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Merchant</span>
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="navigateToMerchantEdit()">
+            <svg viewBox="0 0 24 24" width="14" height="14" class="me-1"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
+            Edit
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive datatable-shell">
+            <table class="table table-sm align-middle mb-0 merchant-results-table">
+              <thead>
+                <tr>
+                  <th>Merchant Name</th>
+                  <th>Merchant Code</th>
+                  <th>Merchant Type</th>
+                  <th>Business Type</th>
+                  <th>City</th>
+                  <th>Status</th>
+                  <th>Offerings</th>
+                  <th>Logo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{{ merchant.merchantName || merchant.legalBusinessName || merchant.applicationReference }}</td>
+                  <td><code>{{ merchant.merchantCode || '—' }}</code></td>
+                  <td>{{ merchant.merchantMobility || '—' }}</td>
+                  <td>{{ verticalDisplayName(merchant.businessType || '') || merchant.businessType || '—' }}</td>
+                  <td>{{ merchantLocation?.city || '—' }}</td>
+                  <td><span class="status-tag" [ngClass]="merchantStatusTone(merchant.status)">{{ merchant.status }}</span></td>
+                  <td>
+                    <ng-container *ngIf="merchant.offerings?.length; else noOfferings">
+                      <span class="status-tag status-tag-neutral me-1" *ngFor="let offering of merchant.offerings">{{ serviceLabel(offering) }}</span>
+                    </ng-container>
+                    <ng-template #noOfferings>—</ng-template>
+                  </td>
+                  <td class="product-thumb-col">
+                    <img *ngIf="merchant.logoUrl && !merchantTableLogoFailed" [src]="merchant.logoUrl" [alt]="merchant.merchantName || merchant.legalBusinessName" class="product-thumb" (error)="onMerchantTableLogoError()" />
+                    <div *ngIf="!merchant.logoUrl || merchantTableLogoFailed" class="product-thumb-empty"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BRANCHES & PRODUCTS TAB -->
+    <div *ngIf="activeDetailTab === 'branches-products'">
+      <div class="row g-4">
+        <div class="col-lg-5">
+          <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>Branches</span>
+              <span class="badge text-bg-light">{{ branchFilterActive ? branchVisibleCount + ' / ' + branches.length : branches.length }} rows</span>
+            </div>
+            <div class="card-body">
+              <div class="table-filter-toolbar mb-3">
+                <div class="table-filter-input-wrap">
+                  <label class="table-filter-label" for="branch-filter">Branch Filters</label>
+                  <input id="branch-filter" pInputText class="table-filter-input" [(ngModel)]="branchTableState.filter.query" (ngModelChange)="onBranchFilterChange()" [placeholder]="branchFilterHint" />
+                </div>
+                <button class="btn btn-outline-secondary table-filter-clear" type="button" (click)="clearBranchFilters()" [disabled]="!branchFilterActive">Clear</button>
+              </div>
+              <div class="table-responsive datatable-shell">
+                <table class="table table-sm align-middle mb-0 merchant-results-table">
+                  <thead>
+                    <tr>
+                      <th [attr.aria-sort]="sortAriaSort(branchNameSortDirection)">
+                        <button class="sort-header-button" type="button" [attr.aria-label]="sortButtonLabel('branch name', branchNameSortDirection)" (click)="toggleBranchSort('name')">
+                          <span>Name</span><i class="sort-header-icon" [ngClass]="sortIconClass(branchNameSortDirection)" aria-hidden="true"></i>
+                        </button>
+                      </th>
+                      <th>Code</th>
+                      <th>City</th>
+                      <th [attr.aria-sort]="sortAriaSort(branchStatusSortDirection)">
+                        <button class="sort-header-button" type="button" [attr.aria-label]="sortButtonLabel('branch status', branchStatusSortDirection)" (click)="toggleBranchSort('status')">
+                          <span>Status</span><i class="sort-header-icon" [ngClass]="sortIconClass(branchStatusSortDirection)" aria-hidden="true"></i>
+                        </button>
+                      </th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let branch of visibleBranchRows" [class.row-selected]="selectedBranch?.branchId === branch.branchId" (click)="selectBranch(branch)">
+                      <td>{{ branch.name }}</td>
+                      <td><code>{{ branch.branchCode || '—' }}</code></td>
+                      <td>{{ branch.city || '—' }}</td>
+                      <td><span class="status-tag" [ngClass]="branchStatusTone(branch)">{{ branchStatusLabel(branch) }}</span></td>
+                      <td class="text-end">
+                        <a *ngIf="branchWebCatalogUrl(branch)" class="icon-action-btn me-1" [href]="branchWebCatalogUrl(branch)" target="_blank" rel="noopener noreferrer" aria-label="Open Web Catalog" (click)="$event.stopPropagation()">
+                          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                        </a>
+                        <button class="icon-action-btn me-1" type="button" aria-label="Edit branch" (click)="navigateToBranchEdit(branch); $event.stopPropagation()">
+                          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
+                        </button>
+                        <button class="icon-action-btn" type="button" aria-label="Deactivate branch" (click)="removeBranch(branch); $event.stopPropagation()">
+                          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm3.46-7.12 1.41-1.41L12 11.59l1.12-1.12 1.41 1.41L13.41 13l1.12 1.12-1.41 1.41L12 14.41l-1.12 1.12-1.41-1.41L10.59 13l-1.13-1.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr *ngIf="!visibleBranchRows.length">
+                      <td colspan="5" class="text-center text-body-secondary">{{ branchEmptyMessage }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p-paginator *ngIf="branchPaginatorVisible" class="table-paginator" [first]="branchTableState.pagination.first" [rows]="branchTableState.pagination.rows" [totalRecords]="branchTableState.pagination.totalRecords" [rowsPerPageOptions]="branchTableState.pagination.rowsPerPageOptions" [showCurrentPageReport]="true" currentPageReportTemplate="Showing {first} to {last} of {totalRecords}" (onPageChange)="onBranchPageChange($event)" />
+              <div class="table-footer">
+                <span>Click a branch row to load its products.</span>
+                <span>{{ selectedBranch?.name || 'No branch selected' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-7">
+          <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>Product Categories</span>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge text-bg-light">{{ categoryFilterActive ? categoryVisibleCount + ' / ' + categories.length : categories.length }} rows</span>
+                <button class="btn btn-sm btn-primary" type="button" (click)="openCreateCategoryDialog()">Add category</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-filter-toolbar mb-3">
+                <div class="table-filter-input-wrap">
+                  <label class="table-filter-label" for="category-filter">Category Filters</label>
+                  <input id="category-filter" pInputText class="table-filter-input" [(ngModel)]="categoryTableState.filter.query" (ngModelChange)="onCategoryFilterChange()" [placeholder]="categoryFilterHint" />
+                </div>
+                <button class="btn btn-outline-secondary table-filter-clear" type="button" (click)="clearCategoryFilters()" [disabled]="!categoryFilterActive">Clear</button>
+              </div>
+              <div class="table-responsive datatable-shell">
+                <table class="table table-sm align-middle mb-0 merchant-results-table">
+                  <thead>
+                    <tr>
+                      <th [attr.aria-sort]="sortAriaSort(categoryNameSortDirection)">
+                        <button class="sort-header-button" type="button" [attr.aria-label]="sortButtonLabel('category name', categoryNameSortDirection)" (click)="toggleCategorySort('name')">
+                          <span>Name</span><i class="sort-header-icon" [ngClass]="sortIconClass(categoryNameSortDirection)" aria-hidden="true"></i>
+                        </button>
+                      </th>
+                      <th>Updated</th>
+                      <th class="text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let category of visibleCategoryRows">
+                      <td>{{ category.name }}</td>
+                      <td>{{ category.updatedAt | displayDate }}</td>
+                      <td class="text-end">
+                        <button class="icon-action-btn me-1" type="button" aria-label="Edit category" (click)="openEditCategoryDialog(category)">
+                          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
+                        </button>
+                        <button class="icon-action-btn" type="button" aria-label="Delete category" (click)="removeCategory(category)">
+                          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm3.46-7.12 1.41-1.41L12 11.59l1.12-1.12 1.41 1.41L13.41 13l1.12 1.12-1.41 1.41L12 14.41l-1.12 1.12-1.41-1.41L10.59 13l-1.13-1.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr *ngIf="!visibleCategoryRows.length">
+                      <td colspan="3" class="text-center text-body-secondary">{{ categoryEmptyMessage }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p-paginator *ngIf="categoryPaginatorVisible" class="table-paginator" [first]="categoryTableState.pagination.first" [rows]="categoryTableState.pagination.rows" [totalRecords]="categoryTableState.pagination.totalRecords" [rowsPerPageOptions]="categoryTableState.pagination.rowsPerPageOptions" [showCurrentPageReport]="true" currentPageReportTemplate="Showing {first} to {last} of {totalRecords}" (onPageChange)="onCategoryPageChange($event)" />
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>Products</span>
+              <span class="badge text-bg-light">{{ productFilterActive ? productVisibleCount + ' / ' + products.length : products.length }} rows</span>
+            </div>
+            <div class="card-body">
+              <div class="table-card-toolbar mb-3">
+                <div>
+                  <div class="table-card-label">Branch Scope</div>
+                  <div class="table-card-value">{{ selectedBranch?.name || 'Select a branch' }}</div>
+                </div>
+                <div class="table-filter-input-wrap">
+                  <label class="table-filter-label" for="product-filter">Product Filters</label>
+                  <input id="product-filter" pInputText class="table-filter-input" [(ngModel)]="productTableState.filter.query" (ngModelChange)="onProductFilterChange()" [placeholder]="productFilterHint" />
+                </div>
+                <div class="table-filter-action-wrap">
+                  <button class="btn btn-outline-secondary table-filter-clear" type="button" (click)="clearProductFilters()" [disabled]="!productFilterActive">Clear</button>
+                </div>
+              </div>
+              <div class="table-responsive datatable-shell">
+                <table class="table table-sm align-middle mb-0 merchant-results-table">
+                  <thead>
+                    <tr>
+                      <th class="product-thumb-col"></th>
+                      <th [attr.aria-sort]="sortAriaSort(productNameSortDirection)">
+                        <button class="sort-header-button" type="button" [attr.aria-label]="sortButtonLabel('product name', productNameSortDirection)" (click)="toggleProductSort('name')">
+                          <span>Product</span><i class="sort-header-icon" [ngClass]="sortIconClass(productNameSortDirection)" aria-hidden="true"></i>
+                        </button>
+                      </th>
+                      <th [attr.aria-sort]="sortAriaSort(productCodeSortDirection)">
+                        <button class="sort-header-button" type="button" [attr.aria-label]="sortButtonLabel('product code', productCodeSortDirection)" (click)="toggleProductSort('productCode')">
+                          <span>Code</span><i class="sort-header-icon" [ngClass]="sortIconClass(productCodeSortDirection)" aria-hidden="true"></i>
+                        </button>
+                      </th>
+                      <th [attr.aria-sort]="sortAriaSort(productCategorySortDirection)">
+                        <button class="sort-header-button" type="button" [attr.aria-label]="sortButtonLabel('product category', productCategorySortDirection)" (click)="toggleProductSort('categoryName')">
+                          <span>Category</span><i class="sort-header-icon" [ngClass]="sortIconClass(productCategorySortDirection)" aria-hidden="true"></i>
+                        </button>
+                      </th>
+                      <th [attr.aria-sort]="sortAriaSort(productStatusSortDirection)">
+                        <button class="sort-header-button" type="button" [attr.aria-label]="sortButtonLabel('product status', productStatusSortDirection)" (click)="toggleProductSort('status')">
+                          <span>Status</span><i class="sort-header-icon" [ngClass]="sortIconClass(productStatusSortDirection)" aria-hidden="true"></i>
+                        </button>
+                      </th>
+                      <th class="text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let product of visibleProductRows">
+                      <td class="product-thumb-col">
+                        <img *ngIf="product.imageUrl && !failedProductImages.has(product.productId)" [src]="product.imageUrl" [alt]="product.name" class="product-thumb" (error)="onProductImageError(product.productId)" />
+                        <div *ngIf="!product.imageUrl || failedProductImages.has(product.productId)" class="product-thumb-empty"></div>
+                      </td>
+                      <td>
+                        <div class="product-cell-title">{{ product.name }}</div>
+                        <div class="product-cell-subtitle">{{ product.description || 'No description' }}</div>
+                      </td>
+                      <td>{{ product.productCode ?? '—' }}</td>
+                      <td>{{ product.categoryName || '—' }}</td>
+                      <td><span class="status-tag" [ngClass]="productStatusTone(product)">{{ productStatusLabel(product) }}</span></td>
+                      <td class="text-end action-cell">
+                        <button class="btn btn-sm btn-outline-primary me-1" type="button" (click)="navigateToProductEdit(product)">
+                          <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
+                          <span class="ms-1">Edit</span>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="removeProduct(product)">Remove</button>
+                      </td>
+                    </tr>
+                    <tr *ngIf="!visibleProductRows.length">
+                      <td colspan="6" class="text-center text-body-secondary">{{ productEmptyMessage }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p-paginator *ngIf="productPaginatorVisible" class="table-paginator" [first]="productTableState.pagination.first" [rows]="productTableState.pagination.rows" [totalRecords]="productTableState.pagination.totalRecords" [rowsPerPageOptions]="productTableState.pagination.rowsPerPageOptions" [showCurrentPageReport]="true" currentPageReportTemplate="Showing {first} to {last} of {totalRecords}" (onPageChange)="onProductPageChange($event)" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT TAB -->
+    <div *ngIf="activeDetailTab === 'payment'">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Payment Providers</span>
+          <div *ngIf="providerAccountsLoading" class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+        </div>
+
+        <div *ngIf="providerAccountsError" class="alert alert-danger mx-3 mt-3 mb-0 py-1 px-2 small">
+          {{ providerAccountsError }}
+          <button class="btn btn-link btn-sm p-0 ms-1" type="button" (click)="loadProviderAccounts(selectedMerchant!.applicationId)">Retry</button>
+        </div>
+        <div *ngIf="paymentAccountError" class="alert alert-danger mx-3 mt-3 mb-0 py-1 px-2 small">{{ paymentAccountError }}</div>
+        <div *ngIf="tapToPayError" class="alert alert-danger mx-3 mt-3 mb-0 py-1 px-2 small">{{ tapToPayError }}</div>
+
+        <div class="table-responsive" *ngIf="!providerAccountsLoading">
+          <table class="table table-sm align-middle mb-0 merchant-results-table">
+            <thead>
+              <tr>
+                <th style="width:12%">Provider</th>
+                <th style="width:18%">Enabled</th>
+                <th style="width:30%">Account</th>
+                <th>Capabilities</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let code of knownPspCodes">
+                <ng-container *ngIf="{ pa: getProviderAccount(code) } as ctx">
+                  <tr>
+                    <!-- Provider -->
+                    <td class="fw-semibold">{{ pspDisplayName(code) }}</td>
+
+                    <!-- Enabled -->
+                    <td>
+                      <ng-container *ngIf="ctx.pa; else notAdded">
+                        <span class="status-tag me-2" [ngClass]="ctx.pa.enabled ? 'status-tag-success' : 'status-tag-neutral'">
+                          {{ ctx.pa.enabled ? 'Enabled' : 'Disabled' }}
+                        </span>
+                        <button class="btn btn-sm btn-outline-secondary" type="button"
+                          [disabled]="providerAccountActionLoading.has(code)"
+                          (click)="ctx.pa.enabled ? disableProviderAccount(code) : enableProviderAccount(code)">
+                          <span *ngIf="providerAccountActionLoading.has(code)" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                          {{ ctx.pa.enabled ? 'Disable' : 'Enable' }}
+                        </button>
+                      </ng-container>
+                      <ng-template #notAdded>
+                        <button class="btn btn-sm btn-outline-primary" type="button"
+                          [disabled]="providerAccountActionLoading.has(code)"
+                          (click)="enableProviderAccount(code)">
+                          <span *ngIf="providerAccountActionLoading.has(code)" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                          Enable
+                        </button>
+                      </ng-template>
+                    </td>
+
+                    <!-- Account (Stripe Connect; dash for others) -->
+                    <td>
+                      <ng-container *ngIf="code === 'STRIPE' && stripeEnabled; else noAccount">
+                        <ng-container [ngSwitch]="paymentAccountStatus">
+                          <span *ngSwitchCase="'connected'" class="status-tag status-tag-success me-2">Connected</span>
+                          <span *ngSwitchCase="'verifying'" class="status-tag status-tag-warning me-2">Verifying</span>
+                          <span *ngSwitchCase="'not_connected'" class="status-tag status-tag-neutral me-2">Not connected</span>
+                          <span *ngSwitchCase="'loading'" class="status-tag status-tag-neutral me-2">Loading…</span>
+                          <span *ngSwitchCase="'error'" class="status-tag status-tag-danger me-2">Error
+                            <button class="btn btn-link btn-sm p-0 ms-1" type="button" (click)="loadPaymentAccountStatus(selectedMerchant!.applicationId)">Retry</button>
+                          </span>
+                        </ng-container>
+                        <button *ngIf="paymentAccountStatus !== 'loading' && paymentAccountStatus !== 'error'"
+                          class="btn btn-sm"
+                          [ngClass]="paymentAccountStatus === 'connected' ? 'btn-outline-secondary' : 'btn-primary'"
+                          [disabled]="paymentAccountStatus === 'connected' || paymentAccountActionLoading"
+                          type="button" (click)="handleStripeConnect()">
+                          <span *ngIf="paymentAccountActionLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                          <ng-container *ngIf="!paymentAccountActionLoading">
+                            <ng-container [ngSwitch]="paymentAccountStatus">
+                              <span *ngSwitchCase="'connected'">Connected</span>
+                              <span *ngSwitchCase="'verifying'">Continue setup</span>
+                              <span *ngSwitchDefault>Connect Stripe</span>
+                            </ng-container>
+                          </ng-container>
+                        </button>
+                      </ng-container>
+                      <ng-template #noAccount><span class="text-body-secondary">—</span></ng-template>
+                    </td>
+
+                    <!-- Capabilities -->
+                    <td>
+                      <ng-container *ngIf="code === 'STRIPE' && paymentAccountStatus === 'connected'; else noCapabilities">
+                        <div class="d-flex align-items-center gap-2">
+                          <span class="small fw-medium">Tap to Pay</span>
+                          <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox"
+                              [ngModel]="tapToPayEnabled"
+                              [disabled]="tapToPayActionLoading"
+                              (ngModelChange)="onTapToPayToggle($event, selectedMerchant!.applicationId)" />
+                          </div>
+                          <span *ngIf="tapToPayActionLoading" class="spinner-border spinner-border-sm text-secondary" role="status"></span>
+                        </div>
+                      </ng-container>
+                      <ng-template #noCapabilities><span class="text-body-secondary">—</span></ng-template>
+                    </td>
+                  </tr>
+                </ng-container>
+              </ng-container>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPEARANCES TAB (mobile merchants only) -->
+    <div *ngIf="activeDetailTab === 'appearances' && merchant.merchantMobility === 'MOBILE'">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Appearances</span>
+          <button class="btn btn-outline-secondary btn-sm" type="button" (click)="loadAppearanceOperational(); loadAppearanceHistory(0)">Refresh</button>
+        </div>
+        <div class="card-body">
+          <h6 class="text-body-secondary mb-2">Active &amp; Upcoming</h6>
+          <div *ngIf="appearanceOperationalLoading" class="text-muted small">Loading…</div>
+          <div *ngIf="appearanceOperationalError" class="alert alert-danger py-1 px-2 small">{{ appearanceOperationalError }}</div>
+          <div class="table-responsive" *ngIf="!appearanceOperationalLoading && !appearanceOperationalError">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th>Name</th><th>Branch</th><th>Status</th><th>Start</th><th>End</th><th>Location</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let a of appearanceOperational">
+                  <td>{{ a.name }}</td>
+                  <td>{{ a.branchName }}</td>
+                  <td><span class="status-tag" [ngClass]="a.status === 'ACTIVE' ? 'status-tag-success' : 'status-tag-warning'">{{ a.status }}</span></td>
+                  <td>{{ a.startTime | displayDate }}</td>
+                  <td>{{ a.endTime | displayDate }}</td>
+                  <td>
+                    <a [href]="'https://www.google.com/maps?q=' + a.effectiveLatitude + ',' + a.effectiveLongitude" target="_blank" rel="noopener noreferrer" class="text-decoration-none small">
+                      📍 {{ a.effectiveLatitude.toFixed(4) }}, {{ a.effectiveLongitude.toFixed(4) }}
+                    </a>
+                  </td>
+                </tr>
+                <tr *ngIf="appearanceOperational.length === 0"><td colspan="6" class="text-center text-body-secondary small">No active or upcoming appearances.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <hr class="my-3" />
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="text-body-secondary mb-0">History</h6>
+            <span class="badge text-bg-light">{{ appearanceHistoryTotalElements }} records</span>
+          </div>
+          <div class="row g-2 align-items-end mb-3">
+            <div class="col-md-3">
+              <label class="form-label" for="appearance-branch">Branch</label>
+              <select id="appearance-branch" class="form-select" [(ngModel)]="appearanceHistoryBranchId">
+                <option value="">All branches</option>
+                <option *ngFor="let branch of branches" [value]="branch.branchId || branch.id">{{ branch.name }}</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label" for="appearance-status">Status</label>
+              <select id="appearance-status" class="form-select" [(ngModel)]="appearanceHistoryStatus">
+                <option value="">All statuses</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label" for="appearance-from">From</label>
+              <input id="appearance-from" class="form-control" type="date" [(ngModel)]="appearanceHistoryFrom" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label" for="appearance-to">To</label>
+              <input id="appearance-to" class="form-control" type="date" [(ngModel)]="appearanceHistoryTo" />
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-primary" type="button" (click)="applyAppearanceHistoryFilters()">Apply filters</button>
+            </div>
+          </div>
+          <div *ngIf="appearanceHistoryLoading" class="text-muted small">Loading history…</div>
+          <div *ngIf="appearanceHistoryError" class="alert alert-danger py-1 px-2 small">{{ appearanceHistoryError }}</div>
+          <div class="table-responsive" *ngIf="!appearanceHistoryLoading && !appearanceHistoryError">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th>Name</th><th>Branch</th><th>Status</th><th>Start</th><th>End</th><th>Cancelled</th><th>Location</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let appearance of appearanceHistory">
+                  <td>{{ appearance.name }}</td>
+                  <td>{{ appearance.branchName }}</td>
+                  <td><span class="status-tag" [ngClass]="appearance.status === 'COMPLETED' ? 'status-tag-success' : 'status-tag-neutral'">{{ appearance.status }}</span></td>
+                  <td>{{ appearance.startTime | displayDate }}</td>
+                  <td>{{ appearance.endTime | displayDate }}</td>
+                  <td>{{ appearance.cancelledAt | displayDate }}</td>
+                  <td>
+                    <a [href]="'https://www.google.com/maps?q=' + appearance.declaredLatitude + ',' + appearance.declaredLongitude" target="_blank" rel="noopener noreferrer" class="text-decoration-none small">
+                      📍 {{ appearance.declaredLatitude.toFixed(4) }}, {{ appearance.declaredLongitude.toFixed(4) }}
+                    </a>
+                  </td>
+                </tr>
+                <tr *ngIf="appearanceHistory.length === 0"><td colspan="7" class="text-center text-body-secondary small">No appearance history found.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="appearanceHistoryTotalPages > 1">
+            <button class="btn btn-outline-secondary btn-sm" [disabled]="appearanceHistoryPage === 0" (click)="loadAppearanceHistory(appearanceHistoryPage - 1)">Previous</button>
+            <span class="text-muted small">Page {{ appearanceHistoryPage + 1 }} of {{ appearanceHistoryTotalPages }}</span>
+            <button class="btn btn-outline-secondary btn-sm" [disabled]="appearanceHistoryPage + 1 >= appearanceHistoryTotalPages" (click)="loadAppearanceHistory(appearanceHistoryPage + 1)">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+<!-- Category dialog (inline, single-field) -->
+<div class="product-dialog-backdrop" *ngIf="categoryDialogOpen">
+  <div class="product-dialog card" role="dialog" aria-modal="true" aria-labelledby="category-dialog-title">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 id="category-dialog-title" class="mb-0">{{ categoryDialogMode === 'create' ? 'Add Product Category' : 'Edit Product Category' }}</h5>
+      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeCategoryDialog()">Close</button>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-danger mb-3" *ngIf="categoryDialogError">{{ categoryDialogError }}</div>
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label required">Name</label>
+          <input class="form-control" [(ngModel)]="categoryFormName" />
+        </div>
+      </div>
+      <div class="dialog-actions mt-3">
+        <button class="btn btn-primary" type="button" (click)="saveCategory()">
+          {{ categoryDialogMode === 'create' ? 'Create category' : 'Save category' }}
+        </button>
+        <button class="btn btn-outline-secondary" type="button" (click)="closeCategoryDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>

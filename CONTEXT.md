@@ -153,6 +153,20 @@ _Avoid_: Branch user, staff login, employee account
 - The `/user-management` backend API is the sole write path for **Merchant User Assignment** — it writes Keycloak group membership and the BlitzPay domain record atomically
 - The admin dashboard calls the `/user-management` API only; it never calls Keycloak directly
 
+## Navigation
+
+**Merchant Detail View**:
+The route-level page at `/merchants/:id` that displays a single Merchant's complete data: info, location, payment accounts, branches, products, product categories, and (for mobile merchants) appearances. Rendered inside the shell layout with the sidebar visible. Replaced the previous inline section inside `AuthShellComponent`.
+_Avoid_: Merchant page, catalog detail, merchant tab
+
+**Merchant Cross-link**:
+A pair of navigation actions ("View Settlements", "View Appointments") available in the Merchant Detail View header that open the respective section pre-filtered for that Merchant. The selected Merchant's `applicationId` is passed as a `merchantId` query parameter; the target page auto-loads data without requiring the admin to search again.
+_Avoid_: Merchant link, catalog shortcut, context switch
+
+**Edit Route**:
+A dedicated route that renders an edit form for a single entity (Merchant, Branch, or Product) in a full page instead of a dialog overlay. Accessed from the Merchant Detail View. The sidebar remains visible. On save or cancel, the admin is returned to the Merchant Detail View.
+_Avoid_: Edit dialog, modal edit, inline edit
+
 ## Flagged ambiguities
 
 - "category list on the catalog page" could have implied branch-level categories; resolved: **Product Categories** belong to the **Merchant** and are reusable across all **Branches**.

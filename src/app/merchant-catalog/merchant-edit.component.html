@@ -1,0 +1,149 @@
+<div class="container-fluid px-4 pt-2 pb-4">
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <a class="btn btn-link btn-sm ps-0" [routerLink]="['/merchants', merchantId]">← Back to merchant</a>
+  </div>
+
+  <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <div *ngIf="loading" class="text-center py-5 text-muted">Loading…</div>
+
+  <ng-container *ngIf="!loading && merchant">
+    <div class="card mb-4">
+      <div class="card-header">Edit Merchant — {{ merchant.merchantName || merchant.legalBusinessName }}</div>
+      <div class="card-body">
+        <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label required">Trading Name</label>
+            <input class="form-control" [(ngModel)]="form.merchantName" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label required">Legal Business Name</label>
+            <input class="form-control" [(ngModel)]="form.legalBusinessName" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label required">Business Address</label>
+            <input class="form-control" [(ngModel)]="form.primaryBusinessAddress" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Website</label>
+            <input class="form-control" [(ngModel)]="form.website" type="url" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label required">Contact Name</label>
+            <input class="form-control" [(ngModel)]="form.contactFullName" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label required">Contact Email</label>
+            <input class="form-control" [(ngModel)]="form.contactEmail" type="email" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label required">Contact Phone</label>
+            <input class="form-control" [(ngModel)]="form.contactPhoneNumber" type="tel" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Business Type</label>
+            <select class="form-select" [(ngModel)]="form.businessType">
+              <option value="">Select…</option>
+              <option *ngFor="let v of verticals" [value]="v.code">{{ v.displayName }}</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Merchant Type</label>
+            <select class="form-select" [(ngModel)]="form.merchantMobility">
+              <option value="">Select…</option>
+              <option *ngFor="let m of mobilityOptions" [value]="m.code">{{ m.label }}</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label d-block">Offerings</label>
+            <div class="d-flex flex-wrap gap-3">
+              <div class="form-check" *ngFor="let svc of serviceOptions">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  [id]="'offering-' + svc.code"
+                  [checked]="isOfferingSelected(svc.code)"
+                  (change)="toggleOffering(svc.code)"
+                />
+                <label class="form-check-label" [for]="'offering-' + svc.code">{{ svc.label }}</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header">Logo</div>
+      <div class="card-body">
+        <div class="d-flex align-items-start gap-3 flex-wrap">
+          <div>
+            <img *ngIf="logoPreviewUrl" [src]="logoPreviewUrl" alt="Logo preview" style="max-width:120px; max-height:120px; object-fit:contain; border:1px solid #dee2e6; border-radius:6px;" />
+            <div *ngIf="!logoPreviewUrl" class="product-thumb-empty" style="width:80px; height:80px;"></div>
+          </div>
+          <div class="flex-grow-1">
+            <label class="form-label">Upload new logo</label>
+            <input class="form-control" type="file" accept="image/*" (change)="onLogoFileChange($event)" />
+            <div *ngIf="logoUploadFile" class="mt-2">
+              <button class="btn btn-sm btn-outline-primary" type="button" [disabled]="logoUploading" (click)="uploadLogo()">
+                <span *ngIf="logoUploading" class="spinner-border spinner-border-sm me-1"></span>
+                {{ logoUploading ? 'Uploading…' : 'Upload' }}
+              </button>
+            </div>
+            <div *ngIf="logoError" class="alert alert-danger mt-2 py-1 px-2 small">{{ logoError }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header">Location</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Latitude</label>
+            <input class="form-control" [(ngModel)]="locationForm.latitude" type="number" step="any" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Longitude</label>
+            <input class="form-control" [(ngModel)]="locationForm.longitude" type="number" step="any" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Geofence Radius (m)</label>
+            <input class="form-control" [(ngModel)]="locationForm.geofenceRadiusMeters" type="number" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Country</label>
+            <input class="form-control" [(ngModel)]="locationForm.country" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Address Line 1</label>
+            <input class="form-control" [(ngModel)]="locationForm.addressLine1" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Address Line 2</label>
+            <input class="form-control" [(ngModel)]="locationForm.addressLine2" />
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">City</label>
+            <input class="form-control" [(ngModel)]="locationForm.city" />
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Postal Code</label>
+            <input class="form-control" [(ngModel)]="locationForm.postalCode" />
+          </div>
+        </div>
+        <p class="form-text mt-2">Leave latitude and longitude blank to skip location update.</p>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" type="button" [disabled]="saving" (click)="save()">
+        <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
+        {{ saving ? 'Saving…' : 'Save changes' }}
+      </button>
+      <button class="btn btn-outline-secondary" type="button" (click)="cancel()">Cancel</button>
+    </div>
+  </ng-container>
+</div>
