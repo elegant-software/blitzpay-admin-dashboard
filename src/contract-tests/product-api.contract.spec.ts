@@ -69,7 +69,7 @@ describe('Product API — contract tests', () => {
   it('POST /v1/merchants/{merchantId}/products creates a product via FormData and returns Product', (done) => {
     const formData = new FormData();
     formData.append('name', 'Contract Test Product');
-    formData.append('unitPrice', '999');
+    formData.append('unitPrice', '9.99');
     formData.append('active', 'true');
     formData.append('branchId', branchId);
 
@@ -97,7 +97,7 @@ describe('Product API — contract tests', () => {
   it('PUT /v1/merchants/{merchantId}/products/{productId} updates a product via FormData and returns Product', (done) => {
     const formData = new FormData();
     formData.append('name', 'Updated Contract Product');
-    formData.append('unitPrice', '1099');
+    formData.append('unitPrice', '10.99');
     formData.append('active', 'true');
     formData.append('branchId', branchId);
 

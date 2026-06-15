@@ -80,7 +80,7 @@ export class ProductEditComponent implements OnInit {
     this.form = {
       name: product.name ?? '',
       description: product.description ?? '',
-      unitPrice: (product.unitPrice / 100).toFixed(2),
+      unitPrice: Number(product.unitPrice).toFixed(2),
       categoryId: product.categoryId ?? '',
       active: product.active,
       productCode: product.productCode?.toString() ?? '',
@@ -115,7 +115,7 @@ export class ProductEditComponent implements OnInit {
     const formData = new FormData();
     formData.append('name', this.form.name);
     formData.append('description', this.form.description ?? '');
-    formData.append('unitPrice', Math.round(unitPriceMajor * 100).toString());
+    formData.append('unitPrice', unitPriceMajor.toFixed(2));
     formData.append('active', this.form.active ? 'true' : 'false');
     if (this.form.categoryId) formData.append('categoryId', this.form.categoryId);
     if (this.form.productCode) formData.append('productCode', this.form.productCode);
