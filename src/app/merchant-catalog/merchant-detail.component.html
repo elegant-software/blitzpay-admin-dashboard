@@ -45,7 +45,7 @@
 
     <!-- INFO TAB -->
     <div *ngIf="activeDetailTab === 'info'">
-      <div class="card mb-4">
+      <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span>Merchant</span>
           <button class="btn btn-sm btn-outline-secondary" type="button" (click)="navigateToMerchantEdit()">
@@ -90,6 +90,16 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+
+      <div class="card mb-4" *ngIf="merchant.defaultVatPercent != null">
+        <div class="card-header">Invoice Settings</div>
+        <div class="card-body py-2">
+          <dl class="row mb-0 small">
+            <dt class="col-sm-3 text-body-secondary fw-normal">Default VAT Rate</dt>
+            <dd class="col-sm-9 mb-0">{{ merchant.defaultVatPercent }}%</dd>
+          </dl>
         </div>
       </div>
     </div>

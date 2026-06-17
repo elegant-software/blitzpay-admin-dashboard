@@ -49,6 +49,7 @@ export class MerchantEditComponent implements OnInit {
     businessType: '',
     merchantMobility: '',
     offerings: [] as string[],
+    defaultVatPercent: '',
   };
 
   locationForm = {
@@ -125,6 +126,7 @@ export class MerchantEditComponent implements OnInit {
       businessType: merchant.businessType ?? '',
       merchantMobility: merchant.merchantMobility ?? '',
       offerings: [...(merchant.offerings ?? [])],
+      defaultVatPercent: merchant.defaultVatPercent != null ? merchant.defaultVatPercent.toString() : '',
     };
     this.logoStorageKey = merchant.logoStorageKey ?? '';
     this.logoPreviewUrl = merchant.logoUrl ?? '';
@@ -200,6 +202,7 @@ export class MerchantEditComponent implements OnInit {
       offerings: this.form.offerings,
       businessType: this.form.businessType || undefined,
       merchantMobility: this.form.merchantMobility || undefined,
+      defaultVatPercent: this.form.defaultVatPercent !== '' ? parseFloat(this.form.defaultVatPercent) : undefined,
     };
 
     const save$ = this.merchantApi.updateMerchant(this.selectedEnvironment, this.apiVersion, this.merchantId, payload);
