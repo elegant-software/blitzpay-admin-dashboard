@@ -29,6 +29,7 @@ export interface Merchant {
   lastUpdatedAt: string;
   logoStorageKey?: string | null;
   logoUrl?: string | null;
+  defaultVatPercent?: number | null;
 }
 
 export type AppearanceHistoryStatus = 'COMPLETED' | 'CANCELLED';
@@ -218,6 +219,7 @@ export interface UpdateMerchantRequest {
   status?: string;
   businessType?: string;
   merchantMobility?: string;
+  defaultVatPercent?: number | null;
 }
 
 export interface UpdateBranchRequest {
@@ -305,6 +307,7 @@ export interface MerchantFormModel {
   merchantMobility: string;
   services: string[];
   status: string;
+  defaultVatPercent: string;
 }
 
 export interface ProductFormModel {
