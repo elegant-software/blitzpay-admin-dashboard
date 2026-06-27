@@ -2,7 +2,8 @@ import { BackendEnvironment, EnvironmentKey } from '../models/merchant-catalog.m
 
 export const MERCHANT_ENVIRONMENTS: readonly BackendEnvironment[] = [
   { key: 'local', label: 'Local', baseUrl: 'http://localhost:8080', storefrontUrl: 'http://localhost:4201' },
-  { key: 'staging', label: 'Staging', baseUrl: 'https://api-blitzpay-staging.elegantsoftware.de', storefrontUrl: 'https://blitz-pay-web.elegantsoftware.de' }
+  { key: 'k8s-staging', label: 'K8s Staging', baseUrl: 'https://api-blitzpay-staging.elegantsoftware.de', storefrontUrl: 'https://blitz-pay-web.elegantsoftware.de' },
+  { key: 'aws-staging', label: 'AWS Staging', baseUrl: 'https://api.elegantsoftware.de', storefrontUrl: 'https://blitz-pay-web.elegantsoftware.de' }
 ] as const;
 
 export function getEnvironmentByKey(key: EnvironmentKey): BackendEnvironment {

@@ -1,4 +1,4 @@
-export type EnvironmentKey = 'local' | 'staging';
+export type EnvironmentKey = 'local' | 'k8s-staging' | 'aws-staging';
 export type CatalogSearchMode = 'merchantId' | 'branchId' | 'productId' | 'productName';
 
 export interface BackendEnvironment {
@@ -541,4 +541,68 @@ export interface NoteEditFormModel {
   contactName: string;
   contactEmail: string;
   contactPhone: string;
+}
+
+// ── Orders ──────────────────────────────────────────────────────────────────
+
+export type OrderType = 'WALK_IN_ORDERING' | 'PRE_ORDER';
+export type OrderStatus = 'PENDING' | 'PAID' | 'CANCELLED' | 'EXPIRED';
+
+export interface OrderItemResponse {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface OrderResponse {
+  id: string;
+  merchantId: string;
+  branchId: string;
+  branchName?: string | null;
+  orderType: OrderType;
+  status: OrderStatus;
+  usesDeferredPayment: boolean;
+  targetShopperId?: string | null;
+  targetShopperName?: string | null;
+  dueDate?: string | null;
+  qrCode?: string | null;
+  items: OrderItemResponse[];
+  totalAmount: number;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateOrderItemRequest {
+  productId: string;
+  quantity: number;
+}
+
+export interface CreateOrderRequest {
+  merchantId: string;
+  branchId: string;
+  orderType: OrderType;
+  usesDeferredPayment?: boolean;
+  targetShopperId?: string;
+  dueDate?: string;
+  items: CreateOrderItemRequest[];
+}
+
+export interface BranchCustomer {
+  shopperAccountId: string;
+  name: string;
+}
+
+export interface ShopperSearchResult {
+  shopperAccountId: string;
+  name: string;
+}
+
+export interface OrderItemFormModel {
+  productId: string;
+  productName: string;
+  unitPrice: number;
+  quantity: number;
 }

@@ -9,6 +9,8 @@ import {
   AppearanceHistoryStatus,
   OperationalAppearanceItem,
   Branch,
+  BranchCustomer,
+  CreateOrderRequest,
   CreateProductCategoryRequest,
   CreateBranchRequest,
   Merchant,
@@ -18,12 +20,14 @@ import {
   MerchantSearchRequest,
   MerchantSearchResponse,
   MerchantVerticalResponse,
+  OrderResponse,
   Product,
   ProductCategory,
   ProductListResponse,
   ProviderAccountResponse,
   RenameProductCategoryRequest,
   RescheduleAppointmentRequest,
+  ShopperSearchResult,
   StartStripeConnectRequest,
   StripeConnectStatusResponse,
   SupportOverrideAppointmentRequest,
@@ -492,6 +496,54 @@ export class MerchantApiService {
     return this.http.patch<AppointmentPolicy>(
       `${this.base(environment, apiVersion)}/merchants/${merchantId}/appointment-policy`,
       payload
+    );
+  }
+
+  // ── Orders ──────────────────────────────────────────────────────────────
+
+  getOrders(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    branchId: string
+  ): Observable<OrderResponse[]> {
+    const params = new HttpParams().set('branchId', branchId);
+    return this.http.get<OrderResponse[]>(
+      `${this.base(environment, apiVersion)}/merchant/orders`,
+      { params }
+    );
+  }
+
+  createOrder(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    payload: CreateOrderRequest
+  ): Observable<OrderResponse> {
+    return this.http.post<OrderResponse>(
+      `${this.base(environment, apiVersion)}/merchant/orders`,
+      payload
+    );
+  }
+
+  getBranchCustomers(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    branchId: string
+  ): Observable<BranchCustomer[]> {
+    return this.http.get<BranchCustomer[]>(
+      `${this.base(environment, apiVersion)}/merchant/orders/branches/${branchId}/customers`
+    );
+  }
+
+  searchShopperByEmail(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    email: string
+  ): Observable<ShopperSearchResult> {
+    const params = new HttpParams().set('email', email);
+    return this.http.get<ShopperSearchResult>(
+      `${this.base(environment, apiVersion)}/merchant/orders/shoppers/search`,
+      { params }
     );
   }
 

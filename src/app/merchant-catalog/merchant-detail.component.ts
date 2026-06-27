@@ -10,6 +10,7 @@ import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import {
   AppearanceHistoryItem,
   AppearanceHistoryStatus,
+  EnvironmentKey,
   OperationalAppearanceItem,
   Branch,
   CategorySortField,
@@ -40,7 +41,7 @@ import { environment } from '../../environments/environment';
   styleUrl: './merchant-catalog.component.css'
 })
 export class MerchantDetailComponent implements OnInit, OnDestroy {
-  selectedEnvironmentKey: 'local' | 'staging' = environment.defaultEnvironmentKey;
+  selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   apiVersion = 'v1';
 
   selectedMerchant: Merchant | null = null;

@@ -64,7 +64,7 @@ export class StripeConnectReturnComponent implements OnInit {
   errorMessage: string | null = null;
 
   private merchantId = '';
-  private envKey: EnvironmentKey = 'staging';
+  private envKey: EnvironmentKey = 'aws-staging';
   private apiVersion = 'v1';
 
   constructor(
@@ -75,7 +75,7 @@ export class StripeConnectReturnComponent implements OnInit {
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
     this.merchantId = params.get('merchantId') ?? '';
-    this.envKey = (params.get('env') ?? 'staging') as EnvironmentKey;
+    this.envKey = (params.get('env') ?? 'aws-staging') as EnvironmentKey;
     this.apiVersion = params.get('apiVersion') ?? 'v1';
     const isRefresh = params.get('refresh') === 'true';
 

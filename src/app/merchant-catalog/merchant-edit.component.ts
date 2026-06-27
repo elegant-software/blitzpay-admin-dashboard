@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import {
+  EnvironmentKey,
   Merchant,
   MerchantVerticalResponse,
   UpdateMerchantRequest,
@@ -23,7 +24,7 @@ import { environment } from '../../environments/environment';
   styleUrl: './merchant-catalog.component.css'
 })
 export class MerchantEditComponent implements OnInit {
-  readonly selectedEnvironmentKey: 'local' | 'staging' = environment.defaultEnvironmentKey;
+  readonly selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   readonly apiVersion = 'v1';
 
   get selectedEnvironment() { return getEnvironmentByKey(this.selectedEnvironmentKey); }

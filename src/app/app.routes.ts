@@ -71,6 +71,10 @@ export const appRoutes: Routes = [
         ]
       },
       {
+        path: 'orders',
+        loadComponent: () => import('./orders/order-management.component').then(m => m.OrderManagementComponent)
+      },
+      {
         path: 'user-management',
         loadComponent: () => import('./user-management/user-management.component').then(m => m.UserManagementComponent)
       },

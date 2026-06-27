@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { Branch, UpdateBranchRequest } from '../models/merchant-catalog.models';
+import { Branch, EnvironmentKey, UpdateBranchRequest } from '../models/merchant-catalog.models';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
@@ -15,7 +15,7 @@ import { environment } from '../../environments/environment';
   styleUrl: './merchant-catalog.component.css'
 })
 export class BranchEditComponent implements OnInit {
-  readonly selectedEnvironmentKey: 'local' | 'staging' = environment.defaultEnvironmentKey;
+  readonly selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   readonly apiVersion = 'v1';
 
   get selectedEnvironment() { return getEnvironmentByKey(this.selectedEnvironmentKey); }

@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule } from 'primeng/paginator';
 import {
+  EnvironmentKey,
   MerchantSearchRequest,
   MerchantSearchResultItem,
   MerchantSearchResponse,
@@ -22,7 +23,7 @@ import { environment } from '../../environments/environment';
   styleUrl: './merchant-catalog.component.css'
 })
 export class MerchantCatalogComponent implements OnInit {
-  selectedEnvironmentKey: 'local' | 'staging' = environment.defaultEnvironmentKey;
+  selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   apiVersion = 'v1';
 
   searchQuery = '';
