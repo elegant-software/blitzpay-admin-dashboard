@@ -9,6 +9,6 @@ export const environment = {
     silentCheckSsoPath: '/silent-check-sso.html',
     scopes: ['openid', 'profile', 'email'],
     requiredRoles: ['blitzpay-admin'],
-    apiBaseUrls: ['http://localhost:8080', 'https://api-blitzpay-staging.elegantsoftware.de']
+    apiBaseUrls: ['http://localhost:8080', 'https://api-blitzpay-staging.elegantsoftware.de', 'https://api.elegantsoftware.de']
   }
 };

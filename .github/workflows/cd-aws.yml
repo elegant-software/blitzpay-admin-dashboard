@@ -1,0 +1,82 @@
+name: Admin dashboard — deploy to AWS (S3 + CloudFront)
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write   # required for OIDC → AWS role assumption
+
+env:
+  NODE_VERSION: '20'
+  AWS_REGION: eu-central-1
+
+jobs:
+  verify-release-ci:
+    name: Verify CI passed for release commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: refs/tags/${{ github.event.release.tag_name }}
+
+      - name: Resolve release commit SHA
+        id: sha
+        run: echo "release_sha=$(git rev-list -n 1 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure push CI succeeded for release commit
+        uses: actions/github-script@v9
+        env:
+          RELEASE_SHA: ${{ steps.sha.outputs.release_sha }}
+        with:
+          script: |
+            const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
+              owner: context.repo.owner, repo: context.repo.repo,
+              workflow_id: 'ci.yml', event: 'push', branch: 'main',
+              status: 'completed', per_page: 100
+            });
+            const ok = runs.find(r => r.head_sha === process.env.RELEASE_SHA && r.conclusion === 'success');
+            if (!ok) core.setFailed(`No successful CI run on main for commit ${process.env.RELEASE_SHA}`);
+
+  deploy:
+    name: Build and deploy to S3
+    needs: verify-release-ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build -- --configuration aws-staging
+
+      - name: Assume AWS deploy role (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync to S3
+        run: |
+          aws s3 sync dist/blitzpay-admin-dashboard/ \
+            s3://${{ secrets.WEB_ADMIN_BUCKET }} \
+            --delete \
+            --cache-control "public,max-age=31536000,immutable" \
+            --exclude "index.html"
+          # index.html must not be cached so SPA updates are picked up immediately
+          aws s3 cp dist/blitzpay-admin-dashboard/index.html \
+            s3://${{ secrets.WEB_ADMIN_BUCKET }}/index.html \
+            --cache-control "no-cache,no-store,must-revalidate"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.WEB_ADMIN_DISTRIBUTION_ID }} \
+            --paths "/*"
