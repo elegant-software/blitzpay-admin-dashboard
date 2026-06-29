@@ -143,14 +143,14 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   }
 
   get branchCatalogUrl(): string {
-    const merchantId = this.selectedMerchant?.applicationId;
+    const merchantId = this.selectedMerchant?.merchantId;
     const branchId = this.selectedBranch?.branchId ?? this.selectedBranch?.id;
     if (!merchantId || !branchId) return '';
     return `${this.selectedEnvironment.storefrontUrl}/m/${encodeURIComponent(merchantId)}/b/${encodeURIComponent(branchId)}`;
   }
 
   branchWebCatalogUrl(branch: Branch): string {
-    const merchantId = this.selectedMerchant?.applicationId;
+    const merchantId = this.selectedMerchant?.merchantId;
     const branchId = branch.branchId ?? branch.id;
     if (!merchantId || !branchId) return '';
     return `${this.selectedEnvironment.storefrontUrl}/m/${encodeURIComponent(merchantId)}/b/${encodeURIComponent(branchId)}`;
@@ -223,28 +223,28 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
   navigateToMerchantEdit(): void {
     if (!this.selectedMerchant) return;
-    this.router.navigate(['/merchants', this.selectedMerchant.applicationId, 'edit']);
+    this.router.navigate(['/merchants', this.selectedMerchant.merchantId, 'edit']);
   }
 
   navigateToBranchEdit(branch: Branch): void {
     if (!this.selectedMerchant) return;
     const branchId = branch.branchId ?? branch.id;
-    this.router.navigate(['/merchants', this.selectedMerchant.applicationId, 'branches', branchId, 'edit']);
+    this.router.navigate(['/merchants', this.selectedMerchant.merchantId, 'branches', branchId, 'edit']);
   }
 
   navigateToProductEdit(product: Product): void {
     if (!this.selectedMerchant) return;
-    this.router.navigate(['/merchants', this.selectedMerchant.applicationId, 'products', product.productId, 'edit']);
+    this.router.navigate(['/merchants', this.selectedMerchant.merchantId, 'products', product.productId, 'edit']);
   }
 
   viewSettlements(): void {
     if (!this.selectedMerchant) return;
-    this.router.navigate(['/settlements'], { queryParams: { merchantId: this.selectedMerchant.applicationId } });
+    this.router.navigate(['/settlements'], { queryParams: { merchantId: this.selectedMerchant.merchantId } });
   }
 
   viewAppointments(): void {
     if (!this.selectedMerchant) return;
-    this.router.navigate(['/appointments'], { queryParams: { merchantId: this.selectedMerchant.applicationId } });
+    this.router.navigate(['/appointments'], { queryParams: { merchantId: this.selectedMerchant.merchantId } });
   }
 
   onBranchFilterChange(): void { this.branchTableState.pagination.first = 0; this.syncBranchTableState(); }
@@ -292,7 +292,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     if (!branchId) { this.selectedBranch = this.normalizeBranch(branch); return; }
 
     this.loading = true;
-    this.merchantApi.getBranch(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, branchId).subscribe({
+    this.merchantApi.getBranch(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, branchId).subscribe({
       next: (detail) => {
         this.selectedBranch = this.normalizeBranch(detail);
         this.resetProductTableStateForBranch(this.selectedBranch.branchId ?? null);
@@ -316,7 +316,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     if (!confirm(`Deactivate branch "${branch.name}"?`)) return;
 
     this.loading = true;
-    this.merchantApi.deleteBranch(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, branch.branchId).subscribe({
+    this.merchantApi.deleteBranch(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, branch.branchId).subscribe({
       next: () => {
         this.loading = false;
         this.statusMessage = `Branch "${branch.name}" deactivated.`;
@@ -336,7 +336,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     if (!this.selectedMerchant || !confirm(`Soft-remove product "${product.name}"?`)) return;
 
     this.loading = true;
-    this.merchantApi.removeProduct(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, product.productId, product.branchId ?? undefined).subscribe({
+    this.merchantApi.removeProduct(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, product.productId, product.branchId ?? undefined).subscribe({
       next: () => {
         this.loading = false;
         this.statusMessage = 'Product marked inactive.';
@@ -382,8 +382,8 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.categoryDialogError = '';
 
     const request$ = this.categoryDialogMode === 'create'
-      ? this.merchantApi.createProductCategory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, { name })
-      : this.merchantApi.renameProductCategory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, this.selectedCategory!.id, { name });
+      ? this.merchantApi.createProductCategory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, { name })
+      : this.merchantApi.renameProductCategory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, this.selectedCategory!.id, { name });
 
     request$.subscribe({
       next: (category) => {
@@ -405,7 +405,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     if (!this.selectedMerchant || !confirm(`Delete category "${category.name}"?`)) return;
 
     this.loading = true;
-    this.merchantApi.deleteProductCategory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, category.id).subscribe({
+    this.merchantApi.deleteProductCategory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, category.id).subscribe({
       next: () => {
         this.loading = false;
         this.categories = this.categories.filter(item => item.id !== category.id);
@@ -421,7 +421,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     if (!this.selectedMerchant || this.selectedMerchant.merchantMobility !== 'MOBILE') return;
     this.appearanceOperationalLoading = true;
     this.appearanceOperationalError = '';
-    this.merchantApi.getAppearanceOperational(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId).subscribe({
+    this.merchantApi.getAppearanceOperational(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId).subscribe({
       next: result => { this.appearanceOperational = result; this.appearanceOperationalLoading = false; },
       error: error => { this.appearanceOperational = []; this.appearanceOperationalLoading = false; this.appearanceOperationalError = this.toMessage(error, 'Operational appearances could not be loaded.'); }
     });
@@ -432,7 +432,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.appearanceHistoryLoading = true;
     this.appearanceHistoryError = '';
     this.appearanceHistoryPage = page;
-    this.merchantApi.getAppearanceHistory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, {
+    this.merchantApi.getAppearanceHistory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, {
       branchId: this.appearanceHistoryBranchId || undefined,
       status: this.appearanceHistoryStatus || undefined,
       from: new Date(`${this.appearanceHistoryFrom}T00:00:00`).toISOString(),
@@ -474,7 +474,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
   handleStripeConnect(): void {
     if (!this.selectedMerchant || this.paymentAccountActionLoading) return;
-    const merchantId = this.selectedMerchant.applicationId;
+    const merchantId = this.selectedMerchant.merchantId;
     const origin = window.location.origin;
     const base = `${origin}/stripe-connect/return?merchantId=${merchantId}&env=${this.selectedEnvironmentKey}&apiVersion=${this.apiVersion}`;
     this.paymentAccountActionLoading = true;
@@ -502,7 +502,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   enableProviderAccount(pspCode: string): void {
     if (!this.selectedMerchant || this.providerAccountActionLoading.has(pspCode)) return;
     this.providerAccountActionLoading.add(pspCode);
-    this.merchantApi.enableProviderAccount(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, pspCode).subscribe({
+    this.merchantApi.enableProviderAccount(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, pspCode).subscribe({
       next: (account) => { this.providerAccounts = this.upsertProviderAccount(this.providerAccounts, account); this.providerAccountActionLoading.delete(pspCode); },
       error: (err) => { this.providerAccountsError = this.toMessage(err, `Failed to enable ${pspCode}.`); this.providerAccountActionLoading.delete(pspCode); }
     });
@@ -511,7 +511,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   disableProviderAccount(pspCode: string): void {
     if (!this.selectedMerchant || this.providerAccountActionLoading.has(pspCode)) return;
     this.providerAccountActionLoading.add(pspCode);
-    this.merchantApi.disableProviderAccount(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, pspCode).subscribe({
+    this.merchantApi.disableProviderAccount(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, pspCode).subscribe({
       next: () => { this.providerAccounts = this.providerAccounts.map(a => a.pspCode === pspCode ? { ...a, enabled: false } : a); this.providerAccountActionLoading.delete(pspCode); },
       error: (err) => { this.providerAccountsError = this.toMessage(err, `Failed to disable ${pspCode}.`); this.providerAccountActionLoading.delete(pspCode); }
     });
@@ -555,17 +555,17 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.resetAppearanceHistory();
     this.activeDetailTab = 'info';
 
-    this.loadPaymentAccountStatus(merchant.applicationId);
-    this.loadProviderAccounts(merchant.applicationId);
+    this.loadPaymentAccountStatus(merchant.merchantId);
+    this.loadProviderAccounts(merchant.merchantId);
     if (merchant.merchantMobility === 'MOBILE') {
       this.loadAppearanceOperational();
       this.loadAppearanceHistory();
     }
 
     forkJoin({
-      location: this.merchantApi.getLocation(this.selectedEnvironment, this.apiVersion, merchant.applicationId).pipe(catchError(() => of(null))),
-      branches: this.merchantApi.getBranches(this.selectedEnvironment, this.apiVersion, merchant.applicationId).pipe(catchError(() => of([]))),
-      categories: this.merchantApi.getProductCategories(this.selectedEnvironment, this.apiVersion, merchant.applicationId).pipe(catchError(() => of([])))
+      location: this.merchantApi.getLocation(this.selectedEnvironment, this.apiVersion, merchant.merchantId).pipe(catchError(() => of(null))),
+      branches: this.merchantApi.getBranches(this.selectedEnvironment, this.apiVersion, merchant.merchantId).pipe(catchError(() => of([]))),
+      categories: this.merchantApi.getProductCategories(this.selectedEnvironment, this.apiVersion, merchant.merchantId).pipe(catchError(() => of([])))
     }).subscribe({
       next: ({ location, branches, categories }) => {
         this.merchantLocation = location;
@@ -579,7 +579,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
         this.syncCategoryTableState();
         this.syncBranchTableState();
         this.resetProductTableStateForBranch(this.selectedBranch?.branchId ?? null);
-        this.statusMessage = `Loaded merchant ${merchant.applicationReference}.`;
+        this.statusMessage = `Loaded merchant ${merchant.merchantCode}.`;
         if (this.selectedBranch?.branchId) {
           this.loadProductsForSelectedBranch();
           return;
@@ -600,7 +600,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
     this.loading = true;
     this.resetProductTableStateForBranch(this.selectedBranch.branchId);
-    this.merchantApi.getProducts(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.applicationId, this.selectedBranch.branchId).subscribe({
+    this.merchantApi.getProducts(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, this.selectedBranch.branchId).subscribe({
       next: (products) => { this.loading = false; this.products = products; this.syncProductTableState(); },
       error: (error) => { this.loading = false; this.products = []; this.syncProductTableState(); this.errorMessage = this.toMessage(error, 'Unable to load products.'); }
     });

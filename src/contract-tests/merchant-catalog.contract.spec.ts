@@ -21,8 +21,8 @@ describe('Merchant API — contract tests', () => {
   it('GET /v1/merchants/{merchantId} returns required Merchant fields', (done) => {
     http.get<Merchant>(`${contractBaseUrl}/v1/merchants/${merchantId}`).subscribe({
       next: (body) => {
-        expect(body.applicationId).toBeTruthy();
-        expect(body.status).toBeTruthy();
+        expect(body.merchantId).toBeTruthy();
+        expect(body.merchantStatus).toBeTruthy();
         expect(body.lastUpdatedAt).toBeTruthy();
         done();
       },
@@ -33,17 +33,15 @@ describe('Merchant API — contract tests', () => {
   it('PUT /v1/merchants/{merchantId} accepts UpdateMerchantRequest and returns Merchant', (done) => {
     http
       .put<Merchant>(`${contractBaseUrl}/v1/merchants/${merchantId}`, {
-        legalBusinessName: 'Contract Test Business',
-        primaryBusinessAddress: '1 Test Street, Berlin',
-        contactFullName: 'Test Contact',
-        contactEmail: 'contact@test.example',
-        contactPhoneNumber: '+49123456789',
-        activePaymentChannels: ['CARD'],
+        contactInfo: {
+          email: 'contact@test.example',
+          phoneNumber: '+49123456789',
+        },
       })
       .subscribe({
         next: (body) => {
-          expect(body.applicationId).toBeTruthy();
-          expect(body.status).toBeTruthy();
+          expect(body.merchantId).toBeTruthy();
+          expect(body.merchantStatus).toBeTruthy();
           expect(body.lastUpdatedAt).toBeTruthy();
           done();
         },
@@ -97,7 +95,7 @@ describe('Merchant API — contract tests', () => {
       })
       .subscribe({
         next: (body) => {
-          expect(body.applicationId).toBeTruthy();
+          expect(body.merchantId).toBeTruthy();
           expect(body.lastUpdatedAt).toBeTruthy();
           done();
         },

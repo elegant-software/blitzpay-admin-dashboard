@@ -60,7 +60,6 @@
             <thead>
               <tr>
                 <th>Merchant Name</th>
-                <th>Legal Name</th>
                 <th>Code</th>
                 <th>Merchant Type</th>
                 <th>Business Type</th>
@@ -71,14 +70,13 @@
             </thead>
             <tbody>
               <tr *ngFor="let item of searchResults" style="cursor:pointer" (click)="selectSearchResult(item)">
-                <td>{{ item.merchantName || item.legalBusinessName }}</td>
-                <td class="text-muted small">{{ item.legalBusinessName }}</td>
+                <td>{{ item.merchantName }}</td>
                 <td><code>{{ item.merchantCode }}</code></td>
                 <td>{{ item.merchantMobility || '—' }}</td>
                 <td>{{ verticalDisplayName(item.businessType) || item.businessType || '—' }}</td>
                 <td>{{ item.city || '—' }}</td>
                 <td>{{ item.country || '—' }}</td>
-                <td><span class="status-tag" [ngClass]="merchantStatusTone(item.status)">{{ item.status }}</span></td>
+                <td><span class="status-tag" [ngClass]="merchantStatusTone(item.merchantStatus)">{{ item.merchantStatus }}</span></td>
               </tr>
             </tbody>
           </table>

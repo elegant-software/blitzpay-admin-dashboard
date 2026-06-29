@@ -33,13 +33,13 @@
                 style="cursor:pointer"
                 (click)="selectMerchant(m)"
               >
-                <span class="d-block fw-semibold">{{ m.merchantName || m.legalBusinessName }}</span>
+                <span class="d-block fw-semibold">{{ m.merchantName }}</span>
                 <span class="d-block small text-muted">{{ m.merchantCode }} · {{ m.city ?? '—' }}</span>
               </li>
             </ul>
           </ng-container>
           <div *ngIf="selectedMerchant" class="d-flex align-items-center gap-2">
-            <span class="badge bg-primary fs-6 fw-normal px-3 py-2">{{ selectedMerchant.merchantName || selectedMerchant.legalBusinessName }}</span>
+            <span class="badge bg-primary fs-6 fw-normal px-3 py-2">{{ selectedMerchant.merchantName }}</span>
             <span class="text-muted small">{{ selectedMerchant.merchantCode }}</span>
             <button class="btn btn-sm btn-outline-secondary ms-auto" type="button" (click)="clearMerchant()">Change</button>
           </div>

@@ -99,7 +99,7 @@ export class MerchantCatalogComponent implements OnInit {
   }
 
   selectSearchResult(item: MerchantSearchResultItem): void {
-    this.router.navigate(['/merchants', item.applicationId]);
+    this.router.navigate(['/merchants', item.merchantId]);
   }
 
   goToSearchPage(page: number): void {

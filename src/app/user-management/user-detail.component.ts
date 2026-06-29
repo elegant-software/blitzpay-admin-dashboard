@@ -73,7 +73,7 @@ export class UserDetailComponent implements OnChanges {
     this.dialog.selectedMerchant = m;
     this.dialog.branches = [];
     this.dialog.branchId = null;
-    this.loadBranches(m.applicationId);
+    this.loadBranches(m.merchantId);
   }
 
   onRoleChanged(role: MerchantOperationsRole): void {
@@ -86,7 +86,7 @@ export class UserDetailComponent implements OnChanges {
     this.dialog.error = null;
 
     const request: CreateAssignmentRequest = {
-      merchantId: this.dialog.selectedMerchant.applicationId,
+      merchantId: this.dialog.selectedMerchant.merchantId,
       branchId: this.dialog.branchId || null,
       role: this.dialog.role,
       employeeId: this.dialog.employeeId || null,

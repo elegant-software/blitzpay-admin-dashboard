@@ -95,15 +95,14 @@ export class OrderManagementComponent implements OnInit {
       this.merchantApi.getMerchant(this.selectedEnvironment, this.apiVersion, merchantId).subscribe({
         next: (merchant) => {
           const item: MerchantSearchResultItem = {
-            applicationId: merchant.applicationId,
+            merchantId: merchant.merchantId,
             merchantName: merchant.merchantName,
-            legalBusinessName: merchant.legalBusinessName ?? '',
             merchantCode: merchant.merchantCode,
             city: null,
             country: null,
             businessType: merchant.businessType ?? '',
             merchantMobility: merchant.merchantMobility ?? '',
-            status: merchant.status,
+            merchantStatus: merchant.merchantStatus,
             lastUpdatedAt: merchant.lastUpdatedAt,
           };
           this.selectMerchantForFilter(item);
@@ -129,8 +128,8 @@ export class OrderManagementComponent implements OnInit {
 
   selectMerchantForFilter(m: MerchantSearchResultItem): void {
     this.selectedMerchantItem = m;
-    this.merchantIdInput = m.applicationId;
-    this.merchantId = m.applicationId;
+    this.merchantIdInput = m.merchantId;
+    this.merchantId = m.merchantId;
     this.merchantResults = [];
   }
 

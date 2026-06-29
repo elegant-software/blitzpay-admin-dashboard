@@ -58,7 +58,7 @@ export class AppointmentPolicyComponent {
 
   selectMerchantForFilter(m: MerchantSearchResultItem): void {
     this.selectedMerchantItem = m;
-    this.merchantIdInput = m.applicationId;
+    this.merchantIdInput = m.merchantId;
     this.merchantResults = [];
   }
 

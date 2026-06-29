@@ -10,13 +10,11 @@ describe('MerchantDetailComponent product category management', () => {
   let merchantApi: jasmine.SpyObj<MerchantApiService>;
 
   const merchant: Merchant = {
-    applicationId: 'merchant-123',
-    applicationReference: 'MERCHANT-123',
+    merchantId: 'merchant-123',
     merchantCode: 'MRC-123',
     merchantName: 'Merchant 123',
-    registrationNumber: 'REG-123',
+    merchantStatus: 'ACTIVE',
     offerings: [],
-    status: 'ACTIVE',
     lastUpdatedAt: '2026-05-10T10:00:00.000Z'
   };
 
@@ -108,7 +106,7 @@ describe('MerchantDetailComponent product category management', () => {
     expect(merchantApi.createProductCategory).toHaveBeenCalledWith(
       component.selectedEnvironment,
       'v1',
-      merchant.applicationId,
+      merchant.merchantId,
       { name: 'Food' }
     );
     expect(component.categories).toEqual([beverages, category]);
@@ -166,7 +164,7 @@ describe('MerchantDetailComponent product category management', () => {
     expect(merchantApi.renameProductCategory).toHaveBeenCalledWith(
       component.selectedEnvironment,
       'v1',
-      merchant.applicationId,
+      merchant.merchantId,
       beverages.id,
       { name: 'Hot Drinks' }
     );
@@ -206,7 +204,7 @@ describe('MerchantDetailComponent product category management', () => {
     expect(merchantApi.deleteProductCategory).toHaveBeenCalledWith(
       component.selectedEnvironment,
       'v1',
-      merchant.applicationId,
+      merchant.merchantId,
       beverages.id
     );
     expect(component.errorMessage).toBe('Category is still used by products.');
@@ -243,7 +241,7 @@ describe('MerchantDetailComponent product category management', () => {
     component.selectedBranch = {
       id: 'branch-1',
       branchId: 'branch-1',
-      merchantId: merchant.applicationId,
+      merchantId: merchant.merchantId,
       branchCode: 'BR-1',
       name: 'Central',
       status: 'ACTIVE',
