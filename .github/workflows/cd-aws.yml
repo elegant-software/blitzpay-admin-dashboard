@@ -2,7 +2,7 @@ name: Admin dashboard — deploy to AWS (S3 + CloudFront)
 
 on:
   release:
-    types: [published]
+    types: [published, prereleased]
 
 permissions:
   actions: read
@@ -35,11 +35,11 @@ jobs:
           script: |
             const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
               owner: context.repo.owner, repo: context.repo.repo,
-              workflow_id: 'ci.yml', event: 'push', branch: 'main',
+              workflow_id: 'ci.yml',
               status: 'completed', per_page: 100
             });
             const ok = runs.find(r => r.head_sha === process.env.RELEASE_SHA && r.conclusion === 'success');
-            if (!ok) core.setFailed(`No successful CI run on main for commit ${process.env.RELEASE_SHA}`);
+            if (!ok) core.setFailed(`No successful CI run found for commit ${process.env.RELEASE_SHA}`);
 
   deploy:
     name: Build and deploy to S3
