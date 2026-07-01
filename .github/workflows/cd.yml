@@ -1,12 +1,10 @@
 name: Frontend CD
 
 on:
-  push:
-    tags:
-      - 'v*-alpha'
   release:
     types:
       - published
+      - prereleased
 
 permissions:
   actions: read
