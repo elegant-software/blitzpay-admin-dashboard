@@ -75,7 +75,7 @@ export class PlatformKpiDashboardComponent implements OnInit {
         this.apiVersion,
         this.from,
         this.to,
-        this.selectedMerchant?.applicationId || undefined,
+        this.selectedMerchant?.merchantId || undefined,
       )
       .subscribe({
         next: (data) => {

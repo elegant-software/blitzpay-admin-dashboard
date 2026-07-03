@@ -89,7 +89,7 @@ export class BranchCalendarComponent implements OnInit {
     this.branches = [];
     this.branchQuery = '';
     this.loadingBranches = true;
-    this.merchantApi.getBranches(this.selectedEnvironment, this.apiVersion, m.applicationId).subscribe({
+    this.merchantApi.getBranches(this.selectedEnvironment, this.apiVersion, m.merchantId).subscribe({
       next: branches => {
         this.branches = branches.filter(b => b.active !== false);
         this.loadingBranches = false;

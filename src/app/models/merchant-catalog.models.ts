@@ -8,28 +8,29 @@ export interface BackendEnvironment {
   storefrontUrl: string;
 }
 
+export interface MerchantContactInfo {
+  website?: string | null;
+  email?: string | null;
+  phoneNumber?: string | null;
+  xHandle?: string | null;
+  instagramHandle?: string | null;
+}
+
 export interface Merchant {
-  applicationId: string;
-  applicationReference: string;
+  merchantId: string;
   merchantCode: string;
   merchantName: string;
-  registrationNumber: string;
+  merchantStatus: string;
   businessType?: string | null;
   merchantMobility?: string | null;
   operatingCountry?: string | null;
-  legalBusinessName?: string | null;
-  primaryBusinessAddress?: string | null;
   website?: string | null;
-  contactFullName?: string | null;
-  contactEmail?: string | null;
-  contactPhoneNumber?: string | null;
   offerings: string[];
-  status: string;
-  submittedAt?: string | null;
   lastUpdatedAt: string;
   logoStorageKey?: string | null;
   logoUrl?: string | null;
   defaultVatPercent?: number | null;
+  contactInfo?: MerchantContactInfo | null;
 }
 
 export type AppearanceHistoryStatus = 'COMPLETED' | 'CANCELLED';
@@ -95,7 +96,6 @@ export interface MerchantLocation {
 
 export interface NearbyMerchantResult {
   merchantId: string;
-  legalBusinessName: string;
   latitude: number;
   longitude: number;
   geofenceRadiusMeters: number;
@@ -209,17 +209,18 @@ export interface CreateBranchRequest {
 
 export interface UpdateMerchantRequest {
   merchantName?: string;
-  legalBusinessName: string;
-  primaryBusinessAddress: string;
   website?: string;
-  contactFullName: string;
-  contactEmail: string;
-  contactPhoneNumber: string;
   offerings?: string[];
-  status?: string;
+  merchantStatus?: string;
   businessType?: string;
   merchantMobility?: string;
   defaultVatPercent?: number | null;
+  contactInfo?: {
+    email?: string;
+    phoneNumber?: string;
+    xHandle?: string;
+    instagramHandle?: string;
+  };
 }
 
 export interface UpdateBranchRequest {
@@ -297,16 +298,14 @@ export interface BranchFormModel {
 
 export interface MerchantFormModel {
   merchantName: string;
-  legalBusinessName: string;
-  primaryBusinessAddress: string;
   website: string;
-  contactFullName: string;
   contactEmail: string;
   contactPhoneNumber: string;
+  xHandle: string;
+  instagramHandle: string;
   businessType: string;
   merchantMobility: string;
   services: string[];
-  status: string;
   defaultVatPercent: string;
 }
 
@@ -400,15 +399,14 @@ export interface MerchantSearchRequest {
 }
 
 export interface MerchantSearchResultItem {
-  applicationId: string;
+  merchantId: string;
   merchantName: string;
-  legalBusinessName: string;
   merchantCode: string;
   city: string | null;
   country: string | null;
   businessType: string;
   merchantMobility: string;
-  status: string;
+  merchantStatus: string;
   lastUpdatedAt: string;
 }
 

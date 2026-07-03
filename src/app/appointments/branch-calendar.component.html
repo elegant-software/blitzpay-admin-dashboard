@@ -29,14 +29,14 @@
               style="cursor:pointer"
               (click)="selectMerchantForFilter(m)"
             >
-              <span class="d-block fw-semibold small">{{ m.merchantName || m.legalBusinessName }}</span>
+              <span class="d-block fw-semibold small">{{ m.merchantName }}</span>
               <span class="d-block small text-muted">{{ m.merchantCode }}</span>
             </li>
           </ul>
         </ng-container>
         <ng-container *ngIf="selectedMerchantItem && !selectedBranch">
           <div class="d-flex align-items-center gap-2 mb-1">
-            <span class="badge bg-secondary fw-normal">{{ selectedMerchantItem.merchantName || selectedMerchantItem.legalBusinessName }}</span>
+            <span class="badge bg-secondary fw-normal">{{ selectedMerchantItem.merchantName }}</span>
             <button class="btn btn-sm btn-link p-0 text-secondary" type="button" (click)="clearMerchantFilter()">Change merchant</button>
           </div>
           <div *ngIf="loadingBranches" class="small text-muted d-flex align-items-center gap-1">

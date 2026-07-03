@@ -100,7 +100,7 @@ export class SettlementReportingComponent implements OnInit {
 
   selectMerchant(m: MerchantSearchResultItem): void {
     this.selectedMerchant = m;
-    this.merchantId = m.applicationId;
+    this.merchantId = m.merchantId;
     this.merchantResults = [];
   }
 
@@ -199,15 +199,14 @@ export class SettlementReportingComponent implements OnInit {
 
   private merchantToSearchItem(merchant: Merchant): MerchantSearchResultItem {
     return {
-      applicationId: merchant.applicationId,
+      merchantId: merchant.merchantId,
       merchantName: merchant.merchantName,
-      legalBusinessName: merchant.legalBusinessName ?? '',
       merchantCode: merchant.merchantCode,
       city: null,
       country: null,
       businessType: merchant.businessType ?? '',
       merchantMobility: merchant.merchantMobility ?? '',
-      status: merchant.status,
+      merchantStatus: merchant.merchantStatus,
       lastUpdatedAt: merchant.lastUpdatedAt,
     };
   }

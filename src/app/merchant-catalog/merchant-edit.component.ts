@@ -41,12 +41,11 @@ export class MerchantEditComponent implements OnInit {
 
   form = {
     merchantName: '',
-    legalBusinessName: '',
-    primaryBusinessAddress: '',
     website: '',
-    contactFullName: '',
     contactEmail: '',
     contactPhoneNumber: '',
+    xHandle: '',
+    instagramHandle: '',
     businessType: '',
     merchantMobility: '',
     offerings: [] as string[],
@@ -118,12 +117,11 @@ export class MerchantEditComponent implements OnInit {
   private populateForm(merchant: Merchant, location: MerchantLocation | null): void {
     this.form = {
       merchantName: merchant.merchantName ?? '',
-      legalBusinessName: merchant.legalBusinessName ?? '',
-      primaryBusinessAddress: merchant.primaryBusinessAddress ?? '',
       website: merchant.website ?? '',
-      contactFullName: merchant.contactFullName ?? '',
-      contactEmail: merchant.contactEmail ?? '',
-      contactPhoneNumber: merchant.contactPhoneNumber ?? '',
+      contactEmail: merchant.contactInfo?.email ?? '',
+      contactPhoneNumber: merchant.contactInfo?.phoneNumber ?? '',
+      xHandle: merchant.contactInfo?.xHandle ?? '',
+      instagramHandle: merchant.contactInfo?.instagramHandle ?? '',
       businessType: merchant.businessType ?? '',
       merchantMobility: merchant.merchantMobility ?? '',
       offerings: [...(merchant.offerings ?? [])],
@@ -194,16 +192,17 @@ export class MerchantEditComponent implements OnInit {
 
     const payload: UpdateMerchantRequest = {
       merchantName: this.form.merchantName,
-      legalBusinessName: this.form.legalBusinessName,
-      primaryBusinessAddress: this.form.primaryBusinessAddress,
       website: this.form.website || undefined,
-      contactFullName: this.form.contactFullName,
-      contactEmail: this.form.contactEmail,
-      contactPhoneNumber: this.form.contactPhoneNumber,
       offerings: this.form.offerings,
       businessType: this.form.businessType || undefined,
       merchantMobility: this.form.merchantMobility || undefined,
       defaultVatPercent: this.form.defaultVatPercent !== '' ? parseFloat(this.form.defaultVatPercent) : undefined,
+      contactInfo: {
+        email: this.form.contactEmail || undefined,
+        phoneNumber: this.form.contactPhoneNumber || undefined,
+        xHandle: this.form.xHandle || undefined,
+        instagramHandle: this.form.instagramHandle || undefined,
+      },
     };
 
     const save$ = this.merchantApi.updateMerchant(this.selectedEnvironment, this.apiVersion, this.merchantId, payload);

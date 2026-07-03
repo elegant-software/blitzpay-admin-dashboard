@@ -9,7 +9,7 @@
 
   <ng-container *ngIf="!loading && merchant">
     <div class="card mb-4">
-      <div class="card-header">Edit Merchant — {{ merchant.merchantName || merchant.legalBusinessName }}</div>
+      <div class="card-header">Edit Merchant — {{ merchant.merchantName }}</div>
       <div class="card-body">
         <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
         <div class="row g-3">
@@ -18,28 +18,28 @@
             <input class="form-control" [(ngModel)]="form.merchantName" />
           </div>
           <div class="col-md-6">
-            <label class="form-label required">Legal Business Name</label>
-            <input class="form-control" [(ngModel)]="form.legalBusinessName" />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label required">Business Address</label>
-            <input class="form-control" [(ngModel)]="form.primaryBusinessAddress" />
-          </div>
-          <div class="col-md-6">
             <label class="form-label">Website</label>
             <input class="form-control" [(ngModel)]="form.website" type="url" />
           </div>
           <div class="col-md-4">
-            <label class="form-label required">Contact Name</label>
-            <input class="form-control" [(ngModel)]="form.contactFullName" />
-          </div>
-          <div class="col-md-4">
-            <label class="form-label required">Contact Email</label>
+            <label class="form-label">Contact Email</label>
             <input class="form-control" [(ngModel)]="form.contactEmail" type="email" />
           </div>
           <div class="col-md-4">
-            <label class="form-label required">Contact Phone</label>
+            <label class="form-label">Contact Phone</label>
             <input class="form-control" [(ngModel)]="form.contactPhoneNumber" type="tel" />
+          </div>
+          <div class="col-md-4">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">X (Twitter) Handle</label>
+            <input class="form-control" [(ngModel)]="form.xHandle" placeholder="@handle" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Instagram Handle</label>
+            <input class="form-control" [(ngModel)]="form.instagramHandle" placeholder="@handle" />
+          </div>
+          <div class="col-md-4">
           </div>
           <div class="col-md-4">
             <label class="form-label">Business Type</label>

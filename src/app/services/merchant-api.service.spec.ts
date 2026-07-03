@@ -107,17 +107,14 @@ describe('MerchantApiService product category API', () => {
   it('updates a merchant including business type and merchant mobility', () => {
     const payload = {
       merchantName: 'Cafe Roma',
-      legalBusinessName: 'Cafe Roma GmbH',
-      primaryBusinessAddress: 'Market Street 1',
       website: 'https://cafe.example.com',
-      contactFullName: 'Jane Doe',
-      contactEmail: 'jane@example.com',
-      contactPhoneNumber: '+49123456789',
-      activePaymentChannels: ['STRIPE'],
       businessType: 'CAFE',
       merchantMobility: 'MOBILE',
       offerings: ['PRE_ORDER'],
-      status: 'ACTIVE'
+      contactInfo: {
+        email: 'jane@example.com',
+        phoneNumber: '+49123456789',
+      },
     };
     let response: Merchant | undefined;
 
@@ -132,23 +129,20 @@ describe('MerchantApiService product category API', () => {
     expect(request.request.body).toEqual(payload);
 
     request.flush({
-      applicationId: merchantId,
-      applicationReference: 'APP-123',
+      merchantId,
       merchantCode: 'MRC-123',
       merchantName: 'Cafe Roma',
-      registrationNumber: 'REG-1',
+      merchantStatus: 'ACTIVE',
       businessType: 'CAFE',
       merchantMobility: 'MOBILE',
       operatingCountry: 'DE',
-      legalBusinessName: 'Cafe Roma GmbH',
-      primaryBusinessAddress: 'Market Street 1',
       website: 'https://cafe.example.com',
-      contactFullName: 'Jane Doe',
-      contactEmail: 'jane@example.com',
-      contactPhoneNumber: '+49123456789',
       offerings: ['PRE_ORDER'],
-      status: 'ACTIVE',
-      lastUpdatedAt: '2026-05-23T10:00:00.000Z'
+      lastUpdatedAt: '2026-05-23T10:00:00.000Z',
+      contactInfo: {
+        email: 'jane@example.com',
+        phoneNumber: '+49123456789',
+      },
     } satisfies Merchant);
 
     expect(response?.merchantMobility).toBe('MOBILE');
