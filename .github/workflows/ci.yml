@@ -38,7 +38,7 @@ jobs:
         run: npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox
 
       - name: Build application
-        run: npm run build -- --configuration production
+        run: npm run build -- --configuration staging
 
   contract-tests:
     name: Contract Tests

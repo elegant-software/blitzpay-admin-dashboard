@@ -38,7 +38,7 @@
             "scripts": []
           },
           "configurations": {
-            "production": {
+            "staging": {
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -81,8 +81,8 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
-            "production": {
-              "buildTarget": "blitzpay-admin-dashboard:build:production"
+            "staging": {
+              "buildTarget": "blitzpay-admin-dashboard:build:staging"
             },
             "development": {
               "buildTarget": "blitzpay-admin-dashboard:build:development"
