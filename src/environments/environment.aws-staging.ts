@@ -1,7 +1,7 @@
 export const environment = {
   defaultEnvironmentKey: 'aws-staging' as const,
   auth: {
-    authorityUrl: 'https://auth.elegantsoftware.de',
+    authorityUrl: 'https://auth.zackpay.de',
     realm: 'blitzpay',
     clientId: 'blitzpay-admin-dashboard',
     redirectPath: '/',
@@ -9,6 +9,6 @@ export const environment = {
     silentCheckSsoPath: '/silent-check-sso.html',
     scopes: ['openid', 'profile', 'email'],
     requiredRoles: ['blitzpay-admin'],
-    apiBaseUrls: ['https://api.elegantsoftware.de', 'https://api-blitzpay-staging.elegantsoftware.de']
+    apiBaseUrls: ['https://api.zackpay.de', 'https://api-blitzpay-staging.zackpay.de']
   }
 };
