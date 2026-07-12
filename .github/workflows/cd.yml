@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout tag
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: refs/tags/${{ github.event.release.tag_name || github.ref_name }}
@@ -67,7 +67,7 @@ jobs:
       image_reference: ${{ steps.compute-image.outputs.image_reference }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -121,7 +121,7 @@ jobs:
       image_reference: ${{ steps.compute-image.outputs.image_reference }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
