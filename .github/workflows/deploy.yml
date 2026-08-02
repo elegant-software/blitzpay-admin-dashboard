@@ -47,7 +47,7 @@ jobs:
       MANIFESTS_DIR: ${{ inputs.manifests_dir || github.event.inputs.manifests_dir || 'k8s' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Verify deployment manifests exist
         run: |
