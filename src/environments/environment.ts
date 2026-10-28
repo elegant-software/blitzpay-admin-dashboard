@@ -1,7 +1,7 @@
 export const environment = {
   defaultEnvironmentKey: 'local' as const,
   auth: {
-    authorityUrl: 'https://keycloak.elegantsoftware.de',
+    authorityUrl: 'https://auth.zackpay.de',
     realm: 'blitzpay',
     clientId: 'blitzpay-admin-dashboard',
     redirectPath: '/',
