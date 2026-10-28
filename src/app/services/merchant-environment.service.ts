@@ -3,7 +3,7 @@ import { BackendEnvironment, EnvironmentKey } from '../models/merchant-catalog.m
 export const MERCHANT_ENVIRONMENTS: readonly BackendEnvironment[] = [
   { key: 'local', label: 'Local', baseUrl: 'http://localhost:8080', storefrontUrl: 'http://localhost:4201' },
   { key: 'k8s-staging', label: 'K8s Staging', baseUrl: 'https://api-blitzpay-staging.zackpay.de', storefrontUrl: 'https://blitz-pay-web.zackpay.de' },
-  { key: 'aws-staging', label: 'AWS Staging', baseUrl: 'https://api.zackpay.de', storefrontUrl: 'https://blitz-pay-web.zackpay.de' }
+  { key: 'aws-staging', label: 'AWS Staging', baseUrl: 'https://api-blitzpay-staging.zackpay.de', storefrontUrl: 'https://blitz-pay-web.zackpay.de' }
 ] as const;
 
 export function getEnvironmentByKey(key: EnvironmentKey): BackendEnvironment {
