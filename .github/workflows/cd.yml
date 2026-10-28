@@ -63,8 +63,6 @@ jobs:
     name: Build release image
     needs: verify-release-ci
     runs-on: ubuntu-latest
-    outputs:
-      image_reference: ${{ steps.compute-image.outputs.image_reference }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -117,8 +115,6 @@ jobs:
     name: Build storefront image
     needs: verify-release-ci
     runs-on: ubuntu-latest
-    outputs:
-      image_reference: ${{ steps.compute-image.outputs.image_reference }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -170,7 +166,7 @@ jobs:
     needs: build-release-image
     uses: ./.github/workflows/deploy.yml
     with:
-      image_reference: ${{ needs.build-release-image.outputs.image_reference }}
+      image_tag: ${{ github.event.release.tag_name || github.ref_name }}
       kube_namespace: blitzpay-staging
       manifests_dir: k8s
     secrets:
@@ -183,7 +179,8 @@ jobs:
     needs: build-storefront-image
     uses: ./.github/workflows/deploy.yml
     with:
-      image_reference: ${{ needs.build-storefront-image.outputs.image_reference }}
+      image_tag: ${{ github.event.release.tag_name || github.ref_name }}
+      image_repository: ${{ format('ghcr.io/{0}/blitz-pay-web', github.repository) }}
       kube_namespace: blitzpay-staging
       manifests_dir: k8s/storefront
     secrets:
