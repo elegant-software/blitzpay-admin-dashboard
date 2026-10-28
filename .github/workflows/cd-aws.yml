@@ -1,8 +1,11 @@
 name: Admin dashboard — deploy to AWS (S3 + CloudFront)
 
+# Disabled for now: restore the release trigger to re-enable AWS deploys.
+# on:
+#   release:
+#     types: [published, prereleased]
 on:
-  release:
-    types: [published, prereleased]
+  workflow_dispatch:
 
 permissions:
   actions: read
