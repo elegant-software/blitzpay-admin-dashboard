@@ -52,7 +52,7 @@ Use port 4201 for the storefront locally — the admin's `local` environment `st
 ### Releases & Deploys
 - Both apps share one release. Publishing a GitHub Release `vX.Y.Z` triggers `.github/workflows/cd-release.yml`, which verifies CI passed for the tagged commit, builds both images with that tag, and deploys both to `blitzpay-staging`.
 - Pushing to `main` only runs CI; it does not deploy.
-- To redeploy one app with an existing tag, run `cd-deploy-k8s.yml` manually. For the storefront pass `image_repository=ghcr.io/elegant-software/blitzpay-admin-dashboard/blitz-pay-web` and `manifests_dir=k8s/storefront`; the defaults deploy the admin.
+- To redeploy one app with an existing tag, run `cd-deploy-k8s.yml` manually. Pick `app` = `admin` or `storefront`.
 
 ### Changing Domains / URLs
 No hostname is hardcoded here. In Kubernetes they all derive from `global.baseDomain` in the `blitz-pay` repo's `helm/blitz-pay/values-<env>.yaml`; that chart publishes them in the `blitzpay-domains` ConfigMap, and this repo only reads it:
