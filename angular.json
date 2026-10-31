@@ -109,7 +109,9 @@
               "node_modules/@coreui/coreui/dist/css/coreui.min.css",
               "src/styles.css"
             ],
-            "scripts": [],
+            "scripts": [
+              "public/config.js"
+            ],
             "include": [
               "src/app/**/*.spec.ts"
             ]
@@ -134,7 +136,9 @@
               "node_modules/@coreui/coreui/dist/css/coreui.min.css",
               "src/styles.css"
             ],
-            "scripts": [],
+            "scripts": [
+              "public/config.js"
+            ],
             "include": [
               "src/contract-tests/**/*.contract.spec.ts"
             ]

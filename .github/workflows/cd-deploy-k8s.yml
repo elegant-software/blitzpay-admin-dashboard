@@ -110,10 +110,25 @@ jobs:
       - name: Verify cluster connectivity
         run: kubectl cluster-info --request-timeout=10s
 
+      # Hostnames come from the blitzpay-domains ConfigMap, which the blitz-pay backend Helm chart
+      # derives from global.baseDomain — the single place the domain is configured.
       - name: Render Kubernetes manifests
         run: |
-          sed "s|\${IMAGE}|${IMAGE_REFERENCE}|g" "${MANIFESTS_DIR}/deployment.yaml" > /tmp/deployment.yaml
-          cp "${MANIFESTS_DIR}/ingress.yaml" /tmp/ingress.yaml
+          domains=$(kubectl get configmap blitzpay-domains -n "$KUBE_NAMESPACE" -o json) || {
+            echo "::error::blitzpay-domains ConfigMap missing in ${KUBE_NAMESPACE}; deploy the blitz-pay Helm chart first"
+            exit 1
+          }
+          sed_args=(-e "s|\${IMAGE}|${IMAGE_REFERENCE}|g")
+          for key in $(jq -r '.data | keys[]' <<<"$domains"); do
+            sed_args+=(-e "s|\${$key}|$(jq -r --arg k "$key" '.data[$k]' <<<"$domains")|g")
+          done
+          for manifest in deployment ingress; do
+            sed "${sed_args[@]}" "${MANIFESTS_DIR}/${manifest}.yaml" > "/tmp/${manifest}.yaml"
+            if grep -q '\${[A-Z_]*}' "/tmp/${manifest}.yaml"; then
+              echo "::error file=${MANIFESTS_DIR}/${manifest}.yaml::Unresolved placeholders: $(grep -o '\${[A-Z_]*}' "/tmp/${manifest}.yaml" | sort -u | tr '\n' ' ')"
+              exit 1
+            fi
+          done
 
       - name: Apply Kubernetes manifests
         run: |

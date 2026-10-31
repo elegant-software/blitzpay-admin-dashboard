@@ -10,10 +10,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - storefront.zackpay.de
-      secretName: storefront-zackpay-de-tls
+        - ${STOREFRONT_HOST}
+      secretName: blitz-pay-web-tls
   rules:
-    - host: storefront.zackpay.de
+    - host: ${STOREFRONT_HOST}
       http:
         paths:
           - path: /

@@ -20,6 +20,9 @@ spec:
         - name: blitz-pay-web
           image: ${IMAGE}
           imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: blitzpay-domains
           ports:
             - containerPort: 80
               name: http

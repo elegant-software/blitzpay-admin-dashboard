@@ -1,9 +1,13 @@
+import { runtimeConfig } from '../../environments/runtime-config';
 import { BackendEnvironment, EnvironmentKey } from '../models/merchant-catalog.models';
+
+const k8sApiUrl = `https://${runtimeConfig.apiHost}`;
+const storefrontUrl = `https://${runtimeConfig.storefrontHost}`;
 
 export const MERCHANT_ENVIRONMENTS: readonly BackendEnvironment[] = [
   { key: 'local', label: 'Local', baseUrl: 'http://localhost:8080', storefrontUrl: 'http://localhost:4201' },
-  { key: 'k8s-staging', label: 'K8s Staging', baseUrl: 'https://api-blitzpay-staging.zackpay.de', storefrontUrl: 'https://storefront.zackpay.de' },
-  { key: 'aws-staging', label: 'AWS Staging', baseUrl: 'https://api-blitzpay-staging.zackpay.de', storefrontUrl: 'https://storefront.zackpay.de' }
+  { key: 'k8s-staging', label: 'K8s Staging', baseUrl: k8sApiUrl, storefrontUrl },
+  { key: 'aws-staging', label: 'AWS Staging', baseUrl: k8sApiUrl, storefrontUrl }
 ] as const;
 
 export function getEnvironmentByKey(key: EnvironmentKey): BackendEnvironment {
