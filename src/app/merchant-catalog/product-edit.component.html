@@ -49,6 +49,42 @@
       </div>
     </div>
 
+    <div class="card mb-4" *ngIf="translations.length">
+      <div class="card-header">Translations</div>
+      <div class="card-body">
+        <p class="form-text mt-0">
+          Name and description above are in the Original Menu Language ({{ languageLabel(merchant?.originalMenuLanguage ?? '') }}).
+          Edits made here are kept when the menu is re-translated.
+        </p>
+        <div class="border rounded p-3 mb-3" *ngFor="let row of translations" [attr.data-language]="row.language">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <strong>{{ languageLabel(row.language) }}</strong>
+            <span class="status-tag status-tag-neutral" *ngIf="!row.exists">Not translated</span>
+            <span class="status-tag status-tag-warning" *ngIf="row.stale">Needs re-translation</span>
+            <span class="status-tag status-tag-success" *ngIf="row.origin === 'MERCHANT'">Merchant</span>
+            <span class="status-tag status-tag-neutral" *ngIf="row.origin === 'MACHINE'">Machine</span>
+          </div>
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label small" [for]="'tr-name-' + row.language">Name</label>
+              <input class="form-control form-control-sm" [id]="'tr-name-' + row.language" [(ngModel)]="row.name" [dir]="textDirection(row.language)" />
+            </div>
+            <div class="col-md-8">
+              <label class="form-label small" [for]="'tr-desc-' + row.language">Description</label>
+              <textarea class="form-control form-control-sm" [id]="'tr-desc-' + row.language" rows="2" [(ngModel)]="row.description" [dir]="textDirection(row.language)"></textarea>
+            </div>
+          </div>
+          <div class="alert alert-danger py-1 px-2 small mt-2 mb-0" *ngIf="row.error">{{ row.error }}</div>
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-sm btn-outline-primary" type="button" [disabled]="row.saving" (click)="saveTranslation(row)">
+              {{ row.saving ? 'Saving…' : 'Save translation' }}
+            </button>
+            <button class="btn btn-sm btn-outline-danger" type="button" *ngIf="row.exists" [disabled]="row.saving" (click)="deleteTranslation(row)">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="card mb-4">
       <div class="card-header">Product Image</div>
       <div class="card-body">

@@ -34,6 +34,7 @@ See → [CONSTITUTION.md §IX](CONSTITUTION.md#ix-test-driven-development)
 ### API Layer
 - Product activation/deactivation uses `DELETE /products/{id}` (soft-delete), not the PUT payload.
 - Never assume an API field updates via FormData unless confirmed; prefer typed JSON request bodies where possible.
+- Catalog reads (products, product categories) always pass an explicit `language`. Edit forms pin it to the merchant's `originalMenuLanguage`; otherwise the browser's `Accept-Language` can return a translation, and saving would overwrite the original text with it. Views use the chosen **Catalog Language**. Translations are edited only through the `/translations` endpoints.
 
 ### Web Storefront
 The public storefront is a second Angular app in this repo: `projects/blitz-pay-web/` (project name `blitz-pay-web`). Domain language lives in [`projects/blitz-pay-web/CONTEXT.md`](projects/blitz-pay-web/CONTEXT.md); see also [`CONTEXT-MAP.md`](CONTEXT-MAP.md) and [ADR-0007](docs/adr/0007-storefront-separate-deployment.md).

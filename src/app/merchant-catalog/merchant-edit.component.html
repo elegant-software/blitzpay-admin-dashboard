@@ -79,6 +79,40 @@
     </div>
 
     <div class="card mb-4">
+      <div class="card-header">Menu Languages</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label" for="original-menu-language">Original Menu Language</label>
+            <select id="original-menu-language" class="form-select" [ngModel]="form.originalMenuLanguage" (ngModelChange)="onOriginalMenuLanguageChange($event)">
+              <option value="">Select…</option>
+              <option *ngFor="let l of menuLanguages" [value]="l.code">{{ languageLabel(l.code) }}</option>
+            </select>
+            <div class="form-text">The language the menu is written in. Untranslated items are shown in it.</div>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label" for="add-menu-language">Supported Menu Languages</label>
+            <div class="input-group">
+              <select id="add-menu-language" class="form-select" [(ngModel)]="languageToAdd" [disabled]="!form.originalMenuLanguage">
+                <option value="">Add a language…</option>
+                <option *ngFor="let l of addableMenuLanguages" [value]="l.code">{{ languageLabel(l.code) }}</option>
+              </select>
+              <button class="btn btn-outline-primary" type="button" [disabled]="!languageToAdd" (click)="addSupportedMenuLanguage()">Add</button>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-2">
+              <span class="badge text-bg-light border d-inline-flex align-items-center gap-1" *ngFor="let code of form.supportedMenuLanguages">
+                {{ languageLabel(code) }}
+                <button type="button" class="btn-close" style="font-size: .55rem" [attr.aria-label]="'Remove ' + languageLabel(code)" (click)="removeSupportedMenuLanguage(code)"></button>
+              </span>
+              <span class="form-text" *ngIf="!form.supportedMenuLanguages.length">No additional languages.</span>
+            </div>
+            <div class="form-text">Shoppers see these languages only while the International Menu offering is enabled. Removing a language keeps its translations.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
       <div class="card-header">Logo</div>
       <div class="card-body">
         <div class="d-flex align-items-start gap-3 flex-wrap">

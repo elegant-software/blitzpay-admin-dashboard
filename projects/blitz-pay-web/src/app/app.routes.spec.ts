@@ -37,7 +37,7 @@ describe('Web Storefront public routes', () => {
 
     expect(harness.routeNativeElement?.textContent).toContain('Shop online');
     expect(harness.routeNativeElement?.textContent).toContain('Station Cafe');
-    expect(api.getActiveProducts).toHaveBeenCalledWith('merchant-44', 'branch-12');
+    expect(api.getActiveProducts).toHaveBeenCalledWith('merchant-44', 'branch-12', null);
   });
 
   it('renders the QR Order Landing for a universal order URL', async () => {

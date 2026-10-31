@@ -207,7 +207,17 @@
   padding-top: 1rem;
 }
 
+/* On screen only: an item shown in the Original Menu Language because it has no translation. */
+.pc-item.pc-fallback {
+  outline: 2px dashed #f0ad4e;
+  outline-offset: 2px;
+}
+
 @media print {
+  .pc-item.pc-fallback {
+    outline: none;
+  }
+
   .pc-root {
     padding: 0 !important;
   }

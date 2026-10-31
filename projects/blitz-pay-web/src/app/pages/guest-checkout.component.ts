@@ -13,6 +13,7 @@ import {
 } from '../models/storefront.models';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
+import { StorefrontLanguageService } from '../services/storefront-language.service';
 
 @Component({
   selector: 'guest-checkout',
@@ -73,6 +74,7 @@ export class GuestCheckoutComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
   readonly cart = inject(StorefrontSessionService);
+  private readonly catalogLanguage = inject(StorefrontLanguageService);
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly currency = environment.currency;
@@ -93,7 +95,7 @@ export class GuestCheckoutComponent implements OnInit {
     forkJoin({
       merchant: this.api.getMerchant(this.merchantId),
       branch: this.api.getBranch(this.merchantId, this.branchId),
-      products: this.api.getActiveProducts(this.merchantId, this.branchId),
+      products: this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.language),
       capabilities: this.api.getPaymentCapabilities(this.merchantId)
     }).pipe(finalize(() => this.loading = false)).subscribe({
       next: ({ merchant, branch, products, capabilities }) => {
@@ -121,7 +123,7 @@ export class GuestCheckoutComponent implements OnInit {
     if (!this.selectedPaymentMethod || this.cart.itemCount === 0 || this.cartNeedsReview || this.checkingOut || this.branch?.active === false) return;
     this.checkingOut = true;
     this.errorMessage = '';
-    this.api.getActiveProducts(this.merchantId, this.branchId).pipe(
+    this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.language).pipe(
       switchMap((products) => {
         this.products = products;
         if (this.cart.reconcile(products, false)) {

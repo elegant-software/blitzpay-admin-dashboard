@@ -37,6 +37,26 @@ describe('StorefrontApiService', () => {
     expect(names).toEqual(['Bagel', 'Coffee']);
   });
 
+  it('requests catalog text in the shopper-chosen language', () => {
+    service.getActiveProducts('merchant-44', 'branch-12', 'en').subscribe();
+    service.getProduct('merchant-44', 'branch-12', 'p1', 'en').subscribe();
+
+    const list = http.expectOne('/v1/merchants/merchant-44/products?branchId=branch-12');
+    expect(list.request.headers.get('Accept-Language')).toBe('en');
+    list.flush([]);
+    const detail = http.expectOne('/v1/merchants/merchant-44/products/p1?branchId=branch-12');
+    expect(detail.request.headers.get('Accept-Language')).toBe('en');
+    detail.flush({});
+  });
+
+  it('leaves the browser language in charge when the shopper has not chosen one', () => {
+    service.getActiveProducts('merchant-44', 'branch-12').subscribe();
+
+    const list = http.expectOne('/v1/merchants/merchant-44/products?branchId=branch-12');
+    expect(list.request.headers.has('Accept-Language')).toBeFalse();
+    list.flush([]);
+  });
+
   it('loads merchant and branch display context', () => {
     service.getMerchant('merchant-44').subscribe();
     service.getBranch('merchant-44', 'branch-12').subscribe();

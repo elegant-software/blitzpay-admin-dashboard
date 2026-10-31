@@ -1,7 +1,14 @@
 <div class="pc-root container-fluid px-4 pt-2 pb-4">
   <div class="pc-toolbar d-flex flex-wrap align-items-center gap-2 mb-3">
     <a class="btn btn-link btn-sm ps-0" [routerLink]="['/merchants', merchantId]">← Back to merchant</a>
-    <div class="btn-group btn-group-sm ms-auto" role="group" aria-label="Printed Catalog layout">
+    <select class="form-select form-select-sm w-auto ms-auto pc-language" aria-label="Catalog Language"
+            *ngIf="catalogLanguages.length > 1" [ngModel]="catalogLanguage" (ngModelChange)="setCatalogLanguage($event)">
+      <option *ngFor="let code of catalogLanguages" [value]="code">{{ languageLabel(code) }}</option>
+    </select>
+    <span class="small text-warning-emphasis" *ngIf="fallbackCount > 0">
+      {{ fallbackCount }} {{ fallbackCount === 1 ? 'item' : 'items' }} not translated – shown in the original language
+    </span>
+    <div class="btn-group btn-group-sm" [class.ms-auto]="catalogLanguages.length <= 1" role="group" aria-label="Printed Catalog layout">
       <button type="button" class="btn" [class.btn-primary]="layout === 'full'" [class.btn-outline-primary]="layout !== 'full'"
               (click)="setLayout('full')">Full Catalog</button>
       <button type="button" class="btn" [class.btn-primary]="layout === 'showcase'" [class.btn-outline-primary]="layout !== 'showcase'"
@@ -43,14 +50,14 @@
     </ng-template>
 
     <!-- Full Catalog: the tfoot repeats on every printed page. -->
-    <div class="pc-sheet" *ngIf="!isEmpty && layout === 'full'">
+    <div class="pc-sheet" *ngIf="!isEmpty && layout === 'full'" [attr.lang]="catalogLanguage" [attr.dir]="textDirection">
       <table class="pc-flow">
         <tbody>
           <tr><td>
             <ng-container [ngTemplateOutlet]="header"></ng-container>
             <section class="pc-section" *ngFor="let section of sections">
               <h2 class="pc-section-title">{{ section.title }}</h2>
-              <article class="pc-item" *ngFor="let product of section.products">
+              <article class="pc-item" *ngFor="let product of section.products" [class.pc-fallback]="isFallback(product)">
                 <img *ngIf="product.imageUrl" class="pc-item-image" [src]="product.imageUrl" alt="" />
                 <div class="pc-item-body">
                   <div class="pc-item-line">
@@ -70,7 +77,7 @@
               <ng-container [ngTemplateOutlet]="contact"></ng-container>
               <div class="pc-qr pc-qr-small">
                 <app-branch-catalog-qr [url]="webCatalogUrl"></app-branch-catalog-qr>
-                <span>Scannen &amp; bestellen</span>
+                <span>{{ labels.scanToOrder }}</span>
               </div>
             </footer>
           </td></tr>
@@ -79,9 +86,9 @@
     </div>
 
     <!-- Category Showcase: single page. -->
-    <div class="pc-sheet pc-sheet-single" *ngIf="!isEmpty && layout === 'showcase'">
+    <div class="pc-sheet pc-sheet-single" *ngIf="!isEmpty && layout === 'showcase'" [attr.lang]="catalogLanguage" [attr.dir]="textDirection">
       <ng-container [ngTemplateOutlet]="header"></ng-container>
-      <p class="pc-showcase-more" *ngIf="!showcase.entries.length">Entdecke unser Angebot im Online-Katalog.</p>
+      <p class="pc-showcase-more" *ngIf="!showcase.entries.length">{{ labels.discoverOnline }}</p>
       <div class="pc-showcase-grid">
         <article class="pc-showcase-entry" *ngFor="let entry of showcase.entries">
           <div class="pc-showcase-image">
@@ -93,11 +100,11 @@
           </p>
         </article>
       </div>
-      <p class="pc-showcase-more" *ngIf="showcase.hasMoreCategories">Mehr im Online-Katalog – einfach scannen.</p>
+      <p class="pc-showcase-more" *ngIf="showcase.hasMoreCategories">{{ labels.moreOnline }}</p>
       <footer class="pc-footer pc-footer-showcase">
         <div class="pc-qr pc-qr-large">
           <app-branch-catalog-qr [url]="webCatalogUrl"></app-branch-catalog-qr>
-          <span>Scannen &amp; bestellen</span>
+          <span>{{ labels.scanToOrder }}</span>
         </div>
         <ng-container [ngTemplateOutlet]="contact"></ng-container>
       </footer>

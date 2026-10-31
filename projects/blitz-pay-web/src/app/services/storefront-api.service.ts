@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -27,12 +27,13 @@ export class StorefrontApiService {
     );
   }
 
-  getActiveProducts(merchantId: string, branchId: string): Observable<StorefrontProduct[]> {
+  /** [language] is the shopper's chosen catalog language; without it the browser's own Accept-Language applies. */
+  getActiveProducts(merchantId: string, branchId: string, language?: string | null): Observable<StorefrontProduct[]> {
     const params = new HttpParams().set('branchId', branchId);
     return this.http
       .get<StorefrontProduct[] | { products: StorefrontProduct[] }>(
         `${this.baseUrl}/merchants/${encodeURIComponent(merchantId)}/products`,
-        { params }
+        { params, headers: this.languageHeaders(language) }
       )
       .pipe(
         map((response) => Array.isArray(response) ? response : response.products ?? []),
@@ -42,11 +43,11 @@ export class StorefrontApiService {
       );
   }
 
-  getProduct(merchantId: string, branchId: string, productId: string): Observable<StorefrontProduct> {
+  getProduct(merchantId: string, branchId: string, productId: string, language?: string | null): Observable<StorefrontProduct> {
     const params = new HttpParams().set('branchId', branchId);
     return this.http.get<StorefrontProduct>(
       `${this.baseUrl}/merchants/${encodeURIComponent(merchantId)}/products/${encodeURIComponent(productId)}`,
-      { params }
+      { params, headers: this.languageHeaders(language) }
     );
   }
 
@@ -69,6 +70,10 @@ export class StorefrontApiService {
       `${this.baseUrl}/payments/stripe/pay-by-bank/create-checkout-session`,
       payload
     );
+  }
+
+  private languageHeaders(language?: string | null): HttpHeaders | undefined {
+    return language ? new HttpHeaders({ 'Accept-Language': language }) : undefined;
   }
 
   private get baseUrl(): string {

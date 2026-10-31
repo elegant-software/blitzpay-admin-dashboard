@@ -10,6 +10,7 @@ import { WebCartComponent } from '../components/web-cart.component';
 import { StorefrontBranch, StorefrontMerchant, StorefrontProduct } from '../models/storefront.models';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
+import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from '../services/storefront-language.service';
 
 @Component({
   selector: 'web-catalog',
@@ -42,6 +43,12 @@ import { StorefrontSessionService } from '../services/storefront-session.service
             <h2>Products</h2>
             <p class="muted">{{ products.length }} available</p>
           </div>
+          <label class="search-products" *ngIf="languages.length">
+            <span>Language</span>
+            <select data-testid="catalog-language" [ngModel]="activeLanguage" (ngModelChange)="chooseLanguage($event)">
+              <option *ngFor="let code of languages" [value]="code">{{ languageName(code) }}</option>
+            </select>
+          </label>
           <label class="search-products">
             <span>Search products</span>
             <input type="search" [(ngModel)]="query" (ngModelChange)="saveBrowseState()" placeholder="Search products" />
@@ -86,6 +93,7 @@ export class WebCatalogComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
   readonly cart = inject(StorefrontSessionService);
+  private readonly catalogLanguage = inject(StorefrontLanguageService);
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly currency = environment.currency;
@@ -108,7 +116,7 @@ export class WebCatalogComponent implements OnInit {
     forkJoin({
       merchant: this.api.getMerchant(this.merchantId),
       branch: this.api.getBranch(this.merchantId, this.branchId),
-      products: this.api.getActiveProducts(this.merchantId, this.branchId)
+      products: this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.language)
     }).pipe(finalize(() => this.loading = false)).subscribe({
       next: ({ merchant, branch, products }) => {
         this.merchant = merchant;
@@ -117,6 +125,34 @@ export class WebCatalogComponent implements OnInit {
       },
       error: (error: unknown) => this.errorMessage = this.toMessage(error, 'Unable to load this branch catalog.')
     });
+  }
+
+  get languages(): string[] {
+    return catalogLanguages(this.merchant);
+  }
+
+  /** The chosen language when this merchant offers it; otherwise what the catalog was served in. */
+  get activeLanguage(): string | null {
+    const chosen = this.catalogLanguage.language;
+    if (chosen && this.languages.includes(chosen)) return chosen;
+    return this.products[0]?.language ?? this.merchant?.originalMenuLanguage ?? null;
+  }
+
+  languageName(code: string): string {
+    return nativeLanguageName(code);
+  }
+
+  chooseLanguage(language: string): void {
+    this.catalogLanguage.choose(language);
+    // Category names are translated too, so a category picked in another language no longer matches.
+    this.chooseCategory('');
+    this.loading = true;
+    this.api.getActiveProducts(this.merchantId, this.branchId, language)
+      .pipe(finalize(() => this.loading = false))
+      .subscribe({
+        next: (products) => this.products = products,
+        error: (error: unknown) => this.errorMessage = this.toMessage(error, 'Unable to load this branch catalog.')
+      });
   }
 
   get merchantInitial(): string {

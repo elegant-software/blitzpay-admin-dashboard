@@ -31,6 +31,8 @@ export interface Merchant {
   logoUrl?: string | null;
   defaultVatPercent?: number | null;
   contactInfo?: MerchantContactInfo | null;
+  originalMenuLanguage?: string | null;
+  supportedMenuLanguages?: string[];
 }
 
 export type AppearanceHistoryStatus = 'COMPLETED' | 'CANCELLED';
@@ -139,6 +141,7 @@ export interface ProductCategory {
   name: string;
   createdAt: string;
   updatedAt: string;
+  language?: string | null;
 }
 
 export interface CreateProductCategoryRequest {
@@ -164,6 +167,7 @@ export interface Product {
   productCode?: number | null;
   createdAt: string;
   updatedAt: string;
+  language?: string | null;
 }
 
 export interface ProductListResponse {
@@ -215,6 +219,8 @@ export interface UpdateMerchantRequest {
   businessType?: string;
   merchantMobility?: string;
   defaultVatPercent?: number | null;
+  originalMenuLanguage?: string;
+  supportedMenuLanguages?: string[];
   contactInfo?: {
     email?: string;
     phoneNumber?: string;
@@ -603,4 +609,35 @@ export interface OrderItemFormModel {
   productName: string;
   unitPrice: number;
   quantity: number;
+}
+
+/** A Menu Language Catalogue entry: ISO 639-1 code with its English and native names. */
+export interface MenuLanguage {
+  code: string;
+  displayName: string;
+  nativeName: string;
+}
+
+export type TranslationOrigin = 'MACHINE' | 'MERCHANT';
+
+export interface CatalogTranslation {
+  language: string;
+  name: string;
+  description?: string | null;
+  origin: TranslationOrigin;
+  stale: boolean;
+  updatedAt: string;
+}
+
+export interface UpsertCatalogTranslationRequest {
+  name: string;
+  description?: string;
+}
+
+export interface TranslationCoverage {
+  language: string;
+  productsTotal: number;
+  productsTranslated: number;
+  categoriesTotal: number;
+  categoriesTranslated: number;
 }

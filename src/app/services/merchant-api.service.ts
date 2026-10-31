@@ -10,9 +10,11 @@ import {
   OperationalAppearanceItem,
   Branch,
   BranchCustomer,
+  CatalogTranslation,
   CreateOrderRequest,
   CreateProductCategoryRequest,
   CreateBranchRequest,
+  MenuLanguage,
   Merchant,
   MerchantBookAppointmentRequest,
   MerchantLogoUploadResponse,
@@ -31,12 +33,14 @@ import {
   StartStripeConnectRequest,
   StripeConnectStatusResponse,
   SupportOverrideAppointmentRequest,
+  TranslationCoverage,
   UpdateAppointmentNoteRequest,
   UpdateAppointmentPolicyRequest,
   UpdateBranchRequest,
   UpdateMerchantRequest,
   UpdateMerchantLocationRequest,
-  UpdateMerchantLogoRequest
+  UpdateMerchantLogoRequest,
+  UpsertCatalogTranslationRequest
 } from '../models/merchant-catalog.models';
 import { BackendEnvironment } from '../models/merchant-catalog.models';
 import { buildApiBaseUrl } from './merchant-environment.service';
@@ -141,19 +145,29 @@ export class MerchantApiService {
     apiVersion: string,
     merchantId: string,
     branchId: string,
-    includeInactive = true
+    includeInactive = true,
+    language?: string
   ): Observable<Product[]> {
     let params = new HttpParams().set('branchId', branchId);
     if (includeInactive) {
       params = params.set('includeInactive', 'true');
+    }
+    if (language) {
+      params = params.set('language', language);
     }
     return this.http
       .get<ProductListResponse | Product[]>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/products`, { params })
       .pipe(map((response) => Array.isArray(response) ? response : (response.products ?? [])));
   }
 
-  getProductCategories(environment: BackendEnvironment, apiVersion: string, merchantId: string): Observable<ProductCategory[]> {
-    return this.http.get<ProductCategory[]>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/product-categories`);
+  getProductCategories(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    language?: string
+  ): Observable<ProductCategory[]> {
+    const params = language ? new HttpParams().set('language', language) : undefined;
+    return this.http.get<ProductCategory[]>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/product-categories`, { params });
   }
 
   createProductCategory(
@@ -201,9 +215,12 @@ export class MerchantApiService {
     apiVersion: string,
     merchantId: string,
     productId: string,
-    branchId?: string
+    branchId?: string,
+    language?: string
   ): Observable<Product> {
-    const params = branchId ? new HttpParams().set('branchId', branchId) : undefined;
+    let params = new HttpParams();
+    if (branchId) params = params.set('branchId', branchId);
+    if (language) params = params.set('language', language);
     return this.http.get<Product>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/products/${productId}`, { params });
   }
 
@@ -235,6 +252,84 @@ export class MerchantApiService {
     payload: UpdateMerchantLogoRequest
   ): Observable<Merchant> {
     return this.http.put<Merchant>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/logo`, payload);
+  }
+
+  getMenuLanguages(environment: BackendEnvironment, apiVersion: string): Observable<MenuLanguage[]> {
+    return this.http.get<MenuLanguage[]>(`${this.base(environment, apiVersion)}/merchants/menu-languages`);
+  }
+
+  getProductTranslations(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    productId: string
+  ): Observable<CatalogTranslation[]> {
+    return this.http.get<CatalogTranslation[]>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/products/${productId}/translations`);
+  }
+
+  saveProductTranslation(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    productId: string,
+    language: string,
+    payload: UpsertCatalogTranslationRequest
+  ): Observable<CatalogTranslation> {
+    return this.http.put<CatalogTranslation>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/products/${productId}/translations/${language}`,
+      payload
+    );
+  }
+
+  deleteProductTranslation(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    productId: string,
+    language: string
+  ): Observable<void> {
+    return this.http.delete<void>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/products/${productId}/translations/${language}`);
+  }
+
+  getCategoryTranslations(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    categoryId: string
+  ): Observable<CatalogTranslation[]> {
+    return this.http.get<CatalogTranslation[]>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/product-categories/${categoryId}/translations`
+    );
+  }
+
+  saveCategoryTranslation(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    categoryId: string,
+    language: string,
+    payload: UpsertCatalogTranslationRequest
+  ): Observable<CatalogTranslation> {
+    return this.http.put<CatalogTranslation>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/product-categories/${categoryId}/translations/${language}`,
+      payload
+    );
+  }
+
+  deleteCategoryTranslation(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    categoryId: string,
+    language: string
+  ): Observable<void> {
+    return this.http.delete<void>(
+      `${this.base(environment, apiVersion)}/merchants/${merchantId}/product-categories/${categoryId}/translations/${language}`
+    );
+  }
+
+  getTranslationCoverage(environment: BackendEnvironment, apiVersion: string, merchantId: string): Observable<TranslationCoverage[]> {
+    return this.http.get<TranslationCoverage[]>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/translation-coverage`);
   }
 
   getVerticals(environment: BackendEnvironment, apiVersion: string): Observable<MerchantVerticalResponse[]> {

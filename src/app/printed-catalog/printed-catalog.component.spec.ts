@@ -54,12 +54,17 @@ describe('PrintedCatalogComponent', () => {
     product({ name: 'Mocha', unitPrice: 5, categoryId: 'c1', categoryName: 'Kaffee', active: false })
   ];
 
-  async function setup(layout: string | null, productList: Product[] = products) {
-    merchantApi = jasmine.createSpyObj<MerchantApiService>('MerchantApiService', ['getMerchant', 'getBranch', 'getProducts']);
-    merchantApi.getMerchant.and.returnValue(of(merchant));
+  async function setup(layout: string | null, productList: Product[] = products, loadedMerchant: Merchant = merchant, language?: string) {
+    merchantApi = jasmine.createSpyObj<MerchantApiService>('MerchantApiService', ['getMerchant', 'getBranch', 'getProducts', 'getMenuLanguages']);
+    merchantApi.getMerchant.and.returnValue(of(loadedMerchant));
+    merchantApi.getMenuLanguages.and.returnValue(of([
+      { code: 'de', displayName: 'German', nativeName: 'Deutsch' },
+      { code: 'en', displayName: 'English', nativeName: 'English' },
+      { code: 'ar', displayName: 'Arabic', nativeName: 'العربية' }
+    ]));
     merchantApi.getBranch.and.returnValue(of(branch));
     merchantApi.getProducts.and.returnValue(of(productList));
-    queryParams = new BehaviorSubject(convertToParamMap(layout ? { layout } : {}));
+    queryParams = new BehaviorSubject(convertToParamMap({ ...(layout ? { layout } : {}), ...(language ? { language } : {}) }));
 
     await TestBed.configureTestingModule({
       imports: [PrintedCatalogComponent],
@@ -86,7 +91,7 @@ describe('PrintedCatalogComponent', () => {
 
   it('loads only active branch products and renders the Full Catalog by default', async () => {
     await setup(null);
-    expect(merchantApi.getProducts).toHaveBeenCalledWith(jasmine.anything(), 'v1', 'm-1', 'b-1', false);
+    expect(merchantApi.getProducts).toHaveBeenCalledWith(jasmine.anything(), 'v1', 'm-1', 'b-1', false, undefined);
     expect(component.layout).toBe('full');
     expect(Array.from(query('.pc-section-title')).map((e) => e.textContent?.trim())).toEqual(['Kaffee', 'Kuchen']);
     expect(text()).toContain('Latte');
@@ -150,6 +155,63 @@ describe('PrintedCatalogComponent', () => {
     component.load();
     fixture.detectChanges();
     expect(text()).toContain('Branch not found');
+  });
+
+  describe('Catalog Language', () => {
+    const international: Merchant = { ...merchant, originalMenuLanguage: 'de', supportedMenuLanguages: ['en', 'ar'] };
+    const english: Product[] = [
+      product({ name: 'Latte', categoryName: 'Coffee', language: 'en' }),
+      product({ name: 'Brezel', categoryName: 'Coffee', language: 'de' }),
+      product({ name: 'Water', language: 'en' })
+    ];
+
+    it('defaults to the Original Menu Language', async () => {
+      await setup('full', products, international);
+      expect(component.catalogLanguage).toBe('de');
+      expect(merchantApi.getProducts).toHaveBeenCalledWith(jasmine.anything(), 'v1', 'm-1', 'b-1', false, 'de');
+      expect(text()).toContain('Scannen & bestellen');
+    });
+
+    it('renders the chosen language with its printed labels', async () => {
+      await setup('full', english, international, 'en');
+      expect(merchantApi.getProducts).toHaveBeenCalledWith(jasmine.anything(), 'v1', 'm-1', 'b-1', false, 'en');
+      expect(text()).toContain('Scan & order');
+      expect(Array.from(query('.pc-section-title')).map((e) => e.textContent?.trim())).toEqual(['Coffee', 'Other']);
+      expect(query('.pc-sheet[lang="en"]').length).toBeGreaterThan(0);
+    });
+
+    it('flags items that fell back to the original language on screen only', async () => {
+      await setup('full', english, international, 'en');
+      expect(component.fallbackCount).toBe(1);
+      const flagged = Array.from(query('.pc-item.pc-fallback')).map((e) => e.textContent ?? '');
+      expect(flagged.length).toBe(1);
+      expect(flagged[0]).toContain('Brezel');
+      expect(text()).toContain('1 item not translated');
+    });
+
+    it('offers the merchant languages in the picker', async () => {
+      await setup('full', products, international);
+      const options = Array.from(query('select.pc-language option')).map((o) => o.textContent?.trim());
+      expect(options).toEqual(['German — Deutsch', 'English', 'Arabic — العربية']);
+    });
+
+    it('switches language through the URL', async () => {
+      await setup('full', products, international);
+      const router = TestBed.inject(Router);
+      spyOn(router, 'navigate');
+      component.setCatalogLanguage('en');
+      expect(router.navigate).toHaveBeenCalledWith([], jasmine.objectContaining({ queryParams: { language: 'en' } }));
+    });
+
+    it('lays out right-to-left languages right-to-left', async () => {
+      await setup('full', english, international, 'ar');
+      expect((query('.pc-sheet')[0] as HTMLElement).getAttribute('dir')).toBe('rtl');
+    });
+
+    it('hides the picker when the merchant has a single language', async () => {
+      await setup('full');
+      expect(query('select.pc-language').length).toBe(0);
+    });
   });
 
   it('waits for images before opening the browser print dialog', async () => {

@@ -7,6 +7,7 @@ import { WebCartComponent } from '../components/web-cart.component';
 import { StorefrontBranch, StorefrontMerchant, StorefrontProduct } from '../models/storefront.models';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
+import { StorefrontLanguageService } from '../services/storefront-language.service';
 
 @Component({
   selector: 'product-overview',
@@ -61,6 +62,7 @@ export class ProductOverviewComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
   private readonly cart = inject(StorefrontSessionService);
+  private readonly catalogLanguage = inject(StorefrontLanguageService);
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly productId = this.route.snapshot.paramMap.get('productId') ?? '';
@@ -77,7 +79,7 @@ export class ProductOverviewComponent implements OnInit {
     forkJoin({
       merchant: this.api.getMerchant(this.merchantId),
       branch: this.api.getBranch(this.merchantId, this.branchId),
-      product: this.api.getProduct(this.merchantId, this.branchId, this.productId)
+      product: this.api.getProduct(this.merchantId, this.branchId, this.productId, this.catalogLanguage.language)
     }).pipe(finalize(() => this.loading = false)).subscribe({
       next: (result) => {
         this.merchant = result.merchant;
