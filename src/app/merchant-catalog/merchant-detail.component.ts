@@ -232,6 +232,12 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.router.navigate(['/merchants', this.selectedMerchant.merchantId, 'branches', branchId, 'edit']);
   }
 
+  navigateToPrintedCatalog(branch: Branch): void {
+    if (!this.selectedMerchant) return;
+    const branchId = branch.branchId ?? branch.id;
+    this.router.navigate(['/merchants', this.selectedMerchant.merchantId, 'branches', branchId, 'printed-catalog']);
+  }
+
   navigateToProductEdit(product: Product): void {
     if (!this.selectedMerchant) return;
     this.router.navigate(['/merchants', this.selectedMerchant.merchantId, 'products', product.productId, 'edit']);

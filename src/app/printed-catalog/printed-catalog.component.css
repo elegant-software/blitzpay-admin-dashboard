@@ -1,0 +1,230 @@
+/* Screen preview: an A4-width sheet. Print rules are at the bottom and in styles.css. */
+.pc-sheet {
+  background: #fff;
+  box-shadow: 0 0.25rem 1.25rem rgba(15, 23, 42, 0.12);
+  color: #111827;
+  margin: 0 auto 2rem;
+  padding: 15mm;
+  width: 210mm;
+}
+
+.pc-sheet-single {
+  display: flex;
+  flex-direction: column;
+  min-height: 297mm;
+}
+
+.pc-flow {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.pc-flow > tbody > tr > td,
+.pc-flow > tfoot > tr > td {
+  padding: 0;
+}
+
+.pc-header {
+  align-items: center;
+  border-bottom: 2px solid #111827;
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+}
+
+.pc-logo {
+  height: 22mm;
+  object-fit: contain;
+  width: 22mm;
+}
+
+.pc-merchant-name {
+  font-size: 1.9rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pc-branch {
+  color: #4b5563;
+  margin: 0.15rem 0 0;
+}
+
+.pc-section {
+  margin-bottom: 1.25rem;
+}
+
+.pc-section-title {
+  border-bottom: 1px solid #d1d5db;
+  break-after: avoid;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.6rem;
+  padding-bottom: 0.25rem;
+}
+
+.pc-item {
+  break-inside: avoid;
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.pc-item-image {
+  border-radius: 0.35rem;
+  flex: none;
+  height: 16mm;
+  object-fit: cover;
+  width: 16mm;
+}
+
+.pc-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pc-item-line {
+  align-items: baseline;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.pc-item-name {
+  font-weight: 600;
+}
+
+.pc-item-dots {
+  border-bottom: 1px dotted #9ca3af;
+  flex: 1;
+}
+
+.pc-item-price {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pc-item-description {
+  color: #4b5563;
+  font-size: 0.85rem;
+  margin: 0.1rem 0 0;
+}
+
+.pc-footer {
+  align-items: center;
+  border-top: 1px solid #d1d5db;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.pc-contact {
+  color: #374151;
+  font-size: 0.85rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pc-qr {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  font-weight: 600;
+  gap: 0.2rem;
+}
+
+/* Strip the dashboard styling of the shared QR component for paper. */
+.pc-qr ::ng-deep .branch-catalog-qr {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+.pc-qr ::ng-deep .branch-catalog-url {
+  display: none;
+}
+
+.pc-qr-small ::ng-deep .branch-catalog-qr img {
+  height: 22mm;
+  width: 22mm;
+}
+
+.pc-qr-large {
+  font-size: 1.1rem;
+}
+
+.pc-qr-large ::ng-deep .branch-catalog-qr img {
+  height: 50mm;
+  width: 50mm;
+}
+
+.pc-showcase-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.pc-showcase-entry {
+  break-inside: avoid;
+  text-align: center;
+}
+
+.pc-showcase-image {
+  aspect-ratio: 1;
+  background: #f3f4f6;
+  border-radius: 0.6rem;
+  overflow: hidden;
+}
+
+.pc-showcase-image img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.pc-showcase-category {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0.5rem 0 0.1rem;
+}
+
+.pc-showcase-product {
+  color: #374151;
+  margin: 0;
+}
+
+.pc-showcase-more {
+  font-style: italic;
+  margin: 1.25rem 0 0;
+  text-align: center;
+}
+
+.pc-footer-showcase {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+
+@media print {
+  .pc-root {
+    padding: 0 !important;
+  }
+
+  .pc-toolbar,
+  .alert {
+    display: none !important;
+  }
+
+  .pc-sheet {
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    width: auto;
+  }
+
+  .pc-sheet-single {
+    min-height: calc(297mm - 24mm);
+  }
+}
