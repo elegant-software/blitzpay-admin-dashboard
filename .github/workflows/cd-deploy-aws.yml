@@ -4,7 +4,7 @@ run-name: Deploy ${{ github.event.release.tag_name || github.ref_name }} to AWS
 # Disabled for now: restore the release trigger to re-enable AWS deploys.
 # on:
 #   release:
-#     types: [published, prereleased]
+#     types: [released, prereleased]
 on:
   workflow_dispatch:
 
