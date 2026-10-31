@@ -3,7 +3,7 @@
 ## Contexts
 
 - [Admin Dashboard](./CONTEXT.md) — merchant onboarding, catalog management, branch/product admin, and PSP configuration performed by internal operators
-- [Web Storefront](./projects/blitz-pay-web/CONTEXT.md) — public customer-facing product catalog, self-service cart, and QR-initiated order checkout at `pay.blitzpay.com`
+- [Web Storefront](./projects/blitz-pay-web/CONTEXT.md) — public customer-facing product catalog, self-service cart, and QR-initiated order checkout at `storefront.zackpay.de` (staging)
 
 ## Relationships
 

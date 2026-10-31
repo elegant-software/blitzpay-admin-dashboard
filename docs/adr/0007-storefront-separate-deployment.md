@@ -12,6 +12,8 @@ Deploy the Web Storefront as a **separate Docker image** with its own k8s Deploy
 
 The Web Storefront is served at `blitz-pay-web.elegantsoftware.de` (staging). The admin dashboard remains at `blitzpay-admin-dashboard.elegantsoftware.de`.
 
+> **Update (2026-10-31):** Hosts moved to `zackpay.de` — storefront at `storefront.zackpay.de`, admin at `admin.zackpay.de`. The decision itself is unchanged.
+
 ## Consequences
 
 - The two apps can be scaled, secured, and updated independently.

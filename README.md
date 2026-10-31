@@ -74,6 +74,25 @@ Build output is generated in:
 
 - `dist/blitzpay-admin-dashboard`
 
+## Web Storefront
+
+This repository also contains the public customer-facing storefront, `projects/blitz-pay-web/` (branch catalog, cart, and guest checkout).
+
+```bash
+npm run start:storefront -- --port 4201   # http://localhost:4201
+npm run test:storefront
+npm run build:storefront                  # output: dist/blitz-pay-web
+```
+
+## Deployment
+
+| App | Staging URL | Image | Manifests |
+|---|---|---|---|
+| Admin dashboard | https://admin.zackpay.de | `Dockerfile` | `k8s/` |
+| Web Storefront | https://storefront.zackpay.de | `Dockerfile.storefront` | `k8s/storefront/` |
+
+Both apps are released together: publishing a GitHub Release `vX.Y.Z` runs `cd-release.yml`, which builds both images and deploys them to the `blitzpay-staging` namespace. Pushing to `main` only runs CI. To redeploy a single app with an existing tag, run the **CD · Deploy to Kubernetes** workflow manually.
+
 ## Troubleshooting
 
 ### `npm ERR! enoent Could not read package.json`
@@ -110,6 +129,6 @@ If you still see ENOENT, verify the repository was fully copied/cloned and that 
 
 ## Merchant Catalog notes
 
-- APIs are expected at `http://localhost:8080/{version}` (local) or `https://api-blitzpay-staging.elegantsoftware.de/{version}` (staging).
+- APIs are expected at `http://localhost:8080/{version}` (local) or `https://api-blitzpay-staging.zackpay.de/{version}` (staging).
 - Product create/update requests are sent as multipart form data.
 - Branch secret fields are entered for creation but are cleared from UI form state after save.
