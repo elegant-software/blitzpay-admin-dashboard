@@ -121,6 +121,8 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   readonly categoryFilterHint = 'Filter by category name.';
   readonly productFilterHint = 'Filter by product code, category, or name.';
   readonly knownPspCodes = ['STRIPE', 'PAYPAL'];
+  /** Providers an admin may enable. PayPal is listed but not supported yet. */
+  private readonly availablePspCodes = ['STRIPE'];
 
   private routeSub?: Subscription;
 
@@ -540,7 +542,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   }
 
   enableProviderAccount(pspCode: string): void {
-    if (!this.selectedMerchant || this.providerAccountActionLoading.has(pspCode)) return;
+    if (!this.selectedMerchant || !this.isPspAvailable(pspCode) || this.providerAccountActionLoading.has(pspCode)) return;
     this.providerAccountActionLoading.add(pspCode);
     this.merchantApi.enableProviderAccount(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, pspCode).subscribe({
       next: (account) => { this.providerAccounts = this.upsertProviderAccount(this.providerAccounts, account); this.providerAccountActionLoading.delete(pspCode); },
@@ -555,6 +557,18 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
       next: () => { this.providerAccounts = this.providerAccounts.map(a => a.pspCode === pspCode ? { ...a, enabled: false } : a); this.providerAccountActionLoading.delete(pspCode); },
       error: (err) => { this.providerAccountsError = this.toMessage(err, `Failed to disable ${pspCode}.`); this.providerAccountActionLoading.delete(pspCode); }
     });
+  }
+
+  isPspAvailable(pspCode: string): boolean { return this.availablePspCodes.includes(pspCode); }
+
+  /**
+   * Enabling Stripe only lets the merchant start onboarding; it is Active
+   * once Stripe Connect reports the account connected with charges enabled.
+   */
+  providerStatus(pspCode: string): { label: string; tone: string } {
+    if (!this.isPspAvailable(pspCode) || !this.isProviderEnabled(pspCode)) return { label: 'Disabled', tone: 'status-tag-neutral' };
+    if (pspCode === 'STRIPE' && this.paymentAccountStatus !== 'connected') return { label: 'Ready for onboarding', tone: 'status-tag-warning' };
+    return { label: 'Active', tone: 'status-tag-success' };
   }
 
   isProviderEnabled(pspCode: string): boolean { return this.providerAccounts.some(a => a.pspCode === pspCode && a.enabled); }

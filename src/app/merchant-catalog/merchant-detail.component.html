@@ -347,38 +347,33 @@
             <thead>
               <tr>
                 <th style="width:12%">Provider</th>
-                <th style="width:18%">Enabled</th>
-                <th style="width:30%">Account</th>
+                <th style="width:24%">Status</th>
+                <th style="width:28%">Account</th>
                 <th>Capabilities</th>
               </tr>
             </thead>
             <tbody>
               <ng-container *ngFor="let code of knownPspCodes">
                 <ng-container *ngIf="{ pa: getProviderAccount(code) } as ctx">
-                  <tr>
+                  <tr [class.opacity-50]="!isPspAvailable(code)" [attr.aria-disabled]="!isPspAvailable(code) || null">
                     <!-- Provider -->
-                    <td class="fw-semibold">{{ pspDisplayName(code) }}</td>
+                    <td class="fw-semibold" [class.text-body-secondary]="!isPspAvailable(code)">{{ pspDisplayName(code) }}</td>
 
-                    <!-- Enabled -->
+                    <!-- Status -->
                     <td>
-                      <ng-container *ngIf="ctx.pa; else notAdded">
-                        <span class="status-tag me-2" [ngClass]="ctx.pa.enabled ? 'status-tag-success' : 'status-tag-neutral'">
-                          {{ ctx.pa.enabled ? 'Enabled' : 'Disabled' }}
-                        </span>
-                        <button class="btn btn-sm btn-outline-secondary" type="button"
+                      <span class="status-tag me-2" [ngClass]="providerStatus(code).tone">{{ providerStatus(code).label }}</span>
+                      <ng-container *ngIf="isPspAvailable(code); else unavailable">
+                        <button class="btn btn-sm" type="button"
+                          [ngClass]="ctx.pa?.enabled ? 'btn-outline-secondary' : 'btn-outline-primary'"
                           [disabled]="providerAccountActionLoading.has(code)"
-                          (click)="ctx.pa.enabled ? disableProviderAccount(code) : enableProviderAccount(code)">
+                          (click)="ctx.pa?.enabled ? disableProviderAccount(code) : enableProviderAccount(code)">
                           <span *ngIf="providerAccountActionLoading.has(code)" class="spinner-border spinner-border-sm me-1" role="status"></span>
-                          {{ ctx.pa.enabled ? 'Disable' : 'Enable' }}
+                          {{ ctx.pa?.enabled ? 'Disable' : 'Enable' }}
                         </button>
                       </ng-container>
-                      <ng-template #notAdded>
-                        <button class="btn btn-sm btn-outline-primary" type="button"
-                          [disabled]="providerAccountActionLoading.has(code)"
-                          (click)="enableProviderAccount(code)">
-                          <span *ngIf="providerAccountActionLoading.has(code)" class="spinner-border spinner-border-sm me-1" role="status"></span>
-                          Enable
-                        </button>
+                      <ng-template #unavailable>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" disabled
+                          title="{{ pspDisplayName(code) }} is not available yet">Enable</button>
                       </ng-template>
                     </td>
 

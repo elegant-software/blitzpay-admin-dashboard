@@ -3,7 +3,7 @@ import { Router, provideRouter } from '@angular/router';
 import { throwError, of } from 'rxjs';
 import { MerchantDetailComponent } from './merchant-detail.component';
 import { MerchantApiService } from '../services/merchant-api.service';
-import { Branch, Merchant, ProductCategory } from '../models/merchant-catalog.models';
+import { Branch, Merchant, ProductCategory, ProviderAccountResponse } from '../models/merchant-catalog.models';
 
 describe('MerchantDetailComponent product category management', () => {
   let component: MerchantDetailComponent;
@@ -265,5 +265,47 @@ describe('MerchantDetailComponent product category management', () => {
     } satisfies Branch);
 
     expect(router.navigate).toHaveBeenCalledWith(['/merchants', 'merchant-123', 'branches', 'branch-1', 'printed-catalog']);
+  });
+  describe('payment providers', () => {
+    const stripeAccount = (enabled: boolean): ProviderAccountResponse => ({
+      id: 'pa-1',
+      pspCode: 'STRIPE',
+      enabled,
+      createdAt: '2026-05-10T10:00:00.000Z',
+      updatedAt: '2026-05-10T10:00:00.000Z'
+    });
+
+    it('shows Stripe as Disabled when the merchant has no enabled Stripe account', () => {
+      component.providerAccounts = [];
+      expect(component.providerStatus('STRIPE')).toEqual({ label: 'Disabled', tone: 'status-tag-neutral' });
+
+      component.providerAccounts = [stripeAccount(false)];
+      expect(component.providerStatus('STRIPE')).toEqual({ label: 'Disabled', tone: 'status-tag-neutral' });
+    });
+
+    it('shows Stripe as Ready for onboarding once enabled but not yet connected', () => {
+      component.providerAccounts = [stripeAccount(true)];
+      for (const status of ['loading', 'not_connected', 'verifying', 'error'] as const) {
+        component.paymentAccountStatus = status;
+        expect(component.providerStatus('STRIPE')).toEqual({ label: 'Ready for onboarding', tone: 'status-tag-warning' });
+      }
+    });
+
+    it('shows Stripe as Active only after onboarding has connected the account', () => {
+      component.providerAccounts = [stripeAccount(true)];
+      component.paymentAccountStatus = 'connected';
+
+      expect(component.providerStatus('STRIPE')).toEqual({ label: 'Active', tone: 'status-tag-success' });
+    });
+
+    it('shows PayPal as unavailable and never calls the API to enable it', () => {
+      expect(component.isPspAvailable('PAYPAL')).toBeFalse();
+      expect(component.isPspAvailable('STRIPE')).toBeTrue();
+      expect(component.providerStatus('PAYPAL')).toEqual({ label: 'Disabled', tone: 'status-tag-neutral' });
+
+      component.enableProviderAccount('PAYPAL');
+
+      expect(merchantApi.enableProviderAccount).not.toHaveBeenCalled();
+    });
   });
 });
