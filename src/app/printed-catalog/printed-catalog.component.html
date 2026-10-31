@@ -45,6 +45,9 @@
     <!-- Full Catalog: the tfoot repeats on every printed page. -->
     <div class="pc-sheet" *ngIf="!isEmpty && layout === 'full'">
       <table class="pc-flow">
+        <thead>
+          <tr><td><div class="pc-page-top-spacer"></div></td></tr>
+        </thead>
         <tbody>
           <tr><td>
             <ng-container [ngTemplateOutlet]="header"></ng-container>

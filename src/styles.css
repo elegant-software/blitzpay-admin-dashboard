@@ -703,10 +703,12 @@ a {
   }
 }
 
-/* Printed Catalog (ADR-0010): print only the catalog sheet, never the shell chrome. */
-@page {
+/* Printed Catalog (ADR-0010): print only the catalog sheet, never the shell chrome.
+   Named page so other admin pages keep the browser defaults. Zero margin leaves the
+   browser no room for its own header/footer (URL, date, title); spacing comes from the sheet. */
+@page printed-catalog {
   size: A4 portrait;
-  margin: 12mm;
+  margin: 0;
 }
 
 @media print {
