@@ -1,4 +1,5 @@
-name: Cleanup GHCR Images
+name: Cleanup · GHCR Images
+run-name: "${{ github.event_name == 'schedule' && 'Scheduled' || 'Manual' }} · keep latest 5 · untagged only"
 
 on:
   schedule:
@@ -7,6 +8,7 @@ on:
 
 jobs:
   cleanup:
+    name: Delete untagged images (keep 5)
     runs-on: ubuntu-latest
     permissions:
       packages: write

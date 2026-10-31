@@ -1,4 +1,5 @@
-name: Deploy frontend
+name: CD · Deploy to Kubernetes
+run-name: Deploy ${{ inputs.image_tag }} to ${{ inputs.kube_namespace }}
 
 on:
   workflow_dispatch:
@@ -46,6 +47,7 @@ permissions:
 
 jobs:
   apply:
+    name: Deploy ${{ inputs.image_tag }} to ${{ inputs.kube_namespace || 'blitzpay-staging' }}
     runs-on: self-hosted
     env:
       KUBE_NAMESPACE: ${{ inputs.kube_namespace || github.event.inputs.kube_namespace }}
@@ -98,3 +100,17 @@ jobs:
         run: |
           kubectl apply -f /tmp/deployment.yaml -n "$KUBE_NAMESPACE"
           kubectl apply -f /tmp/ingress.yaml -n "$KUBE_NAMESPACE"
+
+      - name: Add deployment to job summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          if [ "$JOB_STATUS" = "success" ]; then result="✅ applied"; else result="❌ ${JOB_STATUS}"; fi
+          {
+            echo "### 🚀 Deploy to \`${KUBE_NAMESPACE}\`"
+            echo "| Image | Namespace | Manifests | Result |"
+            echo "|---|---|---|---|"
+            echo "| \`${IMAGE_REFERENCE}\` | ${KUBE_NAMESPACE} | \`${MANIFESTS_DIR}\` | ${result} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Deploy ${result}::${IMAGE_REFERENCE} → ${KUBE_NAMESPACE}"

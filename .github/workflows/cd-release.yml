@@ -1,4 +1,5 @@
-name: Frontend CD
+name: CD · Release Build & Deploy Staging
+run-name: Release ${{ github.event.release.tag_name || github.ref_name }} → staging
 
 on:
   release:
@@ -17,7 +18,7 @@ env:
 
 jobs:
   verify-release-ci:
-    name: Verify CI passed for release commit
+    name: Verify CI passed for ${{ github.event.release.tag_name || github.ref_name }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout tag
@@ -45,7 +46,7 @@ jobs:
               {
                 owner,
                 repo,
-                workflow_id: 'ci.yml',
+                workflow_id: 'ci-build.yml',
                 status: 'completed',
                 per_page: 100
               }
@@ -60,7 +61,7 @@ jobs:
             core.info(`Matched successful CI run #${successfulRun.run_number} for ${releaseSha}.`);
 
   build-release-image:
-    name: Build release image
+    name: Build admin image ${{ github.event.release.tag_name || github.ref_name }}
     needs: verify-release-ci
     runs-on: ubuntu-latest
     steps:
@@ -101,6 +102,7 @@ jobs:
           echo "image_reference=${IMAGE_REPOSITORY}:${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push image
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -111,8 +113,20 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Add image to job summary
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          {
+            echo "### 🐳 Built admin image"
+            echo "| Image | Digest |"
+            echo "|---|---|"
+            echo "| \`${IMAGE_REFERENCE}\` | \`${DIGEST}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Image pushed::${IMAGE_REFERENCE}"
+
   build-storefront-image:
-    name: Build storefront image
+    name: Build storefront image ${{ github.event.release.tag_name || github.ref_name }}
     needs: verify-release-ci
     runs-on: ubuntu-latest
     steps:
@@ -152,6 +166,7 @@ jobs:
           echo "image_reference=${IMAGE_REPOSITORY}/blitz-pay-web:${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push storefront image
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -161,10 +176,23 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Add image to job summary
+        env:
+          IMAGE_REFERENCE: ${{ steps.compute-image.outputs.image_reference }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          {
+            echo "### 🐳 Built storefront image"
+            echo "| Image | Digest |"
+            echo "|---|---|"
+            echo "| \`${IMAGE_REFERENCE}\` | \`${DIGEST}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Image pushed::${IMAGE_REFERENCE}"
+
   deploy-staging:
-    name: Deploy admin to staging
+    name: Admin → Staging
     needs: build-release-image
-    uses: ./.github/workflows/deploy.yml
+    uses: ./.github/workflows/cd-deploy-k8s.yml
     with:
       image_tag: ${{ github.event.release.tag_name || github.ref_name }}
       kube_namespace: blitzpay-staging
@@ -175,9 +203,9 @@ jobs:
       K8S_TOKEN: ${{ secrets.K8S_TOKEN }}
 
   deploy-storefront-staging:
-    name: Deploy storefront to staging
+    name: Storefront → Staging
     needs: build-storefront-image
-    uses: ./.github/workflows/deploy.yml
+    uses: ./.github/workflows/cd-deploy-k8s.yml
     with:
       image_tag: ${{ github.event.release.tag_name || github.ref_name }}
       image_repository: ${{ format('ghcr.io/{0}/blitz-pay-web', github.repository) }}
