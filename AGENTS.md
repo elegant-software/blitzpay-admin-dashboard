@@ -64,6 +64,6 @@ This repo holds two Angular apps: the admin dashboard (`src/`) and the public We
 
 ## Changing Domains / URLs
 
-A host change spans the dashboard, the storefront, DNS, the `blitz-pay` backend (CORS `frontendOrigin`), and Keycloak. Follow the checklist in [`CLAUDE.md`](CLAUDE.md#changing-domains--urls) and run its CORS preflight check before shipping.
+Hostnames are not hardcoded here: they derive from `global.baseDomain` in the `blitz-pay` Helm values and arrive via the `blitzpay-domains` ConfigMap. See [`CLAUDE.md`](CLAUDE.md#changing-domains--urls) and run its CORS preflight check before shipping.
 
 <!-- MANUAL ADDITIONS END -->

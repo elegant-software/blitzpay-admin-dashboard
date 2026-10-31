@@ -55,11 +55,12 @@ Use port 4201 for the storefront locally — the admin's `local` environment `st
 - To redeploy one app with an existing tag, run `cd-deploy-k8s.yml` manually. For the storefront pass `image_repository=ghcr.io/elegant-software/blitzpay-admin-dashboard/blitz-pay-web` and `manifests_dir=k8s/storefront`; the defaults deploy the admin.
 
 ### Changing Domains / URLs
-A host change (API, auth, the dashboard's or the storefront's own domain) spans repos. Update all of these together:
-- **Dashboard**: `src/environments/*.ts` (`authorityUrl`, `apiBaseUrls`), `src/app/services/merchant-environment.service.ts` (`baseUrl`, `storefrontUrl`) and its spec, `nginx/storefront.conf`, `k8s/ingress.yaml`, `k8s/storefront/ingress.yaml`.
-- **DNS**: every new host needs a Cloudflare record before deploying, or cert-manager cannot issue its TLS certificate.
-- **Backend CORS** (`blitz-pay` repo): `config.frontendOrigin` in `helm/blitz-pay/values-*.yaml` and `FRONTEND_ORIGIN` in `infra/lib/app-stack.ts` must equal the dashboard's public origin, or every API call fails CORS.
-- **Keycloak**: the `blitzpay-admin-dashboard` client's Valid Redirect URIs and Web Origins must include the dashboard origin.
+No hostname is hardcoded here. In Kubernetes they all derive from `global.baseDomain` in the `blitz-pay` repo's `helm/blitz-pay/values-<env>.yaml`; that chart publishes them in the `blitzpay-domains` ConfigMap, and this repo only reads it:
+- **Ingresses** (`k8s/ingress.yaml`, `k8s/storefront/ingress.yaml`) use `${ADMIN_HOST}` / `${STOREFRONT_HOST}`, filled in by `cd-deploy-k8s.yml` at deploy time.
+- **Admin app** reads `window.__BLITZPAY_CONFIG__` (`apiHost`, `authHost`, `storefrontHost`) via `src/environments/runtime-config.ts`. `docker/write-config.sh` rewrites `config.js` at container start from the ConfigMap; `public/config.js` is only the local-dev/test default.
+- **Storefront** nginx proxies `/v1/` to `${API_HOST}` (`nginx/storefront.conf` is an nginx template).
+
+Never put a hostname back into `src/`, `nginx/` or `k8s/`. To change the domain, follow `reference/domain-configuration.md` in the `blitz-pay` repo: DNS and the Keycloak client's redirect URIs/web origins are manual, then deploy the backend first and this repo second. The AWS build keeps its own `api.zackpay.de` in `environment.aws-staging.ts`.
 
 Verify CORS before shipping. Expect `200` with a matching `access-control-allow-origin`:
 ```bash
