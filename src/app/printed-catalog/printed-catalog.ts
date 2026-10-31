@@ -19,11 +19,11 @@ export interface CategoryShowcase {
   hasMoreCategories: boolean;
 }
 
-export function buildFullCatalog(products: Product[]): FullCatalogSection[] {
+export function buildFullCatalog(products: Product[], uncategorisedTitle = UNCATEGORISED_SECTION_TITLE): FullCatalogSection[] {
   const { categorised, uncategorised } = groupActiveByCategory(products);
   const sections = categorised.map(([title, items]) => ({ title, products: items }));
   return uncategorised.length
-    ? [...sections, { title: UNCATEGORISED_SECTION_TITLE, products: uncategorised }]
+    ? [...sections, { title: uncategorisedTitle, products: uncategorised }]
     : sections;
 }
 

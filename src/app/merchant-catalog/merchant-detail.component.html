@@ -211,6 +211,10 @@
                       <td>{{ category.name }}</td>
                       <td>{{ category.updatedAt | displayDate }}</td>
                       <td class="text-end">
+                        <button class="icon-action-btn me-1" type="button" aria-label="Category translations" title="Translations"
+                                *ngIf="supportedMenuLanguages.length" (click)="openCategoryTranslations(category)">
+                          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="m12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7 1.62-4.33L19.12 17h-3.24z"/></svg>
+                        </button>
                         <button class="icon-action-btn me-1" type="button" aria-label="Edit category" (click)="openEditCategoryDialog(category)">
                           <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
                         </button>
@@ -235,6 +239,16 @@
               <span class="badge text-bg-light">{{ productFilterActive ? productVisibleCount + ' / ' + products.length : products.length }} rows</span>
             </div>
             <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center gap-2 mb-3" *ngIf="catalogLanguages.length > 1">
+                <label class="table-filter-label mb-0" for="catalog-language">Catalog Language</label>
+                <select id="catalog-language" class="form-select form-select-sm w-auto" [ngModel]="catalogLanguage" (ngModelChange)="setCatalogLanguage($event)">
+                  <option *ngFor="let code of catalogLanguages" [value]="code">{{ languageLabel(code) }}{{ code === catalogLanguages[0] ? ' (original)' : '' }}</option>
+                </select>
+                <span class="badge text-bg-light border" *ngFor="let c of translationCoverage"
+                      [title]="languageLabel(c.language) + ': ' + c.productsTranslated + ' of ' + c.productsTotal + ' products and ' + c.categoriesTranslated + ' of ' + c.categoriesTotal + ' categories translated'">
+                  {{ c.language.toUpperCase() }} {{ c.productsTranslated }}/{{ c.productsTotal }}
+                </span>
+              </div>
               <div class="table-card-toolbar mb-3">
                 <div>
                   <div class="table-card-label">Branch Scope</div>
@@ -283,7 +297,10 @@
                         <div *ngIf="!product.imageUrl || failedProductImages.has(product.productId)" class="product-thumb-empty"></div>
                       </td>
                       <td>
-                        <div class="product-cell-title">{{ product.name }}</div>
+                        <div class="product-cell-title">
+                          {{ product.name }}
+                          <span class="status-tag status-tag-warning ms-1" *ngIf="isFallbackProduct(product)" title="No translation in the Catalog Language yet">Original</span>
+                        </div>
                         <div class="product-cell-subtitle">{{ product.description || 'No description' }}</div>
                       </td>
                       <td>{{ product.productCode ?? '—' }}</td>
@@ -543,3 +560,11 @@
     </div>
   </div>
 </div>
+
+<app-category-translations-dialog
+  *ngIf="translatingCategory && selectedMerchant"
+  [merchantId]="selectedMerchant.merchantId"
+  [category]="translatingCategory"
+  [supportedLanguages]="supportedMenuLanguages"
+  [menuLanguages]="menuLanguages"
+  (closed)="closeCategoryTranslations()" />

@@ -34,6 +34,10 @@ _Avoid_: Merchant Info QR, Merchant Payment QR, Merchant Order QR
 A Storefront Identity-preserving message shown when a directly opened **Product Overview** no longer represents an orderable Product at its Branch, with a path back to available Branch products.
 _Avoid_: Not found redirect, inactive product sale, silent catalog fallback
 
+**Shopper Catalog Language**:
+The language a customer chooses for a **Web Catalog**, offered only when the Merchant has the International Menu offering and at least one Supported Menu Language. It is kept for the browsing session. Without a choice, the browser's language applies, and items without a translation appear in the Merchant's Original Menu Language.
+_Avoid_: Site language, UI language, locale
+
 **Unavailable Catalog Notice**:
 A Storefront Identity-preserving message shown when a Branch currently has no active Products available for ordering.
 _Avoid_: Empty shop redirect, inactive product display, checkout without products

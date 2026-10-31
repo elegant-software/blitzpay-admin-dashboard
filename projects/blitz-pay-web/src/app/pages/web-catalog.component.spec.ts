@@ -65,4 +65,34 @@ describe('WebCatalogComponent', () => {
     expect(harness.routeNativeElement?.textContent).not.toContain('Payment method');
     expect(checkoutLink?.getAttribute('href')).toContain('/m/merchant-44/b/branch-12/checkout');
   });
+
+  it('hides the language switcher when the merchant has no International Menu', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/m/merchant-44/b/branch-12');
+    harness.detectChanges();
+
+    expect(harness.routeNativeElement?.querySelector('[data-testid="catalog-language"]')).toBeNull();
+  });
+
+  it('lets the shopper switch the catalog language and reloads products in it', async () => {
+    api.getMerchant.and.returnValue(of({
+      applicationId: 'merchant-44', merchantName: 'Brew House',
+      offerings: ['INTERNATIONAL_MENU'], originalMenuLanguage: 'de', supportedMenuLanguages: ['en']
+    }));
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/m/merchant-44/b/branch-12');
+    harness.detectChanges();
+
+    const select = harness.routeNativeElement?.querySelector<HTMLSelectElement>('[data-testid="catalog-language"]');
+    expect(Array.from(select?.options ?? []).map((o) => o.textContent?.trim())).toEqual(['Deutsch', 'English']);
+
+    api.getActiveProducts.and.returnValue(of([{ productId: 'p1', branchId: 'branch-12', name: 'Coffee EN', unitPrice: 3.5, active: true }]));
+    select!.value = select!.options[1].value;
+    select!.dispatchEvent(new Event('change'));
+    harness.detectChanges();
+
+    expect(api.getActiveProducts).toHaveBeenCalledWith('merchant-44', 'branch-12', 'en');
+    expect(harness.routeNativeElement?.textContent).toContain('Coffee EN');
+    expect(sessionStorage.getItem('blitzpay.storefront-language')).toBe('en');
+  });
 });
