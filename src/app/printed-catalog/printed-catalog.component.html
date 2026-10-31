@@ -1,0 +1,106 @@
+<div class="pc-root container-fluid px-4 pt-2 pb-4">
+  <div class="pc-toolbar d-flex flex-wrap align-items-center gap-2 mb-3">
+    <a class="btn btn-link btn-sm ps-0" [routerLink]="['/merchants', merchantId]">← Back to merchant</a>
+    <div class="btn-group btn-group-sm ms-auto" role="group" aria-label="Printed Catalog layout">
+      <button type="button" class="btn" [class.btn-primary]="layout === 'full'" [class.btn-outline-primary]="layout !== 'full'"
+              (click)="setLayout('full')">Full Catalog</button>
+      <button type="button" class="btn" [class.btn-primary]="layout === 'showcase'" [class.btn-outline-primary]="layout !== 'showcase'"
+              (click)="setLayout('showcase')">Category Showcase</button>
+    </div>
+    <button type="button" class="btn btn-sm btn-success pc-print" [disabled]="loading || isEmpty || !!errorMessage" (click)="print()">
+      Print
+    </button>
+  </div>
+
+  <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div *ngIf="loading" class="text-center py-5 text-muted">Loading…</div>
+
+  <ng-container *ngIf="!loading && !errorMessage && merchant && branch">
+    <div class="alert alert-info" *ngIf="isEmpty">
+      Diese Filiale hat keine aktiven Produkte – es gibt nichts zu drucken.
+    </div>
+
+    <ng-template #header>
+      <header class="pc-header">
+        <img *ngIf="merchant.logoUrl" class="pc-logo" [src]="merchant.logoUrl" alt="" />
+        <div>
+          <h1 class="pc-merchant-name">{{ merchant.merchantName }}</h1>
+          <p class="pc-branch">
+            <strong>{{ branch.name }}</strong>
+            <span *ngIf="branchStreet"> · {{ branchStreet }}</span>
+            <span *ngIf="branchCity"> · {{ branchCity }}</span>
+          </p>
+        </div>
+      </header>
+    </ng-template>
+
+    <ng-template #contact>
+      <ul class="pc-contact">
+        <li *ngIf="website">{{ website }}</li>
+        <li *ngIf="phone">{{ phone }}</li>
+        <li *ngIf="instagram">{{ instagram }}</li>
+      </ul>
+    </ng-template>
+
+    <!-- Full Catalog: the tfoot repeats on every printed page. -->
+    <div class="pc-sheet" *ngIf="!isEmpty && layout === 'full'">
+      <table class="pc-flow">
+        <tbody>
+          <tr><td>
+            <ng-container [ngTemplateOutlet]="header"></ng-container>
+            <section class="pc-section" *ngFor="let section of sections">
+              <h2 class="pc-section-title">{{ section.title }}</h2>
+              <article class="pc-item" *ngFor="let product of section.products">
+                <img *ngIf="product.imageUrl" class="pc-item-image" [src]="product.imageUrl" alt="" />
+                <div class="pc-item-body">
+                  <div class="pc-item-line">
+                    <span class="pc-item-name">{{ product.name }}</span>
+                    <span class="pc-item-dots"></span>
+                    <span class="pc-item-price">{{ price(product) }}</span>
+                  </div>
+                  <p class="pc-item-description" *ngIf="product.description">{{ product.description }}</p>
+                </div>
+              </article>
+            </section>
+          </td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td>
+            <footer class="pc-footer">
+              <ng-container [ngTemplateOutlet]="contact"></ng-container>
+              <div class="pc-qr pc-qr-small">
+                <app-branch-catalog-qr [url]="webCatalogUrl"></app-branch-catalog-qr>
+                <span>Scannen &amp; bestellen</span>
+              </div>
+            </footer>
+          </td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Category Showcase: single page. -->
+    <div class="pc-sheet pc-sheet-single" *ngIf="!isEmpty && layout === 'showcase'">
+      <ng-container [ngTemplateOutlet]="header"></ng-container>
+      <p class="pc-showcase-more" *ngIf="!showcase.entries.length">Entdecke unser Angebot im Online-Katalog.</p>
+      <div class="pc-showcase-grid">
+        <article class="pc-showcase-entry" *ngFor="let entry of showcase.entries">
+          <div class="pc-showcase-image">
+            <img *ngIf="entry.representative.imageUrl" [src]="entry.representative.imageUrl" alt="" />
+          </div>
+          <h2 class="pc-showcase-category">{{ entry.categoryName }}</h2>
+          <p class="pc-showcase-product">
+            {{ entry.representative.name }} · <strong>{{ price(entry.representative) }}</strong>
+          </p>
+        </article>
+      </div>
+      <p class="pc-showcase-more" *ngIf="showcase.hasMoreCategories">Mehr im Online-Katalog – einfach scannen.</p>
+      <footer class="pc-footer pc-footer-showcase">
+        <div class="pc-qr pc-qr-large">
+          <app-branch-catalog-qr [url]="webCatalogUrl"></app-branch-catalog-qr>
+          <span>Scannen &amp; bestellen</span>
+        </div>
+        <ng-container [ngTemplateOutlet]="contact"></ng-container>
+      </footer>
+    </div>
+  </ng-container>
+</div>

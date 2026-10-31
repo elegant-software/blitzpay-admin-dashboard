@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { throwError, of } from 'rxjs';
 import { MerchantDetailComponent } from './merchant-detail.component';
 import { MerchantApiService } from '../services/merchant-api.service';
@@ -251,5 +251,19 @@ describe('MerchantDetailComponent product category management', () => {
     expect(component.branchCatalogUrl).toBe(
       'http://localhost:4201/m/merchant-123/b/branch-1'
     );
+  });
+
+  it('opens the Printed Catalog for a branch row', () => {
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
+    component.navigateToPrintedCatalog({
+      id: 'branch-1',
+      merchantId: merchant.merchantId,
+      branchCode: 'BR-1',
+      name: 'Central',
+      status: 'ACTIVE'
+    } satisfies Branch);
+
+    expect(router.navigate).toHaveBeenCalledWith(['/merchants', 'merchant-123', 'branches', 'branch-1', 'printed-catalog']);
   });
 });

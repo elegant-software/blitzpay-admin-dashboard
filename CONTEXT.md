@@ -20,8 +20,27 @@ _Avoid_: SKU, menu item
 A merchant-defined grouping used to classify products in the digital merchant catalog.
 _Avoid_: Tag, label, type
 
+**Printed Catalog**:
+A printable, paper representation of one Branch's current Web Catalog, prepared by an internal operator on a Merchant's behalf, carrying the Branch Catalog QR so readers can reach the live Web Catalog.
+_Avoid_: Menu, menu card, flyer, brochure
+
+**Full Catalog**:
+The Printed Catalog layout that lists every active Product of the Branch, grouped by Product Category.
+_Avoid_: Menu, price list
+
+**Category Showcase**:
+The single-page Printed Catalog layout for advertising that presents one Category Representative per Product Category alongside the Branch Catalog QR.
+_Avoid_: Flyer, poster, ad
+
+**Category Representative**:
+The Product chosen to stand for its Product Category on a Category Showcase: the alphabetically first active Product with an image in that category, or the alphabetically first active Product when none has an image.
+_Avoid_: Featured product, highlight
+
 ## Relationships
 
+- A **Printed Catalog** is scoped to exactly one **Branch** of one **Merchant** and presents the same active **Products** as that Branch's Web Catalog
+- A **Printed Catalog** is rendered in one of two layouts: **Full Catalog** or **Category Showcase**
+- A **Category Showcase** presents at most six **Product Categories**, in alphabetical order; **Products** without a **Product Category** appear only in the **Full Catalog**
 - A **Merchant** owns zero or many **Branches**
 - A **Merchant** owns zero or many **Products**
 - A **Merchant** owns zero or many **Product Categories**
