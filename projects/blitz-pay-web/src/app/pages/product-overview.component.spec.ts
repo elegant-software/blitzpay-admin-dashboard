@@ -46,4 +46,21 @@ describe('ProductOverviewComponent', () => {
     expect(harness.routeNativeElement?.textContent).toContain('This product is not currently available.');
     expect(harness.routeNativeElement?.querySelector('[data-testid="add-product"]')).toBeNull();
   });
+
+  it('requests details in the saved language and renders the backend fallback unchanged', async () => {
+    sessionStorage.setItem('blitzpay.storefront-language', 'ar');
+    api.getProduct.and.returnValue(of({
+      productId: 'p1', branchId: 'branch-12', name: 'Kaffeebohnen',
+      description: 'Frisch geröstet', categoryName: 'Getränke', language: 'de', unitPrice: 12, active: true
+    }));
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/m/merchant-44/b/branch-12/p/p1', ProductOverviewComponent);
+    harness.detectChanges();
+    expect(api.getProduct).toHaveBeenCalledWith('merchant-44', 'branch-12', 'p1', 'ar');
+    expect(component.product?.language).toBe('de');
+    expect(harness.routeNativeElement?.textContent).toContain('Kaffeebohnen');
+    expect(harness.routeNativeElement?.textContent).toContain('Frisch geröstet');
+    expect(harness.routeNativeElement?.querySelector('.overview-copy h2')?.getAttribute('lang')).toBe('de');
+    expect(document.documentElement.dir).not.toBe('rtl');
+  });
 });

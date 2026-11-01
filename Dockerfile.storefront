@@ -17,6 +17,9 @@ COPY nginx/storefront.conf /etc/nginx/templates/default.conf.template
 
 COPY --from=build /app/dist/blitz-pay-web/browser /usr/share/nginx/html
 
+COPY projects/blitz-pay-web/deploy/40-storefront-links.sh /docker-entrypoint.d/40-storefront-links.sh
+RUN chmod +x /docker-entrypoint.d/40-storefront-links.sh
+
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]

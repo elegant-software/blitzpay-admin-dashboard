@@ -109,6 +109,33 @@ export class StorefrontSessionService {
   }
 
   private write(): void {
-    if (this.state) sessionStorage.setItem(this.storageKey, JSON.stringify(this.state));
+    try {
+      if (this.state) sessionStorage.setItem(this.storageKey, JSON.stringify(this.state));
+    } catch { /* Browsing remains available when private-mode storage is restricted. */ }
+  }
+
+  savePaymentReturn(orderId: string): void {
+    if (!this.state?.lines.length) return;
+    try {
+      localStorage.setItem(`${this.storageKey}.payment.${orderId}`, JSON.stringify({
+        expires: Date.now() + 2 * 60 * 60 * 1000, state: this.state
+      }));
+    } catch { /* The live Order remains the source of truth if recovery is unavailable. */ }
+  }
+
+  restorePaymentReturn(orderId: string): void {
+    const key = `${this.storageKey}.payment.${orderId}`;
+    try {
+      const value = localStorage.getItem(key);
+      if (!value) return;
+      const backup = JSON.parse(value);
+      localStorage.removeItem(key);
+      if (this.state?.lines.length || backup.expires <= Date.now()) return;
+      const state = backup.state as StorefrontSessionState;
+      if (typeof state?.merchantId !== 'string' || typeof state.branchId !== 'string' || !Array.isArray(state.lines)) return;
+      if (!state.lines.every(line => line.product && typeof line.product.productId === 'string' && Number.isFinite(line.product.unitPrice) && Number.isInteger(line.quantity) && line.quantity > 0)) return;
+      this.state = state;
+      this.write();
+    } catch { /* Ignore malformed or unavailable recovery storage. */ }
   }
 }

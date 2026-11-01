@@ -1,32 +1,52 @@
 <header class="storefront-header">
-  <a class="brand" href="/" aria-label="BlitzPay home">
-    <span class="brand-mark">B</span>
-    <span>BlitzPay</span>
-  </a>
-  <span class="guest-label">Guest checkout</span>
+  <div class="header-inner">
+    <a class="brand" href="/" aria-label="BlitzPay home">
+      <span class="brand-mark"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m18 5-11 13h8l-1 9 12-15h-9z"/></svg></span>
+      <span class="brand-wordmark">BlitzPay<span>Order. Pay. Enjoy.</span></span>
+    </a>
+    <span class="header-note">More time for the good moments.</span>
+    <span class="guest-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5c0 4.6 3.1 7.9 7.5 10 4.4-2.1 7.5-5.4 7.5-10V6Z"/><path d="m8.5 12 2.2 2.2 4.8-4.8"/></svg>Here as a guest</span>
+  </div>
 </header>
 
 <main class="storefront-content">
-  <router-outlet />
+  <p *ngIf="pwa.reconnected() && !pwa.offline()" class="storefront-alert" role="status">
+    You're back online. Refresh to load live availability and payment status.
+    <button type="button" class="review-button" (click)="reconnect()">Refresh live data</button>
+  </p>
+  <section *ngIf="pwa.offline()" class="surface offline-notice" role="status" aria-live="polite">
+    <h1>You're offline</h1>
+    <p>Reconnect to see the live catalog and continue payment. Your cart stays on this device.</p>
+    <button class="checkout-button" type="button" (click)="reconnect()">Try again</button>
+  </section>
+  <div [hidden]="pwa.offline()" [attr.inert]="pwa.offline() ? '' : null"><router-outlet /></div>
   <aside class="install-prompt" data-testid="app-install-prompt" aria-label="Get the BlitzPay app">
-    <div class="phone-preview" aria-hidden="true">
-      <div class="phone-camera"></div>
-      <div class="app-screen">
-        <span class="app-screen-title">BlitzPay</span>
-        <div class="app-card"></div>
-        <div class="app-line wide"></div>
-        <div class="app-line"></div>
-        <div class="app-button">Pay securely</div>
-      </div>
-    </div>
     <div class="install-message">
-      <p class="eyebrow">BlitzPay Mobile</p>
-      <p class="install-title">Get the BlitzPay app</p>
-      <p class="install-copy">Keep payments and order updates ready on your phone.</p>
+      <p class="eyebrow">A little more BlitzPay</p>
+      <h2 class="install-title">Good moments.<br>Always within reach.</h2>
+      <p class="install-copy">Get the BlitzPay app and keep your payments and order updates together, wherever your next meal takes you.</p>
       <div class="store-links">
-        <a href="https://apps.apple.com/us/search?term=BlitzPay" target="_blank" rel="noopener noreferrer">App Store</a>
-        <a href="https://play.google.com/store/search?q=BlitzPay&amp;c=apps" target="_blank" rel="noopener noreferrer">Google Play</a>
+        <a href="https://apps.apple.com/us/search?term=BlitzPay" target="_blank" rel="noopener noreferrer" aria-label="Get the BlitzPay app on the App Store (opens in a new tab)">
+          <svg class="store-icon apple-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.05 12.54c.03 3.19 2.8 4.25 2.83 4.26-.02.08-.44 1.52-1.46 3.01-.88 1.29-1.8 2.57-3.24 2.6-1.41.03-1.87-.84-3.48-.84-1.6 0-2.11.82-3.44.87-1.39.05-2.45-1.4-3.34-2.68-1.82-2.63-3.21-7.44-1.34-10.69.93-1.61 2.59-2.63 4.39-2.66 1.37-.03 2.67.93 3.49.93.81 0 2.34-1.15 3.95-.98.67.03 2.57.27 3.79 2.06-.1.06-2.26 1.32-2.23 4.12ZM14.4 4.61c.74-.9 1.24-2.15 1.1-3.4-1.07.04-2.37.71-3.14 1.61-.69.8-1.3 2.08-1.14 3.3 1.19.09 2.41-.61 3.18-1.51Z"/></svg>
+          <span><small>Download on the</small><strong>App Store</strong></span>
+        </a>
+        <a href="https://play.google.com/store/search?q=BlitzPay&amp;c=apps" target="_blank" rel="noopener noreferrer" aria-label="Get the BlitzPay app on Google Play (opens in a new tab)">
+          <svg class="store-icon" viewBox="0 0 28 30" aria-hidden="true"><path fill="#48c6ed" d="M2 1 16 15 2 29Z"/><path fill="#64d38b" d="m2 1 18 10-4 4Z"/><path fill="#ffcf53" d="m16 15 4-4 7 4-7 4Z"/><path fill="#f27883" d="m2 29 14-14 4 4Z"/></svg>
+          <span><small>GET IT ON</small><strong>Google Play</strong></span>
+        </a>
       </div>
+      <p class="install-reassurance">Happy as a guest? You can always order right here.</p>
+    </div>
+    <div class="install-visual" aria-hidden="true">
+      <div class="illustration-ring ring-outer"></div>
+      <div class="illustration-ring ring-inner"></div>
+      <span class="illustration-caption">Your everyday, a little easier.</span>
+      <div class="app-icon-tile"><svg viewBox="0 0 64 64"><path d="m37 10-23 27h17l-3 17 23-30H35z"/></svg><span>BlitzPay</span></div>
+      <div class="moment-card"><span class="moment-icon"><svg viewBox="0 0 24 24"><path d="M5 6h11v7a5.5 5.5 0 0 1-11 0ZM16 7h2a3 3 0 0 1 0 6h-2M4 21h14M8 2v1m4-1v1"/></svg></span><span><strong>Enjoy the moment.</strong><small>Bring BlitzPay along.</small></span><span class="moment-check"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-8"/></svg></span></div>
+      <div class="updates-card"><span class="updates-icon"><svg viewBox="0 0 24 24"><path d="M5 3h14v18l-3-2-4 2-4-2-3 2Zm4 5h6m-6 4h6"/></svg></span><span><strong>Your order updates</strong><small>All in one place</small></span></div>
+      <svg class="illustration-star star-one" viewBox="0 0 32 32"><path d="M16 2v28M2 16h28M6 6l20 20M6 26 26 6"/></svg>
+      <svg class="illustration-star star-two" viewBox="0 0 32 32"><path d="M16 2v28M2 16h28M6 6l20 20M6 26 26 6"/></svg>
+      <span class="illustration-dot dot-one"></span><span class="illustration-dot dot-two"></span>
     </div>
   </aside>
 </main>
