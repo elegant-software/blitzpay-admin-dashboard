@@ -8,8 +8,15 @@ on:
 
 jobs:
   cleanup:
-    name: Delete untagged images (keep 5)
+    name: Delete untagged images (keep 5) · ${{ matrix.package }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Must match the images pushed by cd-release.yml (ghcr.io/<owner>/<package>).
+        package:
+          - blitzpay-admin-dashboard
+          - blitzpay-admin-dashboard/blitz-pay-web
     permissions:
       packages: write
       contents: read
@@ -17,7 +24,7 @@ jobs:
       - name: Delete old container versions
         uses: actions/delete-package-versions@v5
         with:
-          package-name: blitz-pay
+          package-name: ${{ matrix.package }}
           package-type: container
           min-versions-to-keep: 5
           delete-only-untagged-versions: true
