@@ -168,7 +168,12 @@
             ],
             "tsConfig": "projects/blitz-pay-web/tsconfig.app.json",
             "inlineStyleLanguage": "css",
-            "assets": [],
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/blitz-pay-web/public"
+              }
+            ],
             "styles": [
               "projects/blitz-pay-web/src/styles.css"
             ],
@@ -189,7 +194,8 @@
                   "maximumError": "1MB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "serviceWorker": "projects/blitz-pay-web/ngsw-config.json"
             },
             "development": {
               "optimization": false,
@@ -223,7 +229,12 @@
             ],
             "tsConfig": "projects/blitz-pay-web/tsconfig.spec.json",
             "inlineStyleLanguage": "css",
-            "assets": [],
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/blitz-pay-web/public"
+              }
+            ],
             "styles": [
               "projects/blitz-pay-web/src/styles.css"
             ],

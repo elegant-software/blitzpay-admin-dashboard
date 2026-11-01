@@ -1,20 +1,14 @@
 import { provideHttpClient } from '@angular/common/http';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { isDevMode } from '@angular/core';
+import { provideServiceWorker } from '@angular/service-worker';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideRouter, withEnabledBlockingInitialNavigation } from '@angular/router';
-import Aura from '@primeuix/themes/aura';
-import { providePrimeNG } from 'primeng/config';
 import { AppComponent } from './app/app.component';
 import { storefrontRoutes } from './app/app.routes';
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideAnimationsAsync(),
-    providePrimeNG({
-      theme: {
-        preset: Aura
-      }
-    }),
+    provideServiceWorker('ngsw-worker.js', { enabled: !isDevMode(), registrationStrategy: 'registerWhenStable:30000' }),
     provideHttpClient(),
     provideRouter(storefrontRoutes, withEnabledBlockingInitialNavigation())
   ]

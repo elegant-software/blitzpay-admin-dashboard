@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 export const storefrontRoutes: Routes = [
+  { path: '', pathMatch: 'full', loadComponent: () => import('./pages/storefront-home.component').then(module => module.StorefrontHomeComponent) },
   {
     path: 'm/:merchantId/b/:branchId/p/:productId',
     loadComponent: () => import('./pages/product-overview.component').then((module) => module.ProductOverviewComponent)

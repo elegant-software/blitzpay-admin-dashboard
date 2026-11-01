@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { WebCatalogComponent } from './web-catalog.component';
+import { StorefrontSessionService } from '../services/storefront-session.service';
 
 describe('WebCatalogComponent', () => {
   const api = jasmine.createSpyObj<StorefrontApiService>('StorefrontApiService', [
@@ -50,6 +51,32 @@ describe('WebCatalogComponent', () => {
 
     expect(harness.routeNativeElement?.textContent).toContain('1 item');
     expect(harness.routeNativeElement?.textContent).toContain('3.50');
+  });
+
+  it('shows selection and adjusts quantities from the card, staying in sync with the cart', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/m/merchant-44/b/branch-12');
+    harness.detectChanges();
+    const card = harness.routeNativeElement!.querySelector<HTMLElement>('.product-card')!;
+    const cart = TestBed.inject(StorefrontSessionService);
+    expect(card.classList.contains('is-selected')).toBeFalse();
+    card.querySelector<HTMLButtonElement>('[data-testid="add-p1"]')!.click();
+    harness.detectChanges();
+    expect(card.classList.contains('is-selected')).toBeTrue();
+    expect(card.textContent).toContain('In cart');
+    expect(card.querySelector('[data-testid="add-p1"]')).toBeNull();
+    card.querySelector<HTMLButtonElement>('[data-testid="increase-p1"]')!.click();
+    harness.detectChanges();
+    expect(cart.itemCount).toBe(2);
+    expect(card.querySelector('.quantity-count')?.textContent?.trim()).toBe('2');
+    cart.decrease('p1');
+    harness.detectChanges();
+    expect(card.querySelector('.quantity-count')?.textContent?.trim()).toBe('1');
+    card.querySelector<HTMLButtonElement>('[data-testid="decrease-p1"]')!.click();
+    harness.detectChanges();
+    expect(cart.itemCount).toBe(0);
+    expect(card.classList.contains('is-selected')).toBeFalse();
+    expect(card.querySelector('[data-testid="add-p1"]')).not.toBeNull();
   });
 
   it('shows product browsing controls and routes checkout without creating an order', async () => {

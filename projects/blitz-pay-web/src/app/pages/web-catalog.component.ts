@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { DataViewModule } from 'primeng/dataview';
 import { finalize, forkJoin } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { WebCartComponent } from '../components/web-cart.component';
@@ -15,8 +14,9 @@ import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from 
 @Component({
   selector: 'web-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, DataViewModule, WebCartComponent],
+  imports: [CommonModule, FormsModule, RouterLink, WebCartComponent],
   template: `
+    <ng-container *ngIf="!loading; else catalogLoading">
     <section class="merchant-hero">
       <div class="merchant-logo">
         <img *ngIf="merchant?.logoUrl" [src]="merchant?.logoUrl" [alt]="merchant?.merchantName + ' logo'" />
@@ -63,13 +63,12 @@ import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from 
           <p class="eyebrow">Unavailable Catalog Notice</p>
           <h2>No products are available at this location right now.</h2>
         </section>
-        <p-dataview *ngIf="!loading && products.length > 0" [value]="visibleProducts" layout="grid" emptyMessage="No products match your search.">
-          <ng-template #grid let-items>
-            <div class="product-grid">
-              <article class="product-card" *ngFor="let product of items; trackBy: trackProduct">
+            <p class="muted" *ngIf="products.length > 0 && visibleProducts.length === 0">No products match your search.</p>
+            <div class="product-grid" *ngIf="products.length > 0">
+              <article class="product-card" *ngFor="let product of visibleProducts; trackBy: trackProduct" [class.is-selected]="productQuantity(product.productId) > 0">
                 <a class="product-detail-link" [routerLink]="['/m', merchantId, 'b', branchId, 'p', product.productId]">
                   <div class="product-image">
-                    <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" />
+                    <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" loading="lazy" decoding="async" />
                     <span *ngIf="!product.imageUrl">Product image</span>
                   </div>
                   <div class="product-copy">
@@ -79,14 +78,28 @@ import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from 
                     <strong>{{ product.unitPrice | currency: currency }}</strong>
                   </div>
                 </a>
-                <button class="add-button" type="button" [attr.data-testid]="'add-' + product.productId" (click)="addProduct(product)">Add</button>
+                <div class="product-cart-actions" *ngIf="productQuantity(product.productId) as quantity; else addToCart">
+                  <span class="in-cart-label">In cart</span>
+                  <div class="quantity product-quantity" role="group" [attr.aria-label]="'Quantity for ' + product.name">
+                    <button type="button" [attr.data-testid]="'decrease-' + product.productId" [attr.aria-label]="quantity === 1 ? 'Remove ' + product.name + ' from cart' : 'Remove one ' + product.name" (click)="cart.decrease(product.productId)">&minus;</button>
+                    <span class="quantity-count" aria-live="polite" aria-atomic="true" [attr.aria-label]="quantity + ' in cart'">{{ quantity }}</span>
+                    <button type="button" [attr.data-testid]="'increase-' + product.productId" [attr.aria-label]="'Add one ' + product.name" (click)="addProduct(product)">+</button>
+                  </div>
+                </div>
+                <ng-template #addToCart>
+                  <button class="add-button" type="button" [attr.data-testid]="'add-' + product.productId" [attr.aria-label]="'Add ' + product.name + ' to cart'" (click)="addProduct(product)">Add</button>
+                </ng-template>
               </article>
             </div>
-          </ng-template>
-        </p-dataview>
       </article>
       <web-cart [merchantId]="merchantId" [branchId]="branchId" />
     </section>
+    </ng-container>
+    <ng-template #catalogLoading>
+      <section class="surface catalog-loading" role="status" aria-live="polite" aria-busy="true">
+        <p class="eyebrow">Your menu</p><h1>Getting things ready</h1><p>Loading the live menu for this location...</p>
+      </section>
+    </ng-template>
   `
 })
 export class WebCatalogComponent implements OnInit {
@@ -186,6 +199,12 @@ export class WebCatalogComponent implements OnInit {
 
   addProduct(product: StorefrontProduct): void {
     if (this.cart.useScope(this.merchantId, this.branchId)) this.cart.add(product);
+  }
+
+  productQuantity(productId: string): number {
+    const scope = this.cart.scope;
+    if (scope?.merchantId !== this.merchantId || scope.branchId !== this.branchId) return 0;
+    return this.cart.lines.find((line) => line.product.productId === productId)?.quantity ?? 0;
   }
 
   trackProduct(_index: number, product: StorefrontProduct): string {

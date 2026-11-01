@@ -13,7 +13,40 @@ describe('StorefrontSessionService', () => {
 
   beforeEach(() => {
     sessionStorage.clear();
+    localStorage.clear();
     TestBed.configureTestingModule({});
+  });
+
+  it('recovers only the matching payment return after tab storage is lost', () => {
+    const service = TestBed.inject(StorefrontSessionService);
+    service.useScope('merchant-44', 'branch-12');
+    service.add(coffee);
+    service.savePaymentReturn('order-1');
+    sessionStorage.clear();
+    const restored = new StorefrontSessionService();
+    restored.restorePaymentReturn('order-other');
+    expect(restored.itemCount).toBe(0);
+    restored.restorePaymentReturn('order-1');
+    expect(restored.itemCount).toBe(1);
+    expect(restored.scope?.branchId).toBe('branch-12');
+  });
+
+  it('ignores expired payment recovery and survives unavailable storage', () => {
+    const service = TestBed.inject(StorefrontSessionService);
+    service.useScope('merchant-44', 'branch-12');
+    service.add(coffee);
+    service.savePaymentReturn('order-1');
+    sessionStorage.clear();
+    const clock = jasmine.clock();
+    clock.install();
+    try {
+      clock.mockDate(new Date(Date.now() + 3 * 60 * 60 * 1000));
+      const restored = new StorefrontSessionService();
+      restored.restorePaymentReturn('order-1');
+      expect(restored.itemCount).toBe(0);
+    } finally { clock.uninstall(); }
+    spyOn(Storage.prototype, 'setItem').and.throwError('Storage unavailable');
+    expect(() => service.add(coffee)).not.toThrow();
   });
 
   it('persists a branch-scoped web cart through a service reload', () => {

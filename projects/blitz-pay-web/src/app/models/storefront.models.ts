@@ -59,6 +59,8 @@ export interface StorefrontOrderLine {
 
 export interface StorefrontOrder {
   orderId: string;
+  /** Merchant-facing reference, when provided by the Order API. */
+  reference?: string;
   merchantId?: string;
   branchId?: string | null;
   status?: string;

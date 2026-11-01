@@ -45,17 +45,18 @@ describe('Web Storefront public routes', () => {
 
     await harness.navigateByUrl('/order/order-200');
 
-    expect(harness.routeNativeElement?.textContent).toContain('Order order-200');
+    expect(harness.routeNativeElement?.textContent).toContain('Your order');
     expect(harness.routeNativeElement?.textContent).toContain('Pay as guest');
     expect(api.getOrder).toHaveBeenCalledWith('order-200');
   });
 
   it('renders the post-payment confirmation route', async () => {
+    api.getOrder.and.returnValue(of({ orderId: 'order-200', reference: 'TABLE-42', status: 'PAID' }));
     const harness = await RouterTestingHarness.create();
 
     await harness.navigateByUrl('/order/order-200/confirmation');
 
     expect(harness.routeNativeElement?.textContent).toContain('Payment confirmed');
-    expect(harness.routeNativeElement?.textContent).toContain('order-200');
+    expect(harness.routeNativeElement?.textContent).toContain('TABLE-42');
   });
 });

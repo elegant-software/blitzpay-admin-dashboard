@@ -5,6 +5,8 @@ import { ActivatedRoute } from '@angular/router';
 import { finalize } from 'rxjs';
 import { StorefrontOrder } from '../models/storefront.models';
 import { StorefrontApiService } from '../services/storefront-api.service';
+import { GuestPaymentService } from '../services/guest-payment.service';
+import { StorefrontSessionService } from '../services/storefront-session.service';
 
 @Component({
   selector: 'web-qr-order-landing',
@@ -13,7 +15,7 @@ import { StorefrontApiService } from '../services/storefront-api.service';
   template: `
     <section class="page-hero centered">
       <p class="eyebrow">QR Order Landing</p>
-      <h1>Order {{ orderId }}</h1>
+      <h1>{{ order?.reference ? 'Order ' + order?.reference : 'Your order' }}</h1>
       <p class="lede">Review your order and complete payment without creating an account.</p>
     </section>
 
@@ -40,6 +42,10 @@ import { StorefrontApiService } from '../services/storefront-api.service';
         <div class="payment-actions">
           <p>Pay as guest</p>
           <span class="muted">Your order is connected to the live BlitzPay checkout record.</span>
+          <button *ngIf="canPay" type="button" data-testid="pay-order" [disabled]="paying" (click)="pay()">
+            {{ paying ? 'Opening payment...' : 'Pay by Bank as guest' }}
+          </button>
+          <p *ngIf="!canPay && !loading && unpaid" class="muted">Guest payment is not currently available for this order.</p>
         </div>
       </ng-container>
     </article>
@@ -48,18 +54,43 @@ import { StorefrontApiService } from '../services/storefront-api.service';
 export class QrOrderLandingComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
+  private readonly payment = inject(GuestPaymentService);
+  private readonly cart = inject(StorefrontSessionService);
 
   readonly orderId = this.route.snapshot.paramMap.get('orderId') ?? '';
   loading = true;
   order: StorefrontOrder | null = null;
   errorMessage = '';
+  paying = false;
+  paymentAvailable = false;
+
+  get unpaid(): boolean { return ['CREATED', 'PENDING', 'PENDING_PAYMENT', 'AWAITING_PAYMENT', 'UNPAID'].includes(this.order?.status ?? ''); }
+  get canPay(): boolean { return this.unpaid && this.paymentAvailable && !!this.order?.merchantId && !!this.order?.branchId; }
+
+  pay(): void {
+    if (!this.canPay || this.paying || !this.order) return;
+    this.paying = true;
+    this.errorMessage = '';
+    this.payment.start(this.order, this.order.merchantId!, this.order.branchId!, this.order.items?.[0]?.productId)
+      .pipe(finalize(() => this.paying = false)).subscribe({
+        next: checkout => window.location.assign(checkout.checkoutUrl),
+        error: error => this.errorMessage = this.toMessage(error, 'Unable to start payment. Please try again.')
+      });
+  }
 
   ngOnInit(): void {
+    this.cart.restorePaymentReturn(this.orderId);
     this.api.getOrder(this.orderId).pipe(finalize(() => {
       this.loading = false;
     })).subscribe({
       next: (order) => {
         this.order = order;
+        if (order.merchantId && this.unpaid) {
+          this.api.getPaymentCapabilities(order.merchantId).subscribe({
+            next: capabilities => this.paymentAvailable = capabilities.enabledPaymentFlows.includes('PAY_BY_BANK'),
+            error: error => this.errorMessage = this.toMessage(error, 'Unable to load payment options.')
+          });
+        }
       },
       error: (error: unknown) => {
         this.errorMessage = this.toMessage(error, 'Unable to load this order.');
