@@ -39,12 +39,12 @@ import { GuestPaymentService } from '../services/guest-payment.service';
         <h2>Your order</h2>
         <p class="muted" *ngIf="cart.itemCount === 0">Your cart is empty.</p>
         <div class="cart-line" *ngFor="let line of cart.lines">
-          <span>{{ line.quantity }} &times; {{ line.product.name }}</span>
-          <strong>{{ line.product.unitPrice * line.quantity | currency: currency }}</strong>
+          <span><bdi dir="ltr">{{ line.quantity }}</bdi> &times; <bdi [attr.lang]="line.product.language">{{ line.product.name }}</bdi></span>
+          <strong><bdi dir="ltr">{{ line.product.unitPrice * line.quantity | currency: currency }}</bdi></strong>
         </div>
         <div class="cart-total" *ngIf="cart.itemCount > 0">
           <span>Subtotal</span>
-          <strong>{{ cart.subtotal | currency: currency }}</strong>
+          <strong><bdi dir="ltr">{{ cart.subtotal | currency: currency }}</bdi></strong>
         </div>
         <a class="back-link" [routerLink]="['/m', merchantId, 'b', branchId]">Review cart</a>
       </article>

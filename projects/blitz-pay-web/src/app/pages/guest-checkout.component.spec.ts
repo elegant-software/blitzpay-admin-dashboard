@@ -13,6 +13,8 @@ describe('GuestCheckoutComponent', () => {
 
   beforeEach(async () => {
     sessionStorage.clear();
+    api.getActiveProducts.calls.reset();
+    api.createOrder.calls.reset();
     api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'Brew House' }));
     api.getBranch.and.returnValue(of({ id: 'branch-12', merchantId: 'merchant-44', name: 'Station Cafe' }));
     api.getActiveProducts.and.returnValue(of([
@@ -51,5 +53,17 @@ describe('GuestCheckoutComponent', () => {
       paymentMethod: 'STRIPE',
       items: [{ productId: 'p1', quantity: 1 }]
     });
+  });
+
+  it('uses the saved menu language when loading and revalidating the checkout catalog', async () => {
+    sessionStorage.setItem('blitzpay.storefront-language', 'tr');
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/m/merchant-44/b/branch-12/checkout');
+    harness.detectChanges();
+    expect(api.getActiveProducts).toHaveBeenCalledWith('merchant-44', 'branch-12', 'tr');
+    harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-testid="confirm-payment"]')!.click();
+    expect(api.getActiveProducts.calls.allArgs()).toEqual([
+      ['merchant-44', 'branch-12', 'tr'], ['merchant-44', 'branch-12', 'tr']
+    ]);
   });
 });

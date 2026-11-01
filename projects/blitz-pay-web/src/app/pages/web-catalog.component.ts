@@ -46,7 +46,7 @@ import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from 
           <label class="search-products" *ngIf="languages.length">
             <span>Language</span>
             <select data-testid="catalog-language" [ngModel]="activeLanguage" (ngModelChange)="chooseLanguage($event)">
-              <option *ngFor="let code of languages" [value]="code">{{ languageName(code) }}</option>
+              <option *ngFor="let code of languages" [value]="code" [lang]="code">{{ languageName(code) }}</option>
             </select>
           </label>
           <label class="search-products">
@@ -71,11 +71,11 @@ import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from 
                     <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" loading="lazy" decoding="async" />
                     <span *ngIf="!product.imageUrl">Product image</span>
                   </div>
-                  <div class="product-copy">
+                  <div class="product-copy" [attr.lang]="product.language">
                     <span class="surface-label" *ngIf="product.categoryName">{{ product.categoryName }}</span>
-                    <h3>{{ product.name }}</h3>
-                    <p class="muted">{{ product.description || 'View details' }}</p>
-                    <strong>{{ product.unitPrice | currency: currency }}</strong>
+                    <h3 dir="auto">{{ product.name }}</h3>
+                    <p class="muted" dir="auto">{{ product.description || 'View details' }}</p>
+                    <strong><bdi dir="ltr">{{ product.unitPrice | currency: currency }}</bdi></strong>
                   </div>
                 </a>
                 <div class="product-cart-actions" *ngIf="productQuantity(product.productId) as quantity; else addToCart">

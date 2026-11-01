@@ -32,10 +32,10 @@ import { StorefrontLanguageService } from '../services/storefront-language.servi
             <span *ngIf="!product?.imageUrl">Product image</span>
           </div>
           <div class="overview-copy">
-            <p class="surface-label" *ngIf="product?.categoryName">{{ product?.categoryName }}</p>
-            <h2>{{ product?.name }}</h2>
-            <strong class="overview-price">{{ product?.unitPrice | currency: currency }}</strong>
-            <p class="muted">{{ product?.description || 'Available for guest checkout.' }}</p>
+            <p class="surface-label" *ngIf="product?.categoryName" [attr.lang]="product?.language">{{ product?.categoryName }}</p>
+            <h2 [attr.lang]="product?.language" dir="auto">{{ product?.name }}</h2>
+            <strong class="overview-price"><bdi dir="ltr">{{ product?.unitPrice | currency: currency }}</bdi></strong>
+            <p class="muted" [attr.lang]="product?.language" dir="auto">{{ product?.description || 'Available for guest checkout.' }}</p>
             <div class="overview-actions">
               <div class="quantity">
                 <button type="button" (click)="quantity = quantity > 1 ? quantity - 1 : 1">-</button>

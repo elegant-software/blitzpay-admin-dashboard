@@ -10,7 +10,7 @@ import { StorefrontSessionService } from '../services/storefront-session.service
   imports: [CommonModule, RouterLink],
   template: `
     <button #cartTrigger class="mobile-cart-summary" type="button" (click)="openCart()" [attr.aria-expanded]="expanded" aria-haspopup="dialog" aria-controls="mobile-cart-dialog">
-      <span>{{ cart.itemCount }} {{ cart.itemCount === 1 ? 'item' : 'items' }} &middot; {{ cart.subtotal | currency: currency }}</span>
+      <span><bdi dir="ltr">{{ cart.itemCount }}</bdi> {{ cart.itemCount === 1 ? 'item' : 'items' }} &middot; <bdi dir="ltr">{{ cart.subtotal | currency: currency }}</bdi></span>
       <strong>View cart</strong>
     </button>
     <article class="surface cart">
@@ -37,8 +37,8 @@ import { StorefrontSessionService } from '../services/storefront-session.service
         <div class="cart-line" *ngFor="let line of cart.lines">
           <img class="cart-thumbnail" *ngIf="mobile && line.product.imageUrl" [src]="line.product.imageUrl" alt="" />
           <div class="cart-line-copy">
-            <strong>{{ line.product.name }}</strong>
-            <p>{{ line.product.unitPrice | currency: currency }} each</p>
+            <strong [attr.lang]="line.product.language" dir="auto">{{ line.product.name }}</strong>
+            <p><bdi dir="ltr">{{ line.product.unitPrice | currency: currency }}</bdi> each</p>
           </div>
           <div class="quantity">
             <button type="button" (click)="cart.decrease(line.product.productId)" [attr.aria-label]="'Remove one ' + line.product.name">-</button>
@@ -50,7 +50,7 @@ import { StorefrontSessionService } from '../services/storefront-session.service
       <footer class="cart-footer" *ngIf="cart.itemCount > 0">
         <div class="cart-total">
           <span>Subtotal</span>
-          <strong>{{ cart.subtotal | currency: currency }}</strong>
+          <strong><bdi dir="ltr">{{ cart.subtotal | currency: currency }}</bdi></strong>
         </div>
         <a
           class="checkout-link"

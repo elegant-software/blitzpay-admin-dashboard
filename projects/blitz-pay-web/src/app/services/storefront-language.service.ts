@@ -31,12 +31,11 @@ export class StorefrontLanguageService {
   }
 }
 
-/** Languages a shopper may switch between: none unless the merchant offers International Menu with extra languages. */
+/** Menu languages are defined by the merchant, not by client-side translations. */
 export function catalogLanguages(merchant: StorefrontMerchant | null | undefined): string[] {
   const original = merchant?.originalMenuLanguage;
-  const supported = (merchant?.supportedMenuLanguages ?? []).filter((code) => code !== original);
-  if (!original || !supported.length || !merchant?.offerings?.includes(INTERNATIONAL_MENU)) return [];
-  return [original, ...supported];
+  if (!original || !merchant?.offerings?.includes(INTERNATIONAL_MENU)) return [];
+  return [...new Set([original, ...(merchant.supportedMenuLanguages ?? [])])];
 }
 
 /** A language's name in that language, e.g. "Deutsch" for `de`. */
