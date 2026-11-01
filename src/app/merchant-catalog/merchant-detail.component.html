@@ -147,6 +147,9 @@
                       <td>{{ branch.city || '—' }}</td>
                       <td><span class="status-tag" [ngClass]="branchStatusTone(branch)">{{ branchStatusLabel(branch) }}</span></td>
                       <td class="text-end">
+                        <button *ngIf="branchWebCatalogUrl(branch)" class="icon-action-btn me-1" type="button" aria-label="Show branch QR code" title="Show QR code" (click)="qrCatalogUrl = branchWebCatalogUrl(branch); branchQrDialog.showModal(); $event.stopPropagation()">
+                          <i class="pi pi-qrcode" aria-hidden="true"></i>
+                        </button>
                         <a *ngIf="branchWebCatalogUrl(branch)" class="icon-action-btn me-1" [href]="branchWebCatalogUrl(branch)" target="_blank" rel="noopener noreferrer" aria-label="Open Web Catalog" (click)="$event.stopPropagation()">
                           <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
                         </a>
@@ -555,6 +558,16 @@
     </div>
   </div>
 </div>
+
+<dialog #branchQrDialog class="branch-qr-dialog" aria-labelledby="branch-qr-title">
+  <h2 id="branch-qr-title" class="h5">Branch QR code</h2>
+  <p>Scan to open this branch's web catalog.</p>
+  <app-branch-catalog-qr [url]="qrCatalogUrl" />
+  <div class="d-flex justify-content-end gap-2 mt-3">
+    <a class="btn btn-outline-primary" [href]="qrCatalogUrl" target="_blank" rel="noopener noreferrer">Open catalog</a>
+    <button class="btn btn-secondary" type="button" autofocus (click)="branchQrDialog.close()">Close</button>
+  </div>
+</dialog>
 
 <app-category-translations-dialog
   *ngIf="translatingCategory && selectedMerchant"

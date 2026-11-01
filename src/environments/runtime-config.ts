@@ -4,6 +4,8 @@ export interface RuntimeConfig {
   apiHost: string;
   authHost: string;
   storefrontHost: string;
+  /** Reachable storefront URL for local links and QR codes, including protocol and port. */
+  localStorefrontUrl?: string;
 }
 
 const config = (window as { __BLITZPAY_CONFIG__?: RuntimeConfig }).__BLITZPAY_CONFIG__;

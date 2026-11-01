@@ -21,7 +21,7 @@ export class BranchCatalogQrComponent implements OnChanges {
   ngOnChanges(): void {
     this.imageUrl = '';
     if (!this.url) return;
-    QRCode.toDataURL(this.url, { errorCorrectionLevel: 'M', margin: 1, width: 208 })
+    QRCode.toDataURL(this.url, { errorCorrectionLevel: 'M', margin: 4, width: 208 })
       .then((imageUrl) => this.imageUrl = imageUrl)
       .catch(() => this.imageUrl = '');
   }

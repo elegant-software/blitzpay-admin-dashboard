@@ -1,12 +1,14 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { throwError, of } from 'rxjs';
 import { MerchantDetailComponent } from './merchant-detail.component';
+import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { Branch, Merchant, ProductCategory, ProviderAccountResponse } from '../models/merchant-catalog.models';
 
 describe('MerchantDetailComponent product category management', () => {
   let component: MerchantDetailComponent;
+  let fixture: ComponentFixture<MerchantDetailComponent>;
   let merchantApi: jasmine.SpyObj<MerchantApiService>;
 
   const merchant: Merchant = {
@@ -83,7 +85,8 @@ describe('MerchantDetailComponent product category management', () => {
       ]
     }).compileComponents();
 
-    component = TestBed.createComponent(MerchantDetailComponent).componentInstance;
+    fixture = TestBed.createComponent(MerchantDetailComponent);
+    component = fixture.componentInstance;
     component.selectedMerchant = merchant;
     component.categories = [beverages];
     component['syncCategoryTableState']();
@@ -249,8 +252,33 @@ describe('MerchantDetailComponent product category management', () => {
     } satisfies Branch;
 
     expect(component.branchCatalogUrl).toBe(
-      'http://localhost:4201/m/merchant-123/b/branch-1'
+      `${getEnvironmentByKey('local').storefrontUrl}/m/merchant-123/b/branch-1`
     );
+  });
+
+  it('opens the clicked branch QR without changing the selected branch, and closes the dialog', async () => {
+    merchantApi.getVerticals.and.returnValue(of([]));
+    component.activeDetailTab = 'branches-products';
+    const first: Branch = { id: 'b1', branchId: 'b1', branchCode: 'BR-1', merchantId: merchant.merchantId, name: 'First', status: 'ACTIVE', active: true };
+    const second: Branch = { ...first, id: 'b2', branchId: 'b2', name: 'Second' };
+    component.branches = [first, second];
+    component.selectedBranch = first;
+    component.onBranchFilterChange();
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const triggers = root.querySelectorAll<HTMLButtonElement>('[aria-label="Show branch QR code"]');
+    expect(triggers.length).toBe(2);
+    triggers[1].click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const dialog = root.querySelector<HTMLDialogElement>('.branch-qr-dialog')!;
+    expect(dialog.open).toBeTrue();
+    expect(component.selectedBranch).toBe(first);
+    const expected = `${component.selectedEnvironment.storefrontUrl}/m/merchant-123/b/b2`;
+    expect(dialog.querySelector('.branch-catalog-url')?.textContent).toContain(expected);
+    expect(dialog.querySelector('a')?.getAttribute('href')).toBe(expected);
+    dialog.querySelector<HTMLButtonElement>('button')!.click();
+    expect(dialog.open).toBeFalse();
   });
 
   it('opens the Printed Catalog for a branch row', () => {

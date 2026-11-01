@@ -498,3 +498,15 @@ th[aria-sort='descending'] .sort-header-icon {
     flex-direction: column;
   }
 }
+.branch-qr-dialog {
+  width: min(38rem, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  overflow: auto;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.9rem;
+}
+
+.branch-qr-dialog::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
