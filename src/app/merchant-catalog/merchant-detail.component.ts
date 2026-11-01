@@ -36,11 +36,12 @@ import { filterRowsByFields, hasActiveQuery, nextSortDirection, paginateRows, so
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
+import { BranchCatalogQrComponent } from './branch-catalog-qr.component';
 
 @Component({
   selector: 'app-merchant-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, DisplayDatePipe, InputTextModule, PaginatorModule, CategoryTranslationsDialogComponent],
+  imports: [CommonModule, FormsModule, RouterModule, DisplayDatePipe, InputTextModule, PaginatorModule, CategoryTranslationsDialogComponent, BranchCatalogQrComponent],
   templateUrl: './merchant-detail.component.html',
   styleUrl: './merchant-catalog.component.css'
 })
@@ -53,6 +54,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   branches: Branch[] = [];
   categories: ProductCategory[] = [];
   selectedBranch: Branch | null = null;
+  qrCatalogUrl = '';
   products: Product[] = [];
 
   appearanceOperational: OperationalAppearanceItem[] = [];
