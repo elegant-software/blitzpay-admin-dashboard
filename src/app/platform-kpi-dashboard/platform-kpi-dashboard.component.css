@@ -123,30 +123,70 @@
   box-shadow: 0 0 0 .2rem rgb(103 82 217 / 13%);
 }
 
-.dashboard-merchant-search {
-  position: relative;
+.dashboard-selected-merchant {
+  align-items: center;
+  background: var(--cui-secondary-bg, #f7f8fc);
+  border: 1px solid var(--cui-border-color, #dce2eb);
+  border-radius: .65rem;
+  display: flex;
+  gap: .6rem;
+  min-height: 2.75rem;
+  min-width: 0;
+  padding: .35rem .5rem;
 }
 
-.dashboard-merchant-suggestions {
-  border: 1px solid #e0e5ee;
-  border-radius: .7rem;
-  box-shadow: 0 .7rem 1.8rem rgb(28 39 61 / 14%);
-  inset: calc(100% + .35rem) 0 auto;
-  max-height: 14rem;
-  overflow-y: auto;
-  position: absolute;
-  z-index: 20;
+.dashboard-merchant-mark {
+  align-items: center;
+  background: rgb(103 82 217 / 9%);
+  border-radius: .5rem;
+  color: #6752d9;
+  display: flex;
+  flex: 0 0 2rem;
+  height: 2rem;
+  justify-content: center;
 }
 
-.dashboard-merchant-suggestions .list-group-item {
-  cursor: pointer;
-  padding: .7rem .85rem;
+.dashboard-merchant-mark svg {
+  fill: none;
+  height: 1.1rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+  width: 1.1rem;
 }
 
-.dashboard-merchant-suggestions .list-group-item-action:hover,
-.dashboard-merchant-suggestions .list-group-item-action:focus {
-  background: var(--cui-secondary-bg, #f5f3ff);
+.dashboard-selected-merchant-details {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dashboard-selected-merchant-name,
+.dashboard-selected-merchant-code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-selected-merchant-name {
   color: var(--cui-emphasis-color, #25324a);
+  font-size: .75rem;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.dashboard-selected-merchant-code {
+  color: var(--cui-secondary-color, #748096);
+  font-size: .68rem;
+  line-height: 1.25;
+}
+
+.dashboard-change-merchant {
+  flex: 0 0 auto;
+  font-size: .72rem;
+  padding-inline: .5rem;
 }
 
 .dashboard-load-column {

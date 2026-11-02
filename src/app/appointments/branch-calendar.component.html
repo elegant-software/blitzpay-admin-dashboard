@@ -14,29 +14,16 @@
       <div class="col-md-4">
         <label class="form-label form-label-sm mb-1 required" for="bc-merchant-search">Merchant &amp; Branch</label>
         <ng-container *ngIf="!selectedMerchantItem">
-          <div class="merchant-search-wrap">
-            <div class="input-group">
-              <input
-                id="bc-merchant-search"
-                type="text"
-                class="form-control"
-                placeholder="Merchant name or code…"
-                [(ngModel)]="merchantQuery"
-                (keyup.enter)="searchMerchantsForFilter()"
-              />
-              <button class="btn btn-outline-secondary" type="button" (click)="searchMerchantsForFilter()">Search</button>
-            </div>
-            <ul *ngIf="merchantResults.length" class="list-group merchant-search-popover">
-              <li
-                *ngFor="let m of merchantResults"
-                class="list-group-item list-group-item-action"
-                (click)="selectMerchantForFilter(m)"
-              >
-                <span class="d-block fw-semibold small">{{ m.merchantName }}</span>
-                <span class="d-block small text-muted">{{ m.merchantCode }}</span>
-              </li>
-            </ul>
-          </div>
+          <app-merchant-search
+            inputId="bc-merchant-search"
+            variant="compact"
+            placeholder="Merchant name or code…"
+            [query]="merchantQuery"
+            [results]="merchantResults"
+            (queryChange)="merchantQuery = $event"
+            (search)="searchMerchantsForFilter()"
+            (merchantSelected)="selectMerchantForFilter($event)"
+          ></app-merchant-search>
         </ng-container>
         <ng-container *ngIf="selectedMerchantItem && !selectedBranch">
           <div class="d-flex align-items-center gap-2 mb-1">

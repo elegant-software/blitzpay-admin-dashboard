@@ -24,32 +24,18 @@
         <div class="col-lg-5">
           <label class="form-label" for="settlement-merchant-search">Merchant</label>
           <ng-container *ngIf="!selectedMerchant">
-            <div class="merchant-search-wrap">
-              <div class="input-group">
-                <input
-                  id="settlement-merchant-search"
-                  type="text"
-                  class="form-control"
-                  placeholder="Search by merchant name or code"
-                  [(ngModel)]="merchantQuery"
-                  (keyup.enter)="searchMerchants()"
-                  aria-label="Search merchants"
-                />
-                <button class="btn btn-outline-secondary" type="button" (click)="searchMerchants()">Search</button>
-              </div>
-              <div *ngIf="merchantResults.length" class="list-group merchant-search-popover" role="listbox" aria-label="Merchant search results">
-                <button
-                  *ngFor="let m of merchantResults"
-                  type="button"
-                  class="list-group-item list-group-item-action"
-                  role="option"
-                  (click)="selectMerchant(m)"
-                >
-                  <span class="merchant-result-name">{{ m.merchantName }}</span>
-                  <span class="merchant-result-meta">{{ m.merchantCode }} <span aria-hidden="true">·</span> {{ m.city ?? '—' }}</span>
-                </button>
-              </div>
-            </div>
+            <app-merchant-search
+              inputId="settlement-merchant-search"
+              variant="settlement"
+              placeholder="Search by merchant name or code"
+              locationMode="city"
+              locationFallback="—"
+              [query]="merchantQuery"
+              [results]="merchantResults"
+              (queryChange)="merchantQuery = $event"
+              (search)="searchMerchants()"
+              (merchantSelected)="selectMerchant($event)"
+            ></app-merchant-search>
           </ng-container>
           <div *ngIf="selectedMerchant" class="selected-merchant">
             <span class="merchant-avatar" aria-hidden="true">{{ selectedMerchant.merchantName.charAt(0) }}</span>

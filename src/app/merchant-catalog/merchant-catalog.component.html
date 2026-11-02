@@ -31,23 +31,17 @@
 
       <div class="merchant-search-controls">
         <label class="visually-hidden" for="merchant-search-query">Search merchants</label>
-        <div class="merchant-search-input-wrap">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
-          <input
-            id="merchant-search-query"
-            class="form-control merchant-search-input"
-            [(ngModel)]="searchQuery"
-            placeholder="Search merchants…"
-            autocomplete="off"
-            (keydown.enter)="runCatalogSearch()"
-            aria-describedby="merchant-search-hint"
-          />
-        </div>
-        <button class="btn btn-primary merchant-search-button" type="button" [disabled]="searchLoading" (click)="runCatalogSearch()">
-          <span *ngIf="searchLoading" class="spinner-border spinner-border-sm" role="status" aria-label="Searching"></span>
-          <svg *ngIf="!searchLoading" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
-          {{ searchLoading ? 'Searching' : 'Search' }}
-        </button>
+        <app-merchant-search
+          class="merchant-catalog-search-control"
+          inputId="merchant-search-query"
+          variant="catalog"
+          placeholder="Search merchants…"
+          describedBy="merchant-search-hint"
+          [query]="searchQuery"
+          [searching]="searchLoading"
+          (queryChange)="searchQuery = $event"
+          (search)="runCatalogSearch()"
+        ></app-merchant-search>
       </div>
       <p id="merchant-search-hint" class="merchant-search-hint">
         Search by name, code, city, product, or merchant ID. Leave blank to browse recently updated merchants.

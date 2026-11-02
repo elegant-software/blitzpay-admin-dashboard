@@ -31,35 +31,35 @@
         <div class="col-md-4">
           <label class="form-label fw-semibold" for="dashboard-merchant-search">Merchant <span class="text-muted fw-normal">(optional)</span></label>
           <ng-container *ngIf="!selectedMerchant">
-            <div class="dashboard-merchant-search">
-              <div class="input-group">
-                <input
-                  id="dashboard-merchant-search"
-                  type="text"
-                  class="form-control"
-                  placeholder="Merchant name or code…"
-                  [(ngModel)]="merchantQuery"
-                  (keyup.enter)="searchMerchants()"
-                  aria-label="Search merchants"
-                />
-                <button class="btn btn-outline-secondary" type="button" (click)="searchMerchants()">Search</button>
-              </div>
-              <ul *ngIf="merchantResults.length" class="list-group dashboard-merchant-suggestions">
-                <li
-                  *ngFor="let m of merchantResults"
-                  class="list-group-item list-group-item-action"
-                  (click)="selectMerchant(m)"
-                >
-                  <span class="d-block fw-semibold">{{ m.merchantName }}</span>
-                  <span class="d-block small text-muted">{{ m.merchantCode }} · {{ m.city ?? '—' }}</span>
-                </li>
-              </ul>
-            </div>
+            <app-merchant-search
+              inputId="dashboard-merchant-search"
+              variant="dashboard"
+              placeholder="Merchant name or code…"
+              locationMode="city"
+              [query]="merchantQuery"
+              [results]="merchantResults"
+              [locationFallback]="'—'"
+              (queryChange)="merchantQuery = $event"
+              (search)="searchMerchants()"
+              (merchantSelected)="selectMerchant($event)"
+            ></app-merchant-search>
           </ng-container>
-          <div *ngIf="selectedMerchant" class="d-flex align-items-center gap-2">
-            <span class="badge bg-primary fs-6 fw-normal px-3 py-2">{{ selectedMerchant.merchantName }}</span>
-            <span class="text-muted small">{{ selectedMerchant.merchantCode }}</span>
-            <button class="btn btn-sm btn-outline-secondary ms-auto" type="button" (click)="clearMerchant()">Change</button>
+          <div *ngIf="selectedMerchant" class="dashboard-selected-merchant" role="group" aria-label="Selected merchant">
+            <span class="dashboard-merchant-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M3 10h18M5 10v10h14V10M4 10l1.5-6h13L20 10M9 20v-6h6v6" /></svg>
+            </span>
+            <span class="dashboard-selected-merchant-details">
+              <strong class="dashboard-selected-merchant-name" [title]="selectedMerchant.merchantName">{{ selectedMerchant.merchantName }}</strong>
+              <small class="dashboard-selected-merchant-code" [title]="selectedMerchant.merchantCode">{{ selectedMerchant.merchantCode }}</small>
+            </span>
+            <button
+              class="btn btn-sm btn-outline-secondary dashboard-change-merchant"
+              type="button"
+              aria-label="Change selected merchant"
+              (click)="clearMerchant()"
+            >
+              Change
+            </button>
           </div>
         </div>
         <div class="col-md-2 dashboard-load-column">

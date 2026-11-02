@@ -14,13 +14,14 @@ import {
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
+import { MerchantSearchComponent } from '../shared/merchant-search.component';
 
 type BranchCalendarDialog = 'detail' | 'override' | null;
 
 @Component({
   selector: 'app-branch-calendar',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe],
+  imports: [CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
   templateUrl: './branch-calendar.component.html',
   styleUrl: './branch-calendar.component.css'
 })

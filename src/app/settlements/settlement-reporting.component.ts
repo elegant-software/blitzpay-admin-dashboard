@@ -9,6 +9,7 @@ import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { SettlementReportingService } from '../services/settlement-reporting.service';
 import { DisplayDatePipe } from '../pipes/display-date.pipe';
+import { MerchantSearchComponent } from '../shared/merchant-search.component';
 import {
   SettlementPageResponse,
   SettlementRow,
@@ -18,7 +19,7 @@ import {
 @Component({
   selector: 'app-settlement-reporting',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe],
+  imports: [CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
   templateUrl: './settlement-reporting.component.html',
   styleUrl: './settlement-reporting.component.css',
 })

@@ -263,7 +263,6 @@
 .orders-primary-action svg,
 .orders-current-scope-icon svg,
 .orders-stat-icon svg,
-.orders-merchant-search > svg,
 .orders-filter-search svg,
 .invoice-badge svg,
 .action-cell svg {
@@ -379,39 +378,6 @@
 
 .orders-filter-field > label > span {
   color: #c43d4d;
-}
-
-.orders-merchant-search {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.orders-merchant-search > svg {
-  position: absolute;
-  z-index: 1;
-  left: 0.75rem;
-  color: var(--orders-muted);
-}
-
-.orders-merchant-search > .form-control {
-  min-width: 0;
-  height: 3.7rem;
-  min-height: 3.7rem;
-  padding-left: 2.35rem;
-  border-color: var(--orders-border);
-  border-radius: 0.6rem 0 0 0.6rem;
-  background: var(--orders-surface);
-  color: var(--orders-text);
-  font-size: 0.8rem;
-}
-
-.orders-merchant-search > .btn {
-  height: 3.7rem;
-  min-height: 3.7rem;
-  border-radius: 0 0.6rem 0.6rem 0;
-  font-size: 0.77rem;
-  font-weight: 600;
 }
 
 .orders-branch-picker {
@@ -557,45 +523,10 @@
   font-size: 0.74rem;
 }
 
-.orders-merchant-search > .form-control:focus,
 .orders-result-filters .form-select:focus,
 .orders-filter-search:focus-within {
   border-color: color-mix(in srgb, var(--orders-accent) 55%, var(--orders-border));
   box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--orders-accent) 14%, transparent);
-}
-
-.orders-merchant-results {
-  position: absolute;
-  z-index: 20;
-  top: calc(100% + 0.45rem);
-  right: 0;
-  left: 0;
-  max-height: 17rem;
-  overflow-y: auto;
-  padding: 0.35rem;
-  border: 1px solid var(--orders-border);
-  border-radius: 0.75rem;
-  background: var(--orders-surface);
-  box-shadow: 0 0.8rem 2rem rgb(20 30 55 / 14%);
-}
-
-.orders-merchant-result {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.6rem;
-  border: 0;
-  border-radius: 0.55rem;
-  background: transparent;
-  color: var(--orders-text);
-  text-align: left;
-}
-
-.orders-merchant-result:hover,
-.orders-merchant-result:focus-visible {
-  background: color-mix(in srgb, var(--orders-accent) 7%, var(--orders-surface));
-  outline: 0;
 }
 
 .orders-result-avatar {
@@ -645,12 +576,6 @@
   color: var(--orders-muted);
   font-size: 0.68rem;
   line-height: 1.2;
-}
-
-.orders-result-arrow {
-  color: var(--orders-muted);
-  font-size: 1.25rem;
-  line-height: 1;
 }
 
 .orders-selected-merchant {

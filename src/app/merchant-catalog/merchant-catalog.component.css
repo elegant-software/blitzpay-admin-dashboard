@@ -665,58 +665,8 @@ th[aria-sort='descending'] .sort-header-icon {
   gap: 0.65rem;
 }
 
-.merchant-search-input-wrap {
-  position: relative;
+.merchant-search-controls > .merchant-catalog-search-control {
   flex: 1;
-  min-width: 0;
-}
-
-.merchant-search-input-wrap > svg {
-  position: absolute;
-  top: 50%;
-  left: 0.9rem;
-  width: 1.15rem;
-  height: 1.15rem;
-  transform: translateY(-50%);
-  fill: none;
-  stroke: var(--merchant-muted);
-  stroke-linecap: round;
-  stroke-width: 1.8;
-  pointer-events: none;
-}
-
-.merchant-search-input {
-  min-height: 2.9rem;
-  padding-left: 2.7rem;
-  border-color: var(--merchant-border);
-  border-radius: 0.7rem;
-  background-color: var(--merchant-surface);
-  color: var(--merchant-text);
-}
-
-.merchant-search-input:focus {
-  border-color: #8272e7;
-  box-shadow: 0 0 0 0.2rem rgb(103 82 217 / 13%);
-}
-
-.merchant-search-button {
-  display: inline-flex;
-  min-width: 7rem;
-  min-height: 2.9rem;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: 0.7rem;
-  font-weight: 650;
-}
-
-.merchant-search-button svg {
-  width: 1.05rem;
-  height: 1.05rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-width: 2;
 }
 
 .merchant-search-hint {
@@ -1821,10 +1771,6 @@ th[aria-sort='descending'] .sort-header-icon {
 @media (max-width: 575.98px) {
   .merchant-search-controls {
     flex-direction: column;
-  }
-
-  .merchant-search-button {
-    width: 100%;
   }
 
   .merchant-filter-panel > summary {

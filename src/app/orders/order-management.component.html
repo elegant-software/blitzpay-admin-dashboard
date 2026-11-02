@@ -29,23 +29,18 @@
       <div class="orders-filter-field orders-merchant-field">
         <label for="order-merchant-search">Merchant <span aria-hidden="true">*</span></label>
         <ng-container *ngIf="!selectedMerchantItem">
-          <div class="orders-merchant-search">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
-            <input id="order-merchant-search" class="form-control" type="search" placeholder="Search by name, code, or ID" [(ngModel)]="merchantQuery" (keyup.enter)="searchMerchantsForFilter()" (ngModelChange)="merchantSearchError = ''" autocomplete="off" />
-            <button class="btn btn-outline-secondary" type="button" [disabled]="merchantSearchLoading" (click)="searchMerchantsForFilter()">
-              <span *ngIf="merchantSearchLoading" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-              <span>{{ merchantSearchLoading ? 'Searching' : 'Search' }}</span>
-            </button>
-            <div *ngIf="merchantResults.length" class="orders-merchant-results" role="listbox" aria-label="Merchant search results">
-              <button *ngFor="let merchant of merchantResults" type="button" role="option" class="orders-merchant-result" (click)="selectMerchantForFilter(merchant)">
-                <span class="orders-result-avatar" aria-hidden="true">
-                  <svg viewBox="0 0 24 24"><path d="M3 10h18M5 10v10h14V10M4 10l1.5-6h13L20 10M9 20v-6h6v6M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0" /></svg>
-                </span>
-                <span class="orders-result-copy"><strong>{{ merchant.merchantName }}</strong><small>{{ merchant.merchantCode }} · {{ merchant.city || merchant.country || 'Location not set' }}</small></span>
-                <span class="orders-result-arrow" aria-hidden="true">›</span>
-              </button>
-            </div>
-          </div>
+          <app-merchant-search
+            inputId="order-merchant-search"
+            variant="orders"
+            placeholder="Search by name, code, or ID"
+            [query]="merchantQuery"
+            [results]="merchantResults"
+            [searching]="merchantSearchLoading"
+            [searchDisabled]="!merchantQuery.trim()"
+            (queryChange)="merchantQuery = $event; merchantSearchError = ''"
+            (search)="searchMerchantsForFilter()"
+            (merchantSelected)="selectMerchantForFilter($event)"
+          ></app-merchant-search>
           <span *ngIf="merchantSearchError" class="orders-field-error" role="alert">{{ merchantSearchError }}</span>
         </ng-container>
         <div *ngIf="selectedMerchantItem" class="orders-selected-merchant">

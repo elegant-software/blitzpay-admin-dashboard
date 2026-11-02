@@ -102,6 +102,40 @@ describe('PlatformKpiDashboardComponent', () => {
     expect(element.querySelector('label[for="dashboard-merchant-search"]')).not.toBeNull();
   });
 
+  it('keeps the selected merchant summary and change action within its filter field', () => {
+    component.selectedMerchant = {
+      merchantId: 'merchant-1',
+      merchantName: '[LOCAL TEST] Bremen Viertel Food Truck',
+      merchantCode: 'MRC-939081A2D2',
+      city: 'Bremen',
+      country: 'Germany',
+      businessType: 'FOOD_TRUCK',
+      merchantMobility: 'BRICK_AND_MORTAR',
+      merchantStatus: 'ACTIVE',
+      lastUpdatedAt: '',
+    };
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.dashboard-selected-merchant')).not.toBeNull();
+    expect(element.querySelector('.dashboard-selected-merchant-name')?.textContent).toContain(
+      '[LOCAL TEST] Bremen Viertel Food Truck',
+    );
+    expect(element.querySelector('.dashboard-selected-merchant-code')?.textContent).toContain(
+      'MRC-939081A2D2',
+    );
+    const changeButton = element.querySelector<HTMLButtonElement>(
+      'button[aria-label="Change selected merchant"]',
+    );
+    expect(changeButton).not.toBeNull();
+    changeButton?.click();
+    fixture.detectChanges();
+
+    expect(component.selectedMerchant).toBeNull();
+    expect(element.querySelector('.dashboard-selected-merchant')).toBeNull();
+    expect(element.querySelector('#dashboard-merchant-search')).not.toBeNull();
+  });
+
   it('announces KPI loading and report errors as accessible status messages', () => {
     const element = fixture.nativeElement as HTMLElement;
     component.report = null;

@@ -12,13 +12,14 @@ import {
   MerchantVerticalResponse,
 } from '../models/merchant-catalog.models';
 import { MerchantApiService } from '../services/merchant-api.service';
+import { MerchantSearchComponent } from '../shared/merchant-search.component';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-merchant-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, DisplayDatePipe, MultiSelectModule],
+  imports: [CommonModule, FormsModule, RouterLink, DisplayDatePipe, MultiSelectModule, MerchantSearchComponent],
   templateUrl: './merchant-catalog.component.html',
   styleUrl: './merchant-catalog.component.css'
 })

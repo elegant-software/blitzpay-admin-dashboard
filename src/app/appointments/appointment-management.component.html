@@ -30,29 +30,17 @@
       <div class="appointment-filter-field appointment-merchant-field">
         <label class="required" for="appt-merchant-search">Merchant</label>
         <ng-container *ngIf="!selectedMerchantItem">
-          <div class="appointment-merchant-search">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
-            <input
-              id="appt-merchant-search"
-              type="search"
-              class="form-control"
-              placeholder="Search by name, code, or ID"
-              [(ngModel)]="merchantQuery"
-              (keyup.enter)="searchMerchantsForFilter()"
-              aria-label="Search merchants"
-              autocomplete="off"
-            />
-            <button class="btn btn-outline-secondary" type="button" (click)="searchMerchantsForFilter()" [disabled]="!merchantQuery.trim()">Search</button>
-          </div>
-          <div *ngIf="merchantResults.length" class="appointment-merchant-results" role="listbox" aria-label="Merchant search results">
-            <button *ngFor="let merchant of merchantResults" class="appointment-merchant-result" type="button" role="option" (click)="selectMerchantForFilter(merchant)">
-              <span class="appointment-merchant-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M3 10h18M5 10v10h14V10M4 10l1.5-6h13L20 10M9 20v-6h6v6" /></svg>
-              </span>
-              <span><strong>{{ merchant.merchantName }}</strong><small>{{ merchant.merchantCode }} · {{ merchant.city || merchant.country || 'Location not set' }}</small></span>
-              <span class="appointment-result-arrow" aria-hidden="true">›</span>
-            </button>
-          </div>
+          <app-merchant-search
+            inputId="appt-merchant-search"
+            variant="appointment"
+            placeholder="Search by name, code, or ID"
+            [query]="merchantQuery"
+            [results]="merchantResults"
+            [searchDisabled]="!merchantQuery.trim()"
+            (queryChange)="merchantQuery = $event"
+            (search)="searchMerchantsForFilter()"
+            (merchantSelected)="selectMerchantForFilter($event)"
+          ></app-merchant-search>
         </ng-container>
         <div *ngIf="selectedMerchantItem" class="appointment-selected-merchant">
           <span class="appointment-merchant-icon" aria-hidden="true">

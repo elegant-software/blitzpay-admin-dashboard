@@ -18,6 +18,7 @@ import {
   ShopperSearchResult,
 } from '../models/merchant-catalog.models';
 import { MerchantApiService } from '../services/merchant-api.service';
+import { MerchantSearchComponent } from '../shared/merchant-search.component';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
 
@@ -27,7 +28,7 @@ type OrderFilterDropdown = 'status' | 'type' | null;
 @Component({
   selector: 'app-order-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe],
+  imports: [CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
   templateUrl: './order-management.component.html',
   styleUrl: './order-management.component.css'
 })

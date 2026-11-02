@@ -91,35 +91,20 @@
 
         <section class="user-assignment-form-section">
           <label class="form-label" for="assignment-merchant-search">Merchant</label>
-          <div class="input-group user-assignment-search">
-            <input
-              id="assignment-merchant-search"
-              type="search"
-              class="form-control"
-              placeholder="Search by merchant name or code"
-              [(ngModel)]="dialog.merchantQuery"
-              (keyup.enter)="searchMerchants()"
-              aria-label="Search merchants"
-            />
-            <button class="btn btn-outline-secondary" type="button" (click)="searchMerchants()" [disabled]="!dialog.merchantQuery.trim()">Search</button>
-          </div>
-          <div *ngIf="dialog.merchantResults.length" class="user-assignment-merchant-results" role="list">
-            <button
-              *ngFor="let merchant of dialog.merchantResults"
-              type="button"
-              class="user-assignment-merchant-result"
-              [class.user-assignment-merchant-result-selected]="dialog.selectedMerchant?.merchantId === merchant.merchantId"
-              (click)="selectMerchant(merchant)">
-              <span class="user-assignment-merchant-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M3 10h18M5 10v10h14V10M4 10l1.5-6h13L20 10M9 20v-6h6v6" /></svg>
-              </span>
-              <span class="user-assignment-merchant-result-copy">
-                <strong>{{ merchant.merchantName }}</strong>
-                <small>{{ merchant.merchantCode }} · {{ merchant.city ?? 'Location not set' }}{{ merchant.country ? ', ' + merchant.country : '' }}</small>
-              </span>
-              <span class="user-assignment-merchant-status">{{ merchant.merchantStatus }}</span>
-            </button>
-          </div>
+          <app-merchant-search
+            inputId="assignment-merchant-search"
+            variant="assignment"
+            placeholder="Search by merchant name or code"
+            locationMode="city-country"
+            [query]="dialog.merchantQuery"
+            [results]="dialog.merchantResults"
+            [selectedMerchantId]="dialog.selectedMerchant?.merchantId ?? null"
+            [searchDisabled]="!dialog.merchantQuery.trim()"
+            [showMerchantStatus]="true"
+            (queryChange)="dialog.merchantQuery = $event"
+            (search)="searchMerchants()"
+            (merchantSelected)="selectMerchant($event)"
+          ></app-merchant-search>
           <div *ngIf="dialog.selectedMerchant" class="user-assignment-selected-merchant">
             <span class="user-assignment-selected-indicator" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></svg>

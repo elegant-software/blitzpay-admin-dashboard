@@ -23,6 +23,7 @@ import {
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
+import { MerchantSearchComponent } from '../shared/merchant-search.component';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { EnvironmentKey } from '../models/merchant-catalog.models';
@@ -32,7 +33,7 @@ type AppointmentDialog = 'create' | 'detail' | 'reschedule' | 'override' | 'edit
 @Component({
   selector: 'app-appointment-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe],
+  imports: [CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
   templateUrl: './appointment-management.component.html',
   styleUrl: './appointment-management.component.css'
 })

@@ -268,41 +268,7 @@
   font-weight: 650;
 }
 
-.merchant-search-wrap {
-  position: relative;
-}
 
-.merchant-search-popover {
-  position: absolute;
-  z-index: 20;
-  top: calc(100% + 0.35rem);
-  right: 0;
-  left: 0;
-  max-height: 13rem;
-  overflow-y: auto;
-  border: 1px solid var(--appointment-border);
-  border-radius: 0.65rem;
-  background: var(--appointment-surface);
-  box-shadow: 0 0.75rem 1.75rem rgb(15 23 42 / 14%);
-}
-
-.merchant-search-popover .list-group-item {
-  padding: 0.65rem 0.75rem;
-  border-color: var(--appointment-border);
-  background: var(--appointment-surface);
-  color: var(--appointment-text);
-  cursor: pointer;
-  font-size: 0.72rem;
-}
-
-.merchant-search-popover .list-group-item:hover,
-.merchant-search-popover .list-group-item:focus {
-  background: var(--appointment-soft-surface);
-}
-
-.merchant-search-popover .text-muted {
-  color: var(--appointment-muted) !important;
-}
 
 .appointment-results-heading {
   padding-block: 0.7rem;
