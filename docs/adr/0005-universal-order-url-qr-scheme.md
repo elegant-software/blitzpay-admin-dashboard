@@ -21,9 +21,9 @@ Use distinct HTTPS public URLs for the two QR purposes:
 - **Branch Catalog QR** from the merchant QR surface: `https://pay.blitzpay.com/m/{merchantId}/b/{branchId}`. It is stable reusable Branch signage, contains no amount or payment label, and opens the merchant-branded, Branch-scoped product catalog before any Order exists, where current selected Products determine the Web Cart amount.
 - **Merchant Order QR** from Create Order: `https://pay.blitzpay.com/order/{orderId}`. It opens one already-created Order for review and payment.
 
-- For a **Merchant Order QR**, on iOS/Android devices **with** the BlitzPay app installed, the operating system may intercept the URL as a Universal Link (iOS) / App Link (Android) and open the native app's `OrderDetail` screen directly.
-- For a **Merchant Order QR** on devices **without** the app, the browser opens and the **QR Order Landing** page at `/order/{orderId}` is served.
-- A **Branch Catalog QR** is a browser-first entry to the Web Storefront catalog for customers who want to choose Products themselves, regardless of whether the native app is installed.
+- For a **Merchant Order QR**, on iOS/Android devices **with** the full BlitzPay app installed, the operating system may intercept the URL as a Universal Link (iOS) / App Link (Android) and open the native app's `OrderDetail` screen directly.
+- On a supported iPhone without the full app, either QR URL may invoke the native **App Clip** with its original HTTPS URL. The clip routes `/m/{merchantId}/b/{branchId}` to the Branch Catalog journey and `/order/{orderId}` to the Order journey.
+- If the App Clip is unavailable or cannot launch, the same URL opens its corresponding Web Storefront route. Android continues to use the Web Storefront or the installed full app; Google Play Instant is not used.
 
 The QR purpose determines the URL: catalog browsing is not represented as an Order, and an already-created Order is not represented as a new Web Cart.
 
@@ -31,5 +31,6 @@ The QR purpose determines the URL: catalog browsing is not represented as an Ord
 
 - **Merchant app changes required**: `MerchantQRCodeScreen` must emit a Branch Catalog URL containing Merchant and Branch identifiers; Create Order must emit the HTTPS Universal Order URL instead of the `blitzpay://` order scheme.
 - **Universal Link / App Link configuration required**: The native BlitzPay iOS app must register an `apple-app-site-association` file at `pay.blitzpay.com/.well-known/apple-app-site-association`, and the Android app must register a Digital Asset Links file, both declaring `/order/*` as handled routes.
+- **App Clip configuration required**: The iOS App Clip target must include `appclips:<storefront-host>` in its Associated Domains entitlement and route both QR URL patterns. The storefront AASA file lists the App Clip bundle ID under `appclips.apps` while retaining the full app's `/order/*` Universal Link rule.
 - **Existing printed or cached QR codes** encoding the old `blitzpay://` scheme will stop working on devices without the app. Migration is a one-time merchant-app release.
 - The merchant UI exposes two purposeful QR actions: let a customer browse this Branch, or let a customer pay this already-created Order.

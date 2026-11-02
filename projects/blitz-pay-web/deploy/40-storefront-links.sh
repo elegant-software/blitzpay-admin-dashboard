@@ -5,14 +5,22 @@ set -eu
 # association responses themselves contain paths and app IDs, not hostnames.
 target=/usr/share/nginx/html/.well-known
 mkdir -p "$target"
-printf '%s\n' '{"applinks":{"apps":[],"details":[]}}' > "$target/apple-app-site-association"
 printf '%s\n' '[]' > "$target/assetlinks.json"
+
+applinks='{"apps":[],"details":[]}'
+appclips='[]'
 
 if [ -n "${SHOPPER_IOS_APP_ID:-}" ]; then
   printf '%s' "$SHOPPER_IOS_APP_ID" | grep -Eq '^[A-Z0-9]{10}\.[A-Za-z0-9.-]+$' || { echo 'Invalid SHOPPER_IOS_APP_ID' >&2; exit 1; }
-  printf '{"applinks":{"apps":[],"details":[{"appID":"%s","paths":["/order/*"]}]}}\n' \
-    "$SHOPPER_IOS_APP_ID" > "$target/apple-app-site-association"
+  applinks=$(printf '{"apps":[],"details":[{"appID":"%s","paths":["/order/*"]}]}' "$SHOPPER_IOS_APP_ID")
 fi
+
+if [ -n "${SHOPPER_IOS_APP_CLIP_ID:-}" ]; then
+  printf '%s' "$SHOPPER_IOS_APP_CLIP_ID" | grep -Eq '^[A-Z0-9]{10}\.[A-Za-z0-9.-]+$' || { echo 'Invalid SHOPPER_IOS_APP_CLIP_ID' >&2; exit 1; }
+  appclips=$(printf '["%s"]' "$SHOPPER_IOS_APP_CLIP_ID")
+fi
+
+printf '{"applinks":%s,"appclips":{"apps":%s}}\n' "$applinks" "$appclips" > "$target/apple-app-site-association"
 
 if [ -n "${SHOPPER_ANDROID_PACKAGE:-}" ] || [ -n "${SHOPPER_ANDROID_SHA256:-}" ]; then
   printf '%s' "${SHOPPER_ANDROID_PACKAGE:-}" | grep -Eq '^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$' || { echo 'Invalid SHOPPER_ANDROID_PACKAGE' >&2; exit 1; }

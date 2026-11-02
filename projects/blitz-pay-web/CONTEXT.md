@@ -27,8 +27,12 @@ A focused customer-facing view of one active Product selected from a **Web Catal
 _Avoid_: Product editor, product administration, item modal
 
 **Branch Catalog QR**:
-A stable, reusable, browser-first QR code provided by a Merchant for one selected Branch that contains only Merchant and Branch identity through `https://pay.blitzpay.com/m/{merchantId}/b/{branchId}`. Any customer scans it to open the current branch-scoped **Web Catalog**, browse Products, and build a **Web Cart** before an Order exists.
+A stable, reusable QR code provided by a Merchant for one selected Branch that contains only Merchant and Branch identity through `https://pay.blitzpay.com/m/{merchantId}/b/{branchId}`. On supported iPhones it may invoke the **App Clip**; otherwise it opens the current branch-scoped **Web Catalog** so customers can browse Products and build a **Web Cart** before an Order exists.
 _Avoid_: Merchant Info QR, Merchant Payment QR, Merchant Order QR
+
+**App Clip**:
+A lightweight native iOS experience invoked from either supported storefront QR URL without installing the full BlitzPay app. It receives the original HTTPS URL and opens the matching Branch Catalog or Merchant Order journey; when the clip cannot launch, the same URL remains a Web Storefront entry.
+_Avoid_: PWA, instant Android app, replacement QR
 
 **Unavailable Product Notice**:
 A Storefront Identity-preserving message shown when a directly opened **Product Overview** no longer represents an orderable Product at its Branch, with a path back to available Branch products.
@@ -51,7 +55,7 @@ The page a customer reaches at `/order/{orderId}` when they scan a **Merchant Or
 _Avoid_: Payment page, checkout page, QR landing page
 
 **Universal Order URL**:
-The HTTPS URL `https://pay.blitzpay.com/order/{orderId}` embedded in a **Merchant Order QR**. On a device with the app installed, iOS/Android intercepts it as a Universal Link / App Link and opens the native BlitzPay app. On a device without the app, the browser opens the **QR Order Landing** page. There is one QR code per order — not separate native and web QR codes.
+The HTTPS URL `https://pay.blitzpay.com/order/{orderId}` embedded in a **Merchant Order QR**. On a device with the full app installed, iOS/Android may open its native Order screen. On a supported iPhone without the full app, it may invoke the **App Clip**; otherwise the browser opens the **QR Order Landing** page. There is one QR code per order — not separate native and web QR codes.
 _Avoid_: Web QR, fallback URL, deep link URL
 
 **App Install Prompt**:

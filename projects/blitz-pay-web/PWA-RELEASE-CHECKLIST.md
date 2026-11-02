@@ -29,17 +29,24 @@ metadata:
   name: blitzpay-shopper-links
 data:
   SHOPPER_IOS_APP_ID: "<TEAM_ID>.<BUNDLE_ID>"
+  SHOPPER_IOS_APP_CLIP_ID: "<TEAM_ID>.<APP_CLIP_BUNDLE_ID>"
   SHOPPER_ANDROID_PACKAGE: "<ANDROID_PACKAGE>"
   SHOPPER_ANDROID_SHA256: "<COLON_SEPARATED_RELEASE_SHA256>"
 ```
 
-Multiple Android signing certificates are comma separated without spaces. Use the Play App Signing certificate for Play installs, not just the upload key. Restart the storefront deployment after configuration changes. If configuration is absent, valid empty association files are served and no native association is claimed. Invalid configured IDs fail startup.
+`SHOPPER_IOS_APP_ID` identifies the full app and keeps its Universal Link scope restricted to `/order/*`. `SHOPPER_IOS_APP_CLIP_ID` identifies the separate App Clip target and is emitted under `appclips.apps`; both IDs use the Apple Team ID and their respective bundle IDs. Configure the clip ID only after the native target exists. Multiple Android signing certificates are comma separated without spaces. Use the Play App Signing certificate for Play installs, not just the upload key. Restart the storefront deployment after configuration changes. If configuration is absent, valid empty association entries are served and no native association is claimed. Invalid configured IDs fail startup.
 
-The container generates the two JSON files at startup. `/order/*` is the only allowed iOS path and Android 15+ dynamic rule. **Android 14 and earlier require `/order/` restrictions in the native manifest:** assetlinks alone cannot limit their paths. The native intent filter must use `android:autoVerify="true"`, HTTPS, the environment's storefront host and `android:pathPrefix="/order/"`. Do not include `/m/` or a catch-all host intent filter. On iOS add `applinks:<storefront-host>` to associated domains and route orders to OrderDetail.
+The container generates both JSON files at startup. `/order/*` remains the only full-app iOS Universal Link path and Android 15+ dynamic rule. **Android 14 and earlier require `/order/` restrictions in the native manifest:** assetlinks alone cannot limit their paths. The native intent filter must use `android:autoVerify="true"`, HTTPS, the environment's storefront host and `android:pathPrefix="/order/"`. Do not include `/m/` or a catch-all host intent filter. On iOS, keep `applinks:<storefront-host>` on the full app and add `appclips:<storefront-host>` to the App Clip target. The App Clip must validate and route both `/m/{merchantId}/b/{branchId}` and `/order/{orderId}`. The AASA `appclips.apps` list associates the App Clip with the domain; native App Clip entitlements and App Store Connect invocation experiences are also required.
 
 Resolve the host from `blitzpay-domains` (`STOREFRONT_HOST`) in the native build/release configuration as specified by ADR-0018. No domain is embedded in these association files. Use the same ConfigMap-derived host in merchant QR generation. Replace existing app store search destinations with the verified direct listing URLs in a follow-up once supplied.
 
-Platform references: [Android website associations and dynamic rules](https://developer.android.com/training/app-links/configure-assetlinks), [Apple associated domains](https://developer.apple.com/documentation/xcode/supporting-associated-domains), [Angular service-worker updates](https://angular.dev/ecosystem/service-workers/communications).
+Run the association-generation regression checks in the nginx Alpine image from the repository root:
+
+```sh
+docker run --rm -v "$PWD/projects/blitz-pay-web/deploy:/workspace:ro" nginx:1.27-alpine sh /workspace/test-storefront-links.sh
+```
+
+Platform references: [Apple App Clip website association](https://developer.apple.com/documentation/appclip/associating-your-app-clip-with-your-website), [Apple associated domains](https://developer.apple.com/documentation/xcode/supporting-associated-domains), [Android website associations and dynamic rules](https://developer.android.com/training/app-links/configure-assetlinks), [Angular service-worker updates](https://angular.dev/ecosystem/service-workers/communications).
 
 ## Backend tasks / contract checks
 
@@ -56,7 +63,7 @@ Platform references: [Android website associations and dynamic rules](https://de
 2. Deploy and inspect `https://$STOREFRONT_HOST/index.html`, `/ngsw.json`, `/ngsw-worker.js`: status 200, `Cache-Control: no-cache`. Verify `/v1/...` is live with `Cache-Control: no-store`.
 3. GET both `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`: status 200, JSON content type, no redirect, expected release identities. Unknown well-known paths return 404, never HTML. Verify with Apple's association tooling and Android `adb shell pm verify-app-links --re-verify <package>` / `adb shell pm get-app-links <package>`.
 4. Verify nginx and service-worker cold navigation to `/m/<merchant>/b/<branch>` and `/order/<order>` with real records. Repeat after first service worker activation and with network disabled; offline shell must explain reconnecting without offering payment.
-5. On a physical iPhone/Safari and Android/Chrome, scan both QR types from the native camera in each state: fresh browser, installed PWA, native app installed. Branch QR must always open the encoded branch in the web storefront. Order QR must open native OrderDetail only when app associations are installed/verified; otherwise show QR Order Landing. OS/browser user link preferences can affect handoff and must be recorded.
+5. On a physical iPhone/Safari and Android/Chrome, scan both QR types from the native camera in each state: fresh browser, installed PWA, App Clip available, and full native app installed. On eligible iPhones without the full app, both QR routes may invoke the App Clip; confirm the Branch Catalog and Order journeys retain the exact URL identifiers. If the clip is unavailable, each URL must open its matching Web Storefront route. Android behavior remains unchanged: Branch QR opens the Web Catalog; Order QR opens native OrderDetail only when app links are installed/verified, otherwise QR Order Landing. OS/browser user link preferences can affect handoff and must be recorded.
 6. At 360px portrait and landscape, check long names, large text, notch safe areas, cart disclosure/scrolling, all 44px targets, keyboard focus and no horizontal overflow. Check product, checkout and QR order surfaces too.
 7. Pay with mobile Safari via the real hosted provider. Check success, cancellation, back navigation, lost tab storage, blocked storage, repeated cancellation and retry. Confirm the cart remains scoped and the same Order is retried. Recovery is best-effort when the browser blocks all persistent storage; the Order is still fetched live.
 8. Leave a catalog open, deploy a second build, foreground the tab and verify a ready update reloads it. Repeat during checkout/payment return: no automatic reload until navigating back to browsing. Check API changes appear immediately with service-worker control enabled.
