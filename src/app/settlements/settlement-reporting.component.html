@@ -1,226 +1,237 @@
-<div class="container-fluid px-0">
+<main class="settlement-page">
+  <header class="settlement-page-header">
+    <div>
+      <div class="settlement-eyebrow">FINANCE</div>
+      <h1>Settlements</h1>
+      <p>Track payment activity, fees, and merchant payouts.</p>
+    </div>
+    <div class="settlement-header-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22">
+        <path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 16h-2v-2h2v2Zm2.07-7.75-.9.92C13.45 11.9 13 12.5 13 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26A2 2 0 1 0 10 8H8a4 4 0 1 1 7.07 2.25Z"/>
+      </svg>
+    </div>
+  </header>
 
-  <!-- Filters -->
-  <div class="card mb-4">
-    <div class="card-body">
+  <section class="card settlement-panel settlement-filter-panel" aria-label="Settlement filters">
+    <div class="settlement-panel-heading">
+      <div>
+        <h2>Settlement report</h2>
+        <p>Choose a merchant and period to view its settlement activity.</p>
+      </div>
+    </div>
+    <div class="card-body settlement-filter-body">
       <div class="row g-3 align-items-end">
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Merchant</label>
+        <div class="col-lg-5">
+          <label class="form-label" for="settlement-merchant-search">Merchant</label>
           <ng-container *ngIf="!selectedMerchant">
-            <div class="input-group mb-1">
-              <input
-                type="text"
-                class="form-control"
-                placeholder="Merchant name or code…"
-                [(ngModel)]="merchantQuery"
-                (keyup.enter)="searchMerchants()"
-                aria-label="Search merchants"
-              />
-              <button class="btn btn-outline-secondary" type="button" (click)="searchMerchants()">Search</button>
+            <div class="merchant-search-wrap">
+              <div class="input-group">
+                <input
+                  id="settlement-merchant-search"
+                  type="text"
+                  class="form-control"
+                  placeholder="Search by merchant name or code"
+                  [(ngModel)]="merchantQuery"
+                  (keyup.enter)="searchMerchants()"
+                  aria-label="Search merchants"
+                />
+                <button class="btn btn-outline-secondary" type="button" (click)="searchMerchants()">Search</button>
+              </div>
+              <div *ngIf="merchantResults.length" class="list-group merchant-search-popover" role="listbox" aria-label="Merchant search results">
+                <button
+                  *ngFor="let m of merchantResults"
+                  type="button"
+                  class="list-group-item list-group-item-action"
+                  role="option"
+                  (click)="selectMerchant(m)"
+                >
+                  <span class="merchant-result-name">{{ m.merchantName }}</span>
+                  <span class="merchant-result-meta">{{ m.merchantCode }} <span aria-hidden="true">·</span> {{ m.city ?? '—' }}</span>
+                </button>
+              </div>
             </div>
-            <ul *ngIf="merchantResults.length" class="list-group" style="max-height:200px;overflow-y:auto;position:absolute;z-index:100;width:33%">
-              <li
-                *ngFor="let m of merchantResults"
-                class="list-group-item list-group-item-action"
-                style="cursor:pointer"
-                (click)="selectMerchant(m)"
-              >
-                <span class="d-block fw-semibold">{{ m.merchantName }}</span>
-                <span class="d-block small text-muted">{{ m.merchantCode }} · {{ m.city ?? '—' }}</span>
-              </li>
-            </ul>
           </ng-container>
-          <div *ngIf="selectedMerchant" class="d-flex align-items-center gap-2">
-            <span class="badge bg-primary fs-6 fw-normal px-3 py-2">{{ selectedMerchant.merchantName }}</span>
-            <span class="text-muted small">{{ selectedMerchant.merchantCode }}</span>
+          <div *ngIf="selectedMerchant" class="selected-merchant">
+            <span class="merchant-avatar" aria-hidden="true">{{ selectedMerchant.merchantName.charAt(0) }}</span>
+            <span class="selected-merchant-details">
+              <strong>{{ selectedMerchant.merchantName }}</strong>
+              <small>{{ selectedMerchant.merchantCode }}</small>
+            </span>
             <button class="btn btn-sm btn-outline-secondary ms-auto" type="button" (click)="clearMerchant()">Change</button>
           </div>
         </div>
-        <div class="col-md-3">
-          <label class="form-label fw-semibold">From</label>
-          <input class="form-control" type="date" [(ngModel)]="from" />
+        <div class="col-sm-6 col-lg-2">
+          <label class="form-label" for="settlement-from">From</label>
+          <input id="settlement-from" class="form-control" type="date" [(ngModel)]="from" />
         </div>
-        <div class="col-md-3">
-          <label class="form-label fw-semibold">To</label>
-          <input class="form-control" type="date" [(ngModel)]="to" />
+        <div class="col-sm-6 col-lg-2">
+          <label class="form-label" for="settlement-to">To</label>
+          <input id="settlement-to" class="form-control" type="date" [(ngModel)]="to" />
         </div>
-        <div class="col-md-2">
-          <button class="btn btn-primary w-100" (click)="load()" [disabled]="!selectedMerchant">
-            Load
+        <div class="col-lg-3 settlement-load-action">
+          <button class="btn btn-primary" type="button" (click)="load()" [disabled]="!selectedMerchant || loadingSummary || loadingList">
+            <span *ngIf="loadingSummary || loadingList" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            {{ loadingSummary || loadingList ? 'Loading report…' : 'Load report' }}
           </button>
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Summary KPIs -->
-  <div class="row g-3 mb-4" *ngIf="summary || loadingSummary || errorSummary">
-    <ng-container *ngIf="loadingSummary">
-      <div class="col-12 text-center py-3">
-        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-        Loading summary…
-      </div>
-    </ng-container>
-
-    <ng-container *ngIf="errorSummary">
-      <div class="col-12">
-        <div class="alert alert-danger mb-0">{{ errorSummary }}</div>
-      </div>
-    </ng-container>
-
-    <ng-container *ngIf="summary && !loadingSummary">
-      <div class="col-md-3">
-        <div class="card border-0 bg-light h-100">
-          <div class="card-body">
-            <div class="text-muted small fw-semibold mb-1">Transactions</div>
-            <div class="fs-3 fw-bold">{{ summary.transactionCount }}</div>
-            <div class="text-muted small">{{ summary.from }} – {{ summary.to }}</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card border-0 bg-light h-100">
-          <div class="card-body">
-            <div class="text-muted small fw-semibold mb-1">Gross Revenue</div>
-            <div class="fs-3 fw-bold">{{ formatMinor(summary.grossAmountMinor, summary.currency) }}</div>
-            <div class="text-muted small">{{ summary.currency }}</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card border-0 bg-light h-100">
-          <div class="card-body">
-            <div class="text-muted small fw-semibold mb-1">Processing Fees</div>
-            <div class="fs-3 fw-bold text-warning">{{ formatMinor(summary.processingFeeMinor, summary.currency) }}</div>
-            <div class="text-muted small">Stripe fee</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card border-0 bg-light h-100">
-          <div class="card-body">
-            <div class="text-muted small fw-semibold mb-1">Net to Merchant</div>
-            <div class="fs-3 fw-bold text-success">{{ formatMinor(summary.netAmountMinor, summary.currency) }}</div>
-            <div class="text-muted small">After all fees</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- By payment method -->
-      <div class="col-12" *ngIf="summary.byPaymentMethod.length > 0">
-        <div class="card border-0 bg-light">
-          <div class="card-body py-3">
-            <div class="fw-semibold small text-muted mb-2">BY PAYMENT METHOD</div>
-            <div class="d-flex flex-wrap gap-3">
-              <div *ngFor="let m of summary.byPaymentMethod" class="d-flex align-items-center gap-2">
-                <span class="badge bg-secondary">{{ m.paymentMethod }}</span>
-                <span class="fw-bold">{{ m.transactionCount }}</span>
-                <span class="text-muted small">{{ formatMinor(m.grossAmountMinor, summary.currency) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </ng-container>
-  </div>
-
-  <!-- Settlements table -->
-  <div class="card" *ngIf="page || loadingList || errorList">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <span class="fw-semibold">Settlements</span>
-      <div class="d-flex align-items-center gap-2">
-        <span class="text-muted small" *ngIf="page">{{ totalElements }} total</span>
-        <button
-          class="btn btn-sm btn-outline-primary"
-          type="button"
-          (click)="refreshVisible()"
-          [disabled]="refreshing || loadingList || visibleStripeRows.length === 0"
-        >
-          <i *ngIf="!refreshing" class="pi pi-refresh me-1"></i>
-          <span *ngIf="refreshing" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-          {{ refreshing ? 'Refreshing…' : 'Refresh settlement data' }}
-        </button>
+  <section class="settlement-summary-section" *ngIf="summary || loadingSummary || errorSummary" aria-label="Settlement summary">
+    <div class="settlement-section-heading">
+      <div>
+        <h2>Overview</h2>
+        <p>Settlement totals for the selected period</p>
       </div>
     </div>
-    <div class="card-body p-0">
-      <div *ngIf="refreshMessage" class="alert alert-success m-3 mb-0">{{ refreshMessage }}</div>
-      <div *ngIf="refreshError" class="alert alert-danger m-3 mb-0">{{ refreshError }}</div>
 
-      <ng-container *ngIf="loadingList">
-        <div class="text-center py-4">
-          <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-          Loading transactions…
-        </div>
-      </ng-container>
-
-      <ng-container *ngIf="errorList">
-        <div class="alert alert-danger m-3 mb-0">{{ errorList }}</div>
-      </ng-container>
-
-      <ng-container *ngIf="page && !loadingList">
-        <div class="table-responsive">
-          <table class="table table-hover table-sm mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Settled At</th>
-                <th>Funds Available</th>
-                <th>Order</th>
-                <th>Provider</th>
-                <th>Method</th>
-                <th class="text-end">Gross</th>
-                <th class="text-end">Processing Fee</th>
-                <th class="text-end">Platform Fee</th>
-                <th class="text-end">Net</th>
-                <th>Stripe</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let row of rows">
-                <td class="text-nowrap">{{ row.settledAt | displayDate }}</td>
-                <td class="text-nowrap">{{ row.fundsAvailableAt | displayDate }}</td>
-                <td class="font-monospace small">{{ row.orderId }}</td>
-                <td>
-                  <span class="badge bg-info text-dark">{{ row.provider }}</span>
-                </td>
-                <td>{{ row.paymentMethod }}<small *ngIf="row.paymentMethodDetail" class="text-muted ms-1">{{ row.paymentMethodDetail }}</small></td>
-                <td class="text-end text-nowrap">{{ formatMinor(row.grossAmountMinor, row.currency) }}</td>
-                <td class="text-end text-nowrap text-warning">{{ formatMinor(row.processingFeeMinor, row.currency) }}</td>
-                <td class="text-end text-nowrap text-secondary">{{ formatMinor(row.platformFeeMinor, row.currency) }}</td>
-                <td class="text-end text-nowrap fw-semibold text-success">{{ formatMinor(row.netAmountMinor, row.currency) }}</td>
-                <td class="small">
-                  <a
-                    *ngIf="row.providerDashboardUrl"
-                    [href]="row.providerDashboardUrl"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >Open payment</a>
-                  <span *ngIf="!row.providerDashboardUrl" class="text-muted">—</span>
-                  <div *ngIf="row.providerPaymentReference" class="font-monospace text-muted">
-                    {{ row.providerPaymentReference }}
-                  </div>
-                </td>
-              </tr>
-              <tr *ngIf="rows.length === 0">
-                <td colspan="10" class="text-center text-muted py-4">No settlements found for this period.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination -->
-        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top" *ngIf="totalPages > 1">
-          <span class="text-muted small">Page {{ currentPage + 1 }} of {{ totalPages }}</span>
-          <div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-secondary" [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)">
-              &lsaquo; Prev
-            </button>
-            <button class="btn btn-outline-secondary" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(currentPage + 1)">
-              Next &rsaquo;
-            </button>
-          </div>
-        </div>
-      </ng-container>
+    <div class="settlement-feedback settlement-loading" *ngIf="loadingSummary">
+      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      Loading summary…
     </div>
-  </div>
+    <div class="alert alert-danger settlement-alert" *ngIf="errorSummary">{{ errorSummary }}</div>
 
-</div>
+    <div class="settlement-summary-grid" *ngIf="summary && !loadingSummary">
+      <article class="settlement-stat-card">
+        <div class="settlement-stat-label">Transactions</div>
+        <div class="settlement-stat-value">{{ summary.transactionCount }}</div>
+        <div class="settlement-stat-caption">In selected period</div>
+      </article>
+      <article class="settlement-stat-card">
+        <div class="settlement-stat-label">Gross revenue</div>
+        <div class="settlement-stat-value">{{ formatMinor(summary.grossAmountMinor, summary.currency) }}</div>
+        <div class="settlement-stat-caption">{{ summary.currency }} collected</div>
+      </article>
+      <article class="settlement-stat-card settlement-stat-fee">
+        <div class="settlement-stat-label">Processing fees</div>
+        <div class="settlement-stat-value">{{ formatMinor(summary.processingFeeMinor, summary.currency) }}</div>
+        <div class="settlement-stat-caption">Payment provider fees</div>
+      </article>
+      <article class="settlement-stat-card settlement-stat-fee">
+        <div class="settlement-stat-label">Platform fees</div>
+        <div class="settlement-stat-value">{{ formatMinor(summary.platformFeeMinor, summary.currency) }}</div>
+        <div class="settlement-stat-caption">Platform charges</div>
+      </article>
+      <article class="settlement-stat-card settlement-stat-net">
+        <div class="settlement-stat-label">Net to merchant</div>
+        <div class="settlement-stat-value">{{ formatMinor(summary.netAmountMinor, summary.currency) }}</div>
+        <div class="settlement-stat-caption">After all fees</div>
+      </article>
+    </div>
+
+    <div class="settlement-method-panel" *ngIf="summary && !loadingSummary && summary.byPaymentMethod.length > 0">
+      <div class="settlement-method-heading">
+        <h3>Payment methods</h3>
+        <span>{{ summary.byPaymentMethod.length }} method{{ summary.byPaymentMethod.length === 1 ? '' : 's' }}</span>
+      </div>
+      <div class="settlement-method-list">
+        <div *ngFor="let method of summary.byPaymentMethod" class="settlement-method-item">
+          <span class="settlement-method-name">{{ method.paymentMethod }}</span>
+          <span class="settlement-method-count">{{ method.transactionCount }} transactions</span>
+          <strong>{{ formatMinor(method.grossAmountMinor, summary.currency) }}</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card settlement-panel settlement-results-panel" *ngIf="page || loadingList || errorList">
+    <div class="settlement-results-heading">
+      <div>
+        <h2>Settlement activity</h2>
+        <p *ngIf="page">{{ totalElements }} settlement{{ totalElements === 1 ? '' : 's' }} in this period</p>
+      </div>
+      <button
+        class="btn btn-outline-primary settlement-refresh-button"
+        type="button"
+        (click)="refreshVisible()"
+        [disabled]="refreshing || loadingList || visibleStripeRows.length === 0"
+      >
+        <i *ngIf="!refreshing" class="pi pi-refresh me-2" aria-hidden="true"></i>
+        <span *ngIf="refreshing" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        {{ refreshing ? 'Refreshing…' : 'Refresh visible Stripe data' }}
+      </button>
+    </div>
+
+    <div class="settlement-alerts">
+      <div *ngIf="refreshMessage" class="alert alert-success">{{ refreshMessage }}</div>
+      <div *ngIf="refreshError" class="alert alert-danger">{{ refreshError }}</div>
+      <div *ngIf="errorList" class="alert alert-danger">{{ errorList }}</div>
+    </div>
+
+    <div *ngIf="loadingList" class="settlement-feedback settlement-loading">
+      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      Loading settlements…
+    </div>
+
+    <ng-container *ngIf="page && !loadingList && !errorList">
+      <div class="settlement-table-wrap" *ngIf="rows.length > 0">
+        <table class="table table-hover mb-0 settlement-table">
+          <thead>
+            <tr>
+              <th>Settled at</th>
+              <th>Funds available</th>
+              <th>Order</th>
+              <th>Provider</th>
+              <th>Method</th>
+              <th class="text-end">Gross</th>
+              <th class="text-end">Processing fee</th>
+              <th class="text-end">Platform fee</th>
+              <th class="text-end">Net</th>
+              <th>Provider details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of rows">
+              <td class="text-nowrap settlement-date">{{ row.settledAt | displayDate }}</td>
+              <td class="text-nowrap settlement-date">{{ row.fundsAvailableAt | displayDate }}</td>
+              <td class="settlement-order-id">{{ row.orderId }}</td>
+              <td><span class="settlement-provider">{{ row.provider }}</span></td>
+              <td>
+                <span>{{ row.paymentMethod }}</span>
+                <small *ngIf="row.paymentMethodDetail" class="settlement-method-detail">{{ row.paymentMethodDetail }}</small>
+              </td>
+              <td class="text-end text-nowrap">{{ formatMinor(row.grossAmountMinor, row.currency) }}</td>
+              <td class="text-end text-nowrap settlement-fee">{{ formatMinor(row.processingFeeMinor, row.currency) }}</td>
+              <td class="text-end text-nowrap settlement-fee">{{ formatMinor(row.platformFeeMinor, row.currency) }}</td>
+              <td class="text-end text-nowrap settlement-net">{{ formatMinor(row.netAmountMinor, row.currency) }}</td>
+              <td>
+                <a
+                  *ngIf="row.providerDashboardUrl"
+                  class="settlement-provider-link"
+                  [href]="row.providerDashboardUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >Open payment <span aria-hidden="true">↗</span></a>
+                <span *ngIf="!row.providerDashboardUrl" class="settlement-empty-value">—</span>
+                <div *ngIf="row.providerPaymentReference" class="settlement-reference">
+                  {{ row.providerPaymentReference }}
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="settlement-empty-state" *ngIf="rows.length === 0">
+        <div class="settlement-empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="23" height="23"><path fill="currentColor" d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v13a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 18.5v-13ZM6.5 5a.5.5 0 0 0-.5.5V8h12V5.5a.5.5 0 0 0-.5-.5h-11ZM18 10H6v8.5a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5V10Zm-9 2h6v2H9v-2Z"/></svg>
+        </div>
+        <h3>No settlements found</h3>
+        <p>There are no settlement transactions for this merchant and period.</p>
+      </div>
+
+      <div class="settlement-pagination" *ngIf="totalPages > 1">
+        <span>Page {{ currentPage + 1 }} of {{ totalPages }}</span>
+        <div class="btn-group">
+          <button class="btn btn-outline-secondary" type="button" [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)">
+            &lsaquo; Previous
+          </button>
+          <button class="btn btn-outline-secondary" type="button" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(currentPage + 1)">
+            Next &rsaquo;
+          </button>
+        </div>
+      </div>
+    </ng-container>
+  </section>
+</main>
