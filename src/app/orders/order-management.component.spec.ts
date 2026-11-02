@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 import { Branch, MerchantSearchResultItem, OrderResponse } from '../models/merchant-catalog.models';
@@ -31,17 +33,16 @@ describe('OrderManagementComponent', () => {
   };
 
   const order = (overrides: Partial<OrderResponse> = {}): OrderResponse => ({
-    id: 'order-12345678',
+    orderId: 'order-12345678',
     merchantId: merchant.merchantId,
     branchId: branch.branchId!,
     orderType: 'WALK_IN_ORDERING',
     status: 'PENDING',
     usesDeferredPayment: false,
     items: [],
-    totalAmount: 12,
+    totalAmountMinor: 1200,
     currency: 'EUR',
     createdAt: '2026-10-31T12:00:00Z',
-    updatedAt: '2026-10-31T12:00:00Z',
     ...overrides
   });
 
@@ -167,8 +168,8 @@ describe('OrderManagementComponent', () => {
     component.selectedBranchId = branch.branchId!;
     component.orders = [
       order(),
-      order({ id: 'order-paid', status: 'PAID' }),
-      order({ id: 'order-invoice', status: 'PENDING', targetShopperId: 'shopper-1', targetShopperName: 'Alex' })
+      order({ orderId: 'order-paid', status: 'PAID' }),
+      order({ orderId: 'order-invoice', status: 'PENDING', targetShopperId: 'shopper-1', targetShopperName: 'Alex' })
     ];
     component.ordersLoaded = true;
     component.onFilterChange();
@@ -183,16 +184,16 @@ describe('OrderManagementComponent', () => {
   it('filters loaded orders by order identifier and shopper name', () => {
     component.orders = [
       order(),
-      order({ id: 'order-invoice', targetShopperId: 'shopper-2', targetShopperName: 'Alex Morgan' })
+      order({ orderId: 'order-invoice', targetShopperId: 'shopper-2', targetShopperName: 'Alex Morgan' })
     ];
     component.orderQuery = 'alex';
     component.onFilterChange();
 
-    expect(component.filteredOrders.map(item => item.id)).toEqual(['order-invoice']);
+    expect(component.filteredOrders.map(item => item.orderId)).toEqual(['order-invoice']);
 
     component.orderQuery = '12345678';
     component.onFilterChange();
-    expect(component.filteredOrders.map(item => item.id)).toEqual(['order-12345678']);
+    expect(component.filteredOrders.map(item => item.orderId)).toEqual(['order-12345678']);
   });
 
   it('uses styled status and type option popovers that apply filters', () => {
@@ -200,8 +201,8 @@ describe('OrderManagementComponent', () => {
     component.selectedBranchId = branch.branchId!;
     component.ordersLoaded = true;
     component.orders = [
-      order({ id: 'pending-standard' }),
-      order({ id: 'paid-invoice', status: 'PAID', targetShopperId: 'shopper-1' })
+      order({ orderId: 'pending-standard' }),
+      order({ orderId: 'paid-invoice', status: 'PAID', targetShopperId: 'shopper-1' })
     ];
     component.onFilterChange();
     fixture.detectChanges();
@@ -216,7 +217,7 @@ describe('OrderManagementComponent', () => {
     fixture.detectChanges();
 
     expect(component.statusFilter).toBe('PENDING');
-    expect(component.filteredOrders.map(item => item.id)).toEqual(['pending-standard']);
+    expect(component.filteredOrders.map(item => item.orderId)).toEqual(['pending-standard']);
 
     root.querySelector<HTMLButtonElement>('#order-type-filter')!.click();
     fixture.detectChanges();
@@ -225,5 +226,33 @@ describe('OrderManagementComponent', () => {
 
     expect(component.typeFilter).toBe('invoice');
     expect(component.filteredOrders).toEqual([]);
+  });
+});
+
+describe('OrderManagementComponent — minor-unit amounts', () => {
+  let component: OrderManagementComponent;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [OrderManagementComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+      ],
+    });
+    component = TestBed.createComponent(OrderManagementComponent).componentInstance;
+  });
+
+  it('formats totalAmountMinor (cents) as a currency amount', () => {
+    expect(component.formatMinorAmount(2185, 'EUR')).toBe('€21.85');
+  });
+
+  it('respects currencies without minor units', () => {
+    expect(component.formatMinorAmount(500, 'JPY')).toBe('JP¥500');
+  });
+
+  it('shows a dash instead of NaN when the amount is missing', () => {
+    expect(component.formatMinorAmount(undefined, 'EUR')).toBe('—');
   });
 });

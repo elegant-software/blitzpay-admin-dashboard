@@ -397,7 +397,7 @@ export class OrderManagementComponent implements OnInit {
     const query = this.orderQuery.trim().toLocaleLowerCase();
     if (query) {
       result = result.filter(order =>
-        order.id.toLocaleLowerCase().includes(query) ||
+        order.orderId.toLocaleLowerCase().includes(query) ||
         (order.targetShopperName ?? '').toLocaleLowerCase().includes(query) ||
         (order.targetShopperId ?? '').toLocaleLowerCase().includes(query)
       );
@@ -455,6 +455,18 @@ export class OrderManagementComponent implements OnInit {
       return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(amount);
     } catch {
       return `${amount} ${currency}`;
+    }
+  }
+
+  /** Formats an API amount given in the currency's minor unit (e.g. cents). */
+  formatMinorAmount(amountMinor: number | null | undefined, currency: string): string {
+    if (amountMinor == null || !Number.isFinite(amountMinor)) return '—';
+    try {
+      const format = new Intl.NumberFormat('en-GB', { style: 'currency', currency });
+      const digits = format.resolvedOptions().maximumFractionDigits ?? 2;
+      return format.format(amountMinor / 10 ** digits);
+    } catch {
+      return `${amountMinor} ${currency}`;
     }
   }
 

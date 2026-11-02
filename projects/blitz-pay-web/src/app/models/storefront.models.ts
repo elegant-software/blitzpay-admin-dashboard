@@ -6,6 +6,7 @@ export interface StorefrontMerchant {
   logoUrl?: string | null;
   offerings?: string[];
   originalMenuLanguage?: string | null;
+  originalLanguage?: string | null;
   supportedMenuLanguages?: string[];
 }
 
