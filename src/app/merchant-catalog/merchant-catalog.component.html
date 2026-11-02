@@ -1,95 +1,226 @@
-<div class="container-fluid px-4 pt-2 pb-4">
-  <div class="card mb-4">
-    <div class="card-header">Merchant Catalog</div>
+<main class="container-fluid merchant-catalog-page">
+  <header class="merchant-page-heading">
+    <div>
+      <p class="merchant-page-eyebrow">OPERATIONS</p>
+      <h1>Merchants</h1>
+      <p class="merchant-page-intro">Find a merchant, review its profile, and manage its branches and catalog.</p>
+    </div>
+    <div class="merchant-heading-actions">
+      <a class="btn btn-primary" routerLink="/merchants/new">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        Add merchant
+      </a>
+      <div class="merchant-heading-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M3 9.5 4.5 4h15L21 9.5M5 10v10h14V10M9 20v-6h6v6M3 9.5a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0" /></svg>
+      </div>
+    </div>
+  </header>
+
+  <section class="card merchant-search-card" aria-labelledby="merchant-search-title">
     <div class="card-body">
-      <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
-      <div class="alert alert-success mb-3" *ngIf="statusMessage">{{ statusMessage }}</div>
+      <div class="merchant-search-heading">
+        <div>
+          <h2 id="merchant-search-title">Find a merchant</h2>
+          <p>Search by merchant name, ID, code, city, or product.</p>
+        </div>
+        <span class="merchant-environment-label">
+          <span class="merchant-environment-indicator" aria-hidden="true"></span>
+          {{ selectedEnvironment.label }} environment
+        </span>
+      </div>
 
-      <div class="row g-2 align-items-end">
-        <div class="col-md-4">
-          <label class="form-label form-label-sm mb-1" for="merchant-search-query">Search</label>
-          <input
-            id="merchant-search-query"
-            class="form-control"
-            [(ngModel)]="searchQuery"
-            placeholder="Name, code, city, product…"
-            (keydown.enter)="runCatalogSearch()"
-          />
+      <div class="merchant-search-controls">
+        <label class="visually-hidden" for="merchant-search-query">Search merchants</label>
+        <app-merchant-search
+          class="merchant-catalog-search-control"
+          inputId="merchant-search-query"
+          variant="catalog"
+          placeholder="Search merchants…"
+          describedBy="merchant-search-hint"
+          [query]="searchQuery"
+          [searching]="searchLoading"
+          (queryChange)="searchQuery = $event"
+          (search)="runCatalogSearch()"
+        ></app-merchant-search>
+      </div>
+      <p id="merchant-search-hint" class="merchant-search-hint">
+        Search by name, code, city, product, or merchant ID. Leave blank to browse recently updated merchants.
+      </p>
+
+      <details class="merchant-filter-panel" aria-label="Merchant filters">
+        <summary>
+          <span class="merchant-filter-summary">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M7 12h10m-7 7h4" /><circle cx="8" cy="5" r="1.5" /><circle cx="15" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg>
+            Filters
+            <span class="active-filter-count" *ngIf="activeFilterCount">{{ activeFilterCount }}</span>
+          </span>
+          <span class="merchant-filter-caption">Business type, merchant type, and status</span>
+        </summary>
+        <div class="merchant-filter-groups">
+          <div class="merchant-filter-group">
+            <label class="merchant-filter-label" for="merchant-business-type-filter">Business type</label>
+            <p-multiSelect
+              inputId="merchant-business-type-filter"
+              ariaLabel="Business type"
+              [options]="verticals"
+              optionLabel="displayName"
+              optionValue="code"
+              [(ngModel)]="searchFilterBusinessTypes"
+              placeholder="Any business type"
+              display="chip"
+              [maxSelectedLabels]="2"
+              selectedItemsLabel="{0} selected"
+              [filter]="true"
+              filterPlaceHolder="Find business type"
+              [showToggleAll]="false"
+              [showClear]="true"
+              [disabled]="verticalsLoading || !!verticalsError || !verticals.length"
+              [fluid]="true"
+            ></p-multiSelect>
+            <span class="merchant-filter-error" *ngIf="verticalsError" role="alert">{{ verticalsError }}</span>
+          </div>
+
+          <div class="merchant-filter-group">
+            <label class="merchant-filter-label" for="merchant-mobility-filter">Merchant type</label>
+            <p-multiSelect
+              inputId="merchant-mobility-filter"
+              ariaLabel="Merchant type"
+              [options]="merchantMobilityFilterOptions"
+              optionLabel="label"
+              optionValue="value"
+              [(ngModel)]="searchFilterMobilities"
+              placeholder="Any merchant type"
+              display="chip"
+              [maxSelectedLabels]="2"
+              selectedItemsLabel="{0} selected"
+              [showToggleAll]="false"
+              [showClear]="true"
+              [fluid]="true"
+            ></p-multiSelect>
+          </div>
+
+          <div class="merchant-filter-group">
+            <label class="merchant-filter-label" for="merchant-status-filter">Status</label>
+            <p-multiSelect
+              inputId="merchant-status-filter"
+              ariaLabel="Status"
+              [options]="merchantStatusFilterOptions"
+              optionLabel="label"
+              optionValue="value"
+              [(ngModel)]="searchFilterStatuses"
+              placeholder="Any status"
+              display="chip"
+              [maxSelectedLabels]="2"
+              selectedItemsLabel="{0} selected"
+              [filter]="true"
+              filterPlaceHolder="Find status"
+              [showToggleAll]="false"
+              [showClear]="true"
+              [fluid]="true"
+            ></p-multiSelect>
+          </div>
         </div>
-        <div class="col-md-2">
-          <label class="form-label form-label-sm mb-1" for="search-business-types">Business Type</label>
-          <select id="search-business-types" class="form-select form-select-sm" multiple size="3" [(ngModel)]="searchFilterBusinessTypes">
-            <option *ngFor="let v of verticals" [value]="v.code">{{ v.displayName }}</option>
-          </select>
+        <div class="merchant-filter-actions" *ngIf="activeFilterCount">
+          <span>{{ activeFilterCount }} filter{{ activeFilterCount === 1 ? '' : 's' }} selected</span>
+          <button type="button" class="btn btn-sm btn-link" (click)="clearCatalogSearch()">Clear search and filters</button>
         </div>
-        <div class="col-md-2">
-          <label class="form-label form-label-sm mb-1" for="search-mobilities">Merchant Type</label>
-          <select id="search-mobilities" class="form-select form-select-sm" multiple size="3" [(ngModel)]="searchFilterMobilities">
-            <option value="BRICK_AND_MORTAR">Brick &amp; Mortar</option>
-            <option value="MOBILE">Mobile</option>
-          </select>
-        </div>
-        <div class="col-md-2">
-          <label class="form-label form-label-sm mb-1" for="search-statuses">Status</label>
-          <select id="search-statuses" class="form-select form-select-sm" multiple size="3" [(ngModel)]="searchFilterStatuses">
-            <option *ngFor="let s of merchantStatusOptions" [value]="s">{{ s }}</option>
-          </select>
-        </div>
-        <div class="col-md-2 d-flex gap-2 align-items-end">
-          <button class="btn btn-primary" type="button" [disabled]="searchLoading" (click)="runCatalogSearch()">
-            <span *ngIf="searchLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
-            Search
+      </details>
+    </div>
+  </section>
+
+  <div class="alert alert-danger merchant-search-error" *ngIf="errorMessage" role="alert">{{ errorMessage }}</div>
+
+  <section
+    class="card merchant-results-card"
+    *ngIf="searchLoading || searchResults.length > 0 || (!errorMessage && searchAttempted)"
+    aria-labelledby="merchant-results-title"
+  >
+    <div class="merchant-results-header">
+      <div>
+        <p class="merchant-results-eyebrow">{{ !searchQuery.trim() && !activeFilterCount ? 'YOUR WORKSPACE' : 'DIRECTORY' }}</p>
+        <h2 id="merchant-results-title">{{ !searchQuery.trim() && !activeFilterCount ? 'Recently updated' : 'Search results' }}</h2>
+      </div>
+      <div class="merchant-results-summary" *ngIf="!searchLoading && !errorMessage">
+        <strong>{{ searchTotalElements }}</strong>
+        <span>merchant{{ searchTotalElements === 1 ? '' : 's' }}</span>
+      </div>
+      <span class="merchant-results-loading" *ngIf="searchLoading" role="status" aria-live="polite">
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        Searching…
+      </span>
+    </div>
+
+    <p class="visually-hidden" role="status" aria-live="polite">{{ statusMessage }}</p>
+
+    <div class="merchant-results-loading-state" *ngIf="searchLoading" role="status" aria-live="polite">
+      <span class="spinner-border text-primary" aria-hidden="true"></span>
+      <span>Loading merchants…</span>
+    </div>
+
+    <div class="merchant-results-empty" *ngIf="!searchLoading && !errorMessage && searchResults.length === 0" role="status">
+      <span class="merchant-empty-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
+      </span>
+      <h3 class="merchant-empty-state">No merchants found</h3>
+      <p>Try a different search or adjust your filters.</p>
+      <button *ngIf="searchQuery || activeFilterCount" class="btn btn-sm btn-outline-secondary" type="button" (click)="clearCatalogSearch()">
+        Clear search and filters
+      </button>
+    </div>
+
+    <ng-container *ngIf="!searchLoading && searchResults.length > 0">
+      <div class="table-responsive merchant-results-table-wrap">
+        <table class="table align-middle mb-0 merchant-results-table" aria-label="Merchant search results">
+          <thead>
+            <tr>
+              <th scope="col">Merchant</th>
+              <th scope="col">Status</th>
+              <th scope="col">Merchant type</th>
+              <th scope="col">Business type</th>
+              <th scope="col">Location</th>
+              <th scope="col">Last updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of searchResults" class="merchant-result-row">
+              <td>
+                <a class="merchant-result-link" [routerLink]="['/merchants', item.merchantId]">
+                  <span class="merchant-result-avatar" aria-hidden="true">{{ (item.merchantName || 'M').charAt(0) }}</span>
+                  <span class="merchant-result-identity">
+                    <span class="merchant-result-name">{{ item.merchantName }}</span>
+                    <code>{{ item.merchantCode || item.merchantId }}</code>
+                  </span>
+                </a>
+              </td>
+              <td>
+                <span class="status-tag merchant-result-status" [ngClass]="merchantStatusTone(item.merchantStatus)">
+                  <span class="status-indicator" aria-hidden="true"></span>
+                  {{ merchantStatusLabel(item.merchantStatus) }}
+                </span>
+              </td>
+              <td>{{ merchantMobilityLabel(item.merchantMobility) }}</td>
+              <td>{{ verticalDisplayName(item.businessType) || item.businessType || '—' }}</td>
+              <td class="merchant-result-location">
+                <span>{{ item.city || '—' }}</span>
+                <span class="merchant-result-country" *ngIf="item.country">{{ item.country }}</span>
+              </td>
+              <td class="merchant-result-updated">{{ item.lastUpdatedAt | displayDate }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="merchant-results-footer" *ngIf="searchTotalPages > 1">
+        <span>Page {{ searchPage + 1 }} of {{ searchTotalPages }}</span>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="searchPage === 0 || searchLoading" (click)="goToSearchPage(searchPage - 1)">
+            Previous
           </button>
-          <button class="btn btn-outline-secondary" type="button" (click)="clearCatalogSearch()">Clear</button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="searchPage >= searchTotalPages - 1 || searchLoading" (click)="goToSearchPage(searchPage + 1)">
+            Next
+          </button>
         </div>
       </div>
-      <div class="form-text mt-1">{{ activeSearchHint }}</div>
-    </div>
-  </div>
-
-  <div class="card mb-4" *ngIf="searchResults.length > 0 || searchLoading">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <span>Search Results</span>
-      <span class="badge text-bg-light">{{ searchTotalElements }} merchant{{ searchTotalElements === 1 ? '' : 's' }}</span>
-    </div>
-    <div class="card-body p-0">
-      <div class="p-3 text-muted small" *ngIf="searchLoading">Loading…</div>
-      <ng-container *ngIf="!searchLoading && searchResults.length > 0">
-        <div class="table-responsive datatable-shell">
-          <table class="table table-sm align-middle mb-0 merchant-results-table table-hover">
-            <thead>
-              <tr>
-                <th>Merchant Name</th>
-                <th>Code</th>
-                <th>Merchant Type</th>
-                <th>Business Type</th>
-                <th>City</th>
-                <th>Country</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of searchResults" style="cursor:pointer" (click)="selectSearchResult(item)">
-                <td>{{ item.merchantName }}</td>
-                <td><code>{{ item.merchantCode }}</code></td>
-                <td>{{ item.merchantMobility || '—' }}</td>
-                <td>{{ verticalDisplayName(item.businessType) || item.businessType || '—' }}</td>
-                <td>{{ item.city || '—' }}</td>
-                <td>{{ item.country || '—' }}</td>
-                <td><span class="status-tag" [ngClass]="merchantStatusTone(item.merchantStatus)">{{ item.merchantStatus }}</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="d-flex gap-2 align-items-center p-3 border-top" *ngIf="searchTotalPages > 1">
-          <button class="btn btn-outline-secondary btn-sm" type="button" [disabled]="searchPage === 0" (click)="goToSearchPage(searchPage - 1)">Previous</button>
-          <span class="text-muted small">Page {{ searchPage + 1 }} of {{ searchTotalPages }}</span>
-          <button class="btn btn-outline-secondary btn-sm" type="button" [disabled]="searchPage >= searchTotalPages - 1" (click)="goToSearchPage(searchPage + 1)">Next</button>
-        </div>
-      </ng-container>
-      <div class="p-3 text-muted small" *ngIf="!searchLoading && searchResults.length === 0">
-        No merchants found. Try a different search or clear the filters.
-      </div>
-    </div>
-  </div>
-</div>
+    </ng-container>
+  </section>
+</main>

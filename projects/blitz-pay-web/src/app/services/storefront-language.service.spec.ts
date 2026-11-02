@@ -15,6 +15,22 @@ describe('StorefrontLanguageService', () => {
     expect(TestBed.inject(StorefrontLanguageService).language).toBeNull();
   });
 
+  it('resolves the merchant original language without saving it as an explicit choice', () => {
+    const service = TestBed.inject(StorefrontLanguageService);
+    expect(service.resolve({ applicationId: 'm', merchantName: 'Restaurant', originalMenuLanguage: 'de' })).toBe('de');
+    expect(sessionStorage.getItem('blitzpay.storefront-language')).toBeNull();
+    expect(service.resolve({ applicationId: 'm2', merchantName: 'Other', originalLanguage: 'tr' })).toBe('tr');
+  });
+
+  it('uses an explicit choice ahead of a merchant default without changing page direction', () => {
+    const service = TestBed.inject(StorefrontLanguageService);
+    service.choose('ar');
+    expect(service.resolve({ applicationId: 'm', merchantName: 'Restaurant', originalMenuLanguage: 'de' })).toBe('ar');
+    expect(service.direction).toBe('rtl');
+    service.choose('de');
+    expect(service.direction).toBe('ltr');
+  });
+
   it('keeps page direction unchanged when choosing Arabic or another menu language', () => {
     const direction = document.documentElement.getAttribute('dir');
     const service = TestBed.inject(StorefrontLanguageService);

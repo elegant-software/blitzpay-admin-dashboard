@@ -1,16 +1,8 @@
-<div class="container-fluid px-4 pt-2 pb-4">
-  <div class="d-flex align-items-center gap-2 mb-3">
-    <a class="btn btn-link btn-sm ps-0" routerLink="/merchants">← Back to search</a>
-    <div class="ms-auto d-flex gap-2" *ngIf="selectedMerchant">
-      <button class="btn btn-sm btn-outline-primary" type="button" (click)="viewSettlements()">
-        <svg viewBox="0 0 24 24" width="14" height="14" class="me-1"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-        View Settlements
-      </button>
-      <button class="btn btn-sm btn-outline-primary" type="button" (click)="viewAppointments()">
-        <svg viewBox="0 0 24 24" width="14" height="14" class="me-1"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>
-        View Appointments
-      </button>
-    </div>
+<div class="container-fluid px-4 pt-2 pb-4 merchant-detail-page">
+  <div class="merchant-detail-breadcrumb mb-3">
+    <a routerLink="/merchants">Merchants</a>
+    <span aria-hidden="true">/</span>
+    <span>Merchant profile</span>
   </div>
 
   <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
@@ -19,172 +11,282 @@
   <div *ngIf="loading && !selectedMerchant" class="text-center py-5 text-muted">Loading merchant…</div>
 
   <ng-container *ngIf="selectedMerchant as merchant">
-    <!-- Anchor tabs -->
-    <ul class="nav nav-tabs detail-anchor-tabs mb-4">
+    <section class="merchant-detail-hero mb-4" aria-labelledby="merchant-detail-title">
+      <div class="merchant-detail-logo-wrap">
+        <img *ngIf="merchant.logoUrl && !merchantTableLogoFailed; else merchantDetailLogoFallback"
+             [src]="merchant.logoUrl" [alt]="merchant.merchantName" class="merchant-detail-logo"
+             (error)="onMerchantTableLogoError()" />
+        <ng-template #merchantDetailLogoFallback>
+          <div class="merchant-detail-logo-fallback" aria-hidden="true">{{ merchant.merchantName.slice(0, 1) || '?' }}</div>
+        </ng-template>
+      </div>
+      <div class="merchant-detail-identity">
+        <div class="merchant-detail-eyebrow">Merchant profile</div>
+        <h1 id="merchant-detail-title">{{ merchant.merchantName }}</h1>
+        <div class="merchant-detail-meta">
+          <span class="merchant-detail-code"><span class="visually-hidden">Merchant code: </span>{{ merchant.merchantCode || '—' }}</span>
+          <span>{{ merchantLocation?.city || merchantLocation?.country || 'Location not set' }}</span>
+          <span>{{ merchantMobilityLabel(merchant.merchantMobility) }}</span>
+        </div>
+        <div class="merchant-detail-badges">
+          <span class="status-tag" [ngClass]="merchantStatusTone(merchant.merchantStatus)">{{ merchantStatusLabel(merchant.merchantStatus) }}</span>
+          <span class="merchant-detail-business-type" *ngIf="merchant.businessType">
+            {{ verticalDisplayName(merchant.businessType) || merchant.businessType }}
+          </span>
+        </div>
+      </div>
+      <div class="merchant-detail-actions">
+        <div class="merchant-detail-updated">
+          <span>Last updated</span>
+          <strong>{{ merchant.lastUpdatedAt | displayDate }}</strong>
+        </div>
+        <div class="merchant-detail-action-buttons">
+          <button class="btn btn-sm btn-primary" type="button" aria-label="Edit merchant" (click)="navigateToMerchantEdit()">
+            <svg viewBox="0 0 24 24" width="14" height="14" class="me-1" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
+            Edit
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="viewSettlements()">
+            <svg viewBox="0 0 24 24" width="14" height="14" class="me-1" aria-hidden="true"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            Settlements
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="viewAppointments()">
+            <svg viewBox="0 0 24 24" width="14" height="14" class="me-1" aria-hidden="true"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>
+            Appointments
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="merchant-detail-overview mb-4" aria-label="Merchant overview">
+      <div class="merchant-detail-stat">
+        <span class="merchant-detail-stat-icon merchant-detail-stat-branches" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg>
+        </span>
+        <div><strong>{{ branches.length }}</strong><span>Branches</span></div>
+      </div>
+      <div class="merchant-detail-stat">
+        <span class="merchant-detail-stat-icon merchant-detail-stat-categories" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16M8 3v4M16 10v4M10 17v4"/></svg>
+        </span>
+        <div><strong>{{ categories.length }}</strong><span>Product categories</span></div>
+      </div>
+      <div class="merchant-detail-stat">
+        <span class="merchant-detail-stat-icon merchant-detail-stat-products" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></svg>
+        </span>
+        <div><strong>{{ products.length }}</strong><span>Products in {{ selectedBranch?.name || 'selected branch' }}</span></div>
+      </div>
+      <div class="merchant-detail-stat">
+        <span class="merchant-detail-stat-icon merchant-detail-stat-offerings" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg>
+        </span>
+        <div><strong>{{ merchantOfferings.length }}</strong><span>Services enabled</span></div>
+      </div>
+    </section>
+
+    <nav class="merchant-detail-navigation mb-4" aria-label="Merchant sections">
+    <ul class="nav merchant-detail-tabs" role="tablist">
       <li class="nav-item">
-        <button class="nav-link" [class.active]="activeDetailTab === 'info'" type="button" (click)="activeDetailTab = 'info'">
-          Info
+        <button class="nav-link" id="merchant-tab-info" role="tab" aria-controls="merchant-panel-info" [attr.aria-selected]="activeDetailTab === 'info'" [class.active]="activeDetailTab === 'info'" type="button" (click)="activeDetailTab = 'info'" (keydown)="onDetailTabKeydown($event)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg>
+          <span>Business profile</span>
         </button>
       </li>
       <li class="nav-item">
-        <button class="nav-link" [class.active]="activeDetailTab === 'branches-products'" type="button" (click)="activeDetailTab = 'branches-products'">
-          Branches &amp; Products
+        <button class="nav-link" id="merchant-tab-categories" role="tab" aria-controls="merchant-panel-categories" [attr.aria-selected]="activeDetailTab === 'categories'" [class.active]="activeDetailTab === 'categories'" type="button" (click)="activeDetailTab = 'categories'" (keydown)="onDetailTabKeydown($event)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16M8 3v4M16 10v4M10 17v4"/></svg>
+          <span>Categories</span>
+          <span class="merchant-tab-count">{{ categories.length }}</span>
         </button>
       </li>
       <li class="nav-item">
-        <button class="nav-link" [class.active]="activeDetailTab === 'payment'" type="button" (click)="activeDetailTab = 'payment'">
-          Payment
+        <button class="nav-link" id="merchant-tab-branches" role="tab" aria-controls="merchant-panel-branches" [attr.aria-selected]="activeDetailTab === 'branches-products'" [class.active]="activeDetailTab === 'branches-products'" type="button" (click)="activeDetailTab = 'branches-products'" (keydown)="onDetailTabKeydown($event)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01"/></svg>
+          <span>Branches &amp; products</span>
+          <span class="merchant-tab-count">{{ branches.length }}</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="merchant-tab-payment" role="tab" aria-controls="merchant-panel-payment" [attr.aria-selected]="activeDetailTab === 'payment'" [class.active]="activeDetailTab === 'payment'" type="button" (click)="activeDetailTab = 'payment'" (keydown)="onDetailTabKeydown($event)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg>
+          <span>Payments</span>
         </button>
       </li>
       <li class="nav-item" *ngIf="merchant.merchantMobility === 'MOBILE'">
-        <button class="nav-link" [class.active]="activeDetailTab === 'appearances'" type="button" (click)="activeDetailTab = 'appearances'">
-          Appearances
+        <button class="nav-link" id="merchant-tab-appearances" role="tab" aria-controls="merchant-panel-appearances" [attr.aria-selected]="activeDetailTab === 'appearances'" [class.active]="activeDetailTab === 'appearances'" type="button" (click)="activeDetailTab = 'appearances'" (keydown)="onDetailTabKeydown($event)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="9" r="2.2"/></svg>
+          <span>Appearances</span>
         </button>
       </li>
     </ul>
+    </nav>
 
-    <!-- INFO TAB -->
-    <div *ngIf="activeDetailTab === 'info'">
-      <div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span>Merchant</span>
-          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="navigateToMerchantEdit()">
-            <svg viewBox="0 0 24 24" width="14" height="14" class="me-1"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
-            Edit
-          </button>
-        </div>
-        <div class="card-body">
-          <div class="table-responsive datatable-shell">
-            <table class="table table-sm align-middle mb-0 merchant-results-table">
-              <thead>
-                <tr>
-                  <th>Merchant Name</th>
-                  <th>Merchant Code</th>
-                  <th>Merchant Type</th>
-                  <th>Business Type</th>
-                  <th>City</th>
-                  <th>Status</th>
-                  <th>Offerings</th>
-                  <th>Logo</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>{{ merchant.merchantName }}</td>
-                  <td><code>{{ merchant.merchantCode || '—' }}</code></td>
-                  <td>{{ merchant.merchantMobility || '—' }}</td>
-                  <td>{{ verticalDisplayName(merchant.businessType || '') || merchant.businessType || '—' }}</td>
-                  <td>{{ merchantLocation?.city || '—' }}</td>
-                  <td><span class="status-tag" [ngClass]="merchantStatusTone(merchant.merchantStatus)">{{ merchant.merchantStatus }}</span></td>
-                  <td>
-                    <ng-container *ngIf="merchant.offerings?.length; else noOfferings">
-                      <span class="status-tag status-tag-neutral me-1" *ngFor="let offering of merchant.offerings">{{ serviceLabel(offering) }}</span>
-                    </ng-container>
-                    <ng-template #noOfferings>—</ng-template>
-                  </td>
-                  <td class="product-thumb-col">
-                    <img *ngIf="merchant.logoUrl && !merchantTableLogoFailed" [src]="merchant.logoUrl" [alt]="merchant.merchantName" class="product-thumb" (error)="onMerchantTableLogoError()" />
-                    <div *ngIf="!merchant.logoUrl || merchantTableLogoFailed" class="product-thumb-empty"></div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+    <section *ngIf="activeDetailTab === 'info'" class="row g-4 merchant-detail-content" id="merchant-panel-info" role="tabpanel" aria-labelledby="merchant-tab-info" tabindex="0">
+      <div class="col-lg-7">
+      <article class="card merchant-detail-profile-card h-100">
+        <div class="card-header">
+          <div class="merchant-detail-card-heading">
+            <span class="merchant-detail-card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 21h16M6 21V7l6-4 6 4v14M9 10h.01M15 10h.01M9 14h.01M15 14h.01M10 21v-3h4v3"/></svg>
+            </span>
+            <div>
+              <h2 class="h6 mb-1">Business details</h2>
+              <p class="small text-body-secondary mb-0">Registration and operating information</p>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div class="card mb-4" *ngIf="merchant.defaultVatPercent != null">
-        <div class="card-header">Invoice Settings</div>
-        <div class="card-body py-2">
-          <dl class="row mb-0 small">
-            <dt class="col-sm-3 text-body-secondary fw-normal">Default VAT Rate</dt>
-            <dd class="col-sm-9 mb-0">{{ merchant.defaultVatPercent }}%</dd>
+        <div class="card-body">
+          <dl class="merchant-detail-facts mb-0">
+            <div class="merchant-detail-fact">
+              <dt>Merchant code</dt>
+              <dd><code>{{ merchant.merchantCode || '—' }}</code></dd>
+            </div>
+            <div class="merchant-detail-fact">
+              <dt>Merchant type</dt>
+              <dd>{{ merchantMobilityLabel(merchant.merchantMobility) }}</dd>
+            </div>
+            <div class="merchant-detail-fact">
+              <dt>Business type</dt>
+              <dd>{{ merchant.businessType ? verticalDisplayName(merchant.businessType) : '—' }}</dd>
+            </div>
+            <div class="merchant-detail-fact">
+              <dt>Location</dt>
+              <dd>{{ merchantBusinessLocation }}</dd>
+            </div>
+            <div class="merchant-detail-fact" *ngIf="merchantLocation?.addressLine1 || merchantLocation?.addressLine2">
+              <dt>Address</dt>
+              <dd>{{ merchantBusinessAddress }}</dd>
+            </div>
+            <div class="merchant-detail-fact" *ngIf="merchant.defaultVatPercent != null">
+              <dt>Default VAT rate</dt>
+              <dd>{{ merchant.defaultVatPercent }}%</dd>
+            </div>
+            <div class="merchant-detail-fact merchant-detail-offerings">
+              <dt>Offerings</dt>
+              <dd>
+                <ng-container *ngIf="merchantOfferings.length; else noOfferings">
+                  <span class="merchant-detail-offering" *ngFor="let offering of merchantOfferings">{{ serviceLabel(offering) }}</span>
+                </ng-container>
+                <ng-template #noOfferings><span class="text-body-secondary">—</span></ng-template>
+              </dd>
+            </div>
           </dl>
         </div>
+      </article>
       </div>
-    </div>
+      <div class="col-lg-5">
+        <article class="card merchant-detail-contact-card h-100">
+          <div class="card-header">
+            <div class="merchant-detail-card-heading">
+              <span class="merchant-detail-card-icon merchant-detail-card-icon-contact" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+              </span>
+              <div>
+                <h2 class="h6 mb-1">Contact information</h2>
+                <p class="small text-body-secondary mb-0">Ways to reach this merchant</p>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <dl class="merchant-detail-contact-list mb-0">
+              <div><dt>Website</dt><dd>{{ merchant.website || merchant.contactInfo?.website || '—' }}</dd></div>
+              <div><dt>Email</dt><dd>{{ merchant.contactInfo?.email || '—' }}</dd></div>
+              <div><dt>Phone</dt><dd>{{ merchant.contactInfo?.phoneNumber || '—' }}</dd></div>
+              <div *ngIf="merchant.contactInfo?.instagramHandle"><dt>Instagram</dt><dd>{{ merchant.contactInfo?.instagramHandle }}</dd></div>
+              <div *ngIf="merchant.contactInfo?.xHandle"><dt>X</dt><dd>{{ merchant.contactInfo?.xHandle }}</dd></div>
+            </dl>
+          </div>
+        </article>
+        </div>
+    </section>
 
     <!-- BRANCHES & PRODUCTS TAB -->
-    <div *ngIf="activeDetailTab === 'branches-products'">
-      <div class="row g-4">
-        <div class="col-lg-5">
-          <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <span>Branches</span>
-              <span class="badge text-bg-light">{{ branchFilterActive ? branchVisibleCount + ' / ' + branches.length : branches.length }} rows</span>
+    <div *ngIf="activeDetailTab === 'branches-products' || activeDetailTab === 'categories'"
+         [id]="activeDetailTab === 'categories' ? 'merchant-panel-categories' : 'merchant-panel-branches'"
+         role="tabpanel"
+         [attr.aria-labelledby]="activeDetailTab === 'categories' ? 'merchant-tab-categories' : 'merchant-tab-branches'"
+         tabindex="0">
+      <div class="row g-4 merchant-branches-products-layout">
+        <div *ngIf="activeDetailTab === 'branches-products'" class="col-lg-4">
+          <section class="card merchant-branches-panel h-100" aria-labelledby="merchant-branches-title">
+            <div class="card-header merchant-section-card-header">
+              <div>
+                <h2 id="merchant-branches-title" class="h6 mb-1">Branches</h2>
+                <p class="small text-body-secondary mb-0">{{ selectedBranch ? 'Selected: ' + selectedBranch.name : 'Choose a branch to view its products.' }}</p>
+              </div>
+              <span class="merchant-section-count">{{ branchFilterActive ? branchVisibleCount + ' / ' + branches.length : branches.length }}</span>
             </div>
-            <div class="card-body">
-              <div class="table-filter-toolbar mb-3">
+            <div class="card-body merchant-branches-body">
+              <div class="table-filter-toolbar merchant-branch-filter mb-3">
                 <div class="table-filter-input-wrap">
-                  <label class="table-filter-label" for="branch-filter">Branch Filters</label>
+                  <label class="table-filter-label" for="branch-filter">Find a branch</label>
                   <input id="branch-filter" pInputText class="table-filter-input" [(ngModel)]="branchTableState.filter.query" (ngModelChange)="onBranchFilterChange()" [placeholder]="branchFilterHint" />
                 </div>
                 <button class="btn btn-outline-secondary table-filter-clear" type="button" (click)="clearBranchFilters()" [disabled]="!branchFilterActive">Clear</button>
               </div>
-              <div class="table-responsive datatable-shell">
-                <table class="table table-sm align-middle mb-0 merchant-results-table">
-                  <thead>
-                    <tr>
-                      <th [attr.aria-sort]="sortAriaSort(branchNameSortDirection)">
-                        <button class="sort-header-button" type="button" [attr.aria-label]="sortButtonLabel('branch name', branchNameSortDirection)" (click)="toggleBranchSort('name')">
-                          <span>Name</span><i class="sort-header-icon" [ngClass]="sortIconClass(branchNameSortDirection)" aria-hidden="true"></i>
-                        </button>
-                      </th>
-                      <th>Code</th>
-                      <th>City</th>
-                      <th [attr.aria-sort]="sortAriaSort(branchStatusSortDirection)">
-                        <button class="sort-header-button" type="button" [attr.aria-label]="sortButtonLabel('branch status', branchStatusSortDirection)" (click)="toggleBranchSort('status')">
-                          <span>Status</span><i class="sort-header-icon" [ngClass]="sortIconClass(branchStatusSortDirection)" aria-hidden="true"></i>
-                        </button>
-                      </th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let branch of visibleBranchRows" [class.row-selected]="selectedBranch?.branchId === branch.branchId" (click)="selectBranch(branch)">
-                      <td>{{ branch.name }}</td>
-                      <td><code>{{ branch.branchCode || '—' }}</code></td>
-                      <td>{{ branch.city || '—' }}</td>
-                      <td><span class="status-tag" [ngClass]="branchStatusTone(branch)">{{ branchStatusLabel(branch) }}</span></td>
-                      <td class="text-end">
-                        <button *ngIf="branchWebCatalogUrl(branch)" class="icon-action-btn me-1" type="button" aria-label="Show branch QR code" title="Show QR code" (click)="qrCatalogUrl = branchWebCatalogUrl(branch); branchQrDialog.showModal(); $event.stopPropagation()">
-                          <i class="pi pi-qrcode" aria-hidden="true"></i>
-                        </button>
-                        <a *ngIf="branchWebCatalogUrl(branch)" class="icon-action-btn me-1" [href]="branchWebCatalogUrl(branch)" target="_blank" rel="noopener noreferrer" aria-label="Open Web Catalog" (click)="$event.stopPropagation()">
-                          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-                        </a>
-                        <button class="icon-action-btn me-1" type="button" aria-label="Printed Catalog" title="Printed Catalog" (click)="navigateToPrintedCatalog(branch); $event.stopPropagation()">
-                          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
-                        </button>
-                        <button class="icon-action-btn me-1" type="button" aria-label="Edit branch" (click)="navigateToBranchEdit(branch); $event.stopPropagation()">
-                          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
-                        </button>
-                        <button class="icon-action-btn" type="button" aria-label="Deactivate branch" (click)="removeBranch(branch); $event.stopPropagation()">
-                          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm3.46-7.12 1.41-1.41L12 11.59l1.12-1.12 1.41 1.41L13.41 13l1.12 1.12-1.41 1.41L12 14.41l-1.12 1.12-1.41-1.41L10.59 13l-1.13-1.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                        </button>
-                      </td>
-                    </tr>
-                    <tr *ngIf="!visibleBranchRows.length">
-                      <td colspan="5" class="text-center text-body-secondary">{{ branchEmptyMessage }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div class="merchant-branch-sort" aria-label="Sort branches">
+                <span>Sort by</span>
+                <button type="button" [attr.aria-label]="sortButtonLabel('branch name', branchNameSortDirection)" [attr.aria-pressed]="branchTableState.sort.field === 'name'" (click)="toggleBranchSort('name')">
+                  Name <i class="sort-header-icon" [ngClass]="sortIconClass(branchNameSortDirection)" aria-hidden="true"></i>
+                </button>
+                <button type="button" [attr.aria-label]="sortButtonLabel('branch status', branchStatusSortDirection)" [attr.aria-pressed]="branchTableState.sort.field === 'status'" (click)="toggleBranchSort('status')">
+                  Status <i class="sort-header-icon" [ngClass]="sortIconClass(branchStatusSortDirection)" aria-hidden="true"></i>
+                </button>
               </div>
-              <p-paginator *ngIf="branchPaginatorVisible" class="table-paginator" [first]="branchTableState.pagination.first" [rows]="branchTableState.pagination.rows" [totalRecords]="branchTableState.pagination.totalRecords" [rowsPerPageOptions]="branchTableState.pagination.rowsPerPageOptions" [showCurrentPageReport]="true" currentPageReportTemplate="Showing {first} to {last} of {totalRecords}" (onPageChange)="onBranchPageChange($event)" />
-              <div class="table-footer">
-                <span>Click a branch row to load its products.</span>
-                <span>{{ selectedBranch?.name || 'No branch selected' }}</span>
+
+              <div class="branch-selection-list" role="list" aria-label="Merchant branches">
+                <article class="branch-selection-card" role="listitem" *ngFor="let branch of visibleBranchRows" [class.branch-selection-card-active]="selectedBranch?.branchId === branch.branchId">
+                  <button class="branch-select-button" type="button" [attr.aria-pressed]="selectedBranch?.branchId === branch.branchId" [attr.aria-label]="'Select branch ' + branch.name" (click)="selectBranch(branch)">
+                    <span class="branch-selection-main">
+                      <span class="branch-selection-name">{{ branch.name }}</span>
+                      <span class="branch-selection-location">{{ branch.city || branch.country || 'Location not set' }}</span>
+                    </span>
+                    <span class="branch-selection-chevron" aria-hidden="true">›</span>
+                    <span class="branch-selection-meta">
+                      <code>{{ branch.branchCode || 'No branch code' }}</code>
+                      <span class="status-tag" [ngClass]="branchStatusTone(branch)">{{ branchStatusLabel(branch) }}</span>
+                    </span>
+                  </button>
+                  <div class="branch-selection-actions" [attr.aria-label]="branch.name + ' actions'">
+                    <button *ngIf="branchWebCatalogUrl(branch)" class="icon-action-btn" type="button" aria-label="Show branch QR code" title="Show QR code" (click)="qrCatalogUrl = branchWebCatalogUrl(branch); branchQrDialog.showModal()">
+                      <i class="pi pi-qrcode" aria-hidden="true"></i>
+                    </button>
+                    <a *ngIf="branchWebCatalogUrl(branch)" class="icon-action-btn" [href]="branchWebCatalogUrl(branch)" target="_blank" rel="noopener noreferrer" aria-label="Open Web Catalog" title="Open Web Catalog">
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                    </a>
+                    <button class="icon-action-btn" type="button" aria-label="Printed Catalog" title="Printed Catalog" (click)="navigateToPrintedCatalog(branch)">
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                    </button>
+                    <button class="icon-action-btn" type="button" aria-label="Edit branch" title="Edit branch" (click)="navigateToBranchEdit(branch)">
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
+                    </button>
+                    <button class="icon-action-btn" type="button" aria-label="Deactivate branch" title="Deactivate branch" (click)="removeBranch(branch)">
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm3.46-7.12 1.41-1.41L12 11.59l1.12-1.12 1.41 1.41L13.41 13l1.12 1.12-1.41 1.41L12 14.41l-1.12 1.12-1.41-1.41L10.59 13l-1.13-1.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                  </div>
+                </article>
+                <div *ngIf="!visibleBranchRows.length" class="merchant-branch-empty">
+                  <span class="merchant-branch-empty-icon" aria-hidden="true">⌕</span>
+                  <strong>{{ branchEmptyMessage }}</strong>
+                  <span *ngIf="branchFilterActive">Try a different search or clear the filter.</span>
+                  <button *ngIf="branchFilterActive" class="btn btn-sm btn-outline-secondary" type="button" (click)="clearBranchFilters()">Clear filter</button>
+                </div>
               </div>
+
+              <p-paginator *ngIf="branchPaginatorVisible" class="table-paginator" [first]="branchTableState.pagination.first" [rows]="branchTableState.pagination.rows" [totalRecords]="branchTableState.pagination.totalRecords" [rowsPerPageOptions]="branchTableState.pagination.rowsPerPageOptions" [showCurrentPageReport]="true" currentPageReportTemplate="{first}-{last} of {totalRecords}" (onPageChange)="onBranchPageChange($event)" />
             </div>
-          </div>
+          </section>
         </div>
 
-        <div class="col-lg-7">
-          <div class="card mb-4">
+        <div class="merchant-catalog-panel" [ngClass]="activeDetailTab === 'categories' ? 'col-12' : 'col-lg-8'">
+          <section *ngIf="activeDetailTab === 'categories'" class="card mb-4 merchant-category-card">
             <div class="card-header d-flex justify-content-between align-items-center">
-              <span>Product Categories</span>
+              <div>
+                <h2 class="h6 mb-1">Product categories</h2>
+                <p class="small text-body-secondary mb-0">Organise products in this merchant’s catalog.</p>
+              </div>
               <div class="d-flex align-items-center gap-2">
-                <span class="badge text-bg-light">{{ categoryFilterActive ? categoryVisibleCount + ' / ' + categories.length : categories.length }} rows</span>
+                <span class="merchant-section-count">{{ categoryFilterActive ? categoryVisibleCount + ' / ' + categories.length : categories.length }}</span>
                 <button class="btn btn-sm btn-primary" type="button" (click)="openCreateCategoryDialog()">Add category</button>
               </div>
             </div>
@@ -234,14 +336,27 @@
               </div>
               <p-paginator *ngIf="categoryPaginatorVisible" class="table-paginator" [first]="categoryTableState.pagination.first" [rows]="categoryTableState.pagination.rows" [totalRecords]="categoryTableState.pagination.totalRecords" [rowsPerPageOptions]="categoryTableState.pagination.rowsPerPageOptions" [showCurrentPageReport]="true" currentPageReportTemplate="Showing {first} to {last} of {totalRecords}" (onPageChange)="onCategoryPageChange($event)" />
             </div>
-          </div>
+          </section>
 
-          <div class="card">
+          <section *ngIf="activeDetailTab === 'branches-products'" class="card merchant-products-card">
             <div class="card-header d-flex justify-content-between align-items-center">
-              <span>Products</span>
-              <span class="badge text-bg-light">{{ productFilterActive ? productVisibleCount + ' / ' + products.length : products.length }} rows</span>
+              <div>
+                <h2 class="h6 mb-1">Products</h2>
+                <p class="small text-body-secondary mb-0">Items available in the selected branch.</p>
+              </div>
+              <span class="merchant-section-count">{{ productFilterActive ? productVisibleCount + ' / ' + products.length : products.length }}</span>
             </div>
             <div class="card-body">
+              <div class="product-branch-scope" [class.product-branch-scope-empty]="!selectedBranch">
+                <span class="product-scope-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01"/></svg>
+                </span>
+                <span class="product-scope-text">
+                  <span class="table-card-label">Showing products for</span>
+                  <strong>{{ selectedBranch?.name || 'Select a branch' }}</strong>
+                </span>
+                <span *ngIf="selectedBranch" class="product-scope-location">{{ selectedBranch.city || selectedBranch.country }}</span>
+              </div>
               <div class="d-flex flex-wrap align-items-center gap-2 mb-3" *ngIf="catalogLanguages.length > 1">
                 <label class="table-filter-label mb-0" for="catalog-language">Catalog Language</label>
                 <select id="catalog-language" class="form-select form-select-sm w-auto" [ngModel]="catalogLanguage" (ngModelChange)="setCatalogLanguage($event)">
@@ -253,12 +368,8 @@
                 </span>
               </div>
               <div class="table-card-toolbar mb-3">
-                <div>
-                  <div class="table-card-label">Branch Scope</div>
-                  <div class="table-card-value">{{ selectedBranch?.name || 'Select a branch' }}</div>
-                </div>
                 <div class="table-filter-input-wrap">
-                  <label class="table-filter-label" for="product-filter">Product Filters</label>
+                  <label class="table-filter-label" for="product-filter">Find a product</label>
                   <input id="product-filter" pInputText class="table-filter-input" [(ngModel)]="productTableState.filter.query" (ngModelChange)="onProductFilterChange()" [placeholder]="productFilterHint" />
                 </div>
                 <div class="table-filter-action-wrap">
@@ -310,11 +421,12 @@
                       <td>{{ product.categoryName || '—' }}</td>
                       <td><span class="status-tag" [ngClass]="productStatusTone(product)">{{ productStatusLabel(product) }}</span></td>
                       <td class="text-end action-cell">
-                        <button class="btn btn-sm btn-outline-primary me-1" type="button" (click)="navigateToProductEdit(product)">
-                          <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
-                          <span class="ms-1">Edit</span>
+                        <button class="icon-action-btn me-1" type="button" aria-label="Edit product" title="Edit product" (click)="navigateToProductEdit(product)">
+                          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/></svg>
                         </button>
-                        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="removeProduct(product)">Remove</button>
+                        <button class="icon-action-btn" type="button" aria-label="Remove product" title="Remove product" (click)="removeProduct(product)">
+                          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm3.46-7.12 1.41-1.41L12 11.59l1.12-1.12 1.41 1.41L13.41 13l1.12 1.12-1.41 1.41L12 14.41l-1.12 1.12-1.41-1.41L10.59 13l-1.13-1.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>
                       </td>
                     </tr>
                     <tr *ngIf="!visibleProductRows.length">
@@ -325,13 +437,13 @@
               </div>
               <p-paginator *ngIf="productPaginatorVisible" class="table-paginator" [first]="productTableState.pagination.first" [rows]="productTableState.pagination.rows" [totalRecords]="productTableState.pagination.totalRecords" [rowsPerPageOptions]="productTableState.pagination.rowsPerPageOptions" [showCurrentPageReport]="true" currentPageReportTemplate="Showing {first} to {last} of {totalRecords}" (onPageChange)="onProductPageChange($event)" />
             </div>
-          </div>
+          </section>
         </div>
       </div>
     </div>
 
     <!-- PAYMENT TAB -->
-    <div *ngIf="activeDetailTab === 'payment'">
+    <div *ngIf="activeDetailTab === 'payment'" id="merchant-panel-payment" role="tabpanel" aria-labelledby="merchant-tab-payment" tabindex="0">
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span>Payment Providers</span>
@@ -436,7 +548,7 @@
     </div>
 
     <!-- APPEARANCES TAB (mobile merchants only) -->
-    <div *ngIf="activeDetailTab === 'appearances' && merchant.merchantMobility === 'MOBILE'">
+    <div *ngIf="activeDetailTab === 'appearances' && merchant.merchantMobility === 'MOBILE'" id="merchant-panel-appearances" role="tabpanel" aria-labelledby="merchant-tab-appearances" tabindex="0">
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span>Appearances</span>

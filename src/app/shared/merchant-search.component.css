@@ -1,0 +1,331 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.merchant-search {
+  --merchant-search-surface: var(--merchant-surface, var(--user-surface, var(--orders-surface, var(--appointment-surface, var(--settlement-surface, #fff)))));
+  --merchant-search-soft: var(--merchant-soft-surface, var(--user-soft-surface, var(--orders-soft-surface, var(--appointment-soft-surface, var(--settlement-soft, #f7f8fc)))));
+  --merchant-search-border: var(--merchant-border, var(--user-border, var(--orders-border, var(--appointment-border, var(--settlement-border, #e4e8f0)))));
+  --merchant-search-text: var(--merchant-text, var(--user-text, var(--orders-text, var(--appointment-text, var(--settlement-text, #202b3c)))));
+  --merchant-search-muted: var(--merchant-muted, var(--user-muted, var(--orders-muted, var(--appointment-muted, var(--settlement-muted, #788397)))));
+  --merchant-search-accent: var(--merchant-accent, var(--user-accent, var(--orders-accent, var(--appointment-accent, var(--settlement-accent, #6959d7)))));
+  position: relative;
+  min-width: 0;
+  color: var(--merchant-search-text);
+}
+
+.merchant-search-control {
+  position: relative;
+}
+
+.merchant-search--catalog,
+.merchant-search--catalog .merchant-search-control {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  gap: 0.65rem;
+}
+
+.merchant-search--catalog .input-group {
+  flex: 1;
+  gap: 0.65rem;
+}
+
+.merchant-search .input-group {
+  flex-wrap: nowrap;
+}
+
+.merchant-search .form-control {
+  min-width: 0;
+  min-height: 2.45rem;
+  border-color: var(--merchant-search-border);
+  border-radius: 0.55rem 0 0 0.55rem;
+  background-color: var(--merchant-search-surface);
+  color: var(--merchant-search-text);
+  font-size: 0.72rem;
+}
+
+.merchant-search .form-control:focus {
+  z-index: 3;
+  border-color: color-mix(in srgb, var(--merchant-search-accent) 55%, var(--merchant-search-border));
+  box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--merchant-search-accent) 14%, transparent);
+}
+
+.merchant-search .input-group > .btn {
+  display: inline-flex;
+  min-height: 2.45rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-color: var(--merchant-search-border);
+  border-radius: 0 0.55rem 0.55rem 0;
+  font-size: 0.68rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.merchant-search-icon {
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  left: 0.78rem;
+  width: 1rem;
+  height: 1rem;
+  transform: translateY(-50%);
+  fill: none;
+  stroke: var(--merchant-search-muted);
+  stroke-linecap: round;
+  stroke-width: 1.8;
+  pointer-events: none;
+}
+
+.merchant-search--orders .form-control,
+.merchant-search--appointment .form-control {
+  padding-left: 2.35rem;
+}
+
+.merchant-search--catalog .form-control {
+  min-height: 2.9rem;
+  padding-left: 2.7rem;
+  border-radius: 0.7rem;
+}
+
+.merchant-search--catalog .input-group > .btn {
+  min-width: 7rem;
+  border-radius: 0.7rem;
+}
+
+.merchant-search--catalog .merchant-search-icon {
+  left: 0.9rem;
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.merchant-search-button-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.merchant-search-results {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  left: 0;
+  display: grid;
+  max-height: 17rem;
+  overflow: auto;
+  border: 1px solid var(--merchant-search-border);
+  border-radius: 0.7rem;
+  background: var(--merchant-search-surface);
+  box-shadow: 0 0.8rem 1.8rem rgb(15 23 42 / 16%);
+}
+
+.merchant-search-result {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border: 0;
+  border-bottom: 1px solid var(--merchant-search-border);
+  background: var(--merchant-search-surface);
+  color: var(--merchant-search-text);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.merchant-search-result:last-child {
+  border-bottom: 0;
+}
+
+.merchant-search-result:hover,
+.merchant-search-result:focus-visible {
+  background: var(--merchant-search-soft);
+}
+
+.merchant-search-result:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--merchant-search-accent);
+  outline-offset: -2px;
+}
+
+.merchant-search-result-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--merchant-search-accent) 20%, var(--merchant-search-border));
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, var(--merchant-search-accent) 8%, var(--merchant-search-surface));
+  color: var(--merchant-search-accent);
+}
+
+.merchant-search-result-icon svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.merchant-search-result-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.merchant-search-result-copy strong {
+  overflow: hidden;
+  color: var(--merchant-search-text);
+  font-size: 0.7rem;
+  font-weight: 680;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.merchant-search-result-copy small {
+  overflow: hidden;
+  color: var(--merchant-search-muted);
+  font-size: 0.61rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.merchant-search-result-arrow {
+  flex: 0 0 auto;
+  color: var(--merchant-search-muted);
+  font-size: 1.1rem;
+}
+
+.merchant-search-status {
+  flex: 0 0 auto;
+  color: var(--merchant-search-muted);
+  font-size: 0.58rem;
+  font-weight: 650;
+  text-transform: capitalize;
+}
+
+.merchant-search--compact .merchant-search-result {
+  display: block;
+  padding: 0.58rem 0.7rem;
+}
+
+.merchant-search--compact .merchant-search-result-copy {
+  gap: 0.1rem;
+}
+
+.merchant-search--compact .merchant-search-result-copy strong {
+  font-size: 0.67rem;
+}
+
+.merchant-search--compact .merchant-search-result-copy small {
+  font-size: 0.59rem;
+}
+
+.merchant-search--dashboard .form-control,
+.merchant-search--dashboard .input-group > .btn {
+  min-height: 2.75rem;
+}
+
+.merchant-search--dashboard .merchant-search-result {
+  display: block;
+  padding: 0.62rem 0.75rem;
+}
+
+.merchant-search--dashboard .merchant-search-result-copy strong {
+  font-size: 0.7rem;
+}
+
+.merchant-search--settlement .form-control,
+.merchant-search--settlement .input-group > .btn {
+  min-height: 2.5rem;
+}
+
+.merchant-search--orders .form-control,
+.merchant-search--orders .input-group > .btn {
+  min-height: 3.7rem;
+}
+
+.merchant-search--appointment .form-control,
+.merchant-search--appointment .input-group > .btn {
+  min-height: 2.7rem;
+}
+
+.merchant-search--orders .merchant-search-result,
+.merchant-search--appointment .merchant-search-result,
+.merchant-search--assignment .merchant-search-result {
+  padding: 0.6rem;
+}
+
+.merchant-search--assignment .merchant-search-result-selected {
+  background: color-mix(in srgb, #20966b 8%, var(--merchant-search-surface));
+}
+
+.merchant-search--assignment .merchant-search-status {
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--merchant-search-border);
+  border-radius: 999px;
+  background: var(--merchant-search-soft);
+}
+
+.merchant-search--assignment .merchant-search-results {
+  position: static;
+  max-height: 15rem;
+  gap: 0.3rem;
+  margin-top: 0.55rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.merchant-search--assignment .merchant-search-result {
+  padding: 0.68rem 0.75rem;
+  border: 1px solid var(--merchant-search-border);
+  border-radius: 0.6rem;
+}
+
+:host-context(html[data-coreui-theme='dark']) .merchant-search {
+  --merchant-search-surface: var(--merchant-surface, var(--user-surface, var(--orders-surface, var(--appointment-surface, var(--settlement-surface, #1b2535)))));
+  --merchant-search-soft: var(--merchant-soft-surface, var(--user-soft-surface, var(--orders-soft-surface, var(--appointment-soft-surface, var(--settlement-soft, #232f42)))));
+  --merchant-search-border: var(--merchant-border, var(--user-border, var(--orders-border, var(--appointment-border, var(--settlement-border, #354154)))));
+  --merchant-search-text: var(--merchant-text, var(--user-text, var(--orders-text, var(--appointment-text, var(--settlement-text, #f1f5f9)))));
+  --merchant-search-muted: var(--merchant-muted, var(--user-muted, var(--orders-muted, var(--appointment-muted, var(--settlement-muted, #a5b0c1)))));
+  --merchant-search-accent: var(--merchant-accent, var(--user-accent, var(--orders-accent, var(--appointment-accent, var(--settlement-accent, #b7adff)))));
+}
+
+@media (max-width: 480px) {
+  .merchant-search--compact .input-group > .btn,
+  .merchant-search--dashboard .input-group > .btn,
+  .merchant-search--settlement .input-group > .btn,
+  .merchant-search--catalog .input-group > .btn {
+    padding-inline: 0.6rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .merchant-search--catalog .merchant-search-control,
+  .merchant-search--catalog .input-group {
+    flex-direction: column;
+  }
+
+  .merchant-search--catalog .merchant-search-control,
+  .merchant-search--catalog .input-group > .form-control,
+  .merchant-search--catalog .input-group > .btn {
+    width: 100%;
+  }
+}

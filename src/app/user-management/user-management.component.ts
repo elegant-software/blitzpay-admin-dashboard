@@ -13,6 +13,7 @@ import { UserDetailComponent } from './user-detail.component';
   standalone: true,
   imports: [CommonModule, FormsModule, UserDetailComponent],
   templateUrl: './user-management.component.html',
+  styleUrl: './user-management.component.css',
 })
 export class UserManagementComponent implements OnInit {
   searchQuery = '';
@@ -74,5 +75,15 @@ export class UserManagementComponent implements OnInit {
     if (this.selectedUser) {
       this.loadAssignments(this.selectedUser.id);
     }
+  }
+
+  userInitials(name: string): string {
+    return name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(part => part.charAt(0))
+      .join('')
+      .toLocaleUpperCase();
   }
 }

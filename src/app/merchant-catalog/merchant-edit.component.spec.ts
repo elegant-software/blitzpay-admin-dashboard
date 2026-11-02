@@ -5,7 +5,7 @@ import { MenuLanguage, Merchant, MerchantLocation, UpdateMerchantRequest } from 
 import { MerchantApiService } from '../services/merchant-api.service';
 import { MerchantEditComponent } from './merchant-edit.component';
 
-describe('MerchantEditComponent menu languages', () => {
+describe('MerchantEditComponent shared create and edit form', () => {
   let fixture: ComponentFixture<MerchantEditComponent>;
   let component: MerchantEditComponent;
   let merchantApi: jasmine.SpyObj<MerchantApiService>;
@@ -22,10 +22,11 @@ describe('MerchantEditComponent menu languages', () => {
     originalMenuLanguage: 'de', supportedMenuLanguages: ['en'], ...overrides,
   });
 
-  async function setup(loaded: Merchant = merchant()) {
+  async function setup(loaded: Merchant = merchant(), creating = false) {
     merchantApi = jasmine.createSpyObj<MerchantApiService>('MerchantApiService',
-      ['getMerchant', 'getVerticals', 'getLocation', 'getMenuLanguages', 'updateMerchant', 'saveLocation']);
+      ['getMerchant', 'createMerchant', 'getVerticals', 'getLocation', 'getMenuLanguages', 'updateMerchant', 'saveLocation']);
     merchantApi.getMerchant.and.returnValue(of(loaded));
+    merchantApi.createMerchant.and.returnValue(of(loaded));
     merchantApi.getVerticals.and.returnValue(of([]));
     merchantApi.getLocation.and.returnValue(of(null as unknown as MerchantLocation));
     merchantApi.getMenuLanguages.and.returnValue(of(catalogue));
@@ -36,7 +37,7 @@ describe('MerchantEditComponent menu languages', () => {
       providers: [
         provideRouter([{ path: '**', children: [] }]),
         { provide: MerchantApiService, useValue: merchantApi },
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 'm-1' }) } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(creating ? {} : { id: 'm-1' }) } } },
       ],
     }).compileComponents();
 
@@ -53,6 +54,47 @@ describe('MerchantEditComponent menu languages', () => {
     expect(component.form.supportedMenuLanguages).toEqual(['en']);
     expect(component.addableMenuLanguages.map((l) => l.code)).toEqual(['fr']);
     expect(component.languageLabel('fr')).toBe('French — Français');
+  });
+
+  it('opens the shared form in create mode without loading an existing merchant', async () => {
+    await setup(merchant(), true);
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(component.isCreateMode).toBeTrue();
+    expect(merchantApi.getMerchant).not.toHaveBeenCalled();
+    expect(root.querySelector('h1')?.textContent).toContain('Add a merchant');
+    expect(root.querySelector('#merchant-name')).not.toBeNull();
+    expect(root.querySelector('#merchant-editor-location-title')).not.toBeNull();
+  });
+
+  it('creates a merchant using the shared profile fields', async () => {
+    await setup(merchant(), true);
+    component.form.merchantName = 'New Cafe';
+    component.form.website = 'https://new-cafe.example';
+    component.form.offerings = ['PRE_ORDER'];
+
+    component.save();
+
+    expect(merchantApi.createMerchant).toHaveBeenCalledWith(
+      component.selectedEnvironment,
+      component.apiVersion,
+      jasmine.objectContaining({
+        merchantName: 'New Cafe',
+        website: 'https://new-cafe.example',
+        offerings: ['PRE_ORDER']
+      })
+    );
+    expect(merchantApi.updateMerchant).not.toHaveBeenCalled();
+    expect(component.isCreateMode).toBeFalse();
+  });
+
+  it('requires a trading name before creating or updating', async () => {
+    await setup(merchant(), true);
+
+    component.save();
+
+    expect(merchantApi.createMerchant).not.toHaveBeenCalled();
+    expect(component.errorMessage).toBe('Enter a trading name.');
   });
 
   it('offers International Menu as an offering', async () => {

@@ -8,7 +8,7 @@
 ## Merchant
 
 - `GET /{version}/merchants/{id}`: Get merchant application details.
-- `POST /{version}/merchants`: Register a merchant if creation is included in a later scope decision.
+- `POST /{version}/merchants`: Create a merchant using the shared merchant profile fields.
 - `POST /{version}/merchants/{id}/activate`: Activate a merchant if lifecycle activation is included in a later scope decision.
 
 ## Merchant Logo

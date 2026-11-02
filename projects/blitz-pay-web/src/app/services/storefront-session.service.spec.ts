@@ -73,4 +73,17 @@ describe('StorefrontSessionService', () => {
     expect(service.scope?.branchId).toBe('branch-12');
     expect(service.lines.length).toBe(1);
   });
+
+  it('refreshes backend menu text without accepting price changes or changing cart quantities', () => {
+    const service = TestBed.inject(StorefrontSessionService);
+    service.useScope('merchant-44', 'branch-12');
+    service.add(coffee, 2);
+    const translated = { ...coffee, name: 'Kaffee', description: 'Frisch', categoryName: 'Getränke', language: 'de', unitPrice: 5 };
+    service.updateCatalogText([translated], 'other-merchant', 'branch-12');
+    expect(service.lines[0].product.name).toBe('Coffee');
+    service.updateCatalogText([translated], 'merchant-44', 'branch-12');
+    expect(service.lines[0].product).toEqual({ ...translated, unitPrice: 3.5 });
+    expect(service.itemCount).toBe(2);
+    expect(service.reconcile([translated], false)).toBeTrue();
+  });
 });

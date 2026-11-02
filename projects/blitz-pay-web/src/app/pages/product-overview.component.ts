@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { finalize, forkJoin } from 'rxjs';
+import { finalize, forkJoin, map, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { WebCartComponent } from '../components/web-cart.component';
 import { StorefrontBranch, StorefrontMerchant, StorefrontProduct } from '../models/storefront.models';
@@ -26,7 +26,7 @@ import { StorefrontLanguageService } from '../services/storefront-language.servi
     <section class="shop-layout product-layout" *ngIf="!loading">
       <article class="surface product-overview" *ngIf="product?.active && branch?.active !== false; else unavailable">
         <a class="back-link" [routerLink]="['/m', merchantId, 'b', branchId]">Back to products</a>
-        <div class="overview-grid">
+        <div class="overview-grid" [attr.dir]="catalogLanguage.direction">
           <div class="overview-image product-image">
             <img *ngIf="product?.imageUrl" [src]="product?.imageUrl" [alt]="product?.name" />
             <span *ngIf="!product?.imageUrl">Product image</span>
@@ -62,7 +62,7 @@ export class ProductOverviewComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
   private readonly cart = inject(StorefrontSessionService);
-  private readonly catalogLanguage = inject(StorefrontLanguageService);
+  readonly catalogLanguage = inject(StorefrontLanguageService);
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly productId = this.route.snapshot.paramMap.get('productId') ?? '';
@@ -78,9 +78,12 @@ export class ProductOverviewComponent implements OnInit {
     this.cart.useScope(this.merchantId, this.branchId);
     forkJoin({
       merchant: this.api.getMerchant(this.merchantId),
-      branch: this.api.getBranch(this.merchantId, this.branchId),
-      product: this.api.getProduct(this.merchantId, this.branchId, this.productId, this.catalogLanguage.language)
-    }).pipe(finalize(() => this.loading = false)).subscribe({
+      branch: this.api.getBranch(this.merchantId, this.branchId)
+    }).pipe(
+      switchMap(({ merchant, branch }) => this.api.getProduct(this.merchantId, this.branchId, this.productId, this.catalogLanguage.resolve(merchant))
+        .pipe(map(product => ({ merchant, branch, product })))),
+      finalize(() => this.loading = false)
+    ).subscribe({
       next: (result) => {
         this.merchant = result.merchant;
         this.branch = result.branch;

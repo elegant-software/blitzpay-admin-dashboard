@@ -15,7 +15,10 @@ bootstrapApplication(AppComponent, {
     provideAnimationsAsync(),
     providePrimeNG({
       theme: {
-        preset: Aura
+        preset: Aura,
+        options: {
+          darkModeSelector: '[data-coreui-theme="dark"]'
+        }
       }
     }),
     provideRouter(appRoutes, withEnabledBlockingInitialNavigation()),
