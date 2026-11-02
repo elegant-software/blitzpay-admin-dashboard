@@ -14,7 +14,7 @@
 - The app shell (including route chunks) is prefetched. Icons/assets load on demand.
 - No API data groups or remote URL caches exist. `/v1/**` and `/.well-known/**` are excluded from navigation fallback. nginx sends API responses with `no-store` and shell/worker metadata with `no-cache`.
 - Ready versions reload while browsing, but wait until customers leave checkout/order/confirmation routes. Updates are checked on foregrounding and every 15 minutes.
-- Native App Install Prompt remains the primary promotion. There is no automatic PWA installation popup. Browser installation menus remain available.
+- Native App Install Prompt remains the primary promotion. A compact, dismissible Web Storefront Install Notice appears after shopping content only when the browser signals installability; the browser's install prompt opens only after the customer selects Install. Installed apps and browsers that do not emit `beforeinstallprompt` show no notice, and their browser installation menus remain available.
 - The normal cart remains tab scoped. A hosted payment creates a recovery snapshot keyed by order ID, valid for two hours, read only on that order's return route. It contains cart items and scope, no payment credentials. Recovery never overwrites an existing nonempty cart. Storage restrictions do not prevent browsing or paying; the live Order remains available even without recovery.
 - Opening the installed PWA at `/` explains QR entry and offers the current tab's menu when available. The optional in-app scanner is deferred pending a product decision.
 

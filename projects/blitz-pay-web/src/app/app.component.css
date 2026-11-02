@@ -26,6 +26,17 @@
 .guest-label { display: inline-flex; align-items: center; gap: .4rem; color: var(--storefront-positive); background: var(--storefront-mint); border: 1px solid var(--storefront-stroke); border-radius: 999px; padding: .55rem .8rem; font-size: .72rem; font-weight: 600; white-space: nowrap; }
 .guest-label svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .storefront-content { margin: 0 auto; max-width: 76rem; padding: 2.25rem max(1.25rem, env(safe-area-inset-right, 0px)) calc(3rem + var(--storefront-download-height, 0px) + env(safe-area-inset-bottom, 0px)) max(1.25rem, env(safe-area-inset-left, 0px)); }
+.pwa-install-notice { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 2rem; padding: 1rem 1.2rem; background: var(--storefront-surface); border: 1px solid var(--storefront-stroke); border-radius: .9rem; }
+.pwa-install-copy h2 { color: var(--storefront-ink); font-size: .95rem; margin: 0 0 .25rem; }
+.pwa-install-copy p { color: var(--storefront-muted); font-size: .78rem; line-height: 1.5; margin: 0; }
+.pwa-install-copy .pwa-install-error { margin-top: .35rem; }
+.pwa-install-actions { display: flex; align-items: center; gap: .5rem; flex: 0 0 auto; }
+.pwa-install-actions button { min-height: 44px; border-radius: .65rem; padding: .55rem .85rem; font: inherit; font-size: .78rem; cursor: pointer; }
+.pwa-install-button { color: #fff; background: var(--storefront-action); border: 1px solid var(--storefront-action); font-weight: 650; }
+.pwa-install-button:hover:not(:disabled) { background: #066c58; }
+.pwa-install-button:disabled { cursor: not-allowed; opacity: .6; }
+.pwa-install-dismiss { color: var(--storefront-ink); background: transparent; border: 1px solid var(--storefront-stroke); }
+.pwa-install-actions button:focus-visible { outline: 3px solid var(--storefront-action); outline-offset: 2px; }
 
 .theme-toggle { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border: 1px solid var(--storefront-stroke); border-radius: 50%; background: var(--storefront-bg); color: var(--storefront-ink); cursor: pointer; margin-left: auto; }
 .theme-toggle svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
@@ -57,4 +68,7 @@
   .download-invitation strong { font-size: .8rem; }
   .download-invitation p { font-size: .72rem; }
   .store-links a { flex: 1 1 130px; justify-content: center; }
+  .pwa-install-notice { align-items: flex-start; flex-direction: column; }
+  .pwa-install-actions { width: 100%; }
+  .pwa-install-actions button { flex: 1 1 0; }
 }
