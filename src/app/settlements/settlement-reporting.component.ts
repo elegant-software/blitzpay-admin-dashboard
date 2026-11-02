@@ -20,6 +20,7 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule, DisplayDatePipe],
   templateUrl: './settlement-reporting.component.html',
+  styleUrl: './settlement-reporting.component.css',
 })
 export class SettlementReportingComponent implements OnInit {
   readonly environment: BackendEnvironment;
