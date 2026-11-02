@@ -13,6 +13,7 @@ import {
   CatalogTranslation,
   CreateOrderRequest,
   CreateProductCategoryRequest,
+  CreateMerchantRequest,
   CreateBranchRequest,
   MenuLanguage,
   Merchant,
@@ -52,6 +53,14 @@ export class MerchantApiService {
   getMerchant(environment: BackendEnvironment, apiVersion: string, merchantId: string): Observable<Merchant> {
     // Bearer credentials are injected centrally by the auth interceptor.
     return this.http.get<Merchant>(`${this.base(environment, apiVersion)}/merchants/${merchantId}`);
+  }
+
+  createMerchant(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    payload: CreateMerchantRequest
+  ): Observable<Merchant> {
+    return this.http.post<Merchant>(`${this.base(environment, apiVersion)}/merchants`, payload);
   }
 
   updateMerchant(

@@ -3,7 +3,7 @@ import { runtimeConfig } from './runtime-config';
 export const environment = {
   defaultEnvironmentKey: 'local' as const,
   auth: {
-    authorityUrl: `https://${runtimeConfig.authHost}`,
+    authorityUrl: runtimeConfig.authUrl ?? `https://${runtimeConfig.authHost}`,
     realm: 'blitzpay',
     clientId: 'blitzpay-admin-dashboard',
     redirectPath: '/',

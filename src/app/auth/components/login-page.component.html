@@ -1,19 +1,77 @@
-<div class="auth-page">
-  <div class="auth-card card shadow-sm border-0">
-    <div class="card-body p-4 p-lg-5">
-      <div class="auth-logo-wrap">
-        <span class="auth-logo-mark">Z</span>
-        <span class="auth-logo-name">ZackPay</span>
-      </div>
-      <h1 class="auth-title">Welcome back</h1>
-      <p class="auth-subtitle">Admin Dashboard</p>
+<main class="auth-page">
+  <div class="auth-shell">
+    <section class="auth-story" aria-labelledby="auth-story-title">
+      <a class="auth-brand" routerLink="/" aria-label="ZackPay Admin home">
+        <span class="auth-logo-mark" aria-hidden="true">Z</span>
+        <span class="auth-logo-name">ZackPay<span>ADMINISTRATION</span></span>
+      </a>
 
-      <div class="alert alert-danger mt-3" *ngIf="errorMessage">{{ errorMessage }}</div>
+      <div class="auth-story-copy">
+        <p class="auth-eyebrow">BLITZPAY OPERATIONS</p>
+        <h1 id="auth-story-title">Run the details.<br />Focus on growth.</h1>
+        <p class="auth-story-description">
+          A clear view of your merchants, orders, and operations — all in one place.
+        </p>
 
-      <div class="auth-actions mt-4">
-        <button class="btn btn-primary btn-lg w-100" type="button" (click)="signIn()">Sign in</button>
-        <button class="btn btn-outline-primary btn-lg w-100" type="button" (click)="register()">Create account</button>
+        <ul class="auth-feature-list" aria-label="Admin tools">
+          <li>
+            <span class="auth-feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M8 15l3-4 3 2 5-7" /></svg>
+            </span>
+            <span>Monitor platform performance</span>
+          </li>
+          <li>
+            <span class="auth-feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10" /><circle cx="18" cy="17" r="2" /></svg>
+            </span>
+            <span>Manage merchants and branches</span>
+          </li>
+          <li>
+            <span class="auth-feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4m8-4v4M4 10h16" /></svg>
+            </span>
+            <span>Keep daily operations moving</span>
+          </li>
+        </ul>
       </div>
-    </div>
+
+      <p class="auth-story-footer">A smarter way to manage every detail.</p>
+    </section>
+
+    <section class="auth-card" aria-labelledby="auth-title">
+      <div class="auth-card-heading">
+        <p class="auth-card-eyebrow">ADMIN PORTAL</p>
+        <h2 id="auth-title">Welcome back</h2>
+        <p class="auth-subtitle">Sign in to continue to your dashboard.</p>
+      </div>
+
+      <div class="alert alert-danger auth-error" role="alert" aria-live="assertive" *ngIf="errorMessage">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 8v5m0 3h.01" /></svg>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <div class="auth-actions">
+        <button
+          class="btn btn-primary btn-lg w-100 auth-primary-action"
+          type="button"
+          aria-label="Sign in to the admin dashboard"
+          (click)="signIn()"
+        >
+          Sign in
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+        </button>
+        <button
+          class="btn btn-outline-primary btn-lg w-100 auth-secondary-action"
+          type="button"
+          aria-label="Create an admin account"
+          (click)="register()"
+        >Create account</button>
+      </div>
+
+      <p class="auth-security-note">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+        Secure administrator access
+      </p>
+    </section>
   </div>
-</div>
+</main>

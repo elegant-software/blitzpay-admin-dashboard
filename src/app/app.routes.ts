@@ -33,6 +33,10 @@ export const appRoutes: Routes = [
         loadComponent: () => import('./merchant-catalog/merchant-catalog.component').then(m => m.MerchantCatalogComponent)
       },
       {
+        path: 'merchants/new',
+        loadComponent: () => import('./merchant-catalog/merchant-edit.component').then(m => m.MerchantEditComponent)
+      },
+      {
         path: 'merchants/:id',
         loadComponent: () => import('./merchant-catalog/merchant-detail.component').then(m => m.MerchantDetailComponent)
       },

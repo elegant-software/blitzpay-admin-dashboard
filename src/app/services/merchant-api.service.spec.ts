@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import {
   BackendEnvironment,
+  CreateMerchantRequest,
   CreateProductCategoryRequest,
   Merchant,
   MerchantSearchResponse,
@@ -147,6 +148,34 @@ describe('MerchantApiService product category API', () => {
 
     expect(response?.merchantMobility).toBe('MOBILE');
     expect(response?.businessType).toBe('CAFE');
+  });
+
+  it('creates a merchant with its profile payload', () => {
+    const payload: CreateMerchantRequest = {
+      merchantName: 'Cafe Roma',
+      website: 'https://cafe.example.com',
+      businessType: 'CAFE',
+      merchantMobility: 'MOBILE',
+      offerings: ['PRE_ORDER'],
+      contactInfo: { email: 'jane@example.com' }
+    };
+    let response: Merchant | undefined;
+
+    service.createMerchant(environment, apiVersion, payload).subscribe((result) => response = result);
+
+    const request = httpTestingController.expectOne('http://localhost:8080/v1/merchants');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(payload);
+    request.flush({
+      merchantId,
+      merchantCode: 'MRC-123',
+      merchantName: 'Cafe Roma',
+      merchantStatus: 'SETUP',
+      offerings: ['PRE_ORDER'],
+      lastUpdatedAt: '2026-05-23T10:00:00.000Z'
+    } satisfies Merchant);
+
+    expect(response?.merchantId).toBe(merchantId);
   });
 
   it('adds required default pagination fields to merchant search requests', () => {

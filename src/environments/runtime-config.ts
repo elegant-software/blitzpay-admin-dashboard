@@ -3,6 +3,8 @@
 export interface RuntimeConfig {
   apiHost: string;
   authHost: string;
+  /** Optional full Keycloak URL for local development (including protocol and port). */
+  authUrl?: string;
   storefrontHost: string;
   /** Reachable storefront URL for local links and QR codes, including protocol and port. */
   localStorefrontUrl?: string;

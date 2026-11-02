@@ -1,75 +1,104 @@
-<div class="container-fluid py-4">
-  <div class="row mb-4">
-    <div class="col-12">
-      <h2 class="fw-semibold mb-1">User Management</h2>
-      <p class="text-muted mb-0">Search Platform Users and manage their Merchant assignments.</p>
+<main class="user-management-page">
+  <header class="user-management-hero">
+    <div class="user-management-hero-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM20 8v6M23 11h-6" /></svg>
     </div>
-  </div>
+    <div class="user-management-hero-copy">
+      <span class="user-management-eyebrow">ACCESS CONTROL</span>
+      <h1>User management</h1>
+      <p>Find platform users and manage their access to merchants and branches.</p>
+    </div>
+    <span class="user-management-hero-tag">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v5c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V6l-8-3Zm-3 9 2 2 4-4" /></svg>
+      Platform access
+    </span>
+  </header>
 
-  <!-- Search bar -->
-  <div class="row mb-4">
-    <div class="col-md-6">
-      <div class="input-group">
-        <input
-          type="text"
-          class="form-control"
-          placeholder="Search by name or email…"
-          [(ngModel)]="searchQuery"
-          (keyup.enter)="search()"
-          aria-label="Search users"
-        />
-        <button class="btn btn-primary" type="button" (click)="search()" [disabled]="searching">
-          <span *ngIf="searching" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-          Search
+  <section class="user-search-card" aria-label="Search users">
+    <div class="user-search-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
+    </div>
+    <div class="user-search-copy">
+      <h2>Find a user</h2>
+      <p>Search by name or email address.</p>
+    </div>
+    <form class="user-search-form" (ngSubmit)="search()">
+      <label class="visually-hidden" for="user-search-input">Search users by name or email</label>
+      <input
+        id="user-search-input"
+        class="user-search-input"
+        type="search"
+        placeholder="Enter a name or email"
+        [(ngModel)]="searchQuery"
+        name="userSearch"
+        autocomplete="off"
+      />
+      <button class="btn btn-primary user-search-button" type="submit" [disabled]="searching || !searchQuery.trim()">
+        <span *ngIf="searching" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        <svg *ngIf="!searching" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
+        {{ searching ? 'Searching' : 'Search users' }}
+      </button>
+    </form>
+  </section>
+
+  <div *ngIf="errorMessage" class="alert alert-danger user-management-error" role="alert">{{ errorMessage }}</div>
+
+  <section class="user-management-workspace" aria-label="User search results and assignments">
+    <aside class="user-results-panel">
+      <header class="user-results-heading">
+        <div>
+          <h2>Search results</h2>
+          <p *ngIf="searchResults.length">{{ searchResults.length }} {{ searchResults.length === 1 ? 'user' : 'users' }} found</p>
+          <p *ngIf="!searchResults.length">Users matching your search</p>
+        </div>
+        <span class="user-results-count" *ngIf="searchResults.length">{{ searchResults.length }}</span>
+      </header>
+
+      <div *ngIf="searching" class="user-results-state" role="status">
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        <span>Searching platform users…</span>
+      </div>
+
+      <div *ngIf="!searching && searchResults.length === 0 && !searchQuery.trim() && !errorMessage" class="user-results-state user-results-empty">
+        <span class="user-state-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
+        </span>
+        <strong>Search for a user</strong>
+        <span>Results will appear here. Select someone to view and manage their access.</span>
+      </div>
+
+      <div *ngIf="!searching && searchResults.length === 0 && searchQuery.trim() && !errorMessage" class="user-results-state user-results-empty">
+        <span class="user-state-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
+        </span>
+        <strong>No users found</strong>
+        <span>Try another name or email address.</span>
+      </div>
+
+      <div *ngIf="!searching && searchResults.length" class="user-result-list">
+        <button
+          *ngFor="let user of searchResults"
+          class="user-result"
+          type="button"
+          [class.user-result-selected]="selectedUser?.id === user.id"
+          [attr.aria-pressed]="selectedUser?.id === user.id"
+          (click)="selectUser(user)">
+          <span class="user-result-avatar" [class.user-result-avatar-inactive]="!user.enabled" aria-hidden="true">{{ userInitials(user.displayName) }}</span>
+          <span class="user-result-copy">
+            <strong class="user-result-name">{{ user.displayName }}</strong>
+            <small>{{ user.email ?? 'No email address' }}</small>
+            <span class="user-result-groups" *ngIf="user.groups?.length">
+              {{ user.groups!.length }} {{ user.groups!.length === 1 ? 'group' : 'groups' }}
+            </span>
+          </span>
+          <span class="user-result-status" [class.user-status-active]="user.enabled" [class.user-status-inactive]="!user.enabled">
+            <span aria-hidden="true"></span>{{ user.enabled ? 'Active' : 'Inactive' }}
+          </span>
         </button>
       </div>
-    </div>
-  </div>
+    </aside>
 
-  <div *ngIf="errorMessage" class="alert alert-danger" role="alert">{{ errorMessage }}</div>
-
-  <div class="row g-4">
-    <!-- Left panel: search results -->
-    <div class="col-md-4">
-      <div class="card h-100">
-        <div class="card-header fw-semibold">
-          Users
-          <span *ngIf="searchResults.length" class="badge bg-secondary ms-2">{{ searchResults.length }}</span>
-        </div>
-        <div class="card-body p-0">
-          <div *ngIf="!searching && searchResults.length === 0 && searchQuery" class="p-4 text-muted text-center">
-            No users found for "{{ searchQuery }}".
-          </div>
-          <ul class="list-group list-group-flush">
-            <li
-              *ngFor="let user of searchResults"
-              class="list-group-item list-group-item-action d-flex align-items-center gap-2"
-              [class.active]="selectedUser?.id === user.id"
-              style="cursor: pointer"
-              (click)="selectUser(user)"
-            >
-              <span class="badge rounded-pill" [class.bg-success]="user.enabled" [class.bg-secondary]="!user.enabled">
-                {{ user.enabled ? 'Active' : 'Inactive' }}
-              </span>
-              <div>
-                <div class="fw-semibold">{{ user.displayName }}</div>
-                <div class="small text-muted">{{ user.email ?? '—' }}</div>
-              </div>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right panel: assignment detail -->
-    <div class="col-md-8">
-      <div *ngIf="!selectedUser" class="card h-100 d-flex align-items-center justify-content-center text-muted">
-        <div class="card-body text-center py-5">
-          <svg viewBox="0 0 24 24" width="48" height="48" class="mb-3 opacity-25"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <p>Select a user to manage their assignments.</p>
-        </div>
-      </div>
-
+    <section class="user-detail-panel" aria-label="Selected user access">
       <app-user-detail
         *ngIf="selectedUser"
         [user]="selectedUser"
@@ -79,6 +108,15 @@
         [apiVersion]="apiVersion"
         (assignmentsChanged)="onAssignmentsChanged()"
       ></app-user-detail>
-    </div>
-  </div>
-</div>
+
+      <div *ngIf="!selectedUser" class="user-detail-empty">
+        <span class="user-detail-empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM20 8v6M23 11h-6" /></svg>
+        </span>
+        <span class="user-management-eyebrow">USER ACCESS</span>
+        <h2>Select a user</h2>
+        <p>Choose someone from the search results to review their merchant assignments and access roles.</p>
+      </div>
+    </section>
+  </section>
+</main>

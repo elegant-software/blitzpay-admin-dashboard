@@ -4,5 +4,6 @@
 window.__BLITZPAY_CONFIG__ = {
   apiHost: 'api-blitzpay-staging.zackpay.de',
   authHost: 'auth.zackpay.de',
+  authUrl: 'http://127.0.0.1:8084',
   storefrontHost: 'storefront.zackpay.de'
 };
