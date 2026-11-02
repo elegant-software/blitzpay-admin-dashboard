@@ -1,8 +1,12 @@
-name: Admin dashboard — deploy to AWS (S3 + CloudFront)
+name: CD · Deploy to AWS (S3 + CloudFront)
+run-name: Deploy ${{ github.event.release.tag_name || github.ref_name }} to AWS
 
+# Disabled for now: restore the release trigger to re-enable AWS deploys.
+# on:
+#   release:
+#     types: [released, prereleased]
 on:
-  release:
-    types: [published, prereleased]
+  workflow_dispatch:
 
 permissions:
   actions: read
@@ -15,7 +19,7 @@ env:
 
 jobs:
   verify-release-ci:
-    name: Verify CI passed for release commit
+    name: Verify CI passed for ${{ github.event.release.tag_name || github.ref_name }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -35,14 +39,14 @@ jobs:
           script: |
             const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
               owner: context.repo.owner, repo: context.repo.repo,
-              workflow_id: 'ci.yml',
+              workflow_id: 'ci-build.yml',
               status: 'completed', per_page: 100
             });
             const ok = runs.find(r => r.head_sha === process.env.RELEASE_SHA && r.conclusion === 'success');
             if (!ok) core.setFailed(`No successful CI run found for commit ${process.env.RELEASE_SHA}`);
 
   deploy:
-    name: Build and deploy to S3
+    name: Build and deploy ${{ github.event.release.tag_name || github.ref_name }} to S3
     needs: verify-release-ci
     runs-on: ubuntu-latest
     steps:
@@ -80,3 +84,10 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.WEB_ADMIN_DISTRIBUTION_ID }} \
             --paths "/*"
+
+      - name: Add deployment to job summary
+        env:
+          REF: ${{ github.event.release.tag_name || github.ref_name }}
+        run: |
+          echo "### 🚀 Deployed \`${REF}\` to S3 + CloudFront (${AWS_REGION})" >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Deployed::${REF} → AWS S3 + CloudFront"

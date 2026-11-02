@@ -58,4 +58,12 @@ Canonical conventions are in `docs/reference/`. Always consult these before gene
 - **Dates**: All ISO 8601 / `Date` values shown in the UI must use `DisplayDatePipe` (`src/app/pipes/display-date.pipe.ts`). Format: `d MMM y, HH:mm` (e.g. `24 Apr 2026, 21:55`). Null/undefined renders as `—`.
 - **Relative time strings** (e.g. "10 sec ago", "Just now") are already user-friendly — do not pipe them through `DisplayDatePipe`.
 
+## Web Storefront & Releases
+
+This repo holds two Angular apps: the admin dashboard (`src/`) and the public Web Storefront (`projects/blitz-pay-web/`, served at `storefront.zackpay.de`). One GitHub Release `vX.Y.Z` deploys both. See [`CLAUDE.md`](CLAUDE.md#web-storefront) for commands, images, manifests, and single-app redeploys.
+
+## Changing Domains / URLs
+
+Hostnames are not hardcoded here: they derive from `global.baseDomain` in the `blitz-pay` Helm values and arrive via the `blitzpay-domains` ConfigMap. See [`CLAUDE.md`](CLAUDE.md#changing-domains--urls) and run its CORS preflight check before shipping.
+
 <!-- MANUAL ADDITIONS END -->

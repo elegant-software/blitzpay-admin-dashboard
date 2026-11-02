@@ -13,7 +13,40 @@ describe('StorefrontSessionService', () => {
 
   beforeEach(() => {
     sessionStorage.clear();
+    localStorage.clear();
     TestBed.configureTestingModule({});
+  });
+
+  it('recovers only the matching payment return after tab storage is lost', () => {
+    const service = TestBed.inject(StorefrontSessionService);
+    service.useScope('merchant-44', 'branch-12');
+    service.add(coffee);
+    service.savePaymentReturn('order-1');
+    sessionStorage.clear();
+    const restored = new StorefrontSessionService();
+    restored.restorePaymentReturn('order-other');
+    expect(restored.itemCount).toBe(0);
+    restored.restorePaymentReturn('order-1');
+    expect(restored.itemCount).toBe(1);
+    expect(restored.scope?.branchId).toBe('branch-12');
+  });
+
+  it('ignores expired payment recovery and survives unavailable storage', () => {
+    const service = TestBed.inject(StorefrontSessionService);
+    service.useScope('merchant-44', 'branch-12');
+    service.add(coffee);
+    service.savePaymentReturn('order-1');
+    sessionStorage.clear();
+    const clock = jasmine.clock();
+    clock.install();
+    try {
+      clock.mockDate(new Date(Date.now() + 3 * 60 * 60 * 1000));
+      const restored = new StorefrontSessionService();
+      restored.restorePaymentReturn('order-1');
+      expect(restored.itemCount).toBe(0);
+    } finally { clock.uninstall(); }
+    spyOn(Storage.prototype, 'setItem').and.throwError('Storage unavailable');
+    expect(() => service.add(coffee)).not.toThrow();
   });
 
   it('persists a branch-scoped web cart through a service reload', () => {
@@ -39,5 +72,18 @@ describe('StorefrontSessionService', () => {
     expect(switched).toBeFalse();
     expect(service.scope?.branchId).toBe('branch-12');
     expect(service.lines.length).toBe(1);
+  });
+
+  it('refreshes backend menu text without accepting price changes or changing cart quantities', () => {
+    const service = TestBed.inject(StorefrontSessionService);
+    service.useScope('merchant-44', 'branch-12');
+    service.add(coffee, 2);
+    const translated = { ...coffee, name: 'Kaffee', description: 'Frisch', categoryName: 'Getränke', language: 'de', unitPrice: 5 };
+    service.updateCatalogText([translated], 'other-merchant', 'branch-12');
+    expect(service.lines[0].product.name).toBe('Coffee');
+    service.updateCatalogText([translated], 'merchant-44', 'branch-12');
+    expect(service.lines[0].product).toEqual({ ...translated, unitPrice: 3.5 });
+    expect(service.itemCount).toBe(2);
+    expect(service.reconcile([translated], false)).toBeTrue();
   });
 });

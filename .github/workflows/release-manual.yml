@@ -1,25 +1,24 @@
-name: Manual release
+# Creates the next GitHub Release (tag + notes) from the commits since the last release.
+# The version number is calculated automatically from the commit messages — you don't type it.
+# Publishing the release then triggers cd-release.yml, which builds and deploys both apps to staging.
+# Nothing is released if there are no new commits.
+name: Release · Create Release
 
-run-name: "Release ${{ inputs.new_version || '(version TBD)' }} from ${{ inputs.base_branch }}"
+run-name: "Release from ${{ inputs.base_branch }}"
 
 on:
   workflow_dispatch:
     inputs:
-      new_version:
-        description: 'Version being released (e.g. v1.3.0). Used in job name only.'
-        required: false
-        type: string
-        default: ''
-      release_boundary:
-        description: 'Tag to diff from (e.g. v1.2.3). Leave blank to use latest tag.'
-        required: false
-        type: string
-        default: ''
       base_branch:
-        description: 'Branch to check for changes after the release boundary'
+        description: 'Branch to release. "main" = normal release; any other branch = alpha pre-release.'
         required: false
         type: string
         default: main
+      release_boundary:
+        description: 'Advanced: compare against this tag instead of the latest one (e.g. v1.2.3). Leave empty normally.'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: write
@@ -30,7 +29,7 @@ concurrency:
 
 jobs:
   manual-release:
-    name: "Release ${{ inputs.new_version || '(version TBD)' }}"
+    name: "Release from ${{ inputs.base_branch }}"
     permissions:
       contents: write
     uses: elegant-software/elegant-ci-cd-pipeline/.github/workflows/manual-release.yml@main

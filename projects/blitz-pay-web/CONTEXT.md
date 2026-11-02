@@ -34,6 +34,10 @@ _Avoid_: Merchant Info QR, Merchant Payment QR, Merchant Order QR
 A Storefront Identity-preserving message shown when a directly opened **Product Overview** no longer represents an orderable Product at its Branch, with a path back to available Branch products.
 _Avoid_: Not found redirect, inactive product sale, silent catalog fallback
 
+**Shopper Catalog Language**:
+The language a customer chooses for a **Web Catalog**, offered only when the Merchant has the International Menu offering and at least one Supported Menu Language. It is kept for the browsing session. Without a choice, the browser's language applies, and items without a translation appear in the Merchant's Original Menu Language.
+_Avoid_: Site language, UI language, locale
+
 **Unavailable Catalog Notice**:
 A Storefront Identity-preserving message shown when a Branch currently has no active Products available for ordering.
 _Avoid_: Empty shop redirect, inactive product display, checkout without products
@@ -83,7 +87,7 @@ _Avoid_: Inferred country currency, post-order currency guess
 - A **Product Overview** is directly shareable and usable by any customer without prior QR entry, while preserving its Merchant and Branch scope
 - A **Branch Catalog QR** identifies exactly one Merchant and exactly one Branch and resolves to that Branch's **Web Catalog**
 - A **Branch Catalog QR** remains reusable as Product availability changes because its **Web Catalog** presents the Branch's current active Products
-- A **Branch Catalog QR** is distributed by the merchant app for the operator's selected Branch; the admin dashboard may render the QR inside the Branch edit dialog solely for scanning and testing the storefront journey
+- A **Branch Catalog QR** is distributed primarily by the merchant app for the operator's selected Branch; the admin dashboard may render the QR inside the Branch edit dialog for scanning and testing the storefront journey, and may place it on a **Printed Catalog** that internal operators prepare on a Merchant's behalf
 - A Branch edit dialog testing QR targets the Web Storefront environment paired with the admin-selected Branch data environment
 - Each Branch row in the admin dashboard provides a direct **Web Catalog Link** — a browser link that opens the Branch's **Web Catalog** in a new tab using the same environment-paired storefront domain; this is a navigation convenience for admins distinct from the scannable **Branch Catalog QR**
 - The Web Storefront and admin testing QR may be delivered before the separate merchant app adopts **Branch Catalog QR** and HTTPS **Merchant Order QR** generation

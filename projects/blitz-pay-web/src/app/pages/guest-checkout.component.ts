@@ -13,6 +13,8 @@ import {
 } from '../models/storefront.models';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
+import { StorefrontLanguageService } from '../services/storefront-language.service';
+import { GuestPaymentService } from '../services/guest-payment.service';
 
 @Component({
   selector: 'guest-checkout',
@@ -36,13 +38,13 @@ import { StorefrontSessionService } from '../services/storefront-session.service
       <article class="surface checkout-summary">
         <h2>Your order</h2>
         <p class="muted" *ngIf="cart.itemCount === 0">Your cart is empty.</p>
-        <div class="cart-line" *ngFor="let line of cart.lines">
-          <span>{{ line.quantity }} &times; {{ line.product.name }}</span>
-          <strong>{{ line.product.unitPrice * line.quantity | currency: currency }}</strong>
+          <div class="cart-line" *ngFor="let line of cart.lines" [attr.dir]="catalogLanguage.direction">
+          <span><bdi dir="ltr">{{ line.quantity }}</bdi> &times; <bdi [attr.lang]="line.product.language">{{ line.product.name }}</bdi></span>
+          <strong><bdi dir="ltr">{{ line.product.unitPrice * line.quantity | currency: currency }}</bdi></strong>
         </div>
         <div class="cart-total" *ngIf="cart.itemCount > 0">
           <span>Subtotal</span>
-          <strong>{{ cart.subtotal | currency: currency }}</strong>
+          <strong><bdi dir="ltr">{{ cart.subtotal | currency: currency }}</bdi></strong>
         </div>
         <a class="back-link" [routerLink]="['/m', merchantId, 'b', branchId]">Review cart</a>
       </article>
@@ -72,7 +74,9 @@ import { StorefrontSessionService } from '../services/storefront-session.service
 export class GuestCheckoutComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
+  private readonly payment = inject(GuestPaymentService);
   readonly cart = inject(StorefrontSessionService);
+  readonly catalogLanguage = inject(StorefrontLanguageService);
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly currency = environment.currency;
@@ -93,13 +97,17 @@ export class GuestCheckoutComponent implements OnInit {
     forkJoin({
       merchant: this.api.getMerchant(this.merchantId),
       branch: this.api.getBranch(this.merchantId, this.branchId),
-      products: this.api.getActiveProducts(this.merchantId, this.branchId),
       capabilities: this.api.getPaymentCapabilities(this.merchantId)
-    }).pipe(finalize(() => this.loading = false)).subscribe({
+    }).pipe(
+      switchMap(context => this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.resolve(context.merchant))
+        .pipe(map(products => ({ ...context, products })))),
+      finalize(() => this.loading = false)
+    ).subscribe({
       next: ({ merchant, branch, products, capabilities }) => {
         this.merchant = merchant;
         this.branch = branch;
         this.products = products;
+        this.cart.updateCatalogText(products, this.merchantId, this.branchId);
         this.capabilities = capabilities;
         this.cartNeedsReview = this.cart.reconcile(products, false);
         if (this.payByBankAvailable) this.selectedPaymentMethod = 'STRIPE';
@@ -121,7 +129,7 @@ export class GuestCheckoutComponent implements OnInit {
     if (!this.selectedPaymentMethod || this.cart.itemCount === 0 || this.cartNeedsReview || this.checkingOut || this.branch?.active === false) return;
     this.checkingOut = true;
     this.errorMessage = '';
-    this.api.getActiveProducts(this.merchantId, this.branchId).pipe(
+    this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.language).pipe(
       switchMap((products) => {
         this.products = products;
         if (this.cart.reconcile(products, false)) {
@@ -136,14 +144,8 @@ export class GuestCheckoutComponent implements OnInit {
           items: this.cart.lines.map((line) => ({ productId: line.product.productId, quantity: line.quantity }))
         });
       }),
-      switchMap((order) => this.api.createPayByBankCheckout({
-        orderId: order.orderId,
-        merchantId: this.merchantId,
-        branchId: this.branchId,
-        productId: this.cart.lines[0]?.product.productId,
-        successUrl: `${window.location.origin}/order/${encodeURIComponent(order.orderId)}/confirmation`,
-        cancelUrl: `${window.location.origin}/order/${encodeURIComponent(order.orderId)}`
-      }).pipe(map((checkout) => checkout.checkoutUrl))),
+      switchMap((order) => this.payment.start(order, this.merchantId, this.branchId,
+        this.cart.lines[0]?.product.productId).pipe(map((checkout) => checkout.checkoutUrl))),
       finalize(() => this.checkingOut = false)
     ).subscribe({
       next: (checkoutUrl) => window.location.assign(checkoutUrl),

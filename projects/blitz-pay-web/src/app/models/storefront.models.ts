@@ -4,6 +4,10 @@ export interface StorefrontMerchant {
   applicationId: string;
   merchantName: string;
   logoUrl?: string | null;
+  offerings?: string[];
+  originalMenuLanguage?: string | null;
+  originalLanguage?: string | null;
+  supportedMenuLanguages?: string[];
 }
 
 export interface StorefrontBranch {
@@ -29,6 +33,8 @@ export interface StorefrontProduct {
   imageUrl?: string | null;
   active: boolean;
   categoryName?: string | null;
+  /** Language the name and description are in; the Original Menu Language when untranslated. */
+  language?: string | null;
 }
 
 export interface StorefrontOrderItem {
@@ -54,6 +60,8 @@ export interface StorefrontOrderLine {
 
 export interface StorefrontOrder {
   orderId: string;
+  /** Merchant-facing reference, when provided by the Order API. */
+  reference?: string;
   merchantId?: string;
   branchId?: string | null;
   status?: string;

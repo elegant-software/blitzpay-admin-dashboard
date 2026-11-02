@@ -1,12 +1,14 @@
-import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
 import { throwError, of } from 'rxjs';
 import { MerchantDetailComponent } from './merchant-detail.component';
+import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { MerchantApiService } from '../services/merchant-api.service';
-import { Branch, Merchant, ProductCategory } from '../models/merchant-catalog.models';
+import { Branch, Merchant, ProductCategory, ProviderAccountResponse } from '../models/merchant-catalog.models';
 
 describe('MerchantDetailComponent product category management', () => {
   let component: MerchantDetailComponent;
+  let fixture: ComponentFixture<MerchantDetailComponent>;
   let merchantApi: jasmine.SpyObj<MerchantApiService>;
 
   const merchant: Merchant = {
@@ -83,7 +85,8 @@ describe('MerchantDetailComponent product category management', () => {
       ]
     }).compileComponents();
 
-    component = TestBed.createComponent(MerchantDetailComponent).componentInstance;
+    fixture = TestBed.createComponent(MerchantDetailComponent);
+    component = fixture.componentInstance;
     component.selectedMerchant = merchant;
     component.categories = [beverages];
     component['syncCategoryTableState']();
@@ -249,7 +252,88 @@ describe('MerchantDetailComponent product category management', () => {
     } satisfies Branch;
 
     expect(component.branchCatalogUrl).toBe(
-      'http://localhost:4201/m/merchant-123/b/branch-1'
+      `${getEnvironmentByKey('local').storefrontUrl}/m/merchant-123/b/branch-1`
     );
+  });
+
+  it('opens the clicked branch QR without changing the selected branch, and closes the dialog', async () => {
+    merchantApi.getVerticals.and.returnValue(of([]));
+    component.activeDetailTab = 'branches-products';
+    const first: Branch = { id: 'b1', branchId: 'b1', branchCode: 'BR-1', merchantId: merchant.merchantId, name: 'First', status: 'ACTIVE', active: true };
+    const second: Branch = { ...first, id: 'b2', branchId: 'b2', name: 'Second' };
+    component.branches = [first, second];
+    component.selectedBranch = first;
+    component.onBranchFilterChange();
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const triggers = root.querySelectorAll<HTMLButtonElement>('[aria-label="Show branch QR code"]');
+    expect(triggers.length).toBe(2);
+    triggers[1].click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const dialog = root.querySelector<HTMLDialogElement>('.branch-qr-dialog')!;
+    expect(dialog.open).toBeTrue();
+    expect(component.selectedBranch).toBe(first);
+    const expected = `${component.selectedEnvironment.storefrontUrl}/m/merchant-123/b/b2`;
+    expect(dialog.querySelector('.branch-catalog-url')?.textContent).toContain(expected);
+    expect(dialog.querySelector('a')?.getAttribute('href')).toBe(expected);
+    dialog.querySelector<HTMLButtonElement>('button')!.click();
+    expect(dialog.open).toBeFalse();
+  });
+
+  it('opens the Printed Catalog for a branch row', () => {
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
+    component.navigateToPrintedCatalog({
+      id: 'branch-1',
+      merchantId: merchant.merchantId,
+      branchCode: 'BR-1',
+      name: 'Central',
+      status: 'ACTIVE'
+    } satisfies Branch);
+
+    expect(router.navigate).toHaveBeenCalledWith(['/merchants', 'merchant-123', 'branches', 'branch-1', 'printed-catalog']);
+  });
+  describe('payment providers', () => {
+    const stripeAccount = (enabled: boolean): ProviderAccountResponse => ({
+      id: 'pa-1',
+      pspCode: 'STRIPE',
+      enabled,
+      createdAt: '2026-05-10T10:00:00.000Z',
+      updatedAt: '2026-05-10T10:00:00.000Z'
+    });
+
+    it('shows Stripe as Disabled when the merchant has no enabled Stripe account', () => {
+      component.providerAccounts = [];
+      expect(component.providerStatus('STRIPE')).toEqual({ label: 'Disabled', tone: 'status-tag-neutral' });
+
+      component.providerAccounts = [stripeAccount(false)];
+      expect(component.providerStatus('STRIPE')).toEqual({ label: 'Disabled', tone: 'status-tag-neutral' });
+    });
+
+    it('shows Stripe as Ready for onboarding once enabled but not yet connected', () => {
+      component.providerAccounts = [stripeAccount(true)];
+      for (const status of ['loading', 'not_connected', 'verifying', 'error'] as const) {
+        component.paymentAccountStatus = status;
+        expect(component.providerStatus('STRIPE')).toEqual({ label: 'Ready for onboarding', tone: 'status-tag-warning' });
+      }
+    });
+
+    it('shows Stripe as Active only after onboarding has connected the account', () => {
+      component.providerAccounts = [stripeAccount(true)];
+      component.paymentAccountStatus = 'connected';
+
+      expect(component.providerStatus('STRIPE')).toEqual({ label: 'Active', tone: 'status-tag-success' });
+    });
+
+    it('shows PayPal as unavailable and never calls the API to enable it', () => {
+      expect(component.isPspAvailable('PAYPAL')).toBeFalse();
+      expect(component.isPspAvailable('STRIPE')).toBeTrue();
+      expect(component.providerStatus('PAYPAL')).toEqual({ label: 'Disabled', tone: 'status-tag-neutral' });
+
+      component.enableProviderAccount('PAYPAL');
+
+      expect(merchantApi.enableProviderAccount).not.toHaveBeenCalled();
+    });
   });
 });

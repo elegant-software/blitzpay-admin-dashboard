@@ -702,3 +702,28 @@ a {
     padding-right: 1rem !important;
   }
 }
+
+/* Printed Catalog (ADR-0010): print only the catalog sheet, never the shell chrome. */
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+
+@media print {
+  .app-layout:has(app-printed-catalog) .app-sidebar,
+  .app-layout:has(app-printed-catalog) .header,
+  .app-layout:has(app-printed-catalog) .footer {
+    display: none !important;
+  }
+
+  .app-layout:has(app-printed-catalog) .app-main {
+    margin-left: 0 !important;
+    min-height: 0 !important;
+  }
+
+  body:has(app-printed-catalog) {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

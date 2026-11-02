@@ -1,4 +1,4 @@
-name: Frontend CI
+name: CI · Build & Test
 
 on:
   pull_request:
@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - main
-      - 'feat/**'
 
 permissions:
   contents: read
@@ -18,8 +17,36 @@ env:
   WIREMOCK_VERSION: '3.0.1'
 
 jobs:
+  # Builds and tests only run when code or build config changed. The workflow itself
+  # always runs, so cd-release.yml still finds a successful run for every release commit.
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'src/**'
+              - 'projects/**'
+              - 'public/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'angular.json'
+              - 'tsconfig*.json'
+              - '.github/workflows/ci-build.yml'
+
   unit-tests:
     name: Unit Tests
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

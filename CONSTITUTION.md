@@ -13,6 +13,7 @@ This document is the authoritative description of how the admin UI is structured
 | User-facing display formats (dates, nulls, status labels) | [`docs/reference/user-display.md`](docs/reference/user-display.md) |
 | Architecture decision records | `docs/adr/` |
 | Feature specs | `specs/001-merchant-catalog-page/` |
+| GitHub Actions naming, run titles, job summaries | [`elegant-ci-cd-pipeline/docs/github-actions-conventions.md`](https://github.com/elegant-software/elegant-ci-cd-pipeline/blob/main/docs/github-actions-conventions.md) |
 
 ---
 

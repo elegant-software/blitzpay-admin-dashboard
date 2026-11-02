@@ -2,12 +2,14 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { StorefrontApiService } from './storefront-api.service';
+import { StorefrontLanguageService } from './storefront-language.service';
 
 describe('StorefrontApiService', () => {
   let service: StorefrontApiService;
   let http: HttpTestingController;
 
   beforeEach(() => {
+    sessionStorage.clear();
     TestBed.configureTestingModule({
       providers: [StorefrontApiService, provideHttpClient(), provideHttpClientTesting()]
     });
@@ -16,6 +18,36 @@ describe('StorefrontApiService', () => {
   });
 
   afterEach(() => http.verify());
+
+  for (const language of ['ar', 'de', 'en', 'tr']) {
+    it(`preserves branch parameters and backend fallback fields when requesting ${language}`, () => {
+      const fallback = { productId: 'p1', branchId: 'branch-12', name: 'Kaffee', description: 'Original', categoryName: 'Getränke', language: 'de', active: true, unitPrice: 3.5 };
+      service.getActiveProducts('merchant-44', 'branch-12', language).subscribe(products => expect(products).toEqual([fallback]));
+      service.getProduct('merchant-44', 'branch-12', 'p1', language).subscribe(product => expect(product).toEqual(fallback));
+      const list = http.expectOne('/v1/merchants/merchant-44/products?branchId=branch-12');
+      expect(list.request.headers.get('Accept-Language')).toBe(language);
+      list.flush([fallback]);
+      const detail = http.expectOne('/v1/merchants/merchant-44/products/p1?branchId=branch-12');
+      expect(detail.request.headers.get('Accept-Language')).toBe(language);
+      detail.flush(fallback);
+    });
+  }
+
+  it('sends the session language on order and hosted checkout requests without changing payloads', () => {
+    TestBed.inject(StorefrontLanguageService).choose('ar');
+    const payload = { branchId: 'branch-12', orderType: 'PRE_ORDER' as const, usesDeferredPayment: false as const, items: [{ productId: 'p1', quantity: 2 }] };
+    service.createOrder(payload).subscribe();
+    const order = http.expectOne('/v1/orders');
+    expect(order.request.headers.get('Accept-Language')).toBe('ar');
+    expect(order.request.body).toEqual(payload);
+    order.flush({ orderId: 'o1' });
+    const checkoutPayload = { orderId: 'o1', merchantId: 'merchant-44', branchId: 'branch-12', successUrl: 'https://example.test/success', cancelUrl: 'https://example.test/cancel' };
+    service.createPayByBankCheckout(checkoutPayload).subscribe();
+    const checkout = http.expectOne('/v1/payments/stripe/pay-by-bank/create-checkout-session');
+    expect(checkout.request.headers.get('Accept-Language')).toBe('ar');
+    expect(checkout.request.body).toEqual(checkoutPayload);
+    checkout.flush({});
+  });
 
   it('loads only active branch products from the public catalog endpoint', () => {
     let names: string[] = [];
@@ -35,6 +67,26 @@ describe('StorefrontApiService', () => {
     ]);
 
     expect(names).toEqual(['Bagel', 'Coffee']);
+  });
+
+  it('requests catalog text in the shopper-chosen language', () => {
+    service.getActiveProducts('merchant-44', 'branch-12', 'en').subscribe();
+    service.getProduct('merchant-44', 'branch-12', 'p1', 'en').subscribe();
+
+    const list = http.expectOne('/v1/merchants/merchant-44/products?branchId=branch-12');
+    expect(list.request.headers.get('Accept-Language')).toBe('en');
+    list.flush([]);
+    const detail = http.expectOne('/v1/merchants/merchant-44/products/p1?branchId=branch-12');
+    expect(detail.request.headers.get('Accept-Language')).toBe('en');
+    detail.flush({});
+  });
+
+  it('leaves the browser language in charge when the shopper has not chosen one', () => {
+    service.getActiveProducts('merchant-44', 'branch-12').subscribe();
+
+    const list = http.expectOne('/v1/merchants/merchant-44/products?branchId=branch-12');
+    expect(list.request.headers.has('Accept-Language')).toBeFalse();
+    list.flush([]);
   });
 
   it('loads merchant and branch display context', () => {
@@ -71,6 +123,7 @@ describe('StorefrontApiService', () => {
     const request = http.expectOne('/v1/orders');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual(payload);
+    expect(request.request.headers.has('Accept-Language')).toBeFalse();
   });
 
   it('loads an order reached through a universal order URL', () => {

@@ -3,8 +3,16 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import { EnvironmentKey, Product, ProductCategory } from '../models/merchant-catalog.models';
+import { catchError, switchMap } from 'rxjs/operators';
+import {
+  CatalogTranslation,
+  EnvironmentKey,
+  MenuLanguage,
+  Merchant,
+  Product,
+  ProductCategory,
+} from '../models/merchant-catalog.models';
+import { TranslationRow, isRightToLeft, languageLabel, toTranslationRow } from '../menu-language/menu-language';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
@@ -26,6 +34,9 @@ export class ProductEditComponent implements OnInit {
   productId = '';
   product: Product | null = null;
   categories: ProductCategory[] = [];
+  merchant: Merchant | null = null;
+  menuLanguages: MenuLanguage[] = [];
+  translations: TranslationRow[] = [];
 
   loading = false;
   saving = false;
@@ -59,13 +70,33 @@ export class ProductEditComponent implements OnInit {
 
   private load(): void {
     this.loading = true;
-    forkJoin({
-      product: this.merchantApi.getProduct(this.selectedEnvironment, this.apiVersion, this.merchantId, this.productId),
-      categories: this.merchantApi.getProductCategories(this.selectedEnvironment, this.apiVersion, this.merchantId).pipe(catchError(() => of([] as ProductCategory[]))),
-    }).subscribe({
-      next: ({ product, categories }) => {
+    const env = this.selectedEnvironment;
+    // Reads are pinned to the Original Menu Language: the browser's Accept-Language must never
+    // turn a translation into the text this form saves back as the original.
+    this.merchantApi.getMerchant(env, this.apiVersion, this.merchantId).pipe(
+      switchMap((merchant) => {
+        const original = merchant.originalMenuLanguage ?? undefined;
+        const supported = merchant.supportedMenuLanguages ?? [];
+        return forkJoin({
+          merchant: of(merchant),
+          product: this.merchantApi.getProduct(env, this.apiVersion, this.merchantId, this.productId, undefined, original),
+          categories: this.merchantApi.getProductCategories(env, this.apiVersion, this.merchantId, original).pipe(catchError(() => of([] as ProductCategory[]))),
+          menuLanguages: supported.length
+            ? this.merchantApi.getMenuLanguages(env, this.apiVersion).pipe(catchError(() => of([] as MenuLanguage[])))
+            : of([] as MenuLanguage[]),
+          translations: supported.length
+            ? this.merchantApi.getProductTranslations(env, this.apiVersion, this.merchantId, this.productId)
+            : of([] as CatalogTranslation[]),
+        });
+      })
+    ).subscribe({
+      next: ({ merchant, product, categories, menuLanguages, translations }) => {
+        this.merchant = merchant;
         this.product = product;
         this.categories = categories;
+        this.menuLanguages = menuLanguages;
+        this.translations = (merchant.supportedMenuLanguages ?? []).map((language) =>
+          toTranslationRow(language, translations.find((t) => t.language === language)));
         this.populateForm(product);
         this.loading = false;
       },
@@ -130,8 +161,38 @@ export class ProductEditComponent implements OnInit {
 
   cancel(): void { this.router.navigate(['/merchants', this.merchantId]); }
 
+  languageLabel(code: string): string { return languageLabel(code, this.menuLanguages); }
+
+  textDirection(code: string): 'rtl' | 'ltr' { return isRightToLeft(code) ? 'rtl' : 'ltr'; }
+
+  saveTranslation(row: TranslationRow): void {
+    if (row.saving) return;
+    row.error = '';
+    if (!row.name.trim()) { row.error = 'Enter the translated name.'; return; }
+    row.saving = true;
+    this.merchantApi.saveProductTranslation(this.selectedEnvironment, this.apiVersion, this.merchantId, this.productId, row.language, {
+      name: row.name.trim(),
+      description: row.description.trim() || undefined,
+    }).subscribe({
+      next: (saved) => Object.assign(row, toTranslationRow(row.language, saved)),
+      error: (error) => { row.saving = false; row.error = this.toMessage(error, 'Failed to save translation.'); }
+    });
+  }
+
+  deleteTranslation(row: TranslationRow): void {
+    if (row.saving || !row.exists) return;
+    if (!confirm(`Delete the ${this.languageLabel(row.language)} translation?`)) return;
+    row.saving = true;
+    row.error = '';
+    this.merchantApi.deleteProductTranslation(this.selectedEnvironment, this.apiVersion, this.merchantId, this.productId, row.language).subscribe({
+      next: () => Object.assign(row, toTranslationRow(row.language)),
+      error: (error) => { row.saving = false; row.error = this.toMessage(error, 'Failed to delete translation.'); }
+    });
+  }
+
   private toMessage(error: unknown, fallback: string): string {
-    const body = (error as { error?: { detail?: string; message?: string } })?.error;
-    return body?.detail || body?.message || fallback;
+    const body = (error as { error?: { detail?: string; message?: string; error?: unknown } })?.error;
+    const apiError = typeof body?.error === 'string' ? body.error : undefined;
+    return body?.detail || body?.message || apiError || fallback;
   }
 }

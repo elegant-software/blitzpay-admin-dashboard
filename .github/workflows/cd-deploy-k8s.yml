@@ -1,0 +1,150 @@
+# Deploys an already-built image of the admin dashboard or the storefront to Kubernetes.
+# Use it to redeploy or roll back to an existing release; it does not build anything.
+# Releases call this automatically (cd-release.yml), so you only run it by hand for redeploys.
+name: CD · Deploy to Kubernetes
+run-name: Deploy ${{ inputs.app || 'admin' }} ${{ inputs.image_tag }} to ${{ inputs.kube_namespace }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Which app to deploy.
+        type: choice
+        options:
+          - admin
+          - storefront
+        default: admin
+      image_tag:
+        description: Release to deploy (e.g. v0.9.2). "latest" = the most recent release.
+        required: false
+        default: latest
+      kube_namespace:
+        description: Kubernetes namespace to deploy into.
+        required: true
+        default: blitzpay-staging
+  workflow_call:
+    inputs:
+      app:
+        type: string
+        required: false
+        default: admin
+      image_tag:
+        type: string
+        required: false
+        default: latest
+      kube_namespace:
+        type: string
+        required: false
+        default: blitzpay-staging
+    secrets:
+      K8S_SERVER:
+        required: true
+      K8S_CA_CERT:
+        required: true
+      K8S_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    name: Deploy ${{ inputs.app || 'admin' }} ${{ inputs.image_tag }} to ${{ inputs.kube_namespace || 'blitzpay-staging' }}
+    runs-on: self-hosted
+    env:
+      KUBE_NAMESPACE: ${{ inputs.kube_namespace || 'blitzpay-staging' }}
+      IMAGE_REPOSITORY: ${{ inputs.app == 'storefront' && format('ghcr.io/{0}/blitz-pay-web', github.repository) || format('ghcr.io/{0}', github.repository) }}
+      MANIFESTS_DIR: ${{ inputs.app == 'storefront' && 'k8s/storefront' || 'k8s' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Resolve image tag
+        env:
+          INPUT_TAG: ${{ inputs.image_tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="$INPUT_TAG"
+          if [ -z "$tag" ] || [ "$tag" = "latest" ]; then
+            tag=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases/latest" | jq -r '.tag_name // empty')
+            if [ -z "$tag" ]; then
+              echo "::error::Could not resolve the latest release tag"
+              exit 1
+            fi
+            echo "::notice title=Resolved image tag::latest → $tag"
+          fi
+          echo "IMAGE_REFERENCE=${IMAGE_REPOSITORY}:${tag}" >> "$GITHUB_ENV"
+
+      - name: Verify deployment manifests exist
+        run: |
+          if [ ! -f "${MANIFESTS_DIR}/deployment.yaml" ]; then
+            echo "::error file=${MANIFESTS_DIR}/deployment.yaml::Missing Kubernetes deployment manifest"
+            exit 1
+          fi
+
+      - name: Configure kubectl
+        env:
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_CA_CERT: ${{ secrets.K8S_CA_CERT }}
+          K8S_TOKEN: ${{ secrets.K8S_TOKEN }}
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "$K8S_CA_CERT" | base64 -d > "$HOME/.kube/ca.crt"
+
+          kubectl config set-cluster deploy-cluster \
+            --server="$K8S_SERVER" \
+            --certificate-authority="$HOME/.kube/ca.crt" \
+            --tls-server-name=kubernetes \
+            --embed-certs=true
+
+          kubectl config set-credentials deploy-user \
+            --token="$K8S_TOKEN"
+
+          kubectl config set-context deploy-context \
+            --cluster=deploy-cluster \
+            --user=deploy-user
+
+          kubectl config use-context deploy-context
+
+      - name: Verify cluster connectivity
+        run: kubectl cluster-info --request-timeout=10s
+
+      # Hostnames come from the blitzpay-domains ConfigMap, which the blitz-pay backend Helm chart
+      # derives from global.baseDomain — the single place the domain is configured.
+      - name: Render Kubernetes manifests
+        run: |
+          domains=$(kubectl get configmap blitzpay-domains -n "$KUBE_NAMESPACE" -o json) || {
+            echo "::error::blitzpay-domains ConfigMap missing in ${KUBE_NAMESPACE}; deploy the blitz-pay Helm chart first"
+            exit 1
+          }
+          sed_args=(-e "s|\${IMAGE}|${IMAGE_REFERENCE}|g")
+          for key in $(jq -r '.data | keys[]' <<<"$domains"); do
+            sed_args+=(-e "s|\${$key}|$(jq -r --arg k "$key" '.data[$k]' <<<"$domains")|g")
+          done
+          for manifest in deployment ingress; do
+            sed "${sed_args[@]}" "${MANIFESTS_DIR}/${manifest}.yaml" > "/tmp/${manifest}.yaml"
+            if grep -q '\${[A-Z_]*}' "/tmp/${manifest}.yaml"; then
+              echo "::error file=${MANIFESTS_DIR}/${manifest}.yaml::Unresolved placeholders: $(grep -o '\${[A-Z_]*}' "/tmp/${manifest}.yaml" | sort -u | tr '\n' ' ')"
+              exit 1
+            fi
+          done
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f /tmp/deployment.yaml -n "$KUBE_NAMESPACE"
+          kubectl apply -f /tmp/ingress.yaml -n "$KUBE_NAMESPACE"
+
+      - name: Add deployment to job summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          if [ "$JOB_STATUS" = "success" ]; then result="✅ applied"; else result="❌ ${JOB_STATUS}"; fi
+          {
+            echo "### 🚀 Deploy to \`${KUBE_NAMESPACE}\`"
+            echo "| Image | Namespace | Manifests | Result |"
+            echo "|---|---|---|---|"
+            echo "| \`${IMAGE_REFERENCE}\` | ${KUBE_NAMESPACE} | \`${MANIFESTS_DIR}\` | ${result} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Deploy ${result}::${IMAGE_REFERENCE} → ${KUBE_NAMESPACE}"

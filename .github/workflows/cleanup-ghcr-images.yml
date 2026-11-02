@@ -1,0 +1,30 @@
+name: Cleanup · GHCR Images
+run-name: "${{ github.event_name == 'schedule' && 'Scheduled' || 'Manual' }} · keep latest 5 · untagged only"
+
+on:
+  schedule:
+    - cron: "0 3 * * 0" # every Sunday at 03:00
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    name: Delete untagged images (keep 5) · ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Must match the images pushed by cd-release.yml (ghcr.io/<owner>/<package>).
+        package:
+          - blitzpay-admin-dashboard
+          - blitzpay-admin-dashboard/blitz-pay-web
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Delete old container versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ matrix.package }}
+          package-type: container
+          min-versions-to-keep: 5
+          delete-only-untagged-versions: true

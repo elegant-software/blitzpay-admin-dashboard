@@ -10,10 +10,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - blitzpay-admin-dashboard.elegantsoftware.de
-      secretName: blitzpay-admin-dashboard-elegantsoftware-de-tls
+        - ${ADMIN_HOST}
+      secretName: blitzpay-admin-dashboard-tls
   rules:
-    - host: blitzpay-admin-dashboard.elegantsoftware.de
+    - host: ${ADMIN_HOST}
       http:
         paths:
           - path: /

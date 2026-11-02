@@ -6,6 +6,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import {
   EnvironmentKey,
+  MenuLanguage,
   Merchant,
   MerchantVerticalResponse,
   UpdateMerchantRequest,
@@ -15,6 +16,7 @@ import {
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
+import { INTERNATIONAL_MENU, languageLabel } from '../menu-language/menu-language';
 
 @Component({
   selector: 'app-merchant-edit',
@@ -33,6 +35,8 @@ export class MerchantEditComponent implements OnInit {
   merchant: Merchant | null = null;
   location: MerchantLocation | null = null;
   verticals: MerchantVerticalResponse[] = [];
+  menuLanguages: MenuLanguage[] = [];
+  languageToAdd = '';
 
   loading = false;
   saving = false;
@@ -50,6 +54,8 @@ export class MerchantEditComponent implements OnInit {
     merchantMobility: '',
     offerings: [] as string[],
     defaultVatPercent: '',
+    originalMenuLanguage: '',
+    supportedMenuLanguages: [] as string[],
   };
 
   locationForm = {
@@ -74,6 +80,7 @@ export class MerchantEditComponent implements OnInit {
     { code: 'WALK_IN_ORDERING', label: 'Walk-In Ordering' },
     { code: 'DEFERRED_PAYMENT', label: 'Deferred Payment' },
     { code: 'APPOINTMENT_BOOKING', label: 'Appointment' },
+    { code: INTERNATIONAL_MENU, label: 'International Menu' },
   ];
 
   readonly mobilityOptions = [
@@ -99,10 +106,12 @@ export class MerchantEditComponent implements OnInit {
       merchant: this.merchantApi.getMerchant(this.selectedEnvironment, this.apiVersion, this.merchantId),
       verticals: this.merchantApi.getVerticals(this.selectedEnvironment, this.apiVersion),
       location: this.merchantApi.getLocation(this.selectedEnvironment, this.apiVersion, this.merchantId).pipe(catchError(() => of(null))),
+      menuLanguages: this.merchantApi.getMenuLanguages(this.selectedEnvironment, this.apiVersion).pipe(catchError(() => of([] as MenuLanguage[]))),
     }).subscribe({
-      next: ({ merchant, verticals, location }) => {
+      next: ({ merchant, verticals, location, menuLanguages }) => {
         this.merchant = merchant;
         this.verticals = verticals;
+        this.menuLanguages = menuLanguages;
         this.location = location;
         this.populateForm(merchant, location);
         this.loading = false;
@@ -126,6 +135,8 @@ export class MerchantEditComponent implements OnInit {
       merchantMobility: merchant.merchantMobility ?? '',
       offerings: [...(merchant.offerings ?? [])],
       defaultVatPercent: merchant.defaultVatPercent != null ? merchant.defaultVatPercent.toString() : '',
+      originalMenuLanguage: merchant.originalMenuLanguage ?? '',
+      supportedMenuLanguages: [...(merchant.supportedMenuLanguages ?? [])],
     };
     this.logoStorageKey = merchant.logoStorageKey ?? '';
     this.logoPreviewUrl = merchant.logoUrl ?? '';
@@ -150,6 +161,30 @@ export class MerchantEditComponent implements OnInit {
   }
 
   isOfferingSelected(code: string): boolean { return this.form.offerings.includes(code); }
+
+  languageLabel(code: string): string { return languageLabel(code, this.menuLanguages); }
+
+  /** Catalogue languages that can still be added as Supported Menu Languages. */
+  get addableMenuLanguages(): MenuLanguage[] {
+    return this.menuLanguages.filter(l => l.code !== this.form.originalMenuLanguage && !this.form.supportedMenuLanguages.includes(l.code));
+  }
+
+  onOriginalMenuLanguageChange(code: string): void {
+    this.form.originalMenuLanguage = code;
+    this.form.supportedMenuLanguages = this.form.supportedMenuLanguages.filter(l => l !== code);
+  }
+
+  addSupportedMenuLanguage(): void {
+    const code = this.languageToAdd;
+    if (code && !this.form.supportedMenuLanguages.includes(code) && code !== this.form.originalMenuLanguage) {
+      this.form.supportedMenuLanguages = [...this.form.supportedMenuLanguages, code];
+    }
+    this.languageToAdd = '';
+  }
+
+  removeSupportedMenuLanguage(code: string): void {
+    this.form.supportedMenuLanguages = this.form.supportedMenuLanguages.filter(l => l !== code);
+  }
 
   onLogoFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -190,6 +225,12 @@ export class MerchantEditComponent implements OnInit {
     this.errorMessage = '';
     this.statusMessage = '';
 
+    if (!this.form.originalMenuLanguage && (this.isOfferingSelected(INTERNATIONAL_MENU) || this.form.supportedMenuLanguages.length)) {
+      this.saving = false;
+      this.errorMessage = 'Choose the Original Menu Language before enabling International Menu or adding languages.';
+      return;
+    }
+
     const payload: UpdateMerchantRequest = {
       merchantName: this.form.merchantName,
       website: this.form.website || undefined,
@@ -197,6 +238,8 @@ export class MerchantEditComponent implements OnInit {
       businessType: this.form.businessType || undefined,
       merchantMobility: this.form.merchantMobility || undefined,
       defaultVatPercent: this.form.defaultVatPercent !== '' ? parseFloat(this.form.defaultVatPercent) : undefined,
+      originalMenuLanguage: this.form.originalMenuLanguage || undefined,
+      supportedMenuLanguages: this.form.originalMenuLanguage ? this.form.supportedMenuLanguages : undefined,
       contactInfo: {
         email: this.form.contactEmail || undefined,
         phoneNumber: this.form.contactPhoneNumber || undefined,

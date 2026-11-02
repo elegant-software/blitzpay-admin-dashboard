@@ -45,13 +45,17 @@ setup_k8s() {
 
   set_repo_secret K8S_SERVER "$k8s_server"
 
-  # --- K8S_CA_CERT (auto-fetched from the server) ---
-  local host_port
-  host_port=$(echo "$k8s_server" | sed -E 's|https?://||; s|/.*||')
-
-  echo "  [secret] K8S_CA_CERT — fetching CA certificate from $host_port ..."
+  # --- K8S_CA_CERT (cluster CA from the current kubeconfig context) ---
+  # Not taken from the TLS handshake: the API server sends only its own serving cert,
+  # and pinning that breaks with "x509: unknown authority" whenever it is renewed.
+  echo "  [secret] K8S_CA_CERT — reading cluster CA from kubeconfig context $(kubectl config current-context) ..."
   local ca_b64
-  ca_b64=$("$(dirname "$0")/fetch-k8s-ca.sh" "$k8s_server")
+  ca_b64=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')
+  if [ -z "$ca_b64" ]; then
+    echo "  ERROR: current kubeconfig context has no certificate-authority-data"
+    exit 1
+  fi
+  echo "           CA: $(echo "$ca_b64" | base64 -d | openssl x509 -noout -subject)"
 
   set_repo_secret K8S_CA_CERT "$ca_b64"
 
@@ -63,13 +67,13 @@ setup_k8s() {
   echo ""
   echo "  Creating service account $sa_ns/$sa_name ..."
 
-  kubectl get sa "$sa_name" -n "$sa_ns" &>/dev/null || \
-    kubectl create sa "$sa_name" -n "$sa_ns"
+  # create --dry-run | apply is idempotent: safe to re-run when these already exist.
+  kubectl create sa "$sa_name" -n "$sa_ns" --dry-run=client -o yaml | kubectl apply -f -
 
-  kubectl get clusterrolebinding "$sa_name-binding" &>/dev/null || \
-    kubectl create clusterrolebinding "$sa_name-binding" \
-      --clusterrole=cluster-admin \
-      --serviceaccount="$sa_ns:$sa_name"
+  kubectl create clusterrolebinding "$sa_name-binding" \
+    --clusterrole=cluster-admin \
+    --serviceaccount="$sa_ns:$sa_name" \
+    --dry-run=client -o yaml | kubectl apply -f -
 
   # Create a Secret-based long-lived token (works on all K8S versions)
   if ! kubectl get secret "$secret_name" -n "$sa_ns" &>/dev/null; then

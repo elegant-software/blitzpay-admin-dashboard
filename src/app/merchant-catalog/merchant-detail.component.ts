@@ -7,6 +7,8 @@ import { catchError } from 'rxjs/operators';
 import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule } from 'primeng/paginator';
 import { DisplayDatePipe } from '../pipes/display-date.pipe';
+import { CategoryTranslationsDialogComponent } from './category-translations-dialog.component';
+import { INTERNATIONAL_MENU, languageLabel, merchantMenuLanguages } from '../menu-language/menu-language';
 import {
   AppearanceHistoryItem,
   AppearanceHistoryStatus,
@@ -17,6 +19,7 @@ import {
   CategoryTableState,
   BranchSortField,
   BranchTableState,
+  MenuLanguage,
   Merchant,
   MerchantLocation,
   MerchantVerticalResponse,
@@ -27,16 +30,18 @@ import {
   ProductSortField,
   ProductTableState,
   TableSortDirection,
+  TranslationCoverage,
 } from '../models/merchant-catalog.models';
 import { filterRowsByFields, hasActiveQuery, nextSortDirection, paginateRows, sortRows } from './merchant-catalog-table-state';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
+import { BranchCatalogQrComponent } from './branch-catalog-qr.component';
 
 @Component({
   selector: 'app-merchant-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, DisplayDatePipe, InputTextModule, PaginatorModule],
+  imports: [CommonModule, FormsModule, RouterModule, DisplayDatePipe, InputTextModule, PaginatorModule, CategoryTranslationsDialogComponent, BranchCatalogQrComponent],
   templateUrl: './merchant-detail.component.html',
   styleUrl: './merchant-catalog.component.css'
 })
@@ -49,6 +54,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   branches: Branch[] = [];
   categories: ProductCategory[] = [];
   selectedBranch: Branch | null = null;
+  qrCatalogUrl = '';
   products: Product[] = [];
 
   appearanceOperational: OperationalAppearanceItem[] = [];
@@ -74,6 +80,12 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   categoryDialogMode: 'create' | 'edit' = 'create';
   categoryFormName = '';
   categoryDialogError = '';
+  translatingCategory: ProductCategory | null = null;
+
+  /** Catalog Language of the products table; null shows the Original Menu Language. */
+  catalogLanguage: string | null = null;
+  menuLanguages: MenuLanguage[] = [];
+  translationCoverage: TranslationCoverage[] = [];
 
   merchantTableLogoFailed = false;
   failedProductImages = new Set<string>();
@@ -103,13 +115,16 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     { code: 'PRE_ORDER', label: 'Pre-Order' },
     { code: 'WALK_IN_ORDERING', label: 'Walk-In Ordering' },
     { code: 'DEFERRED_PAYMENT', label: 'Deferred Payment' },
-    { code: 'APPOINTMENT_BOOKING', label: 'Appointment' }
+    { code: 'APPOINTMENT_BOOKING', label: 'Appointment' },
+    { code: INTERNATIONAL_MENU, label: 'International Menu' }
   ];
 
   readonly branchFilterHint = 'Filter by branch name, country, city, or zipcode.';
   readonly categoryFilterHint = 'Filter by category name.';
   readonly productFilterHint = 'Filter by product code, category, or name.';
   readonly knownPspCodes = ['STRIPE', 'PAYPAL'];
+  /** Providers an admin may enable. PayPal is listed but not supported yet. */
+  private readonly availablePspCodes = ['STRIPE'];
 
   private routeSub?: Subscription;
 
@@ -230,6 +245,35 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     if (!this.selectedMerchant) return;
     const branchId = branch.branchId ?? branch.id;
     this.router.navigate(['/merchants', this.selectedMerchant.merchantId, 'branches', branchId, 'edit']);
+  }
+
+  navigateToPrintedCatalog(branch: Branch): void {
+    if (!this.selectedMerchant) return;
+    const branchId = branch.branchId ?? branch.id;
+    this.router.navigate(['/merchants', this.selectedMerchant.merchantId, 'branches', branchId, 'printed-catalog']);
+  }
+
+  get catalogLanguages(): string[] { return merchantMenuLanguages(this.selectedMerchant); }
+
+  get supportedMenuLanguages(): string[] { return this.catalogLanguages.slice(1); }
+
+  languageLabel(code: string): string { return languageLabel(code, this.menuLanguages); }
+
+  setCatalogLanguage(code: string): void {
+    this.catalogLanguage = code;
+    this.loadProductsForSelectedBranch();
+  }
+
+  /** True when the product is shown in the Original Menu Language because it has no translation in the Catalog Language. */
+  isFallbackProduct(product: Product): boolean {
+    return !!this.catalogLanguage && !!product.language && product.language !== this.catalogLanguage;
+  }
+
+  openCategoryTranslations(category: ProductCategory): void { this.translatingCategory = category; }
+
+  closeCategoryTranslations(): void {
+    this.translatingCategory = null;
+    this.loadTranslationCoverage();
   }
 
   navigateToProductEdit(product: Product): void {
@@ -500,7 +544,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   }
 
   enableProviderAccount(pspCode: string): void {
-    if (!this.selectedMerchant || this.providerAccountActionLoading.has(pspCode)) return;
+    if (!this.selectedMerchant || !this.isPspAvailable(pspCode) || this.providerAccountActionLoading.has(pspCode)) return;
     this.providerAccountActionLoading.add(pspCode);
     this.merchantApi.enableProviderAccount(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, pspCode).subscribe({
       next: (account) => { this.providerAccounts = this.upsertProviderAccount(this.providerAccounts, account); this.providerAccountActionLoading.delete(pspCode); },
@@ -517,6 +561,18 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  isPspAvailable(pspCode: string): boolean { return this.availablePspCodes.includes(pspCode); }
+
+  /**
+   * Enabling Stripe only lets the merchant start onboarding; it is Active
+   * once Stripe Connect reports the account connected with charges enabled.
+   */
+  providerStatus(pspCode: string): { label: string; tone: string } {
+    if (!this.isPspAvailable(pspCode) || !this.isProviderEnabled(pspCode)) return { label: 'Disabled', tone: 'status-tag-neutral' };
+    if (pspCode === 'STRIPE' && this.paymentAccountStatus !== 'connected') return { label: 'Ready for onboarding', tone: 'status-tag-warning' };
+    return { label: 'Active', tone: 'status-tag-success' };
+  }
+
   isProviderEnabled(pspCode: string): boolean { return this.providerAccounts.some(a => a.pspCode === pspCode && a.enabled); }
   isProviderInList(pspCode: string): boolean { return this.providerAccounts.some(a => a.pspCode === pspCode); }
   getProviderAccount(pspCode: string): ProviderAccountResponse | null { return this.providerAccounts.find(a => a.pspCode === pspCode) ?? null; }
@@ -529,6 +585,25 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     if (!product.branchId) return 'Merchant-level product';
     const branch = this.branches.find(b => (b.branchId ?? b.id) === product.branchId);
     return branch ? branch.name : 'Merchant-level product';
+  }
+
+  private loadMenuLanguages(): void {
+    if (!this.supportedMenuLanguages.length) return;
+    if (!this.menuLanguages.length) {
+      this.merchantApi.getMenuLanguages(this.selectedEnvironment, this.apiVersion).subscribe({
+        next: (languages) => this.menuLanguages = languages,
+        error: () => this.menuLanguages = []
+      });
+    }
+    this.loadTranslationCoverage();
+  }
+
+  private loadTranslationCoverage(): void {
+    if (!this.selectedMerchant || !this.supportedMenuLanguages.length) return;
+    this.merchantApi.getTranslationCoverage(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId).subscribe({
+      next: (coverage) => this.translationCoverage = coverage,
+      error: () => this.translationCoverage = []
+    });
   }
 
   private loadMerchantById(merchantId: string, fallbackMessage: string): void {
@@ -554,6 +629,10 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.providerAccountActionLoading.clear();
     this.resetAppearanceHistory();
     this.activeDetailTab = 'info';
+    this.catalogLanguage = merchant.originalMenuLanguage ?? null;
+    this.translatingCategory = null;
+    this.translationCoverage = [];
+    this.loadMenuLanguages();
 
     this.loadPaymentAccountStatus(merchant.merchantId);
     this.loadProviderAccounts(merchant.merchantId);
@@ -565,7 +644,8 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     forkJoin({
       location: this.merchantApi.getLocation(this.selectedEnvironment, this.apiVersion, merchant.merchantId).pipe(catchError(() => of(null))),
       branches: this.merchantApi.getBranches(this.selectedEnvironment, this.apiVersion, merchant.merchantId).pipe(catchError(() => of([]))),
-      categories: this.merchantApi.getProductCategories(this.selectedEnvironment, this.apiVersion, merchant.merchantId).pipe(catchError(() => of([])))
+      // Categories stay in the Original Menu Language: the rename dialog saves what it shows.
+      categories: this.merchantApi.getProductCategories(this.selectedEnvironment, this.apiVersion, merchant.merchantId, merchant.originalMenuLanguage ?? undefined).pipe(catchError(() => of([])))
     }).subscribe({
       next: ({ location, branches, categories }) => {
         this.merchantLocation = location;
@@ -600,7 +680,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
     this.loading = true;
     this.resetProductTableStateForBranch(this.selectedBranch.branchId);
-    this.merchantApi.getProducts(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, this.selectedBranch.branchId).subscribe({
+    this.merchantApi.getProducts(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, this.selectedBranch.branchId, true, this.catalogLanguage ?? undefined).subscribe({
       next: (products) => { this.loading = false; this.products = products; this.syncProductTableState(); },
       error: (error) => { this.loading = false; this.products = []; this.syncProductTableState(); this.errorMessage = this.toMessage(error, 'Unable to load products.'); }
     });

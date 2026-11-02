@@ -106,7 +106,6 @@ export class OrderManagementComponent implements OnInit {
             lastUpdatedAt: merchant.lastUpdatedAt,
           };
           this.selectMerchantForFilter(item);
-          this.loadSupportData(merchantId);
         },
       });
     }
@@ -131,6 +130,9 @@ export class OrderManagementComponent implements OnInit {
     this.merchantIdInput = m.merchantId;
     this.merchantId = m.merchantId;
     this.merchantResults = [];
+    this.branches = [];
+    this.selectedBranchId = '';
+    this.loadSupportData(m.merchantId);
   }
 
   clearMerchantFilter(): void {
@@ -252,6 +254,18 @@ export class OrderManagementComponent implements OnInit {
       return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(amount);
     } catch {
       return `${amount} ${currency}`;
+    }
+  }
+
+  /** Formats an API amount given in the currency's minor unit (e.g. cents). */
+  formatMinorAmount(amountMinor: number | null | undefined, currency: string): string {
+    if (amountMinor == null || !Number.isFinite(amountMinor)) return '—';
+    try {
+      const format = new Intl.NumberFormat('en-GB', { style: 'currency', currency });
+      const digits = format.resolvedOptions().maximumFractionDigits ?? 2;
+      return format.format(amountMinor / 10 ** digits);
+    } catch {
+      return `${amountMinor} ${currency}`;
     }
   }
 
