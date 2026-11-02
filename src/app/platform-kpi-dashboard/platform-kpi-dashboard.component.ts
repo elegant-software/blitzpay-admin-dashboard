@@ -7,6 +7,7 @@ import { BackendEnvironment, MerchantSearchResultItem } from '../models/merchant
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { PlatformKpiService } from '../services/platform-kpi.service';
+import { MerchantSearchComponent } from '../shared/merchant-search.component';
 import {
   PlatformKpiReport,
   PaymentMethodFrequency,
@@ -16,8 +17,9 @@ import {
 @Component({
   selector: 'app-platform-kpi-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MerchantSearchComponent],
   templateUrl: './platform-kpi-dashboard.component.html',
+  styleUrl: './platform-kpi-dashboard.component.css',
 })
 export class PlatformKpiDashboardComponent implements OnInit {
   readonly environment: BackendEnvironment;

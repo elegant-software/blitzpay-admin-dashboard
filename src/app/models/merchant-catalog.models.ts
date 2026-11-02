@@ -229,6 +229,10 @@ export interface UpdateMerchantRequest {
   };
 }
 
+export interface CreateMerchantRequest extends UpdateMerchantRequest {
+  merchantName: string;
+}
+
 export interface UpdateBranchRequest {
   name: string;
   active: boolean;
@@ -553,15 +557,16 @@ export type OrderType = 'WALK_IN_ORDERING' | 'PRE_ORDER';
 export type OrderStatus = 'PENDING' | 'PAID' | 'CANCELLED' | 'EXPIRED';
 
 export interface OrderItemResponse {
+  itemId: string;
   productId: string;
-  productName: string;
+  name: string;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
+  unitPriceMinor: number;
+  lineTotalMinor: number;
 }
 
 export interface OrderResponse {
-  id: string;
+  orderId: string;
   merchantId: string;
   branchId: string;
   branchName?: string | null;
@@ -573,10 +578,11 @@ export interface OrderResponse {
   dueDate?: string | null;
   qrCode?: string | null;
   items: OrderItemResponse[];
-  totalAmount: number;
+  /** Amount in the currency's minor unit (e.g. cents). */
+  totalAmountMinor: number;
   currency: string;
   createdAt: string;
-  updatedAt: string;
+  paidAt?: string | null;
 }
 
 export interface CreateOrderItemRequest {

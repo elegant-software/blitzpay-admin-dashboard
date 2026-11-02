@@ -5,6 +5,7 @@ import { BackendEnvironment, Branch, MerchantSearchResultItem } from '../models/
 import { CreateAssignmentRequest, MerchantOperationsRole, MerchantUserAssignment, UserSearchResult } from '../models/user-management.models';
 import { UserManagementApiService } from '../services/user-management-api.service';
 import { MerchantApiService } from '../services/merchant-api.service';
+import { MerchantSearchComponent } from '../shared/merchant-search.component';
 
 interface AssignDialogState {
   open: boolean;
@@ -24,8 +25,9 @@ interface AssignDialogState {
 @Component({
   selector: 'app-user-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MerchantSearchComponent],
   templateUrl: './user-detail.component.html',
+  styleUrl: './user-detail.component.css',
 })
 export class UserDetailComponent implements OnChanges {
   @Input() user!: UserSearchResult;

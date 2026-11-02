@@ -1,9 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { finalize, forkJoin } from 'rxjs';
+import { Subscription, finalize, forkJoin, map, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { WebCartComponent } from '../components/web-cart.component';
 import { StorefrontBranch, StorefrontMerchant, StorefrontProduct } from '../models/storefront.models';
@@ -18,7 +18,7 @@ import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from 
   template: `
     <ng-container *ngIf="!loading; else catalogLoading">
     <section class="merchant-hero">
-      <div class="merchant-logo">
+      <div class="merchant-logo" [class.has-logo]="merchant?.logoUrl">
         <img *ngIf="merchant?.logoUrl" [src]="merchant?.logoUrl" [alt]="merchant?.merchantName + ' logo'" />
         <span *ngIf="!merchant?.logoUrl">{{ merchantInitial }}</span>
       </div>
@@ -43,17 +43,73 @@ import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from 
             <h2>Products</h2>
             <p class="muted">{{ products.length }} available</p>
           </div>
-          <label class="search-products" *ngIf="languages.length">
+          <div class="search-products language-picker" *ngIf="languages.length">
             <span>Language</span>
-            <select data-testid="catalog-language" [ngModel]="activeLanguage" (ngModelChange)="chooseLanguage($event)">
-              <option *ngFor="let code of languages" [value]="code" [lang]="code">{{ languageName(code) }}</option>
-            </select>
-          </label>
+            <div class="language-control">
+              <button
+                #languageTrigger
+                class="language-trigger"
+                type="button"
+                data-testid="catalog-language"
+                aria-haspopup="listbox"
+                aria-controls="catalog-language-options"
+                [attr.aria-expanded]="languageMenuOpen"
+                (click)="toggleLanguageMenu()"
+                (keydown)="onLanguageTriggerKeydown($event)"
+              >
+                <span [attr.lang]="activeLanguage" dir="auto">{{ languageName(activeLanguage || 'en') }}</span>
+                <svg class="language-chevron" [class.is-open]="languageMenuOpen" viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="m5 7.5 5 5 5-5" />
+                </svg>
+              </button>
+              <div
+                *ngIf="languageMenuOpen"
+                class="language-options"
+                id="catalog-language-options"
+                role="listbox"
+                aria-label="Catalog language"
+              >
+                <button
+                  #languageOption
+                  *ngFor="let code of languages; let index = index"
+                  type="button"
+                  role="option"
+                  class="language-option"
+                  [attr.data-language]="code"
+                  [attr.lang]="code"
+                  [attr.aria-selected]="activeLanguage === code"
+                  [attr.tabindex]="focusedLanguageIndex === index ? 0 : -1"
+                  (click)="selectLanguage(code)"
+                  (keydown)="onLanguageOptionKeydown($event, index)"
+                >
+                  <span dir="auto">{{ languageName(code) }}</span>
+                  <svg *ngIf="activeLanguage === code" viewBox="0 0 20 20" aria-hidden="true">
+                    <path d="m4 10 4 4 8-8" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
           <label class="search-products">
             <span>Search products</span>
             <input type="search" [(ngModel)]="query" (ngModelChange)="saveBrowseState()" placeholder="Search products" />
           </label>
         </div>
+        <div [attr.aria-busy]="productsLoading">
+        <section *ngIf="productsLoading" data-testid="catalog-skeleton" role="status" aria-live="polite">
+          <span class="visually-hidden">Loading menu in {{ languageName(activeLanguage || 'en') }}...</span>
+          <div class="product-grid" aria-hidden="true">
+            <article class="product-card skeleton-card" *ngFor="let placeholder of skeletonCards">
+              <div class="skeleton skeleton-image"></div>
+              <div class="skeleton skeleton-category"></div>
+              <div class="skeleton skeleton-title"></div>
+              <div class="skeleton skeleton-line"></div>
+              <div class="skeleton skeleton-price"></div>
+              <div class="skeleton skeleton-button"></div>
+            </article>
+          </div>
+        </section>
+        <ng-container *ngIf="!productsLoading">
         <nav class="category-chips" *ngIf="categories.length > 0" aria-label="Product categories">
           <button type="button" [class.active]="category === ''" (click)="chooseCategory('')">All</button>
           <button type="button" *ngFor="let option of categories" [class.active]="category === option" (click)="chooseCategory(option)">{{ option }}</button>
@@ -65,7 +121,7 @@ import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from 
         </section>
             <p class="muted" *ngIf="products.length > 0 && visibleProducts.length === 0">No products match your search.</p>
             <div class="product-grid" *ngIf="products.length > 0">
-              <article class="product-card" *ngFor="let product of visibleProducts; trackBy: trackProduct" [class.is-selected]="productQuantity(product.productId) > 0">
+              <article class="product-card" *ngFor="let product of visibleProducts; trackBy: trackProduct" [class.is-selected]="productQuantity(product.productId) > 0" [attr.dir]="catalogLanguage.direction">
                 <a class="product-detail-link" [routerLink]="['/m', merchantId, 'b', branchId, 'p', product.productId]">
                   <div class="product-image">
                     <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" loading="lazy" decoding="async" />
@@ -91,6 +147,8 @@ import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from 
                 </ng-template>
               </article>
             </div>
+        </ng-container>
+        </div>
       </article>
       <web-cart [merchantId]="merchantId" [branchId]="branchId" />
     </section>
@@ -102,11 +160,20 @@ import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from 
     </ng-template>
   `
 })
-export class WebCatalogComponent implements OnInit {
+export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
+  private readonly host = inject(ElementRef<HTMLElement>);
   readonly cart = inject(StorefrontSessionService);
-  private readonly catalogLanguage = inject(StorefrontLanguageService);
+  readonly catalogLanguage = inject(StorefrontLanguageService);
+  @ViewChild('languageTrigger') private languageTrigger?: ElementRef<HTMLButtonElement>;
+  @ViewChildren('languageOption', { read: ElementRef }) private languageOptionElements!: QueryList<ElementRef<HTMLButtonElement>>;
+  private catalogRequest?: Subscription;
+  private pendingLanguageFocus: number | null = null;
+  readonly skeletonCards = [0, 1, 2, 3];
+  productsLoading = false;
+  languageMenuOpen = false;
+  focusedLanguageIndex = 0;
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly currency = environment.currency;
@@ -126,15 +193,23 @@ export class WebCatalogComponent implements OnInit {
       this.query = this.cart.query;
       this.category = this.cart.category;
     }
-    forkJoin({
+    this.catalogRequest = forkJoin({
       merchant: this.api.getMerchant(this.merchantId),
-      branch: this.api.getBranch(this.merchantId, this.branchId),
-      products: this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.language)
-    }).pipe(finalize(() => this.loading = false)).subscribe({
+      branch: this.api.getBranch(this.merchantId, this.branchId)
+    }).pipe(
+      switchMap(({ merchant, branch }) => {
+        this.merchant = merchant;
+        this.branch = branch;
+        return this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.resolve(merchant))
+          .pipe(map(products => ({ merchant, branch, products })));
+      }),
+      finalize(() => this.loading = false)
+    ).subscribe({
       next: ({ merchant, branch, products }) => {
         this.merchant = merchant;
         this.branch = branch;
         this.products = products;
+        this.cart.updateCatalogText(products, this.merchantId, this.branchId);
       },
       error: (error: unknown) => this.errorMessage = this.toMessage(error, 'Unable to load this branch catalog.')
     });
@@ -144,11 +219,9 @@ export class WebCatalogComponent implements OnInit {
     return catalogLanguages(this.merchant);
   }
 
-  /** The chosen language when this merchant offers it; otherwise what the catalog was served in. */
+  /** The requested language stays selected even when individual products fall back. */
   get activeLanguage(): string | null {
-    const chosen = this.catalogLanguage.language;
-    if (chosen && this.languages.includes(chosen)) return chosen;
-    return this.products[0]?.language ?? this.merchant?.originalMenuLanguage ?? null;
+    return this.catalogLanguage.language ?? this.merchant?.originalMenuLanguage ?? this.merchant?.originalLanguage ?? null;
   }
 
   languageName(code: string): string {
@@ -156,16 +229,81 @@ export class WebCatalogComponent implements OnInit {
   }
 
   chooseLanguage(language: string): void {
+    this.catalogRequest?.unsubscribe();
     this.catalogLanguage.choose(language);
     // Category names are translated too, so a category picked in another language no longer matches.
     this.chooseCategory('');
-    this.loading = true;
-    this.api.getActiveProducts(this.merchantId, this.branchId, language)
-      .pipe(finalize(() => this.loading = false))
+    this.query = '';
+    this.saveBrowseState();
+    this.errorMessage = '';
+    this.productsLoading = true;
+    this.catalogRequest = this.api.getActiveProducts(this.merchantId, this.branchId, language)
+      .pipe(finalize(() => this.productsLoading = false))
       .subscribe({
-        next: (products) => this.products = products,
+        next: (products) => {
+          this.products = products;
+          this.cart.updateCatalogText(products, this.merchantId, this.branchId);
+        },
         error: (error: unknown) => this.errorMessage = this.toMessage(error, 'Unable to load this branch catalog.')
       });
+  }
+
+  ngOnDestroy(): void {
+    this.catalogRequest?.unsubscribe();
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.pendingLanguageFocus === null) return;
+    this.languageOptionElements.get(this.pendingLanguageFocus)?.nativeElement.focus();
+    this.pendingLanguageFocus = null;
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeLanguageMenuOnOutsideClick(event: MouseEvent): void {
+    if (this.languageMenuOpen && !this.host.nativeElement.contains(event.target as Node)) {
+      this.closeLanguageMenu(false);
+    }
+  }
+
+  toggleLanguageMenu(): void {
+    if (this.languageMenuOpen) {
+      this.closeLanguageMenu(false);
+      return;
+    }
+    this.openLanguageMenu(this.languages.indexOf(this.activeLanguage ?? ''));
+  }
+
+  onLanguageTriggerKeydown(event: KeyboardEvent): void {
+    if (!['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    const selectedIndex = this.languages.indexOf(this.activeLanguage ?? '');
+    const index = event.key === 'ArrowUp' ? this.languages.length - 1 : Math.max(selectedIndex, 0);
+    this.openLanguageMenu(index);
+  }
+
+  onLanguageOptionKeydown(event: KeyboardEvent, index: number): void {
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowDown') nextIndex = (index + 1) % this.languages.length;
+    else if (event.key === 'ArrowUp') nextIndex = (index - 1 + this.languages.length) % this.languages.length;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = this.languages.length - 1;
+    else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeLanguageMenu(true);
+    } else if (event.key === 'Tab') {
+      this.closeLanguageMenu(false);
+    }
+
+    if (nextIndex !== null) {
+      event.preventDefault();
+      this.focusedLanguageIndex = nextIndex;
+      this.pendingLanguageFocus = nextIndex;
+    }
+  }
+
+  selectLanguage(language: string): void {
+    this.closeLanguageMenu(true);
+    this.chooseLanguage(language);
   }
 
   get merchantInitial(): string {
@@ -217,5 +355,17 @@ export class WebCatalogComponent implements OnInit {
       if (typeof detail === 'string' && detail.trim()) return detail;
     }
     return fallback;
+  }
+
+  private openLanguageMenu(index: number): void {
+    this.focusedLanguageIndex = index < 0 ? 0 : index;
+    this.languageMenuOpen = true;
+    this.pendingLanguageFocus = this.focusedLanguageIndex;
+  }
+
+  private closeLanguageMenu(restoreFocus: boolean): void {
+    this.languageMenuOpen = false;
+    this.pendingLanguageFocus = null;
+    if (restoreFocus) this.languageTrigger?.nativeElement.focus();
   }
 }

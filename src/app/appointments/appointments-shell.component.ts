@@ -6,7 +6,7 @@ import { RouterModule } from '@angular/router';
   standalone: true,
   imports: [RouterModule],
   template: `
-    <div class="container-fluid px-4 pt-2 pb-4">
+    <div class="container-fluid appointments-shell px-4 pt-2 pb-4">
       <ul class="nav nav-tabs appointments-sub-nav mb-4">
         <li class="nav-item">
           <a class="nav-link" routerLink="/appointments" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
@@ -31,32 +31,83 @@ import { RouterModule } from '@angular/router';
     </div>
   `,
   styles: [`
-    .appointments-sub-nav {
-      border-bottom: 2px solid #e5e7eb;
+    .appointments-shell {
+      --appointments-tab-text: #788397;
+      --appointments-tab-border: #e4e8f0;
+      --appointments-tab-accent: #6959d7;
     }
+
+    .appointments-sub-nav {
+      display: flex;
+      gap: 0.35rem;
+      overflow-x: auto;
+      border: 0;
+      border-bottom: 1px solid var(--appointments-tab-border);
+      scrollbar-width: thin;
+    }
+
     .appointments-sub-nav .nav-link {
       display: inline-flex;
+      white-space: nowrap;
       align-items: center;
-      border: none;
+      gap: 0.3rem;
+      border: 1px solid transparent;
       border-bottom: 2px solid transparent;
-      margin-bottom: -2px;
-      color: #6b7280;
-      font-size: 0.88rem;
-      font-weight: 500;
-      padding: 0.5rem 1rem;
+      border-radius: 0.65rem 0.65rem 0 0;
+      margin-bottom: -1px;
+      color: var(--appointments-tab-text);
+      font-size: 0.76rem;
+      font-weight: 620;
+      padding: 0.68rem 0.9rem;
       background: none;
       cursor: pointer;
-      transition: color 0.15s, border-color 0.15s;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
       text-decoration: none;
     }
+
     .appointments-sub-nav .nav-link:hover {
-      color: #374151;
-      border-bottom-color: #d1d5db;
+      color: #4237a1;
+      background: #f7f6ff;
+      border-bottom-color: #c9c4fa;
     }
+
     .appointments-sub-nav .nav-link.active {
-      color: #2563eb;
-      border-bottom-color: #2563eb;
-      font-weight: 600;
+      color: #5143bd;
+      border-color: var(--appointments-tab-border);
+      border-bottom-color: var(--appointments-tab-accent);
+      background: #fff;
+      font-weight: 720;
+    }
+
+    .appointments-sub-nav .nav-link:focus-visible {
+      outline: 2px solid var(--appointments-tab-accent);
+      outline-offset: 2px;
+    }
+
+    :host-context(html[data-coreui-theme='dark']) .appointments-shell {
+      --appointments-tab-text: #a5b0c1;
+      --appointments-tab-border: #354154;
+      --appointments-tab-accent: #b7adff;
+    }
+
+    :host-context(html[data-coreui-theme='dark']) .appointments-sub-nav .nav-link:hover {
+      color: #e4e0ff;
+      background: #252d40;
+    }
+
+    :host-context(html[data-coreui-theme='dark']) .appointments-sub-nav .nav-link.active {
+      color: #e4e0ff;
+      background: #1b2535;
+    }
+
+    @media (max-width: 575.98px) {
+      .appointments-shell {
+        padding-inline: 0.75rem !important;
+      }
+
+      .appointments-sub-nav .nav-link {
+        padding-inline: 0.7rem;
+      }
     }
   `]
 })

@@ -4,7 +4,7 @@ import { throwError, of } from 'rxjs';
 import { MerchantDetailComponent } from './merchant-detail.component';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { MerchantApiService } from '../services/merchant-api.service';
-import { Branch, Merchant, ProductCategory, ProviderAccountResponse } from '../models/merchant-catalog.models';
+import { Branch, Merchant, Product, ProductCategory, ProviderAccountResponse } from '../models/merchant-catalog.models';
 
 describe('MerchantDetailComponent product category management', () => {
   let component: MerchantDetailComponent;
@@ -90,6 +90,152 @@ describe('MerchantDetailComponent product category management', () => {
     component.selectedMerchant = merchant;
     component.categories = [beverages];
     component['syncCategoryTableState']();
+  });
+
+  it('presents the merchant identity and key context in the detail header', () => {
+    merchantApi.getVerticals.and.returnValue(of([]));
+    component.selectedMerchant = {
+      ...merchant,
+      businessType: 'RESTAURANT',
+      merchantMobility: 'BRICK_AND_MORTAR',
+      logoUrl: 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='
+    };
+    component.merchantLocation = {
+      merchantId: merchant.merchantId,
+      latitude: 0,
+      longitude: 0,
+      geofenceRadiusMeters: 0,
+      city: 'Berlin'
+    };
+
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const hero = root.querySelector('.merchant-detail-hero');
+
+    expect(hero).not.toBeNull();
+    expect(hero?.querySelector('h1')?.textContent).toContain(merchant.merchantName);
+    expect(hero?.textContent).toContain(merchant.merchantCode);
+    expect(hero?.textContent).toContain('Berlin');
+    expect(hero?.textContent).toContain('Brick & Mortar');
+    expect(hero?.querySelector('.status-tag-success')?.textContent).toContain('Active');
+    expect(hero?.querySelector('img')?.getAttribute('src')).toBe(component.selectedMerchant.logoUrl);
+    expect(root.querySelector('[aria-label="Edit merchant"]')).not.toBeNull();
+    expect(root.querySelectorAll('.merchant-detail-stat').length).toBe(4);
+    expect(root.querySelector('#merchant-panel-info')?.getAttribute('role')).toBe('tabpanel');
+    expect(root.querySelector('.merchant-detail-profile-card h2')?.textContent).toContain('Business details');
+    expect(root.querySelector('.merchant-detail-contact-card h2')?.textContent).toContain('Contact information');
+  });
+
+  it('does not show a success banner just for loading a merchant', () => {
+    merchantApi.getVerticals.and.returnValue(of([]));
+    merchantApi.getStripeConnectStatus.and.returnValue(of({
+      connected: false,
+      chargesEnabled: false,
+      detailsSubmitted: false
+    }));
+    merchantApi.listProviderAccounts.and.returnValue(of([]));
+    merchantApi.getLocation.and.returnValue(of({
+      merchantId: merchant.merchantId,
+      latitude: 0,
+      longitude: 0,
+      geofenceRadiusMeters: 0
+    }));
+    merchantApi.getBranches.and.returnValue(of([]));
+    merchantApi.getProductCategories.and.returnValue(of([]));
+
+    component['selectMerchant'](merchant);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.alert-success')).toBeNull();
+    expect(component.statusMessage).toBe('');
+  });
+
+  it('supports arrow-key navigation between merchant detail tabs', () => {
+    merchantApi.getVerticals.and.returnValue(of([]));
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const infoTab = root.querySelector<HTMLButtonElement>('#merchant-tab-info')!;
+    infoTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(component.activeDetailTab).toBe('categories');
+    expect(document.activeElement).toBe(root.querySelector('#merchant-tab-categories'));
+  });
+
+  it('shows branches as accessible selectable cards beside a clearly scoped catalog', () => {
+    merchantApi.getVerticals.and.returnValue(of([]));
+    component.activeDetailTab = 'branches-products';
+    const branch: Branch = {
+      id: 'branch-1',
+      branchId: 'branch-1',
+      merchantId: merchant.merchantId,
+      branchCode: 'BR-1',
+      name: 'Central',
+      city: 'Berlin',
+      status: 'ACTIVE',
+      active: true
+    };
+    component.branches = [branch];
+    component.selectedBranch = branch;
+    component['syncBranchTableState']();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const branchButton = root.querySelector<HTMLButtonElement>('.branch-select-button');
+
+    expect(root.querySelector('.merchant-branches-panel')).not.toBeNull();
+    expect(root.querySelectorAll('.branch-selection-card').length).toBe(1);
+    expect(branchButton?.getAttribute('aria-pressed')).toBe('true');
+    expect(branchButton?.textContent).toContain('Central');
+    expect(branchButton?.textContent).toContain('Berlin');
+    expect(root.querySelector('.branch-selection-card')?.classList.contains('branch-selection-card-active')).toBeTrue();
+    expect(root.querySelector('.merchant-catalog-panel')).not.toBeNull();
+    expect(root.querySelector('.product-branch-scope')?.textContent).toContain('Central');
+  });
+
+  it('shows categories in their own tab, separate from branches and products', () => {
+    merchantApi.getVerticals.and.returnValue(of([]));
+    component.activeDetailTab = 'categories';
+    component.categories = [beverages];
+    component['syncCategoryTableState']();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const panel = root.querySelector<HTMLElement>('#merchant-panel-categories');
+
+    expect(panel?.getAttribute('aria-labelledby')).toBe('merchant-tab-categories');
+    expect(panel?.textContent).toContain('Product categories');
+    expect(panel?.textContent).toContain('Beverages');
+    expect(root.querySelector('.merchant-branches-panel')).toBeNull();
+    expect(root.querySelector('.merchant-products-card')).toBeNull();
+  });
+
+  it('renders product actions as icon-only buttons with accessible labels', () => {
+    merchantApi.getVerticals.and.returnValue(of([]));
+    component.activeDetailTab = 'branches-products';
+    const product: Product = {
+      productId: 'product-1',
+      merchantId: merchant.merchantId,
+      branchId: 'branch-1',
+      name: 'Coffee',
+      unitPrice: 3,
+      active: true,
+      status: 'ACTIVE',
+      createdAt: '2026-05-10T10:00:00.000Z',
+      updatedAt: '2026-05-10T10:00:00.000Z'
+    };
+    component.products = [product];
+    component['syncProductTableState']();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const actionButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('.merchant-products-card .action-cell button'));
+
+    expect(actionButtons.map(button => button.getAttribute('aria-label'))).toEqual(['Edit product', 'Remove product']);
+    expect(actionButtons.every(button => button.textContent?.trim() === '')).toBeTrue();
+    expect(actionButtons.every(button => button.querySelector('svg'))).toBeTrue();
   });
 
   it('creates a new product category and closes the dialog', () => {

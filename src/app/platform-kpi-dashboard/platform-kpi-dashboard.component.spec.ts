@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { PlatformKpiDashboardComponent } from './platform-kpi-dashboard.component';
@@ -33,6 +33,7 @@ const mockReport: PlatformKpiReport = {
 
 describe('PlatformKpiDashboardComponent', () => {
   let component: PlatformKpiDashboardComponent;
+  let fixture: ComponentFixture<PlatformKpiDashboardComponent>;
   let httpTestingController: HttpTestingController;
 
   beforeEach(async () => {
@@ -43,7 +44,7 @@ describe('PlatformKpiDashboardComponent', () => {
 
     httpTestingController = TestBed.inject(HttpTestingController);
 
-    const fixture = TestBed.createComponent(PlatformKpiDashboardComponent);
+    fixture = TestBed.createComponent(PlatformKpiDashboardComponent);
     component = fixture.componentInstance;
     fixture.detectChanges(); // triggers ngOnInit → load()
 
@@ -90,5 +91,61 @@ describe('PlatformKpiDashboardComponent', () => {
   it('formatMinor divides by 100 and formats with currency', () => {
     const formatted = component.formatMinor(150000, 'EUR');
     expect(formatted).toContain('1.500');
+  });
+
+  it('presents an accessible page heading and clearly grouped reporting filters', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('h1')?.textContent).toContain('Platform dashboard');
+    expect(element.querySelector('[aria-labelledby="dashboard-filters-title"]')).not.toBeNull();
+    expect(element.querySelector('label[for="dashboard-from"]')).not.toBeNull();
+    expect(element.querySelector('label[for="dashboard-to"]')).not.toBeNull();
+    expect(element.querySelector('label[for="dashboard-merchant-search"]')).not.toBeNull();
+  });
+
+  it('keeps the selected merchant summary and change action within its filter field', () => {
+    component.selectedMerchant = {
+      merchantId: 'merchant-1',
+      merchantName: '[LOCAL TEST] Bremen Viertel Food Truck',
+      merchantCode: 'MRC-939081A2D2',
+      city: 'Bremen',
+      country: 'Germany',
+      businessType: 'FOOD_TRUCK',
+      merchantMobility: 'BRICK_AND_MORTAR',
+      merchantStatus: 'ACTIVE',
+      lastUpdatedAt: '',
+    };
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.dashboard-selected-merchant')).not.toBeNull();
+    expect(element.querySelector('.dashboard-selected-merchant-name')?.textContent).toContain(
+      '[LOCAL TEST] Bremen Viertel Food Truck',
+    );
+    expect(element.querySelector('.dashboard-selected-merchant-code')?.textContent).toContain(
+      'MRC-939081A2D2',
+    );
+    const changeButton = element.querySelector<HTMLButtonElement>(
+      'button[aria-label="Change selected merchant"]',
+    );
+    expect(changeButton).not.toBeNull();
+    changeButton?.click();
+    fixture.detectChanges();
+
+    expect(component.selectedMerchant).toBeNull();
+    expect(element.querySelector('.dashboard-selected-merchant')).toBeNull();
+    expect(element.querySelector('#dashboard-merchant-search')).not.toBeNull();
+  });
+
+  it('announces KPI loading and report errors as accessible status messages', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    component.report = null;
+    component.loading = true;
+    fixture.detectChanges();
+    expect(element.querySelector('.dashboard-loading[role="status"]')).not.toBeNull();
+
+    component.loading = false;
+    component.error = 'Could not load the report.';
+    fixture.detectChanges();
+    expect(element.querySelector('[role="alert"][aria-live="assertive"]')?.textContent).toContain('Could not load the report.');
   });
 });

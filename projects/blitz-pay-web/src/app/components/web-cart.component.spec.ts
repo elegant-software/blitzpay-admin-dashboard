@@ -19,6 +19,7 @@ describe('WebCartComponent mobile dialog', () => {
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
     const trigger = root.querySelector<HTMLButtonElement>('.mobile-cart-summary')!;
+    trigger.style.display = 'flex';
     trigger.focus();
     trigger.click();
     fixture.detectChanges();
@@ -32,7 +33,9 @@ describe('WebCartComponent mobile dialog', () => {
     expect(dialog.getAttribute('aria-labelledby')).toBe('mobile-cart-title');
     expect(document.activeElement).toBe(dialog.querySelector('[autofocus]'));
     expect(document.body.style.overflow).toBe('hidden');
+    const closed = new Promise<void>((resolve) => dialog.addEventListener('close', () => resolve(), { once: true }));
     root.querySelector<HTMLButtonElement>('[aria-label="Close cart"]')!.click();
+    await closed;
     fixture.detectChanges();
     expect(dialog.open).toBeFalse();
     expect(document.activeElement).toBe(trigger);
@@ -58,7 +61,9 @@ describe('WebCartComponent mobile dialog', () => {
 
   it('handles Escape cancellation and cleans up scrolling when destroyed', async () => {
     const { fixture, trigger, dialog } = await setup();
+    const closed = new Promise<void>((resolve) => dialog.addEventListener('close', () => resolve(), { once: true }));
     dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+    await closed;
     fixture.detectChanges();
     expect(dialog.open).toBeFalse();
     trigger.click();

@@ -13,11 +13,12 @@ import {
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
+import { MerchantSearchComponent } from '../shared/merchant-search.component';
 
 @Component({
   selector: 'app-appointment-policy',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe],
+  imports: [CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
   templateUrl: './appointment-policy.component.html',
   styleUrl: './appointment-policy.component.css'
 })

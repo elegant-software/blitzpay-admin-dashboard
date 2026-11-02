@@ -62,5 +62,14 @@ describe('ProductOverviewComponent', () => {
     expect(harness.routeNativeElement?.textContent).toContain('Frisch geröstet');
     expect(harness.routeNativeElement?.querySelector('.overview-copy h2')?.getAttribute('lang')).toBe('de');
     expect(document.documentElement.dir).not.toBe('rtl');
+    expect(harness.routeNativeElement?.querySelector('.overview-grid')?.getAttribute('dir')).toBe('rtl');
+    expect(getComputedStyle(harness.routeNativeElement!.querySelector('.overview-copy')!).textAlign).toBe('right');
+  });
+
+  it('requests a cold product detail in the merchant original language', async () => {
+    api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'Restaurant', originalMenuLanguage: 'de' }));
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/m/merchant-44/b/branch-12/p/p1');
+    expect(api.getProduct).toHaveBeenCalledWith('merchant-44', 'branch-12', 'p1', 'de');
   });
 });

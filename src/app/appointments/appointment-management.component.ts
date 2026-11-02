@@ -23,6 +23,7 @@ import {
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
+import { MerchantSearchComponent } from '../shared/merchant-search.component';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { EnvironmentKey } from '../models/merchant-catalog.models';
@@ -32,7 +33,7 @@ type AppointmentDialog = 'create' | 'detail' | 'reschedule' | 'override' | 'edit
 @Component({
   selector: 'app-appointment-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe],
+  imports: [CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
   templateUrl: './appointment-management.component.html',
   styleUrl: './appointment-management.component.css'
 })
@@ -121,6 +122,18 @@ export class AppointmentManagementComponent implements OnInit {
 
   get selectedEnvironment() {
     return getEnvironmentByKey(this.selectedEnvironmentKey);
+  }
+
+  get bookedCount(): number {
+    return this.appointments.filter(appointment => appointment.status === 'BOOKED').length;
+  }
+
+  get completedCount(): number {
+    return this.appointments.filter(appointment => appointment.status === 'COMPLETED').length;
+  }
+
+  get cancelledCount(): number {
+    return this.appointments.filter(appointment => appointment.status === 'CANCELLED').length;
   }
 
   searchMerchantsForFilter(): void {

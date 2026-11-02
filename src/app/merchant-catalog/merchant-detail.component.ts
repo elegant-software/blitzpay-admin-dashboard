@@ -109,7 +109,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   verticals: MerchantVerticalResponse[] = [];
   verticalsLoading = false;
 
-  activeDetailTab: 'info' | 'branches-products' | 'payment' | 'appearances' = 'info';
+  activeDetailTab: 'info' | 'categories' | 'branches-products' | 'payment' | 'appearances' = 'info';
 
   readonly serviceOptions = [
     { code: 'PRE_ORDER', label: 'Pre-Order' },
@@ -215,6 +215,59 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     if (n.includes('rejected') || n.includes('action_required')) return 'status-tag-danger';
     return 'status-tag-neutral';
   }
+  merchantStatusLabel(status: string): string {
+    return status
+      .toLowerCase()
+      .split(/[_\s-]+/)
+      .filter(Boolean)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+  merchantMobilityLabel(mobility: string | null | undefined): string {
+    if (mobility === 'BRICK_AND_MORTAR') return 'Brick & Mortar';
+    if (mobility === 'MOBILE') return 'Mobile';
+    return mobility || '—';
+  }
+  onDetailTabKeydown(event: KeyboardEvent): void {
+    const tab = event.currentTarget as HTMLButtonElement;
+    const tabList = tab.closest('[role="tablist"]');
+    const tabs = Array.from(tabList?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? []);
+    const currentIndex = tabs.indexOf(tab);
+    if (currentIndex < 0 || !tabs.length) return;
+
+    let nextIndex: number;
+    switch (event.key) {
+      case 'ArrowRight':
+        nextIndex = (currentIndex + 1) % tabs.length;
+        break;
+      case 'ArrowLeft':
+        nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        break;
+      case 'Home':
+        nextIndex = 0;
+        break;
+      case 'End':
+        nextIndex = tabs.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    tabs[nextIndex].focus();
+    tabs[nextIndex].click();
+  }
+  get merchantBusinessLocation(): string {
+    const city = this.merchantLocation?.city;
+    const country = this.merchantLocation?.country || this.selectedMerchant?.operatingCountry;
+    return [city, country].filter((value): value is string => !!value).join(', ') || '—';
+  }
+  get merchantBusinessAddress(): string {
+    return [this.merchantLocation?.addressLine1, this.merchantLocation?.addressLine2]
+      .filter((value): value is string => !!value)
+      .join(', ');
+  }
+  get merchantOfferings(): string[] { return this.selectedMerchant?.offerings ?? []; }
   productStatusTone(product: Product): string { return product.active ? 'status-tag-success' : 'status-tag-neutral'; }
   productStatusLabel(product: Product): string { return product.active ? 'Active' : 'Inactive'; }
   branchStatusTone(branch: Branch): string { return branch.active === false ? 'status-tag-neutral' : 'status-tag-success'; }
@@ -609,6 +662,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   private loadMerchantById(merchantId: string, fallbackMessage: string): void {
     this.loading = true;
     this.errorMessage = '';
+    this.statusMessage = '';
     this.merchantApi.getMerchant(this.selectedEnvironment, this.apiVersion, merchantId).subscribe({
       next: (merchant) => this.selectMerchant(merchant),
       error: (error) => { this.loading = false; this.errorMessage = this.toMessage(error, fallbackMessage); }
@@ -617,6 +671,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
   private selectMerchant(merchant: Merchant): void {
     this.selectedMerchant = merchant;
+    this.statusMessage = '';
     this.selectedBranch = null;
     this.merchantTableLogoFailed = false;
     this.failedProductImages.clear();
@@ -659,7 +714,6 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
         this.syncCategoryTableState();
         this.syncBranchTableState();
         this.resetProductTableStateForBranch(this.selectedBranch?.branchId ?? null);
-        this.statusMessage = `Loaded merchant ${merchant.merchantCode}.`;
         if (this.selectedBranch?.branchId) {
           this.loadProductsForSelectedBranch();
           return;

@@ -8,13 +8,26 @@ const INTERNATIONAL_MENU = 'INTERNATIONAL_MENU';
 export class StorefrontLanguageService {
   private readonly storageKey = 'blitzpay.storefront-language';
   private chosen: string | null = this.read();
+  private resolved: string | null = null;
 
   get language(): string | null {
-    return this.chosen;
+    return this.resolved ?? this.chosen;
+  }
+
+  /** Resolve the merchant default before requesting menu text; only explicit choices are persisted. */
+  resolve(merchant: StorefrontMerchant): string | null {
+    const original = merchant.originalMenuLanguage ?? merchant.originalLanguage ?? null;
+    this.resolved = this.chosen ?? original;
+    return this.language;
+  }
+
+  get direction(): 'rtl' | 'ltr' {
+    return ['ar', 'fa', 'he', 'ur'].includes(this.language?.split('-')[0].toLowerCase() ?? '') ? 'rtl' : 'ltr';
   }
 
   choose(language: string): void {
     this.chosen = language;
+    this.resolved = language;
     try {
       sessionStorage.setItem(this.storageKey, language);
     } catch {
@@ -33,7 +46,7 @@ export class StorefrontLanguageService {
 
 /** Menu languages are defined by the merchant, not by client-side translations. */
 export function catalogLanguages(merchant: StorefrontMerchant | null | undefined): string[] {
-  const original = merchant?.originalMenuLanguage;
+  const original = merchant?.originalMenuLanguage ?? merchant?.originalLanguage;
   if (!original || !merchant?.offerings?.includes(INTERNATIONAL_MENU)) return [];
   return [...new Set([original, ...(merchant.supportedMenuLanguages ?? [])])];
 }

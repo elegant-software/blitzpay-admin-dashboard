@@ -2,9 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { forkJoin, Observable, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import {
+  CreateMerchantRequest,
   EnvironmentKey,
   MenuLanguage,
   Merchant,
@@ -32,6 +33,7 @@ export class MerchantEditComponent implements OnInit {
   get selectedEnvironment() { return getEnvironmentByKey(this.selectedEnvironmentKey); }
 
   merchantId = '';
+  isCreateMode = false;
   merchant: Merchant | null = null;
   location: MerchantLocation | null = null;
   verticals: MerchantVerticalResponse[] = [];
@@ -96,30 +98,41 @@ export class MerchantEditComponent implements OnInit {
 
   ngOnInit(): void {
     this.merchantId = this.route.snapshot.paramMap.get('id') ?? '';
-    if (!this.merchantId) { this.errorMessage = 'No merchant ID in route.'; return; }
+    this.isCreateMode = !this.merchantId;
     this.load();
   }
 
   private load(): void {
     this.loading = true;
     forkJoin({
-      merchant: this.merchantApi.getMerchant(this.selectedEnvironment, this.apiVersion, this.merchantId),
       verticals: this.merchantApi.getVerticals(this.selectedEnvironment, this.apiVersion),
-      location: this.merchantApi.getLocation(this.selectedEnvironment, this.apiVersion, this.merchantId).pipe(catchError(() => of(null))),
       menuLanguages: this.merchantApi.getMenuLanguages(this.selectedEnvironment, this.apiVersion).pipe(catchError(() => of([] as MenuLanguage[]))),
     }).subscribe({
-      next: ({ merchant, verticals, location, menuLanguages }) => {
-        this.merchant = merchant;
+      next: ({ verticals, menuLanguages }) => {
         this.verticals = verticals;
         this.menuLanguages = menuLanguages;
+        if (this.isCreateMode) {
+          this.loading = false;
+          return;
+        }
+        this.loadMerchant();
+      },
+      error: (error) => { this.loading = false; this.errorMessage = this.toMessage(error, 'Failed to load merchant form.'); }
+    });
+  }
+
+  private loadMerchant(): void {
+    forkJoin({
+      merchant: this.merchantApi.getMerchant(this.selectedEnvironment, this.apiVersion, this.merchantId),
+      location: this.merchantApi.getLocation(this.selectedEnvironment, this.apiVersion, this.merchantId).pipe(catchError(() => of(null))),
+    }).subscribe({
+      next: ({ merchant, location }) => {
+        this.merchant = merchant;
         this.location = location;
         this.populateForm(merchant, location);
         this.loading = false;
       },
-      error: (error) => {
-        this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Failed to load merchant.');
-      }
+      error: (error) => { this.loading = false; this.errorMessage = this.toMessage(error, 'Failed to load merchant.'); }
     });
   }
 
@@ -198,29 +211,25 @@ export class MerchantEditComponent implements OnInit {
   }
 
   uploadLogo(): void {
-    if (!this.logoUploadFile || this.logoUploading) return;
+    if (!this.logoUploadFile || this.logoUploading || !this.merchantId) return;
     this.logoUploading = true;
     this.logoError = '';
-    const file = this.logoUploadFile;
-    this.merchantApi.createLogoUploadUrl(this.selectedEnvironment, this.apiVersion, this.merchantId, file.type || 'image/jpeg').subscribe({
-      next: (resp) => {
-        this.merchantApi.uploadMerchantLogo(resp.uploadUrl, file).subscribe({
-          next: () => {
-            this.logoStorageKey = resp.storageKey;
-            this.logoUploading = false;
-            this.merchantApi.updateLogo(this.selectedEnvironment, this.apiVersion, this.merchantId, { storageKey: resp.storageKey }).subscribe({
-              next: (updated) => { this.logoPreviewUrl = updated.logoUrl ?? this.logoPreviewUrl; },
-            });
-          },
-          error: (err) => { this.logoUploading = false; this.logoError = this.toMessage(err, 'Logo upload failed.'); }
-        });
+    this.uploadLogoForMerchant(this.merchantId, this.logoUploadFile).subscribe({
+      next: (updated) => {
+        this.logoPreviewUrl = updated.logoUrl ?? this.logoPreviewUrl;
+        this.logoUploading = false;
+        this.logoUploadFile = null;
       },
-      error: (err) => { this.logoUploading = false; this.logoError = this.toMessage(err, 'Failed to get upload URL.'); }
+      error: (err) => { this.logoUploading = false; this.logoError = this.toMessage(err, 'Logo upload failed.'); }
     });
   }
 
   save(): void {
     if (this.saving) return;
+    if (!this.form.merchantName.trim()) {
+      this.errorMessage = 'Enter a trading name.';
+      return;
+    }
     this.saving = true;
     this.errorMessage = '';
     this.statusMessage = '';
@@ -231,8 +240,8 @@ export class MerchantEditComponent implements OnInit {
       return;
     }
 
-    const payload: UpdateMerchantRequest = {
-      merchantName: this.form.merchantName,
+    const commonPayload: UpdateMerchantRequest = {
+      merchantName: this.form.merchantName.trim(),
       website: this.form.website || undefined,
       offerings: this.form.offerings,
       businessType: this.form.businessType || undefined,
@@ -248,16 +257,58 @@ export class MerchantEditComponent implements OnInit {
       },
     };
 
-    const save$ = this.merchantApi.updateMerchant(this.selectedEnvironment, this.apiVersion, this.merchantId, payload);
-    const loc = this.buildLocationPayload();
-    const location$ = loc
-      ? this.merchantApi.saveLocation(this.selectedEnvironment, this.apiVersion, this.merchantId, loc).pipe(catchError(() => of(null)))
-      : of(null);
-
-    forkJoin({ merchant: save$, location: location$ }).subscribe({
-      next: () => { this.saving = false; this.router.navigate(['/merchants', this.merchantId]); },
-      error: (error) => { this.saving = false; this.errorMessage = this.toMessage(error, 'Failed to save merchant.'); }
+    const wasCreating = this.isCreateMode;
+    const createPayload: CreateMerchantRequest = { ...commonPayload, merchantName: this.form.merchantName.trim() };
+    const save$ = wasCreating
+      ? this.merchantApi.createMerchant(this.selectedEnvironment, this.apiVersion, createPayload)
+      : this.merchantApi.updateMerchant(this.selectedEnvironment, this.apiVersion, this.merchantId, commonPayload);
+    save$.subscribe({
+      next: (savedMerchant) => {
+        this.merchant = savedMerchant;
+        this.merchantId = savedMerchant.merchantId;
+        this.isCreateMode = false;
+        this.form.merchantName = savedMerchant.merchantName;
+        this.saveRelatedData(savedMerchant);
+      },
+      error: (error) => {
+        this.saving = false;
+        this.errorMessage = this.toMessage(error, wasCreating ? 'Failed to create merchant.' : 'Failed to save merchant.');
+      }
     });
+  }
+
+  private saveRelatedData(savedMerchant: Merchant): void {
+    const loc = this.buildLocationPayload();
+    const location$: Observable<MerchantLocation | null> = loc
+      ? this.merchantApi.saveLocation(this.selectedEnvironment, this.apiVersion, savedMerchant.merchantId, loc)
+      : of(null);
+    const logo$: Observable<Merchant | null> = this.logoUploadFile
+      ? this.uploadLogoForMerchant(savedMerchant.merchantId, this.logoUploadFile)
+      : of(null);
+    location$.pipe(switchMap(() => logo$)).subscribe({
+      next: (logo) => {
+        if (logo) this.logoPreviewUrl = logo.logoUrl ?? this.logoPreviewUrl;
+        if (logo) this.logoUploadFile = null;
+        this.saving = false;
+        this.router.navigate(['/merchants', savedMerchant.merchantId]);
+      },
+      error: (error) => {
+        this.saving = false;
+        this.errorMessage = this.toMessage(error, 'Merchant saved, but location or logo could not be saved. Review the form and try again.');
+      }
+    });
+  }
+
+  private uploadLogoForMerchant(merchantId: string, file: File): Observable<Merchant> {
+    return this.merchantApi.createLogoUploadUrl(this.selectedEnvironment, this.apiVersion, merchantId, file.type || 'image/jpeg').pipe(
+      switchMap((response) => this.merchantApi.uploadMerchantLogo(response.uploadUrl, file).pipe(
+        switchMap(() => this.merchantApi.updateLogo(this.selectedEnvironment, this.apiVersion, merchantId, { storageKey: response.storageKey })),
+        map((updated) => {
+          this.logoStorageKey = response.storageKey;
+          return updated;
+        })
+      ))
+    );
   }
 
   private buildLocationPayload(): UpdateMerchantLocationRequest | null {
@@ -277,7 +328,9 @@ export class MerchantEditComponent implements OnInit {
     };
   }
 
-  cancel(): void { this.router.navigate(['/merchants', this.merchantId]); }
+  cancel(): void {
+    this.router.navigate(this.isCreateMode ? ['/merchants'] : ['/merchants', this.merchantId]);
+  }
 
   private toMessage(error: unknown, fallback: string): string {
     const body = (error as { error?: { detail?: string; message?: string } })?.error;
