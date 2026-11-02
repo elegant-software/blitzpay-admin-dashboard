@@ -57,7 +57,7 @@ jobs:
       MANIFESTS_DIR: ${{ inputs.app == 'storefront' && 'k8s/storefront' || 'k8s' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Resolve image tag
         env:
