@@ -20,6 +20,17 @@
     <button class="checkout-button" type="button" (click)="reconnect()">Try again</button>
   </section>
   <div [hidden]="pwa.offline()" [attr.inert]="pwa.offline() ? '' : null"><router-outlet /></div>
+  <aside *ngIf="pwa.installPromptAvailable()" class="pwa-install-notice" data-testid="pwa-install-notice" aria-label="Install this storefront" aria-live="polite">
+    <div class="pwa-install-copy">
+      <h2>Install this storefront</h2>
+      <p>Add this web app to your device for quicker access to the menu and checkout.</p>
+      <p *ngIf="pwa.installPromptError()" class="pwa-install-error" role="alert">The install prompt could not be opened. Try your browser's Install or Add to Home Screen menu.</p>
+    </div>
+    <div class="pwa-install-actions">
+      <button class="pwa-install-button" type="button" data-testid="pwa-install-button" [disabled]="pwa.installPromptError()" (click)="pwa.installStorefront()">Install storefront</button>
+      <button class="pwa-install-dismiss" type="button" data-testid="pwa-install-dismiss" (click)="pwa.dismissInstallPrompt()">Not now</button>
+    </div>
+  </aside>
   <aside class="install-prompt" data-testid="app-install-prompt" aria-label="Get the BlitzPay app">
     <div class="install-message">
       <p class="eyebrow">A little more BlitzPay</p>

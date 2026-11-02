@@ -26,6 +26,17 @@
 .guest-label { display: inline-flex; align-items: center; gap: .4rem; color: #35634f; background: #eaf1e6; border: 1px solid #dce8d7; border-radius: 999px; padding: .55rem .8rem; font-size: .72rem; font-weight: 600; white-space: nowrap; }
 .guest-label svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .storefront-content { margin: 0 auto; max-width: 76rem; padding: 2.25rem max(1.25rem, env(safe-area-inset-right, 0px)) calc(3rem + env(safe-area-inset-bottom, 0px)) max(1.25rem, env(safe-area-inset-left, 0px)); }
+.pwa-install-notice { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 2rem; padding: 1rem 1.2rem; background: #fffefa; border: 1px solid var(--storefront-stroke); border-radius: .9rem; }
+.pwa-install-copy h2 { color: var(--storefront-ink); font-size: .95rem; margin: 0 0 .25rem; }
+.pwa-install-copy p { color: var(--storefront-muted); font-size: .78rem; line-height: 1.5; margin: 0; }
+.pwa-install-copy .pwa-install-error { margin-top: .35rem; }
+.pwa-install-actions { display: flex; align-items: center; gap: .5rem; flex: 0 0 auto; }
+.pwa-install-actions button { min-height: 44px; border-radius: .65rem; padding: .55rem .85rem; font: inherit; font-size: .78rem; cursor: pointer; }
+.pwa-install-button { color: #fff; background: #087f68; border: 1px solid #087f68; font-weight: 650; }
+.pwa-install-button:hover:not(:disabled) { background: #066c58; }
+.pwa-install-button:disabled { cursor: not-allowed; opacity: .6; }
+.pwa-install-dismiss { color: var(--storefront-ink); background: transparent; border: 1px solid var(--storefront-stroke); }
+.pwa-install-actions button:focus-visible { outline: 3px solid #087f68; outline-offset: 2px; }
 .install-prompt { display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: 2rem; background: linear-gradient(110deg, #edf3e8, #f4f7ee 55%, #e3eee1); border: 1px solid var(--storefront-stroke); border-radius: 1.4rem; margin-top: 3rem; padding: 2.5rem clamp(1.2rem, 5vw, 3.5rem); overflow: hidden; }
 .install-message { max-width: 28rem; position: relative; z-index: 1; }
 .install-message .eyebrow { font-size: .67rem; letter-spacing: .12em; margin-bottom: 1rem; }
@@ -80,6 +91,9 @@
   .brand-wordmark > span { font-size: .53rem; }
   .guest-label { font-size: .64rem; padding: .45rem .6rem; gap: .25rem; }
   .guest-label svg { width: 15px; height: 15px; }
+  .pwa-install-notice { align-items: flex-start; flex-direction: column; }
+  .pwa-install-actions { width: 100%; }
+  .pwa-install-actions button { flex: 1 1 0; }
   .install-prompt { grid-template-columns: minmax(0, 1fr); gap: 1.2rem; padding: 2rem 1.2rem 1.3rem; text-align: center; }
   .store-links { justify-content: center; }
   .store-links a { flex: 1 1 130px; text-align: left; }

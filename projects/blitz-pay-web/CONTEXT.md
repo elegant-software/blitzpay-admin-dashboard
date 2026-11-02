@@ -58,6 +58,10 @@ _Avoid_: Web QR, fallback URL, deep link URL
 A visible secondary promotional element after the primary shopping content on every screen of the Web Storefront — including the **Web Catalog**, **QR Order Landing**, and post-payment confirmation — that presents an app preview and App Store / Google Play paths without overtaking the Merchant's shopping content.
 _Avoid_: App banner, install popup, download modal
 
+**Web Storefront Install Notice**:
+A compact, dismissible notice after the primary shopping content that offers the browser's PWA installation flow only after the browser signals that the Web Storefront is installable. It appears only when the app is not installed and does not automatically open the browser prompt or replace the native **App Install Prompt**.
+_Avoid_: Native app install prompt, automatic install popup
+
 **Guest Checkout**:
 The dedicated branch-scoped payment surface on the Web Storefront that requires no account registration or login. It converts a current, reviewed **Web Cart** into an **Order** only when the customer confirms their payment action.
 _Avoid_: Anonymous checkout, unauthenticated payment
@@ -107,6 +111,7 @@ _Avoid_: Inferred country currency, post-order currency guess
 - **Guest Checkout** applies to both the **Web Cart** checkout path and the **QR Order Landing** payment path
 - The **Branch Catalog QR** journey remains public from browsing through **Guest Checkout**; no BlitzPay account sign-in is required
 - An **App Install Prompt** appears on every screen of the **Web Storefront** — it is never absent
+- The **Web Storefront Install Notice** appears only when a supported browser signals installability, remains separate from the native **App Install Prompt**, and invokes installation only after a customer action
 - The **Web Storefront** does not manage or modify Merchant, Branch, or Product data — all catalog data is read-only from the customer's perspective
 
 ## Flagged ambiguities
