@@ -66,4 +66,11 @@ describe('GuestCheckoutComponent', () => {
       ['merchant-44', 'branch-12', 'tr'], ['merchant-44', 'branch-12', 'tr']
     ]);
   });
+
+  it('resolves the original language on a cold checkout entry', async () => {
+    api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'Restaurant', originalMenuLanguage: 'de' }));
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/m/merchant-44/b/branch-12/checkout');
+    expect(api.getActiveProducts).toHaveBeenCalledWith('merchant-44', 'branch-12', 'de');
+  });
 });

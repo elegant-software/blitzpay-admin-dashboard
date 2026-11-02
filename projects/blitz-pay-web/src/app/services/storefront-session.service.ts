@@ -79,6 +79,21 @@ export class StorefrontSessionService {
     this.write();
   }
 
+  /** Refresh localized text only; price and availability changes still require checkout review. */
+  updateCatalogText(products: StorefrontProduct[], merchantId: string, branchId: string): void {
+    if (this.state?.merchantId !== merchantId || this.state.branchId !== branchId) return;
+    const current = new Map(products.map(product => [product.productId, product]));
+    for (const line of this.state.lines) {
+      const product = current.get(line.product.productId);
+      if (!product) continue;
+      line.product = {
+        ...line.product, name: product.name, description: product.description,
+        categoryName: product.categoryName, language: product.language
+      };
+    }
+    this.write();
+  }
+
   reconcile(products: StorefrontProduct[], commit: boolean): boolean {
     if (!this.state) return false;
     const current = new Map(products.map((product) => [product.productId, product]));

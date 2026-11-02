@@ -38,7 +38,7 @@ import { GuestPaymentService } from '../services/guest-payment.service';
       <article class="surface checkout-summary">
         <h2>Your order</h2>
         <p class="muted" *ngIf="cart.itemCount === 0">Your cart is empty.</p>
-        <div class="cart-line" *ngFor="let line of cart.lines">
+          <div class="cart-line" *ngFor="let line of cart.lines" [attr.dir]="catalogLanguage.direction">
           <span><bdi dir="ltr">{{ line.quantity }}</bdi> &times; <bdi [attr.lang]="line.product.language">{{ line.product.name }}</bdi></span>
           <strong><bdi dir="ltr">{{ line.product.unitPrice * line.quantity | currency: currency }}</bdi></strong>
         </div>
@@ -76,7 +76,7 @@ export class GuestCheckoutComponent implements OnInit {
   private readonly api = inject(StorefrontApiService);
   private readonly payment = inject(GuestPaymentService);
   readonly cart = inject(StorefrontSessionService);
-  private readonly catalogLanguage = inject(StorefrontLanguageService);
+  readonly catalogLanguage = inject(StorefrontLanguageService);
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly currency = environment.currency;
@@ -97,13 +97,17 @@ export class GuestCheckoutComponent implements OnInit {
     forkJoin({
       merchant: this.api.getMerchant(this.merchantId),
       branch: this.api.getBranch(this.merchantId, this.branchId),
-      products: this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.language),
       capabilities: this.api.getPaymentCapabilities(this.merchantId)
-    }).pipe(finalize(() => this.loading = false)).subscribe({
+    }).pipe(
+      switchMap(context => this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.resolve(context.merchant))
+        .pipe(map(products => ({ ...context, products })))),
+      finalize(() => this.loading = false)
+    ).subscribe({
       next: ({ merchant, branch, products, capabilities }) => {
         this.merchant = merchant;
         this.branch = branch;
         this.products = products;
+        this.cart.updateCatalogText(products, this.merchantId, this.branchId);
         this.capabilities = capabilities;
         this.cartNeedsReview = this.cart.reconcile(products, false);
         if (this.payByBankAvailable) this.selectedPaymentMethod = 'STRIPE';

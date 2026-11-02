@@ -3,6 +3,7 @@ import { Component, ElementRef, HostListener, Input, OnDestroy, ViewChild, injec
 import { RouterLink } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { StorefrontSessionService } from '../services/storefront-session.service';
+import { StorefrontLanguageService } from '../services/storefront-language.service';
 
 @Component({
   selector: 'web-cart',
@@ -34,7 +35,7 @@ import { StorefrontSessionService } from '../services/storefront-session.service
         <button *ngIf="mobile" class="add-button continue-shopping" type="button" (click)="closeCart()">Continue shopping</button>
       </div>
       <div class="cart-lines" *ngIf="cart.itemCount > 0">
-        <div class="cart-line" *ngFor="let line of cart.lines">
+        <div class="cart-line" *ngFor="let line of cart.lines" [attr.dir]="catalogLanguage.direction">
           <img class="cart-thumbnail" *ngIf="mobile && line.product.imageUrl" [src]="line.product.imageUrl" alt="" />
           <div class="cart-line-copy">
             <strong [attr.lang]="line.product.language" dir="auto">{{ line.product.name }}</strong>
@@ -70,6 +71,7 @@ export class WebCartComponent implements OnDestroy {
   @Input({ required: true }) merchantId = '';
   @Input({ required: true }) branchId = '';
   readonly cart = inject(StorefrontSessionService);
+  readonly catalogLanguage = inject(StorefrontLanguageService);
   readonly currency = environment.currency;
 
   openCart(): void {
@@ -82,7 +84,6 @@ export class WebCartComponent implements OnDestroy {
 
   closeCart(): void {
     this.cartDialog.nativeElement.close();
-    this.finishClose();
   }
 
   finishClose(): void {
@@ -98,6 +99,7 @@ export class WebCartComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.expanded = false;
     this.cartDialog.nativeElement.close();
     this.restoreScrolling();
   }
