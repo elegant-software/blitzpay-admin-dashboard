@@ -1,10 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
 import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import {
   Branch,
@@ -24,6 +22,7 @@ import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
 
 type OrderDialog = 'create' | 'detail' | null;
+type OrderFilterDropdown = 'status' | 'type' | null;
 
 @Component({
   selector: 'app-order-management',
@@ -39,6 +38,8 @@ export class OrderManagementComponent implements OnInit {
   // Merchant search
   merchantQuery = '';
   merchantResults: MerchantSearchResultItem[] = [];
+  merchantSearchLoading = false;
+  merchantSearchError = '';
   selectedMerchantItem: MerchantSearchResultItem | null = null;
   merchantIdInput = '';
   merchantId = '';
@@ -46,16 +47,30 @@ export class OrderManagementComponent implements OnInit {
   // Branch filter
   selectedBranchId = '';
   branches: Branch[] = [];
+  branchDropdownOpen = false;
+
+  @ViewChild('branchPicker') private branchPicker?: ElementRef<HTMLElement>;
+  @ViewChild('branchTrigger') private branchTrigger?: ElementRef<HTMLButtonElement>;
+  @ViewChildren('branchOption') private branchOptions!: QueryList<ElementRef<HTMLButtonElement>>;
 
   // Orders
   orders: OrderResponse[] = [];
   filteredOrders: OrderResponse[] = [];
   statusFilter: OrderStatus | '' = '';
   typeFilter: '' | 'invoice' | 'standard' = '';
+  filterDropdownOpen: OrderFilterDropdown = null;
+  orderQuery = '';
+  ordersLoaded = false;
+
+  @ViewChild('statusFilterPicker') private statusFilterPicker?: ElementRef<HTMLElement>;
+  @ViewChild('typeFilterPicker') private typeFilterPicker?: ElementRef<HTMLElement>;
+  @ViewChild('statusFilterTrigger') private statusFilterTrigger?: ElementRef<HTMLButtonElement>;
+  @ViewChild('typeFilterTrigger') private typeFilterTrigger?: ElementRef<HTMLButtonElement>;
 
   loading = false;
   errorMessage = '';
   statusMessage = '';
+  supportDataError = '';
 
   // Dialog
   activeDialog: OrderDialog = null;
@@ -64,6 +79,8 @@ export class OrderManagementComponent implements OnInit {
 
   // Support data
   products: Product[] = [];
+  productsLoading = false;
+  productsLoadError = '';
   supportDataLoading = false;
 
   // Create form
@@ -83,6 +100,7 @@ export class OrderManagementComponent implements OnInit {
   // Known customers for selected branch
   branchCustomers: BranchCustomer[] = [];
   branchCustomersLoading = false;
+  private supportDataRequestId = 0;
 
   constructor(
     private readonly merchantApi: MerchantApiService,
@@ -106,8 +124,8 @@ export class OrderManagementComponent implements OnInit {
             lastUpdatedAt: merchant.lastUpdatedAt,
           };
           this.selectMerchantForFilter(item);
-          this.loadSupportData(merchantId);
         },
+        error: (error) => { this.errorMessage = this.toMessage(error, 'Unable to load the selected merchant.'); }
       });
     }
   }
@@ -116,24 +134,58 @@ export class OrderManagementComponent implements OnInit {
     return getEnvironmentByKey(this.selectedEnvironmentKey);
   }
 
+  get pendingOrderCount(): number { return this.orders.filter(order => order.status === 'PENDING').length; }
+  get paidOrderCount(): number { return this.orders.filter(order => order.status === 'PAID').length; }
+  get invoiceOrderCount(): number { return this.orders.filter(order => this.isInvoiceOrder(order)).length; }
+  get visibleOrderCount(): number { return this.filteredOrders.length; }
+
   // ── Merchant search ─────────────────────────────────────────────────────
 
   searchMerchantsForFilter(): void {
     const q = this.merchantQuery.trim();
-    if (!q) return;
+    if (!q) {
+      this.merchantSearchError = 'Enter a merchant name, code, or ID to search.';
+      return;
+    }
+    this.merchantSearchLoading = true;
+    this.merchantSearchError = '';
     this.merchantApi.searchMerchants(this.selectedEnvironment, this.apiVersion, { q, page: 0 }).subscribe({
-      next: response => { this.merchantResults = response.results; },
+      next: response => {
+        this.merchantResults = response.results;
+        this.merchantSearchLoading = false;
+        if (!response.results.length) this.merchantSearchError = 'No merchants found. Try another search.';
+      },
+      error: error => {
+        this.merchantSearchLoading = false;
+        this.merchantSearchError = this.toMessage(error, 'Unable to search merchants.');
+      }
     });
   }
 
   selectMerchantForFilter(m: MerchantSearchResultItem): void {
+    this.errorMessage = '';
+    this.statusMessage = '';
+    this.branchDropdownOpen = false;
     this.selectedMerchantItem = m;
     this.merchantIdInput = m.merchantId;
     this.merchantId = m.merchantId;
     this.merchantResults = [];
+    this.merchantQuery = '';
+    this.merchantSearchError = '';
+    this.selectedBranchId = '';
+    this.branches = [];
+    this.orders = [];
+    this.filteredOrders = [];
+    this.ordersLoaded = false;
+    this.orderQuery = '';
+    this.statusFilter = '';
+    this.typeFilter = '';
+    this.loadSupportData(m.merchantId);
   }
 
   clearMerchantFilter(): void {
+    this.supportDataRequestId++;
+    this.branchDropdownOpen = false;
     this.selectedMerchantItem = null;
     this.merchantIdInput = '';
     this.merchantId = '';
@@ -143,13 +195,69 @@ export class OrderManagementComponent implements OnInit {
     this.products = [];
     this.orders = [];
     this.filteredOrders = [];
+    this.ordersLoaded = false;
     this.selectedBranchId = '';
+    this.supportDataError = '';
+    this.supportDataLoading = false;
+    this.merchantSearchError = '';
+    this.orderQuery = '';
   }
 
   // ── Orders loading ──────────────────────────────────────────────────────
 
   get canSearch(): boolean {
     return !!this.selectedMerchantItem && !!this.selectedBranchId;
+  }
+
+  toggleBranchDropdown(): void {
+    this.branchDropdownOpen = !this.branchDropdownOpen;
+  }
+
+  selectBranchFilter(branchId: string): void {
+    this.selectedBranchId = branchId;
+    this.branchDropdownOpen = false;
+    this.onBranchFilterChange();
+  }
+
+  onBranchTriggerKeydown(event: KeyboardEvent): void {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.branchDropdownOpen = true;
+      const selectedIndex = this.branches.findIndex(branch => this.branchId(branch) === this.selectedBranchId) + 1;
+      this.focusBranchOption(event.key === 'ArrowUp' ? this.branches.length : selectedIndex);
+    } else if (event.key === 'Escape' && this.branchDropdownOpen) {
+      event.preventDefault();
+      this.branchDropdownOpen = false;
+    }
+  }
+
+  onBranchOptionKeydown(event: KeyboardEvent, index: number): void {
+    const optionCount = this.branches.length + 1;
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowDown') nextIndex = (index + 1) % optionCount;
+    if (event.key === 'ArrowUp') nextIndex = (index - 1 + optionCount) % optionCount;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = optionCount - 1;
+
+    if (nextIndex !== null) {
+      event.preventDefault();
+      this.focusBranchOption(nextIndex);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.branchDropdownOpen = false;
+      this.branchTrigger?.nativeElement.focus();
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.selectBranchFilter(index === 0 ? '' : this.branchId(this.branches[index - 1]));
+      this.branchTrigger?.nativeElement.focus();
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeBranchDropdownOutside(event: MouseEvent): void {
+    if (event.target instanceof Node && !this.branchPicker?.nativeElement.contains(event.target)) {
+      this.branchDropdownOpen = false;
+    }
   }
 
   loadOrders(): void {
@@ -161,6 +269,7 @@ export class OrderManagementComponent implements OnInit {
     this.errorMessage = '';
     this.statusMessage = '';
     this.loading = true;
+    this.ordersLoaded = false;
     this.orders = [];
     this.filteredOrders = [];
 
@@ -168,8 +277,8 @@ export class OrderManagementComponent implements OnInit {
       next: (orders) => {
         this.loading = false;
         this.orders = orders;
+        this.ordersLoaded = true;
         this.applyFilters();
-        this.statusMessage = `Loaded ${orders.length} order${orders.length === 1 ? '' : 's'}.`;
       },
       error: (error) => {
         this.loading = false;
@@ -191,6 +300,89 @@ export class OrderManagementComponent implements OnInit {
     this.applyFilters();
   }
 
+  toggleFilterDropdown(filter: Exclude<OrderFilterDropdown, null>): void {
+    this.filterDropdownOpen = this.filterDropdownOpen === filter ? null : filter;
+  }
+
+  selectStatusFilter(status: OrderStatus | ''): void {
+    this.statusFilter = status;
+    this.filterDropdownOpen = null;
+    this.applyFilters();
+    this.statusFilterTrigger?.nativeElement.focus();
+  }
+
+  selectTypeFilter(type: '' | 'invoice' | 'standard'): void {
+    this.typeFilter = type;
+    this.filterDropdownOpen = null;
+    this.applyFilters();
+    this.typeFilterTrigger?.nativeElement.focus();
+  }
+
+  onFilterTriggerKeydown(event: KeyboardEvent, filter: Exclude<OrderFilterDropdown, null>): void {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.filterDropdownOpen = filter;
+      const selectedIndex = filter === 'status'
+        ? ['', 'PENDING', 'PAID', 'CANCELLED', 'EXPIRED'].indexOf(this.statusFilter)
+        : ['', 'invoice', 'standard'].indexOf(this.typeFilter);
+      const optionCount = filter === 'status' ? 5 : 3;
+      const index = event.key === 'ArrowUp' ? optionCount - 1 : Math.max(selectedIndex, 0);
+      this.focusFilterOption(filter, index);
+    } else if (event.key === 'Escape' && this.filterDropdownOpen === filter) {
+      event.preventDefault();
+      this.filterDropdownOpen = null;
+    }
+  }
+
+  onFilterOptionKeydown(event: KeyboardEvent, index: number, filter: Exclude<OrderFilterDropdown, null>): void {
+    const optionList = (event.currentTarget as HTMLElement).closest('[role="listbox"]');
+    const optionCount = optionList?.querySelectorAll<HTMLButtonElement>('[role="option"]').length ?? 0;
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowDown') nextIndex = (index + 1) % optionCount;
+    if (event.key === 'ArrowUp') nextIndex = (index - 1 + optionCount) % optionCount;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = optionCount - 1;
+
+    if (nextIndex !== null && optionCount) {
+      event.preventDefault();
+      this.focusFilterOption(filter, nextIndex);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.filterDropdownOpen = null;
+      this.filterTrigger(filter)?.focus();
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeFilterDropdownOutside(event: MouseEvent): void {
+    const target = event.target;
+    if (
+      target instanceof Node &&
+      !this.statusFilterPicker?.nativeElement.contains(target) &&
+      !this.typeFilterPicker?.nativeElement.contains(target)
+    ) {
+      this.filterDropdownOpen = null;
+    }
+  }
+
+  statusFilterLabel(): string {
+    return this.statusFilter ? this.orderStatusLabel(this.statusFilter) : 'All statuses';
+  }
+
+  typeFilterLabel(): string {
+    if (this.typeFilter === 'invoice') return 'Invoice';
+    if (this.typeFilter === 'standard') return 'Standard';
+    return 'All types';
+  }
+
+  clearOrderFilters(): void {
+    this.orderQuery = '';
+    this.statusFilter = '';
+    this.typeFilter = '';
+    this.filterDropdownOpen = null;
+    this.applyFilters();
+  }
+
   private applyFilters(): void {
     let result = [...this.orders];
     if (this.statusFilter) {
@@ -201,24 +393,34 @@ export class OrderManagementComponent implements OnInit {
     } else if (this.typeFilter === 'standard') {
       result = result.filter(o => !o.targetShopperId);
     }
+    const query = this.orderQuery.trim().toLocaleLowerCase();
+    if (query) {
+      result = result.filter(order =>
+        order.id.toLocaleLowerCase().includes(query) ||
+        (order.targetShopperName ?? '').toLocaleLowerCase().includes(query) ||
+        (order.targetShopperId ?? '').toLocaleLowerCase().includes(query)
+      );
+    }
     this.filteredOrders = result;
   }
 
   // ── Support data ────────────────────────────────────────────────────────
 
   private loadSupportData(merchantId: string): void {
+    const requestId = ++this.supportDataRequestId;
     this.supportDataLoading = true;
-    forkJoin({
-      branches: this.merchantApi
-        .getBranches(this.selectedEnvironment, this.apiVersion, merchantId)
-        .pipe(catchError(() => of([]))),
-    }).subscribe({
-      next: ({ branches }) => {
-        this.branches = branches.map(b => ({ ...b, branchId: b.branchId ?? b.id }));
+    this.supportDataError = '';
+    this.merchantApi.getBranches(this.selectedEnvironment, this.apiVersion, merchantId).subscribe({
+      next: branches => {
+        if (requestId !== this.supportDataRequestId) return;
+        this.branches = branches.map(branch => ({ ...branch, branchId: branch.branchId ?? branch.id }));
         this.supportDataLoading = false;
       },
-      error: () => {
+      error: error => {
+        if (requestId !== this.supportDataRequestId) return;
+        this.branches = [];
         this.supportDataLoading = false;
+        this.supportDataError = this.toMessage(error, 'Unable to load branches for this merchant.');
       }
     });
   }
@@ -298,23 +500,21 @@ export class OrderManagementComponent implements OnInit {
     this.selectedShopperName = '';
   }
 
-  onCreateBranchChange(): void {
-    this.createItems = [];
-    this.products = [];
-    this.branchCustomers = [];
-    this.selectedShopperId = '';
-    this.selectedShopperName = '';
-    if (this.createBranchId) {
-      this.loadProductsForBranch(this.createBranchId);
-      this.loadBranchCustomers(this.createBranchId);
-    }
-  }
-
   private loadProductsForBranch(branchId: string): void {
     if (!this.merchantId) return;
+    this.products = [];
+    this.productsLoading = true;
+    this.productsLoadError = '';
     this.merchantApi.getProducts(this.selectedEnvironment, this.apiVersion, this.merchantId, branchId, false).subscribe({
-      next: (products) => { this.products = products; },
-      error: () => { this.products = []; }
+      next: (products) => {
+        this.products = products;
+        this.productsLoading = false;
+      },
+      error: (error) => {
+        this.products = [];
+        this.productsLoading = false;
+        this.productsLoadError = this.toMessage(error, 'Unable to load products for this branch.');
+      }
     });
   }
 
@@ -447,6 +647,7 @@ export class OrderManagementComponent implements OnInit {
       next: (order) => {
         this.loading = false;
         this.orders = [order, ...this.orders];
+        this.ordersLoaded = true;
         this.applyFilters();
         this.closeDialog(true);
         this.statusMessage = this.createPayByInvoice
@@ -465,6 +666,10 @@ export class OrderManagementComponent implements OnInit {
   onBranchFilterChange(): void {
     if (this.selectedBranchId && this.merchantId) {
       this.loadOrders();
+    } else {
+      this.orders = [];
+      this.filteredOrders = [];
+      this.ordersLoaded = false;
     }
   }
 
@@ -473,6 +678,25 @@ export class OrderManagementComponent implements OnInit {
   branchName(branchId: string): string {
     const branch = this.branches.find(b => (b.branchId ?? b.id) === branchId);
     return branch?.name ?? branchId;
+  }
+
+  branchId(branch: Branch): string {
+    return branch.branchId ?? branch.id ?? '';
+  }
+
+  private filterTrigger(filter: Exclude<OrderFilterDropdown, null>): HTMLButtonElement | undefined {
+    return filter === 'status'
+      ? this.statusFilterTrigger?.nativeElement
+      : this.typeFilterTrigger?.nativeElement;
+  }
+
+  private focusFilterOption(filter: Exclude<OrderFilterDropdown, null>, index: number): void {
+    const picker = filter === 'status' ? this.statusFilterPicker : this.typeFilterPicker;
+    setTimeout(() => picker?.nativeElement.querySelectorAll<HTMLButtonElement>('[role="option"]').item(index)?.focus());
+  }
+
+  private focusBranchOption(index: number): void {
+    setTimeout(() => this.branchOptions?.get(index)?.nativeElement.focus());
   }
 
   private toMessage(error: unknown, fallback: string): string {
