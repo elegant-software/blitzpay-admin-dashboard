@@ -106,7 +106,6 @@ export class OrderManagementComponent implements OnInit {
             lastUpdatedAt: merchant.lastUpdatedAt,
           };
           this.selectMerchantForFilter(item);
-          this.loadSupportData(merchantId);
         },
       });
     }
@@ -131,6 +130,9 @@ export class OrderManagementComponent implements OnInit {
     this.merchantIdInput = m.merchantId;
     this.merchantId = m.merchantId;
     this.merchantResults = [];
+    this.branches = [];
+    this.selectedBranchId = '';
+    this.loadSupportData(m.merchantId);
   }
 
   clearMerchantFilter(): void {
