@@ -49,7 +49,6 @@ describe('MerchantApiService — Appointment API', () => {
     TestBed.configureTestingModule({
       providers: [MerchantApiService, provideHttpClient(), provideHttpClientTesting()]
     });
-
     service = TestBed.inject(MerchantApiService);
     httpTestingController = TestBed.inject(HttpTestingController);
   });

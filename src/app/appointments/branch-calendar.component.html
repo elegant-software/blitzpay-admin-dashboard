@@ -1,38 +1,42 @@
 <!-- Search toolbar -->
-<div class="card mb-4">
-  <div class="card-header">
-    <span>Branch Calendar</span>
+<div class="card appointment-panel appointment-filter-panel mb-4">
+  <div class="card-header appointment-panel-heading">
+    <div>
+      <h1 class="appointment-panel-title">Branch Calendar</h1>
+      <p class="appointment-panel-description">Review and manage appointments for a selected branch and date range.</p>
+    </div>
   </div>
-  <div class="card-body">
+  <div class="card-body appointment-filter-body">
     <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
     <div class="alert alert-success mb-3" *ngIf="statusMessage">{{ statusMessage }}</div>
 
     <div class="row g-2 align-items-end">
-      <div class="col-md-5">
+      <div class="col-md-4">
         <label class="form-label form-label-sm mb-1 required" for="bc-merchant-search">Merchant &amp; Branch</label>
         <ng-container *ngIf="!selectedMerchantItem">
-          <div class="input-group">
-            <input
-              id="bc-merchant-search"
-              type="text"
-              class="form-control"
-              placeholder="Merchant name or code…"
-              [(ngModel)]="merchantQuery"
-              (keyup.enter)="searchMerchantsForFilter()"
-            />
-            <button class="btn btn-outline-secondary" type="button" (click)="searchMerchantsForFilter()">Search</button>
+          <div class="merchant-search-wrap">
+            <div class="input-group">
+              <input
+                id="bc-merchant-search"
+                type="text"
+                class="form-control"
+                placeholder="Merchant name or code…"
+                [(ngModel)]="merchantQuery"
+                (keyup.enter)="searchMerchantsForFilter()"
+              />
+              <button class="btn btn-outline-secondary" type="button" (click)="searchMerchantsForFilter()">Search</button>
+            </div>
+            <ul *ngIf="merchantResults.length" class="list-group merchant-search-popover">
+              <li
+                *ngFor="let m of merchantResults"
+                class="list-group-item list-group-item-action"
+                (click)="selectMerchantForFilter(m)"
+              >
+                <span class="d-block fw-semibold small">{{ m.merchantName }}</span>
+                <span class="d-block small text-muted">{{ m.merchantCode }}</span>
+              </li>
+            </ul>
           </div>
-          <ul *ngIf="merchantResults.length" class="list-group mt-1" style="max-height:200px;overflow-y:auto;position:absolute;z-index:100;width:40%">
-            <li
-              *ngFor="let m of merchantResults"
-              class="list-group-item list-group-item-action"
-              style="cursor:pointer"
-              (click)="selectMerchantForFilter(m)"
-            >
-              <span class="d-block fw-semibold small">{{ m.merchantName }}</span>
-              <span class="d-block small text-muted">{{ m.merchantCode }}</span>
-            </li>
-          </ul>
         </ng-container>
         <ng-container *ngIf="selectedMerchantItem && !selectedBranch">
           <div class="d-flex align-items-center gap-2 mb-1">
@@ -42,7 +46,7 @@
           <div *ngIf="loadingBranches" class="small text-muted d-flex align-items-center gap-1">
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading branches…
           </div>
-          <select *ngIf="!loadingBranches" class="form-select form-select-sm" (ngModelChange)="selectBranch($event)" [ngModel]="selectedBranch" [disabled]="filteredBranches.length === 0">
+          <select *ngIf="!loadingBranches" class="form-select" (ngModelChange)="selectBranch($event)" [ngModel]="selectedBranch" [disabled]="filteredBranches.length === 0">
             <option [ngValue]="null">— Select branch —</option>
             <option *ngFor="let b of filteredBranches" [ngValue]="b">{{ b.name }}{{ b.branchCode ? ' · ' + b.branchCode : '' }}</option>
           </select>
@@ -61,7 +65,7 @@
         <label class="form-label form-label-sm mb-1 required" for="bc-to">To</label>
         <input id="bc-to" class="form-control" type="date" [(ngModel)]="toDate" />
       </div>
-      <div class="col-md-5 d-flex gap-2 align-items-end flex-wrap">
+      <div class="col-md-4 d-flex gap-2 align-items-end flex-wrap calendar-filter-actions">
         <button class="btn btn-primary" type="button" [disabled]="loading || !canSearch" (click)="loadAppointments()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
           Load Calendar
@@ -74,15 +78,15 @@
 
 <!-- Results -->
 <ng-container *ngIf="branchId">
-  <div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div class="card appointment-panel appointment-results-panel mb-4">
+    <div class="card-header appointment-panel-heading appointment-results-heading d-flex justify-content-between align-items-center flex-wrap gap-2">
       <span>
         Appointments
-        <span class="badge text-bg-light ms-1">{{ filteredAppointments.length }}</span>
+        <span class="appointment-count-badge ms-1">{{ filteredAppointments.length }}</span>
       </span>
       <div class="d-flex align-items-center gap-2">
         <label class="form-label form-label-sm mb-0" for="bc-status-filter">Status</label>
-        <select id="bc-status-filter" class="form-select form-select-sm" style="width:auto" [(ngModel)]="statusFilter" (ngModelChange)="onStatusFilterChange()">
+        <select id="bc-status-filter" class="form-select form-select-sm status-filter-select" [(ngModel)]="statusFilter" (ngModelChange)="onStatusFilterChange()">
           <option value="">All</option>
           <option value="BOOKED">Booked</option>
           <option value="COMPLETED">Completed</option>

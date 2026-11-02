@@ -123,6 +123,18 @@ export class AppointmentManagementComponent implements OnInit {
     return getEnvironmentByKey(this.selectedEnvironmentKey);
   }
 
+  get bookedCount(): number {
+    return this.appointments.filter(appointment => appointment.status === 'BOOKED').length;
+  }
+
+  get completedCount(): number {
+    return this.appointments.filter(appointment => appointment.status === 'COMPLETED').length;
+  }
+
+  get cancelledCount(): number {
+    return this.appointments.filter(appointment => appointment.status === 'CANCELLED').length;
+  }
+
   searchMerchantsForFilter(): void {
     const q = this.merchantQuery.trim();
     if (!q) return;

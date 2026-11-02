@@ -1,9 +1,12 @@
 <!-- Toolbar -->
-<div class="card mb-4">
-  <div class="card-header">
-    <span>Appointment Policy</span>
+<div class="card appointment-panel policy-filter-panel mb-4">
+  <div class="card-header appointment-panel-heading">
+    <div>
+      <h1 class="appointment-panel-title">Appointment Policy</h1>
+      <p class="appointment-panel-description">Review booking rules or update them on behalf of a merchant.</p>
+    </div>
   </div>
-  <div class="card-body">
+  <div class="card-body appointment-filter-body">
     <div class="support-action-banner mb-3">
       <svg viewBox="0 0 24 24" width="18" height="18" class="me-2 flex-shrink-0"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
       <span><strong>Support action.</strong> Editing this policy changes booking behaviour on behalf of the merchant. Coordinate with the merchant before making changes.</span>
@@ -16,28 +19,29 @@
       <div class="col-md-4">
         <label class="form-label form-label-sm mb-1 required" for="ap-merchant-search">Merchant</label>
         <ng-container *ngIf="!selectedMerchantItem">
-          <div class="input-group">
-            <input
-              id="ap-merchant-search"
-              type="text"
-              class="form-control"
-              placeholder="Merchant name or code…"
-              [(ngModel)]="merchantQuery"
-              (keyup.enter)="searchMerchantsForFilter()"
-            />
-            <button class="btn btn-outline-secondary" type="button" (click)="searchMerchantsForFilter()">Search</button>
+          <div class="merchant-search-wrap">
+            <div class="input-group">
+              <input
+                id="ap-merchant-search"
+                type="text"
+                class="form-control"
+                placeholder="Merchant name or code…"
+                [(ngModel)]="merchantQuery"
+                (keyup.enter)="searchMerchantsForFilter()"
+              />
+              <button class="btn btn-outline-secondary" type="button" (click)="searchMerchantsForFilter()">Search</button>
+            </div>
+            <ul *ngIf="merchantResults.length" class="list-group merchant-search-popover">
+              <li
+                *ngFor="let m of merchantResults"
+                class="list-group-item list-group-item-action"
+                (click)="selectMerchantForFilter(m)"
+              >
+                <span class="d-block fw-semibold small">{{ m.merchantName }}</span>
+                <span class="d-block small text-muted">{{ m.merchantCode }}</span>
+              </li>
+            </ul>
           </div>
-          <ul *ngIf="merchantResults.length" class="list-group mt-1" style="max-height:200px;overflow-y:auto;position:absolute;z-index:100;width:33%">
-            <li
-              *ngFor="let m of merchantResults"
-              class="list-group-item list-group-item-action"
-              style="cursor:pointer"
-              (click)="selectMerchantForFilter(m)"
-            >
-              <span class="d-block fw-semibold small">{{ m.merchantName }}</span>
-              <span class="d-block small text-muted">{{ m.merchantCode }}</span>
-            </li>
-          </ul>
         </ng-container>
         <div *ngIf="selectedMerchantItem" class="d-flex align-items-center gap-2">
           <span class="badge bg-primary fw-normal px-2 py-1">{{ selectedMerchantItem.merchantName }}</span>
@@ -58,15 +62,18 @@
 
 <!-- Policy view / edit -->
 <ng-container *ngIf="merchantId">
-  <div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
+  <div class="card appointment-panel policy-details-panel mb-4">
+    <div class="card-header appointment-panel-heading d-flex justify-content-between align-items-center">
       <span>Appointment Policy</span>
       <div class="d-flex gap-2" *ngIf="policy && !editMode">
-        <button class="btn btn-sm btn-outline-primary" type="button" (click)="startEdit()">Edit Policy</button>
+        <button class="btn btn-sm btn-outline-primary policy-edit-button" type="button" (click)="startEdit()">Edit Policy</button>
       </div>
     </div>
-    <div class="card-body">
-      <div class="p-3 text-muted small" *ngIf="loading">Loading policy…</div>
+    <div class="card-body policy-details-body">
+      <div class="policy-loading" *ngIf="loading">
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        Loading policy…
+      </div>
 
       <!-- View mode -->
       <ng-container *ngIf="policy && !editMode">
@@ -93,7 +100,8 @@
           </div>
         </div>
         <div class="policy-meta mt-3">
-          Last updated: {{ policy.updatedAt | displayDate }}
+          <span>Last updated</span>
+          <strong>{{ policy.updatedAt | displayDate }}</strong>
         </div>
       </ng-container>
 
@@ -157,7 +165,7 @@
 
         <div class="alert alert-danger mt-3 mb-0" *ngIf="formError">{{ formError }}</div>
 
-        <div class="d-flex gap-2 justify-content-end mt-3">
+        <div class="d-flex gap-2 justify-content-end mt-3 policy-form-actions">
           <button class="btn btn-light" type="button" (click)="cancelEdit()">Cancel</button>
           <button class="btn btn-warning" type="button" [disabled]="saving" (click)="savePolicy()">
             <span *ngIf="saving" class="spinner-border spinner-border-sm me-1" role="status"></span>
