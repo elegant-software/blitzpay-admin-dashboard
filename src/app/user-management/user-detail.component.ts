@@ -26,6 +26,7 @@ interface AssignDialogState {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './user-detail.component.html',
+  styleUrl: './user-detail.component.css',
 })
 export class UserDetailComponent implements OnChanges {
   @Input() user!: UserSearchResult;
