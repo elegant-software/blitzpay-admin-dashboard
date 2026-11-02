@@ -19,6 +19,7 @@ describe('WebCartComponent mobile dialog', () => {
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
     const trigger = root.querySelector<HTMLButtonElement>('.mobile-cart-summary')!;
+    trigger.style.display = 'flex';
     trigger.focus();
     trigger.click();
     fixture.detectChanges();
