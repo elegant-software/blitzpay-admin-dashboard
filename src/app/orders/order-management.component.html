@@ -122,7 +122,7 @@
               <tbody>
                 <tr *ngFor="let order of filteredOrders">
                   <td>
-                    <div class="order-id-cell">{{ order.id | slice:0:8 }}...</div>
+                    <div class="order-id-cell">{{ order.orderId }}</div>
                   </td>
                   <td>
                     <span *ngIf="isInvoiceOrder(order)" class="invoice-badge" title="Invoice order sent to shopper">
@@ -137,7 +137,7 @@
                     <span class="text-muted small">{{ order.items.length }} item{{ order.items.length === 1 ? '' : 's' }}</span>
                   </td>
                   <td>
-                    <span class="fw-semibold">{{ formatCurrency(order.totalAmount, order.currency) }}</span>
+                    <span class="fw-semibold">{{ formatMinorAmount(order.totalAmountMinor, order.currency) }}</span>
                   </td>
                   <td>
                     <span class="status-tag" [ngClass]="orderStatusTone(order.status)">
@@ -343,7 +343,7 @@
         <div class="detail-grid mb-3">
           <div>
             <div class="order-meta-label">Order ID</div>
-            <div class="small">{{ selectedOrder.id }}</div>
+            <div class="small">{{ selectedOrder.orderId }}</div>
           </div>
           <div>
             <div class="order-meta-label">Status</div>
@@ -365,15 +365,15 @@
           </div>
           <div>
             <div class="order-meta-label">Total</div>
-            <div class="fw-bold">{{ formatCurrency(selectedOrder.totalAmount, selectedOrder.currency) }}</div>
+            <div class="fw-bold">{{ formatMinorAmount(selectedOrder.totalAmountMinor, selectedOrder.currency) }}</div>
           </div>
           <div>
             <div class="order-meta-label">Created</div>
             <div>{{ selectedOrder.createdAt | displayDate }}</div>
           </div>
-          <div>
-            <div class="order-meta-label">Updated</div>
-            <div>{{ selectedOrder.updatedAt | displayDate }}</div>
+          <div *ngIf="selectedOrder.paidAt">
+            <div class="order-meta-label">Paid</div>
+            <div>{{ selectedOrder.paidAt | displayDate }}</div>
           </div>
           <div *ngIf="selectedOrder.targetShopperId">
             <div class="order-meta-label">Target Shopper</div>
@@ -402,16 +402,16 @@
             </thead>
             <tbody>
               <tr *ngFor="let item of selectedOrder.items">
-                <td>{{ item.productName }}</td>
+                <td>{{ item.name }}</td>
                 <td>{{ item.quantity }}</td>
-                <td>{{ formatCurrency(item.unitPrice, selectedOrder.currency) }}</td>
-                <td class="text-end">{{ formatCurrency(item.totalPrice, selectedOrder.currency) }}</td>
+                <td>{{ formatMinorAmount(item.unitPriceMinor, selectedOrder.currency) }}</td>
+                <td class="text-end">{{ formatMinorAmount(item.lineTotalMinor, selectedOrder.currency) }}</td>
               </tr>
             </tbody>
             <tfoot>
               <tr>
                 <td colspan="3" class="text-end fw-bold">Total</td>
-                <td class="text-end fw-bold">{{ formatCurrency(selectedOrder.totalAmount, selectedOrder.currency) }}</td>
+                <td class="text-end fw-bold">{{ formatMinorAmount(selectedOrder.totalAmountMinor, selectedOrder.currency) }}</td>
               </tr>
             </tfoot>
           </table>

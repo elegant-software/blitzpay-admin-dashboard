@@ -49,3 +49,31 @@ describe('OrderManagementComponent — branch loading', () => {
     expect(component.branches[0].branchId).toBe('branch-1');
   });
 });
+
+describe('OrderManagementComponent — minor-unit amounts', () => {
+  let component: OrderManagementComponent;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [OrderManagementComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+      ],
+    });
+    component = TestBed.createComponent(OrderManagementComponent).componentInstance;
+  });
+
+  it('formats totalAmountMinor (cents) as a currency amount', () => {
+    expect(component.formatMinorAmount(2185, 'EUR')).toBe('€21.85');
+  });
+
+  it('respects currencies without minor units', () => {
+    expect(component.formatMinorAmount(500, 'JPY')).toBe('JP¥500');
+  });
+
+  it('shows a dash instead of NaN when the amount is missing', () => {
+    expect(component.formatMinorAmount(undefined, 'EUR')).toBe('—');
+  });
+});
