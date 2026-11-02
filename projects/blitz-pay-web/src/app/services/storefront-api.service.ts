@@ -10,7 +10,9 @@ import {
   StorefrontBranch,
   StorefrontMerchant,
   StorefrontOrder,
+  StorefrontPayment,
   StorefrontPaymentCapabilities,
+  StorefrontPaymentMethod,
   StorefrontProduct
 } from '../models/storefront.models';
 
@@ -53,8 +55,17 @@ export class StorefrontApiService {
     );
   }
 
+  /** Guest order; the response sets the order-scoped HttpOnly guest_token cookie (same-origin, so sent automatically). */
   createOrder(payload: CreateStorefrontOrderRequest): Observable<StorefrontOrder> {
-    return this.http.post<StorefrontOrder>(`${this.baseUrl}/orders`, payload, { headers: this.languageHeaders() });
+    return this.http.post<StorefrontOrder>(`${this.baseUrl}/storefront/orders`, payload, { headers: this.languageHeaders() });
+  }
+
+  getGuestOrder(orderId: string): Observable<StorefrontOrder> {
+    return this.http.get<StorefrontOrder>(`${this.baseUrl}/storefront/orders/${encodeURIComponent(orderId)}`);
+  }
+
+  startGuestPayment(orderId: string, method: StorefrontPaymentMethod): Observable<StorefrontPayment> {
+    return this.http.post<StorefrontPayment>(`${this.baseUrl}/storefront/orders/${encodeURIComponent(orderId)}/payment`, { method });
   }
 
   getOrder(orderId: string): Observable<StorefrontOrder> {

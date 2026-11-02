@@ -728,6 +728,11 @@ h2 {
   margin-top: 0.25rem;
 }
 
+/* Stripe Payment Element host (Stripe renders the card fields in its own iframe). */
+.card-element {
+  margin: 1.2rem 0;
+}
+
 .checkout-button {
   margin-top: 1.1rem;
   width: 100%;

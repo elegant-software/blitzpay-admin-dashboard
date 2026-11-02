@@ -9,7 +9,7 @@ describe('Payment return', () => {
   it('does not claim success based on the return URL alone', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([]),
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ orderId: 'o1' }) } } },
-      { provide: StorefrontApiService, useValue: { getOrder: () => of({ orderId: 'o1', status: 'CREATED' }) } }
+      { provide: StorefrontApiService, useValue: { getGuestOrder: () => of({ orderId: 'o1', status: 'CREATED' }) } }
     ] });
     const fixture = TestBed.createComponent(OrderConfirmationComponent);
     fixture.detectChanges();

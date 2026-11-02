@@ -1,4 +1,4 @@
-export type StorefrontPaymentMethod = 'STRIPE' | 'BRAINTREE';
+export type StorefrontPaymentMethod = 'CARD' | 'PAY_BY_BANK';
 
 export interface StorefrontMerchant {
   applicationId: string;
@@ -42,12 +42,19 @@ export interface StorefrontOrderItem {
   quantity: number;
 }
 
+/** Guest order: the server prices it from the catalog and sets the HttpOnly guest_token session cookie. */
 export interface CreateStorefrontOrderRequest {
   branchId: string;
-  orderType: 'PRE_ORDER';
-  usesDeferredPayment: false;
-  paymentMethod?: StorefrontPaymentMethod;
   items: StorefrontOrderItem[];
+}
+
+/** CARD: Payment Element credentials (direct charge on the connected account). PAY_BY_BANK: hosted checkout URL. */
+export interface StorefrontPayment {
+  method: StorefrontPaymentMethod;
+  connectedAccountId: string;
+  clientSecret?: string;
+  publishableKey?: string;
+  checkoutUrl?: string;
 }
 
 export interface StorefrontOrderLine {
