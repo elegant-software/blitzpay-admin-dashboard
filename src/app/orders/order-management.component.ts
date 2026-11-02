@@ -257,6 +257,18 @@ export class OrderManagementComponent implements OnInit {
     }
   }
 
+  /** Formats an API amount given in the currency's minor unit (e.g. cents). */
+  formatMinorAmount(amountMinor: number | null | undefined, currency: string): string {
+    if (amountMinor == null || !Number.isFinite(amountMinor)) return '—';
+    try {
+      const format = new Intl.NumberFormat('en-GB', { style: 'currency', currency });
+      const digits = format.resolvedOptions().maximumFractionDigits ?? 2;
+      return format.format(amountMinor / 10 ** digits);
+    } catch {
+      return `${amountMinor} ${currency}`;
+    }
+  }
+
   // ── Create order dialog ─────────────────────────────────────────────────
 
   openCreateDialog(): void {
