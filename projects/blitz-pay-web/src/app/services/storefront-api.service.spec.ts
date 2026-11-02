@@ -35,9 +35,9 @@ describe('StorefrontApiService', () => {
 
   it('sends the session language on order and hosted checkout requests without changing payloads', () => {
     TestBed.inject(StorefrontLanguageService).choose('ar');
-    const payload = { branchId: 'branch-12', orderType: 'PRE_ORDER' as const, usesDeferredPayment: false as const, items: [{ productId: 'p1', quantity: 2 }] };
+    const payload = { branchId: 'branch-12', items: [{ productId: 'p1', quantity: 2 }] };
     service.createOrder(payload).subscribe();
-    const order = http.expectOne('/v1/orders');
+    const order = http.expectOne('/v1/storefront/orders');
     expect(order.request.headers.get('Accept-Language')).toBe('ar');
     expect(order.request.body).toEqual(payload);
     order.flush({ orderId: 'o1' });
@@ -110,20 +110,24 @@ describe('StorefrontApiService', () => {
   });
 
   it('creates a guest order using the web cart selection', () => {
-    const payload = {
-      branchId: 'branch-12',
-      orderType: 'PRE_ORDER' as const,
-      usesDeferredPayment: false as const,
-      paymentMethod: 'STRIPE' as const,
-      items: [{ productId: 'p1', quantity: 2 }]
-    };
+    const payload = { branchId: 'branch-12', items: [{ productId: 'p1', quantity: 2 }] };
 
     service.createOrder(payload).subscribe();
 
-    const request = http.expectOne('/v1/orders');
+    const request = http.expectOne('/v1/storefront/orders');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual(payload);
     expect(request.request.headers.has('Accept-Language')).toBeFalse();
+  });
+
+  it('loads and pays a guest order through the cookie-authorised storefront endpoints', () => {
+    service.getGuestOrder('order-200').subscribe();
+    expect(http.expectOne('/v1/storefront/orders/order-200').request.method).toBe('GET');
+
+    service.startGuestPayment('order-200', 'CARD').subscribe();
+    const payment = http.expectOne('/v1/storefront/orders/order-200/payment');
+    expect(payment.request.method).toBe('POST');
+    expect(payment.request.body).toEqual({ method: 'CARD' });
   });
 
   it('loads an order reached through a universal order URL', () => {

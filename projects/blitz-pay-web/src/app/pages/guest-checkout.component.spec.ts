@@ -8,13 +8,14 @@ import { GuestCheckoutComponent } from './guest-checkout.component';
 
 describe('GuestCheckoutComponent', () => {
   const api = jasmine.createSpyObj<StorefrontApiService>('StorefrontApiService', [
-    'getMerchant', 'getBranch', 'getActiveProducts', 'getPaymentCapabilities', 'createOrder', 'createPayByBankCheckout'
+    'getMerchant', 'getBranch', 'getActiveProducts', 'getPaymentCapabilities', 'createOrder', 'startGuestPayment'
   ]);
 
   beforeEach(async () => {
     sessionStorage.clear();
     api.getActiveProducts.calls.reset();
     api.createOrder.calls.reset();
+    api.startGuestPayment.calls.reset();
     api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'Brew House' }));
     api.getBranch.and.returnValue(of({ id: 'branch-12', merchantId: 'merchant-44', name: 'Station Cafe' }));
     api.getActiveProducts.and.returnValue(of([
@@ -22,7 +23,7 @@ describe('GuestCheckoutComponent', () => {
     ]));
     api.getPaymentCapabilities.and.returnValue(of({ enabledPaymentFlows: ['PAY_BY_BANK'] }));
     api.createOrder.and.returnValue(of({ orderId: 'order-200' }));
-    api.createPayByBankCheckout.and.returnValue(NEVER);
+    api.startGuestPayment.and.returnValue(NEVER);
     await TestBed.configureTestingModule({
       providers: [
         provideRouter([{ path: 'm/:merchantId/b/:branchId/checkout', component: GuestCheckoutComponent }]),
@@ -48,11 +49,21 @@ describe('GuestCheckoutComponent', () => {
     expect(api.getActiveProducts).toHaveBeenCalledTimes(2);
     expect(api.createOrder).toHaveBeenCalledWith({
       branchId: 'branch-12',
-      orderType: 'PRE_ORDER',
-      usesDeferredPayment: false,
-      paymentMethod: 'STRIPE',
       items: [{ productId: 'p1', quantity: 1 }]
     });
+    expect(api.startGuestPayment).toHaveBeenCalledWith('order-200', 'PAY_BY_BANK');
+  });
+
+  it('defaults to card when the merchant accepts cards and sends only the method', async () => {
+    api.getPaymentCapabilities.and.returnValue(of({ enabledPaymentFlows: ['CARD', 'PAY_BY_BANK'] }));
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/m/merchant-44/b/branch-12/checkout');
+    harness.detectChanges();
+
+    expect(harness.routeNativeElement?.textContent).toContain('Card');
+    harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-testid="confirm-payment"]')!.click();
+
+    expect(api.startGuestPayment).toHaveBeenCalledWith('order-200', 'CARD');
   });
 
   it('uses the saved menu language when loading and revalidating the checkout catalog', async () => {

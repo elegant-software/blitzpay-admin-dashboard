@@ -11,7 +11,8 @@ describe('Web Storefront public routes', () => {
     'getBranch',
     'getActiveProducts',
     'getPaymentCapabilities',
-    'getOrder'
+    'getOrder',
+    'getGuestOrder'
   ]);
 
   beforeEach(async () => {
@@ -51,7 +52,7 @@ describe('Web Storefront public routes', () => {
   });
 
   it('renders the post-payment confirmation route', async () => {
-    api.getOrder.and.returnValue(of({ orderId: 'order-200', reference: 'TABLE-42', status: 'PAID' }));
+    api.getGuestOrder.and.returnValue(of({ orderId: 'order-200', reference: 'TABLE-42', status: 'PAID' }));
     const harness = await RouterTestingHarness.create();
 
     await harness.navigateByUrl('/order/order-200/confirmation');

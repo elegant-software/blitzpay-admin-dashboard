@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { finalize, forkJoin, map, switchMap, throwError } from 'rxjs';
+import { finalize, forkJoin, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   StorefrontBranch,
@@ -14,7 +15,7 @@ import {
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
 import { StorefrontLanguageService } from '../services/storefront-language.service';
-import { GuestPaymentService } from '../services/guest-payment.service';
+import { CardPaymentForm, GuestPaymentService } from '../services/guest-payment.service';
 
 @Component({
   selector: 'guest-checkout',
@@ -51,11 +52,16 @@ import { GuestPaymentService } from '../services/guest-payment.service';
       <article class="surface payment-panel">
         <p class="surface-label">Payment</p>
         <h2>Choose how to pay</h2>
+        <label class="payment-choice" *ngIf="cardAvailable">
+          <input type="radio" name="payment" [(ngModel)]="selectedPaymentMethod" value="CARD" [disabled]="!!cardForm" />
+          <span><strong>Card</strong><small>Card details go straight to Stripe, never to BlitzPay</small></span>
+        </label>
         <label class="payment-choice" *ngIf="payByBankAvailable">
-          <input type="radio" name="payment" [(ngModel)]="selectedPaymentMethod" value="STRIPE" />
+          <input type="radio" name="payment" [(ngModel)]="selectedPaymentMethod" value="PAY_BY_BANK" [disabled]="!!cardForm" />
           <span><strong>Pay by Bank</strong><small>Secure hosted payment powered by Stripe</small></span>
         </label>
-        <p class="muted" *ngIf="!payByBankAvailable">No hosted payment method is available for this merchant.</p>
+        <p class="muted" *ngIf="!cardAvailable && !payByBankAvailable">No online payment method is available for this merchant.</p>
+        <div #cardHost class="card-element" data-testid="card-element" [hidden]="!cardForm"></div>
         <div class="storefront-alert" *ngIf="cartNeedsReview">
           Product availability or pricing has changed. Review and accept the updated cart before paying.
           <button class="review-button" type="button" (click)="acceptCartUpdates()">Accept updates</button>
@@ -66,7 +72,11 @@ import { GuestPaymentService } from '../services/guest-payment.service';
           data-testid="confirm-payment"
           [disabled]="cart.itemCount === 0 || !selectedPaymentMethod || cartNeedsReview || checkingOut"
           (click)="confirmPayment()"
+          *ngIf="!cardForm"
         >{{ checkingOut ? 'Opening payment...' : 'Confirm and pay' }}</button>
+        <button class="checkout-button" type="button" data-testid="pay-card" *ngIf="cardForm" [disabled]="checkingOut" (click)="payByCard()">
+          {{ checkingOut ? 'Processing...' : 'Pay now' }}
+        </button>
       </article>
     </section>
   `
@@ -89,6 +99,10 @@ export class GuestCheckoutComponent implements OnInit {
   loading = true;
   checkingOut = false;
   errorMessage = '';
+  cardForm: CardPaymentForm | null = null;
+  /** Created once; retries and method switches reuse it (its guest_token cookie is already set). */
+  private orderId: string | null = null;
+  @ViewChild('cardHost') private cardHost?: ElementRef<HTMLElement>;
 
   ngOnInit(): void {
     if (!this.cart.useScope(this.merchantId, this.branchId)) {
@@ -110,10 +124,14 @@ export class GuestCheckoutComponent implements OnInit {
         this.cart.updateCatalogText(products, this.merchantId, this.branchId);
         this.capabilities = capabilities;
         this.cartNeedsReview = this.cart.reconcile(products, false);
-        if (this.payByBankAvailable) this.selectedPaymentMethod = 'STRIPE';
+        this.selectedPaymentMethod = this.cardAvailable ? 'CARD' : this.payByBankAvailable ? 'PAY_BY_BANK' : undefined;
       },
       error: () => this.errorMessage = 'Unable to load guest checkout.'
     });
+  }
+
+  get cardAvailable(): boolean {
+    return !!this.capabilities?.enabledPaymentFlows.includes('CARD');
   }
 
   get payByBankAvailable(): boolean {
@@ -126,10 +144,38 @@ export class GuestCheckoutComponent implements OnInit {
   }
 
   confirmPayment(): void {
-    if (!this.selectedPaymentMethod || this.cart.itemCount === 0 || this.cartNeedsReview || this.checkingOut || this.branch?.active === false) return;
+    const method = this.selectedPaymentMethod;
+    if (!method || this.cart.itemCount === 0 || this.cartNeedsReview || this.checkingOut || this.branch?.active === false) return;
     this.checkingOut = true;
     this.errorMessage = '';
-    this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.language).pipe(
+    this.guestOrderId().pipe(
+      switchMap((orderId) => this.payment.startGuest(orderId, method)),
+      finalize(() => this.checkingOut = false)
+    ).subscribe({
+      next: async (payment) => {
+        if (payment.checkoutUrl) return window.location.assign(payment.checkoutUrl);
+        try {
+          this.cardForm = await this.payment.mountCard(payment, this.cardHost!.nativeElement);
+        } catch (error) {
+          this.errorMessage = (error as Error).message;
+        }
+      },
+      error: (error: unknown) => this.errorMessage = this.toMessage(error, 'Unable to start payment.')
+    });
+  }
+
+  async payByCard(): Promise<void> {
+    if (!this.cardForm || !this.orderId || this.checkingOut) return;
+    this.checkingOut = true;
+    this.errorMessage = '';
+    // Resolves only on failure; on success Stripe navigates to the confirmation page.
+    this.errorMessage = await this.cardForm.confirm(`${window.location.origin}/order/${encodeURIComponent(this.orderId)}/confirmation`);
+    this.checkingOut = false;
+  }
+
+  private guestOrderId(): Observable<string> {
+    if (this.orderId) return of(this.orderId);
+    return this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.language).pipe(
       switchMap((products) => {
         this.products = products;
         if (this.cart.reconcile(products, false)) {
@@ -138,18 +184,15 @@ export class GuestCheckoutComponent implements OnInit {
         }
         return this.api.createOrder({
           branchId: this.branchId,
-          orderType: 'PRE_ORDER',
-          usesDeferredPayment: false,
-          paymentMethod: this.selectedPaymentMethod,
           items: this.cart.lines.map((line) => ({ productId: line.product.productId, quantity: line.quantity }))
         });
       }),
-      switchMap((order) => this.payment.start(order, this.merchantId, this.branchId,
-        this.cart.lines[0]?.product.productId).pipe(map((checkout) => checkout.checkoutUrl))),
-      finalize(() => this.checkingOut = false)
-    ).subscribe({
-      next: (checkoutUrl) => window.location.assign(checkoutUrl),
-      error: (error: Error) => this.errorMessage = error.message || 'Unable to start payment.'
-    });
+      map((order) => this.orderId = order.orderId)
+    );
+  }
+
+  private toMessage(error: unknown, fallback: string): string {
+    if (error instanceof HttpErrorResponse) return error.error?.error ?? fallback;
+    return error instanceof Error && error.message ? error.message : fallback;
   }
 }
