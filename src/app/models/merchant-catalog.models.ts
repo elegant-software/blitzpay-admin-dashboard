@@ -229,6 +229,10 @@ export interface UpdateMerchantRequest {
   };
 }
 
+export interface CreateMerchantRequest extends UpdateMerchantRequest {
+  merchantName: string;
+}
+
 export interface UpdateBranchRequest {
   name: string;
   active: boolean;

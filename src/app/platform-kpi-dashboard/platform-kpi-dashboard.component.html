@@ -1,42 +1,60 @@
-<div class="container-fluid px-0">
+<main class="container-fluid dashboard-page">
+  <header class="dashboard-heading">
+    <div>
+      <p class="dashboard-eyebrow">OVERVIEW</p>
+      <h1>Platform dashboard</h1>
+      <p class="dashboard-intro">Track platform activity, revenue, and operational health.</p>
+    </div>
+    <div class="dashboard-heading-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M8 15l3-4 3 2 5-7" /></svg>
+    </div>
+  </header>
 
-  <!-- Filters -->
-  <div class="card mb-4">
+  <section class="card dashboard-filter-panel mb-4" aria-labelledby="dashboard-filters-title" aria-label="Dashboard report filters">
     <div class="card-body">
+      <div class="dashboard-filter-heading">
+        <div>
+          <h2 id="dashboard-filters-title">Report filters</h2>
+          <p>Choose a reporting period and optionally focus on one merchant.</p>
+        </div>
+        <span class="dashboard-default-range">Last 30 days by default</span>
+      </div>
       <div class="row g-3 align-items-end">
         <div class="col-md-3">
-          <label class="form-label fw-semibold">From</label>
-          <input class="form-control" type="date" [(ngModel)]="from" />
+          <label class="form-label fw-semibold" for="dashboard-from">From</label>
+          <input id="dashboard-from" class="form-control" type="date" [(ngModel)]="from" />
         </div>
         <div class="col-md-3">
-          <label class="form-label fw-semibold">To</label>
-          <input class="form-control" type="date" [(ngModel)]="to" />
+          <label class="form-label fw-semibold" for="dashboard-to">To</label>
+          <input id="dashboard-to" class="form-control" type="date" [(ngModel)]="to" />
         </div>
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Merchant <span class="text-muted fw-normal">(optional)</span></label>
+          <label class="form-label fw-semibold" for="dashboard-merchant-search">Merchant <span class="text-muted fw-normal">(optional)</span></label>
           <ng-container *ngIf="!selectedMerchant">
-            <div class="input-group mb-1">
-              <input
-                type="text"
-                class="form-control"
-                placeholder="Merchant name or code…"
-                [(ngModel)]="merchantQuery"
-                (keyup.enter)="searchMerchants()"
-                aria-label="Search merchants"
-              />
-              <button class="btn btn-outline-secondary" type="button" (click)="searchMerchants()">Search</button>
+            <div class="dashboard-merchant-search">
+              <div class="input-group">
+                <input
+                  id="dashboard-merchant-search"
+                  type="text"
+                  class="form-control"
+                  placeholder="Merchant name or code…"
+                  [(ngModel)]="merchantQuery"
+                  (keyup.enter)="searchMerchants()"
+                  aria-label="Search merchants"
+                />
+                <button class="btn btn-outline-secondary" type="button" (click)="searchMerchants()">Search</button>
+              </div>
+              <ul *ngIf="merchantResults.length" class="list-group dashboard-merchant-suggestions">
+                <li
+                  *ngFor="let m of merchantResults"
+                  class="list-group-item list-group-item-action"
+                  (click)="selectMerchant(m)"
+                >
+                  <span class="d-block fw-semibold">{{ m.merchantName }}</span>
+                  <span class="d-block small text-muted">{{ m.merchantCode }} · {{ m.city ?? '—' }}</span>
+                </li>
+              </ul>
             </div>
-            <ul *ngIf="merchantResults.length" class="list-group" style="max-height:200px;overflow-y:auto;position:absolute;z-index:100;width:33%">
-              <li
-                *ngFor="let m of merchantResults"
-                class="list-group-item list-group-item-action"
-                style="cursor:pointer"
-                (click)="selectMerchant(m)"
-              >
-                <span class="d-block fw-semibold">{{ m.merchantName }}</span>
-                <span class="d-block small text-muted">{{ m.merchantCode }} · {{ m.city ?? '—' }}</span>
-              </li>
-            </ul>
           </ng-container>
           <div *ngIf="selectedMerchant" class="d-flex align-items-center gap-2">
             <span class="badge bg-primary fs-6 fw-normal px-3 py-2">{{ selectedMerchant.merchantName }}</span>
@@ -44,21 +62,21 @@
             <button class="btn btn-sm btn-outline-secondary ms-auto" type="button" (click)="clearMerchant()">Change</button>
           </div>
         </div>
-        <div class="col-md-2">
-          <button class="btn btn-primary w-100" type="button" (click)="load()" [disabled]="loading">
+        <div class="col-md-2 dashboard-load-column">
+          <button class="btn btn-primary w-100 dashboard-load-button" type="button" (click)="load()" [disabled]="loading">
             <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
             {{ loading ? 'Loading…' : 'Load' }}
           </button>
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
   <!-- Error state -->
-  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+  <div *ngIf="error" class="alert alert-danger dashboard-error" role="alert" aria-live="assertive">{{ error }}</div>
 
   <!-- Loading placeholder (no data yet) -->
-  <div *ngIf="loading && !report" class="text-center py-5 text-muted">
+  <div *ngIf="loading && !report" class="dashboard-loading text-center py-5 text-muted" role="status" aria-live="polite">
     <div class="spinner-border text-primary me-2" role="status" aria-hidden="true"></div>
     Loading KPI data…
   </div>
@@ -67,14 +85,14 @@
   <ng-container *ngIf="report && !loading">
 
     <!-- Period label -->
-    <p class="text-muted small mb-3">
+    <p class="dashboard-period">
       Period: <strong>{{ report.from }}</strong> – <strong>{{ report.to }}</strong>
       <span *ngIf="isDrillDown" class="ms-2 badge bg-info text-dark">Merchant: {{ selectedMerchantName }}</span>
     </p>
 
     <!-- Revenue -->
-    <div class="card mb-4">
-      <div class="card-header fw-semibold">Revenue</div>
+    <section class="card dashboard-section mb-4" aria-labelledby="dashboard-revenue-title">
+      <h2 id="dashboard-revenue-title" class="card-header fw-semibold">Revenue</h2>
       <div class="card-body">
         <div class="row g-3">
           <div class="col-md-3 col-sm-6">
@@ -121,11 +139,11 @@
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
     <!-- Orders -->
-    <div class="card mb-4">
-      <div class="card-header fw-semibold">Orders</div>
+    <section class="card dashboard-section mb-4" aria-labelledby="dashboard-orders-title">
+      <h2 id="dashboard-orders-title" class="card-header fw-semibold">Orders</h2>
       <div class="card-body">
         <div class="row g-3">
           <div class="col-md-4 col-sm-6">
@@ -172,11 +190,11 @@
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
     <!-- Appointments -->
-    <div class="card mb-4">
-      <div class="card-header fw-semibold">Appointments</div>
+    <section class="card dashboard-section mb-4" aria-labelledby="dashboard-appointments-title">
+      <h2 id="dashboard-appointments-title" class="card-header fw-semibold">Appointments</h2>
       <div class="card-body">
         <div class="row g-3">
           <div class="col-md-4 col-sm-6">
@@ -205,11 +223,11 @@
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
     <!-- Payment Method Frequency -->
-    <div class="card mb-4">
-      <div class="card-header fw-semibold">Payment Method Frequency</div>
+    <section class="card dashboard-section mb-4" aria-labelledby="dashboard-payment-method-title">
+      <h2 id="dashboard-payment-method-title" class="card-header fw-semibold">Payment Method Frequency</h2>
       <div class="card-body">
         <div *ngIf="report.paymentMethodFrequency.length === 0" class="text-muted text-center py-3">
           No payment method data for this period.
@@ -246,12 +264,12 @@
           </table>
         </div>
       </div>
-    </div>
+    </section>
 
     <!-- Platform Counts (hidden in merchant drill-down mode) -->
     <ng-container *ngIf="!isDrillDown && report.merchantCounts && report.branchCounts">
-      <div class="card mb-4">
-        <div class="card-header fw-semibold">Platform Counts</div>
+      <section class="card dashboard-section mb-4" aria-labelledby="dashboard-platform-counts-title">
+        <h2 id="dashboard-platform-counts-title" class="card-header fw-semibold">Platform Counts</h2>
         <div class="card-body">
           <div class="row g-3">
             <!-- Merchants -->
@@ -313,9 +331,9 @@
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </ng-container>
 
   </ng-container>
 
-</div>
+</main>

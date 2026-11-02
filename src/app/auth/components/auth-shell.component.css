@@ -6,8 +6,33 @@
 .topbar-brand {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--cui-emphasis-color, #374151);
   letter-spacing: -0.01em;
+}
+
+.header-logout {
+  width: 2.35rem;
+  height: 2.35rem;
+  padding: 0;
+  border: 1px solid var(--cui-border-color, #d8dbe0);
+  border-radius: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--cui-secondary-color, #6b7280);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.header-logout:hover {
+  border-color: #dc3545;
+  background: rgba(220, 53, 69, 0.1);
+  color: var(--cui-danger, #dc3545);
+}
+
+.header-logout:focus-visible {
+  outline: 3px solid rgba(220, 53, 69, 0.45);
+  outline-offset: 2px;
 }
 
 .zackpay-brand-full {

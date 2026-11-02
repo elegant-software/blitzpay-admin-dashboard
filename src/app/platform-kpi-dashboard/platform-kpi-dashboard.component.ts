@@ -18,6 +18,7 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './platform-kpi-dashboard.component.html',
+  styleUrl: './platform-kpi-dashboard.component.css',
 })
 export class PlatformKpiDashboardComponent implements OnInit {
   readonly environment: BackendEnvironment;
