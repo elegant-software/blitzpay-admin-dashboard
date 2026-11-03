@@ -48,6 +48,9 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -62,7 +65,75 @@ jobs:
         run: npm ci
 
       - name: Run unit tests
+        id: unit_tests
+        continue-on-error: true
         run: npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox
+
+      # Same report as the backend pipeline (elegant-ci-cd-pipeline/backend-gradle-test.yml).
+      - name: Summarize unit test results
+        if: always()
+        shell: python3 {0}
+        run: |
+          import glob, os, xml.etree.ElementTree as ET
+
+          files = sorted(glob.glob("test-results/unit/TEST-*.xml"))
+          total = failures = errors = skipped = 0
+          failed_tests = []
+
+          for path in files:
+            for suite in ET.parse(path).getroot().iter("testsuite"):
+              total    += int(suite.get("tests",    0))
+              failures += int(suite.get("failures", 0))
+              errors   += int(suite.get("errors",   0))
+              skipped  += int(suite.get("skipped",  0))
+              for tc in suite.findall("testcase"):
+                for child in tc:
+                  if child.tag in ("failure", "error"):
+                    cls  = tc.get("classname", "")
+                    name = tc.get("name", "")
+                    msg  = (child.get("message") or child.text or "").split("\n")[0][:150]
+                    msg  = msg.replace("|", "\\|")
+                    failed_tests.append((f"{cls}.{name}" if cls else name, msg))
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+            f.write("## Unit Test Results\n\n")
+            if not files:
+              f.write("No unit test result files were found.\n")
+            else:
+              fail_icon = " ❌" if (failures + errors) else ""
+              f.write("| Metric | Value |\n")
+              f.write("|--------|-------|\n")
+              f.write(f"| Tests | {total} |\n")
+              f.write(f"| Failures{fail_icon} | {failures} |\n")
+              f.write(f"| Errors{fail_icon} | {errors} |\n")
+              f.write(f"| Skipped | {skipped} |\n")
+              if failed_tests:
+                f.write("\n### ❌ Failing Unit Tests\n\n")
+                f.write("| Test | Reason |\n")
+                f.write("|------|--------|\n")
+                for test_name, msg in failed_tests:
+                  f.write(f"| `{test_name}` | {msg} |\n")
+
+      - name: Upload unit test artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-results
+          if-no-files-found: ignore
+          path: test-results/unit/**
+
+      - name: Publish unit test report
+        uses: dorny/test-reporter@v1
+        if: always() && hashFiles('test-results/unit/TEST-*.xml') != ''
+        with:
+          name: Unit Tests
+          path: test-results/unit/TEST-*.xml
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Fail if unit tests failed
+        if: steps.unit_tests.outcome != 'success'
+        run: exit 1
 
       - name: Build application
         run: npm run build -- --configuration staging

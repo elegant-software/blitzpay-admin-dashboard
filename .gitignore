@@ -5,6 +5,7 @@ build/
 *.log
 .env*
 coverage/
+test-results/
 .DS_Store
 Thumbs.db
 *.tmp
