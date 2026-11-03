@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -15,6 +15,8 @@ import {
   CreateProductCategoryRequest,
   CreateMerchantRequest,
   CreateBranchRequest,
+  KitchenAccessStatus,
+  KitchenLogin,
   MenuLanguage,
   Merchant,
   MerchantBookAppointmentRequest,
@@ -45,6 +47,7 @@ import {
 } from '../models/merchant-catalog.models';
 import { BackendEnvironment } from '../models/merchant-catalog.models';
 import { buildApiBaseUrl } from './merchant-environment.service';
+import { HANDLE_FORBIDDEN_LOCALLY } from '../auth/interceptors/auth.interceptor';
 
 @Injectable({ providedIn: 'root' })
 export class MerchantApiService {
@@ -418,6 +421,29 @@ export class MerchantApiService {
     return this.http.delete<{ tapToPayEnabled: boolean }>(
       `${this.base(environment, apiVersion)}/merchants/${merchantId}/stripe-connect/tap-to-pay`
     );
+  }
+
+  /** Kitchen Login status of a Branch. A 403 (caller is not a Merchant Manager) is handled by the caller. */
+  getKitchenAccess(environment: BackendEnvironment, apiVersion: string, branchId: string): Observable<KitchenAccessStatus> {
+    return this.http.get<KitchenAccessStatus>(this.kitchenUrl(environment, apiVersion, branchId), { context: this.kitchenContext() });
+  }
+
+  /** Enables the Kitchen Screen, or resets its password when already enabled. Returns the new password once. */
+  enableKitchenAccess(environment: BackendEnvironment, apiVersion: string, branchId: string): Observable<KitchenLogin> {
+    return this.http.post<KitchenLogin>(`${this.kitchenUrl(environment, apiVersion, branchId)}/enable`, {}, { context: this.kitchenContext() });
+  }
+
+  /** Disables the Kitchen Login and logs out every kitchen screen of the Branch. */
+  disableKitchenAccess(environment: BackendEnvironment, apiVersion: string, branchId: string): Observable<KitchenAccessStatus> {
+    return this.http.post<KitchenAccessStatus>(`${this.kitchenUrl(environment, apiVersion, branchId)}/disable`, {}, { context: this.kitchenContext() });
+  }
+
+  private kitchenUrl(environment: BackendEnvironment, apiVersion: string, branchId: string): string {
+    return `${this.base(environment, apiVersion)}/merchant/branches/${encodeURIComponent(branchId)}/kitchen`;
+  }
+
+  private kitchenContext(): HttpContext {
+    return new HttpContext().set(HANDLE_FORBIDDEN_LOCALLY, true);
   }
 
   searchMerchants(

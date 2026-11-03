@@ -1,8 +1,14 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, from, switchMap, throwError } from 'rxjs';
 import { AuthConfigService } from '../services/auth-config.service';
 import { AuthService } from '../services/auth.service';
+
+/**
+ * Set on a request whose 403 the caller shows itself (e.g. a Merchant Manager-only action on a page any admin can open).
+ * Without it, a 403 sends the whole app to the access-denied page.
+ */
+export const HANDLE_FORBIDDEN_LOCALLY = new HttpContextToken<boolean>(() => false);
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authConfig = inject(AuthConfigService);
@@ -31,7 +37,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: unknown) => {
       if (error instanceof HttpErrorResponse && error.status === 401) {
         void authService.handleUnauthorizedResponse();
-      } else if (error instanceof HttpErrorResponse && error.status === 403) {
+      } else if (error instanceof HttpErrorResponse && error.status === 403 && !req.context.get(HANDLE_FORBIDDEN_LOCALLY)) {
         void authService.handleForbiddenResponse();
       }
 

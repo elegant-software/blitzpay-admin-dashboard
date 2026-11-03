@@ -647,3 +647,23 @@ export interface TranslationCoverage {
   categoriesTotal: number;
   categoriesTranslated: number;
 }
+
+/** `GET`/`POST disable` of `/merchant/branches/{branchId}/kitchen`. `username` is null if no Kitchen Login was ever provisioned. */
+export interface KitchenAccessStatus {
+  enabled: boolean;
+  username: string | null;
+}
+
+/**
+ * The Kitchen Login returned once by `POST .../kitchen/enable`. The password exists only in this response:
+ * keep it in component state, never in storage, the URL, logs or error reports.
+ */
+export interface KitchenLogin {
+  username: string;
+  password: string;
+  keycloakUrl: string;
+  realm: string;
+  clientId: string;
+  apiBaseUrl: string;
+  branchId: string;
+}

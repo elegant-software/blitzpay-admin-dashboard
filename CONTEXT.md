@@ -44,6 +44,14 @@ _Avoid_: Locale, display language, UI language
 For one Supported Menu Language, how many of a Merchant's Products and Product Categories have a current, non-stale translation, out of the total.
 _Avoid_: Translation progress, completion rate
 
+**Kitchen Screen**:
+The low-interaction display where kitchen staff of one Branch see incoming Orders. Managed from the Branch page with a single switch.
+_Avoid_: KDS, kitchen app, order board
+
+**Kitchen Login**:
+The one shared login per Branch that its Kitchen Screens sign in with. A Merchant Manager enables, resets or disables it; enabling or resetting shows a new password once, and the password is never stored or shown again. The dashboard keeps the password only in the Branch page's component state.
+_Avoid_: kitchen account, kitchen user, device login
+
 ## Relationships
 
 - A **Printed Catalog** is scoped to exactly one **Branch** of one **Merchant** and presents the same active **Products** as that Branch's Web Catalog

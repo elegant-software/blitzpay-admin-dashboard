@@ -1,0 +1,64 @@
+<section class="card mb-4" aria-labelledby="kitchen-screen-title">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span id="kitchen-screen-title">Kitchen Screen</span>
+    <span *ngIf="loading || busy" class="spinner-border spinner-border-sm text-secondary" role="status" aria-label="Loading"></span>
+  </div>
+  <div class="card-body">
+    <p *ngIf="forbidden" class="text-body-secondary small mb-0">
+      Only a Merchant Manager of this merchant can manage the Kitchen Screen.
+    </p>
+
+    <ng-container *ngIf="!forbidden && !loading">
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <div class="form-check form-switch mb-0">
+          <input id="kitchen-screen-switch" class="form-check-input" type="checkbox" role="switch"
+            [checked]="enabled" [disabled]="busy" (change)="onToggle($event)" />
+          <label class="form-check-label" for="kitchen-screen-switch">{{ enabled ? 'Enabled' : 'Disabled' }}</label>
+        </div>
+        <span *ngIf="username" class="small">Username: <code>{{ username }}</code></span>
+        <button *ngIf="enabled" class="btn btn-sm btn-outline-secondary ms-auto" type="button" [disabled]="busy" (click)="resetPassword()">
+          Reset password
+        </button>
+      </div>
+      <p class="small text-body-secondary mt-2 mb-0">Lets the kitchen staff of this branch log in to the Kitchen Screen.</p>
+
+      <div *ngIf="login" class="border rounded p-3 mt-3" aria-live="polite">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="form-label">Username</div>
+            <code>{{ login.username }}</code>
+          </div>
+          <div class="col-md-8">
+            <div class="form-label">Password</div>
+            <div class="d-flex align-items-center gap-2">
+              <code data-test="kitchen-password">{{ passwordRevealed ? login.password : '••••••••••••' }}</code>
+              <button class="icon-action-btn" type="button" (click)="togglePasswordReveal()"
+                [attr.aria-label]="passwordRevealed ? 'Hide password' : 'Show password'"
+                [title]="passwordRevealed ? 'Hide password' : 'Show password'">
+                <i class="pi" [ngClass]="passwordRevealed ? 'pi-eye-slash' : 'pi-eye'" aria-hidden="true"></i>
+              </button>
+              <button class="icon-action-btn" type="button" aria-label="Copy password" title="Copy password" (click)="copy('password')">
+                <i class="pi pi-copy" aria-hidden="true"></i>
+              </button>
+              <span *ngIf="copied === 'password'" class="small text-success">Copied</span>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="form-label mb-0">Run settings</span>
+              <button class="icon-action-btn" type="button" aria-label="Copy run settings" title="Copy run settings" (click)="copy('settings')">
+                <i class="pi pi-copy" aria-hidden="true"></i>
+              </button>
+              <span *ngIf="copied === 'settings'" class="small text-success">Copied</span>
+            </div>
+            <pre class="bg-body-tertiary border rounded p-2 mb-0 small" data-test="kitchen-run-settings">{{ runSettings }}</pre>
+          </div>
+        </div>
+        <div *ngIf="copyFailed" class="alert alert-warning mt-3 mb-0 py-1 px-2 small">Copy failed. Select the text and copy it manually.</div>
+        <p class="small fw-semibold mt-3 mb-0">This password is shown only now. Use Reset password to get a new one.</p>
+      </div>
+    </ng-container>
+
+    <div *ngIf="error" class="alert alert-danger mt-3 mb-0 py-1 px-2 small">{{ error }}</div>
+  </div>
+</section>
