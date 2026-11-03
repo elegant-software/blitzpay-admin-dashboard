@@ -6,11 +6,12 @@ import { Branch, EnvironmentKey, UpdateBranchRequest } from '../models/merchant-
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
+import { BranchKitchenScreenComponent } from './branch-kitchen-screen.component';
 
 @Component({
   selector: 'app-branch-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, BranchKitchenScreenComponent],
   templateUrl: './branch-edit.component.html',
   styleUrl: './merchant-catalog.component.css'
 })
