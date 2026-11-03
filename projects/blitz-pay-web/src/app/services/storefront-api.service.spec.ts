@@ -160,4 +160,54 @@ describe('StorefrontApiService', () => {
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual(payload);
   });
+
+  describe('guestOrderEvents', () => {
+    class FakeEventSource {
+      static readonly CLOSED = 2;
+      static last: FakeEventSource;
+      readyState = 1;
+      closed = false;
+      onerror: (() => void) | null = null;
+      readonly listeners: Record<string, (event: MessageEvent) => void> = {};
+      constructor(readonly url: string, readonly init?: EventSourceInit) { FakeEventSource.last = this; }
+      addEventListener(type: string, listener: (event: MessageEvent) => void): void { this.listeners[type] = listener; }
+      close(): void { this.closed = true; this.readyState = FakeEventSource.CLOSED; }
+      emit(type: string, data: unknown): void { this.listeners[type]?.(new MessageEvent(type, { data: JSON.stringify(data) })); }
+    }
+
+    let original: typeof EventSource;
+    beforeEach(() => {
+      original = window.EventSource;
+      (window as unknown as { EventSource: unknown }).EventSource = FakeEventSource;
+    });
+    afterEach(() => (window as unknown as { EventSource: unknown }).EventSource = original);
+
+    it('streams order.changed events with credentials and closes on unsubscribe', () => {
+      const orders: unknown[] = [];
+      const subscription = service.guestOrderEvents('o/1').subscribe(order => orders.push(order));
+      const source = FakeEventSource.last;
+      expect(source.url).toBe('/v1/storefront/orders/o%2F1/events');
+      expect(source.init).toEqual({ withCredentials: true });
+
+      source.emit('order.changed', { orderId: 'o/1', preparationStatus: 'PREPARING', pickupNumber: 42 });
+      source.emit('message', { orderId: 'ignored' });
+      expect(orders).toEqual([{ orderId: 'o/1', preparationStatus: 'PREPARING', pickupNumber: 42 }]);
+
+      subscription.unsubscribe();
+      expect(source.closed).toBeTrue();
+    });
+
+    it('errors only once the browser stops reconnecting', () => {
+      let failed = false;
+      service.guestOrderEvents('o1').subscribe({ error: () => failed = true });
+      const source = FakeEventSource.last;
+      source.readyState = 0;
+      source.onerror?.();
+      expect(failed).toBeFalse();
+      source.readyState = FakeEventSource.CLOSED;
+      source.onerror?.();
+      expect(failed).toBeTrue();
+      expect(source.closed).toBeTrue();
+    });
+  });
 });

@@ -1,10 +1,17 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, Subscription } from 'rxjs';
+import { StorefrontOrder, StorefrontPreparationStatus } from '../models/storefront.models';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
+
+const PREPARATION_LABELS: Record<StorefrontPreparationStatus, string> = {
+  RECEIVED: 'Received',
+  PREPARING: 'Preparing',
+  READY: 'Ready for pickup'
+};
 
 @Component({
   selector: 'web-order-confirmation',
@@ -17,6 +24,13 @@ import { StorefrontSessionService } from '../services/storefront-session.service
       <h1>{{ paid ? 'Payment confirmed' : 'Checking your payment' }}</h1>
       <p *ngIf="paid">Your payment{{ reference ? ' for order ' + reference : '' }} has been received.</p>
       <p *ngIf="!paid">We're waiting for live payment confirmation. You can check again or return to checkout.</p>
+      <section *ngIf="pickupNumber != null || preparationStatus" class="pickup" aria-live="polite">
+        <ng-container *ngIf="pickupNumber != null">
+          <p class="eyebrow">Pickup Number</p>
+          <strong class="pickup-number">{{ pickupNumber }}</strong>
+        </ng-container>
+        <span *ngIf="preparationStatus" class="preparation-status" [class.ready]="preparationStatus === 'READY'">{{ preparationLabel }}</span>
+      </section>
       <p *ngIf="errorMessage" class="storefront-alert" role="alert">{{ errorMessage }}</p>
       <button *ngIf="!paid" class="checkout-button" type="button" [disabled]="loading" (click)="refresh()">{{ loading ? 'Checking...' : 'Check payment status' }}</button>
       <a class="back-link" *ngIf="!paid && checkoutLink" [routerLink]="checkoutLink">Back to checkout</a>
@@ -24,17 +38,24 @@ import { StorefrontSessionService } from '../services/storefront-session.service
     </article>
   `
 })
-export class OrderConfirmationComponent implements OnInit {
+export class OrderConfirmationComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
   private readonly cart = inject(StorefrontSessionService);
+  private events: Subscription | null = null;
   paid = false;
   loading = false;
   reference = '';
   errorMessage = '';
   checkoutLink: string[] | null = null;
+  pickupNumber: number | null = null;
+  preparationStatus: StorefrontPreparationStatus | null = null;
 
   readonly orderId = this.route.snapshot.paramMap.get('orderId') ?? '';
+
+  get preparationLabel(): string {
+    return this.preparationStatus ? PREPARATION_LABELS[this.preparationStatus] : '';
+  }
 
   ngOnInit(): void {
     this.cart.restorePaymentReturn(this.orderId);
@@ -45,15 +66,17 @@ export class OrderConfirmationComponent implements OnInit {
     this.refresh();
   }
 
+  ngOnDestroy(): void {
+    this.closeEvents();
+  }
+
   refresh(): void {
     if (this.loading) return;
     this.loading = true;
     this.api.getGuestOrder(this.orderId).pipe(finalize(() => this.loading = false)).subscribe({
       next: order => {
-        this.paid = order.status === 'PAID';
-        this.reference = order.reference ?? '';
-        this.checkoutLink = order.merchantId && order.branchId ? ['/m', order.merchantId, 'b', order.branchId, 'checkout'] : null;
-        if (this.paid) this.errorMessage = '';
+        this.apply(order);
+        this.listen();
       },
       error: (error: unknown) => {
         // 404 also covers a missing or expired guest_token cookie (order is only visible in the browser that created it).
@@ -62,5 +85,29 @@ export class OrderConfirmationComponent implements OnInit {
           : 'Unable to check payment. Please try again.';
       }
     });
+  }
+
+  private apply(order: StorefrontOrder): void {
+    this.paid = order.status === 'PAID';
+    this.reference = order.reference ?? '';
+    this.checkoutLink = order.merchantId && order.branchId ? ['/m', order.merchantId, 'b', order.branchId, 'checkout'] : null;
+    this.pickupNumber = order.pickupNumber ?? null;
+    this.preparationStatus = order.preparationStatus ?? null;
+    if (this.paid) this.errorMessage = '';
+    if (this.preparationStatus === 'READY') this.closeEvents();
+  }
+
+  /** Live updates; if the stream fails, the manual "Check payment status" button remains the fallback. */
+  private listen(): void {
+    if (this.events || this.preparationStatus === 'READY') return;
+    this.events = this.api.guestOrderEvents(this.orderId).subscribe({
+      next: order => this.apply(order),
+      error: () => this.events = null
+    });
+  }
+
+  private closeEvents(): void {
+    this.events?.unsubscribe();
+    this.events = null;
   }
 }

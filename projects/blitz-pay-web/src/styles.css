@@ -820,6 +820,41 @@ button:disabled {
   width: 3.5rem;
 }
 
+.pickup {
+  background: var(--storefront-mint);
+  border-radius: 0.9rem;
+  margin: 1.25rem auto;
+  padding: 1rem;
+}
+
+.pickup .eyebrow {
+  margin-bottom: 0.25rem;
+}
+
+.pickup-number {
+  color: var(--storefront-primary);
+  display: block;
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 0.5rem;
+}
+
+.preparation-status {
+  border: 1px solid var(--storefront-stroke);
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+}
+
+.preparation-status.ready {
+  background: var(--storefront-action);
+  border-color: var(--storefront-action);
+  color: #fff;
+}
+
 @media (max-width: 840px) {
   .catalog-layout {
     grid-template-columns: 1fr;

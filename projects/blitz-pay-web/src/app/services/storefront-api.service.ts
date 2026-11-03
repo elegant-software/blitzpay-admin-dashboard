@@ -64,6 +64,27 @@ export class StorefrontApiService {
     return this.http.get<StorefrontOrder>(`${this.baseUrl}/storefront/orders/${encodeURIComponent(orderId)}`);
   }
 
+  /**
+   * Live order updates over SSE (event `order.changed`, full order on connect and on every status change).
+   * Authenticated by the guest_token cookie. Transient drops reconnect on their own; errors once the browser gives up.
+   */
+  guestOrderEvents(orderId: string): Observable<StorefrontOrder> {
+    return new Observable<StorefrontOrder>((subscriber) => {
+      const source = new EventSource(`${this.baseUrl}/storefront/orders/${encodeURIComponent(orderId)}/events`, { withCredentials: true });
+      source.addEventListener('order.changed', (event) => {
+        try {
+          subscriber.next(JSON.parse((event as MessageEvent<string>).data) as StorefrontOrder);
+        } catch (error) {
+          subscriber.error(error);
+        }
+      });
+      source.onerror = () => {
+        if (source.readyState === EventSource.CLOSED) subscriber.error(new Error('Order event stream closed'));
+      };
+      return () => source.close();
+    });
+  }
+
   startGuestPayment(orderId: string, method: StorefrontPaymentMethod): Observable<StorefrontPayment> {
     return this.http.post<StorefrontPayment>(`${this.baseUrl}/storefront/orders/${encodeURIComponent(orderId)}/payment`, { method });
   }

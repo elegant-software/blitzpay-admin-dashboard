@@ -65,6 +65,8 @@ export interface StorefrontOrderLine {
   lineTotalMinor?: number;
 }
 
+export type StorefrontPreparationStatus = 'RECEIVED' | 'PREPARING' | 'READY';
+
 export interface StorefrontOrder {
   orderId: string;
   /** Merchant-facing reference, when provided by the Order API. */
@@ -75,6 +77,9 @@ export interface StorefrontOrder {
   currency?: string;
   totalAmountMinor?: number;
   items?: StorefrontOrderLine[];
+  preparationStatus?: StorefrontPreparationStatus;
+  /** Null for legacy orders and orders without a Branch. */
+  pickupNumber?: number | null;
 }
 
 export interface StorefrontPaymentCapabilities {
