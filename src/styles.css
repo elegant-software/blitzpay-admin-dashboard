@@ -769,6 +769,11 @@ a {
     z-index: 1045;
   }
 
+  /* Match CoreUI's specificity so our transform alone controls mobile visibility. */
+  .app-sidebar.sidebar:not(.sidebar-end) {
+    margin-inline-start: 0;
+  }
+
   .app-sidebar.sidebar-narrow {
     transform: translateX(0);
     width: min(100vw, var(--app-sidebar-width));
