@@ -210,4 +210,10 @@ describe('StorefrontApiService', () => {
       expect(source.closed).toBeTrue();
     });
   });
+
+  it('resolves a Table Code through the public storefront endpoint', () => {
+    const resolution = { merchantId: 'm', merchantName: 'Brew House', branchId: 'b', branchName: 'Station', tableId: 't', tableName: '5', active: true };
+    service.resolveTable('AB3K7Q').subscribe(result => expect(result).toEqual(resolution));
+    http.expectOne({ method: 'GET', url: '/v1/storefront/tables/AB3K7Q' }).flush(resolution);
+  });
 });

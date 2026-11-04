@@ -13,7 +13,9 @@ import {
   StorefrontPayment,
   StorefrontPaymentCapabilities,
   StorefrontPaymentMethod,
-  StorefrontProduct
+  StorefrontProduct,
+  StorefrontTableAvailability,
+  StorefrontTableResolution
 } from '../models/storefront.models';
 
 @Injectable({ providedIn: 'root' })
@@ -53,6 +55,16 @@ export class StorefrontApiService {
       `${this.baseUrl}/merchants/${encodeURIComponent(merchantId)}/products/${encodeURIComponent(productId)}`,
       { params, headers: this.languageHeaders(language) }
     );
+  }
+
+  /** Resolves a Table Code from a Table Link; 404 when no Table has that code. */
+  resolveTable(tableCode: string): Observable<StorefrontTableResolution> {
+    return this.http.get<StorefrontTableResolution>(`${this.baseUrl}/storefront/tables/${encodeURIComponent(tableCode)}`);
+  }
+
+  /** How many of a Branch's Tables (and seats) are free right now. */
+  getTableAvailability(branchId: string): Observable<StorefrontTableAvailability> {
+    return this.http.get<StorefrontTableAvailability>(`${this.baseUrl}/storefront/branches/${encodeURIComponent(branchId)}/table-availability`);
   }
 
   /** Guest order; the response sets the order-scoped HttpOnly guest_token cookie (same-origin, so sent automatically). */

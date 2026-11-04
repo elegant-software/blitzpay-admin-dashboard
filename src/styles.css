@@ -853,10 +853,14 @@ a {
 @media print {
   .app-layout:has(app-printed-catalog) .app-sidebar,
   .app-layout:has(app-printed-catalog) .header,
-  .app-layout:has(app-printed-catalog) .footer {
+  .app-layout:has(app-printed-catalog) .footer,
+  .app-layout:has(app-branch-tables) .app-sidebar,
+  .app-layout:has(app-branch-tables) .header,
+  .app-layout:has(app-branch-tables) .footer {
     display: none !important;
   }
 
+  .app-layout:has(app-branch-tables) .app-main,
   .app-layout:has(app-printed-catalog) .app-main {
     margin-left: 0 !important;
     min-height: 0 !important;

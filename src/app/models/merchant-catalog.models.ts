@@ -132,6 +132,8 @@ export interface Branch {
   placeEnrichmentStatus?: string | null;
   placeEnrichedAt?: string | null;
   imageUrl?: string | null;
+  /** Branch Capacity: how many guests the Branch seats, set by the merchant. Never blocks ordering. */
+  capacity?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 }
@@ -209,6 +211,8 @@ export interface CreateBranchRequest {
   longitude?: number;
   geofenceRadiusMeters?: number;
   googlePlaceId?: string;
+  /** Branch Capacity; null clears it. */
+  capacity?: number | null;
 }
 
 export interface UpdateMerchantRequest {
@@ -248,6 +252,8 @@ export interface UpdateBranchRequest {
   longitude?: number;
   geofenceRadiusMeters?: number;
   googlePlaceId?: string;
+  /** Branch Capacity; null clears it. */
+  capacity?: number | null;
 }
 
 export interface UpdateMerchantLogoRequest {
@@ -667,3 +673,89 @@ export interface KitchenLogin {
   apiBaseUrl: string;
   branchId: string;
 }
+
+// ── Tables and Floor Plans (zack-pay#195) ─────────────────────────────────
+
+/** Where a Table sits on a Floor Plan, as fractions 0..1 of the picture's width (x) and height (y). */
+export interface TablePlacement {
+  floorPlanId: string;
+  x: number;
+  y: number;
+}
+
+/** A seating place in a Branch. Shown by its Table Name; the Table Code is the stable short ID inside its Table Link. */
+export interface BranchTable {
+  id: string;
+  code: string;
+  name: string;
+  active: boolean;
+  /** The Table Link: the storefront URL `/t/{code}` that its QR code and NFC tag carry. */
+  link: string;
+  placement: TablePlacement | null;
+  /** Seats at the Table (1–50), or null when not set. */
+  seats?: number | null;
+}
+
+export interface CreateTablesRequest {
+  names: string[];
+  /** Applied to every created Table. */
+  seats?: number;
+}
+
+export interface UpdateTableRequest {
+  name?: string;
+  active?: boolean;
+  /** null clears the seats. */
+  seats?: number | null;
+}
+
+/** A named picture of a room or area of a Branch on which Tables are placed. */
+export interface FloorPlan {
+  id: string;
+  name: string;
+  imageUrl?: string | null;
+}
+
+export interface FloorPlanImageUploadResponse {
+  storageKey?: string;
+  uploadUrl: string;
+  expiresAt?: string;
+}
+
+/** RESERVED is part of the contract for the later Reservation feature; the backend does not return it yet. */
+export type TableStatus = 'FREE' | 'OCCUPIED' | 'RESERVED';
+
+export interface TableOrderSummary {
+  orderId: string;
+  pickupNumber: number | null;
+  totalAmountMinor: number;
+  currency: string;
+  paymentStatus: string;
+  preparationStatus: string | null;
+  createdAt: string;
+}
+
+export interface TableLive {
+  table: BranchTable;
+  status: TableStatus;
+  occupiedSince: string | null;
+  orders: TableOrderSummary[];
+  /** Guest Count: people at the Table right now; null when not known (or the Table is free). */
+  guestCount?: number | null;
+}
+
+/** The live floor of a Branch: its Floor Plans and every active Table with its Table Status and open orders. */
+export interface BranchFloor {
+  floorPlans: FloorPlan[];
+  tables: TableLive[];
+  totalTables?: number;
+  occupiedTables?: number;
+  /** Sum of the seats of active Tables. */
+  seatedCapacity?: number;
+  /** Sum of the seats of Occupied Tables. */
+  occupiedSeats?: number;
+  branchCapacity?: number | null;
+  /** Sum of the Guest Counts of Occupied Tables. */
+  totalGuests?: number;
+}
+

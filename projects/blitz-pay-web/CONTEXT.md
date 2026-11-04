@@ -62,6 +62,10 @@ _Avoid_: App banner, install popup, download modal
 A compact, dismissible notice after the primary shopping content that offers the browser's PWA installation flow only after the browser signals that the Web Storefront is installable. It appears only when the app is not installed and does not automatically open the browser prompt or replace the native **App Install Prompt**.
 _Avoid_: Native app install prompt, automatic install popup
 
+**Table Check-in**:
+What happens when a guest opens a Table Link (`/t/{tableCode}`, from the Table's QR code or NFC tag, or by typing the Table Code under "Enter table code"): the Web Storefront resolves the Table and opens its Branch's **Web Catalog** with that Table set for this browser tab. Orders then go to that Table as Walk-In orders and need the browser's location. A deactivated Table opens the Branch's Web Catalog without a Table, with a note to collect the order at the counter. Table, Table Code, Table Link and Cash Payment are defined in the backend glossary (zack-pay `CONTEXT.md`).
+_Avoid_: table login, table session, scan-in
+
 **Guest Checkout**:
 The dedicated branch-scoped payment surface on the Web Storefront that requires no account registration or login. It converts a current, reviewed **Web Cart** into an **Order** only when the customer confirms their payment action.
 _Avoid_: Anonymous checkout, unauthenticated payment
@@ -77,6 +81,7 @@ _Avoid_: Inferred country currency, post-order currency guess
 | `/m/{merchantId}/b/{branchId}` | **Web Catalog** for a specific Branch |
 | `/m/{merchantId}/b/{branchId}/p/{productId}` | **Product Overview** for a Product in the selected Branch |
 | `/m/{merchantId}/b/{branchId}/checkout` | **Guest Checkout** for the current Web Cart |
+| `/t/{tableCode}` | **Table Link**: resolves the Table and opens its Branch's **Web Catalog** at that Table |
 | `/order/{orderId}` | **QR Order Landing** for a Merchant Order QR scan |
 | `/order/{orderId}/confirmation` | Post-payment confirmation screen |
 
@@ -108,6 +113,10 @@ _Avoid_: Inferred country currency, post-order currency guess
 - A cancelled hosted payment returns to the existing Order surface so payment can be retried without creating another Order
 - A **Universal Order URL** resolves to exactly one **QR Order Landing** when the native app is absent
 - A **Universal Order URL** resolves to the native `OrderDetail` screen when the BlitzPay app intercepts it
+- A **Guest Checkout** at a Table sends the Table Code and a fresh browser location; a guest who denies location access cannot order at the Table
+- A guest at a Table pays now online or chooses **Cash Payment**; guests never get Deferred Payment
+- When the Table was free at check-in, **Guest Checkout** asks "How many people?" (default 2) once and sends it as the Guest Count
+- A **Web Catalog** opened without a Table shows how many Tables and seats are free, when the Branch has Tables
 - **Guest Checkout** applies to both the **Web Cart** checkout path and the **QR Order Landing** payment path
 - The **Branch Catalog QR** journey remains public from browsing through **Guest Checkout**; no BlitzPay account sign-in is required
 - An **App Install Prompt** appears on every screen of the **Web Storefront** — it is never absent

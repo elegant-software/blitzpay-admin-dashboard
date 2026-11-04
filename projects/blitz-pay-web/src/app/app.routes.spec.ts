@@ -12,7 +12,8 @@ describe('Web Storefront public routes', () => {
     'getActiveProducts',
     'getPaymentCapabilities',
     'getOrder',
-    'getGuestOrder'
+    'getGuestOrder',
+    'getTableAvailability'
   ]);
 
   beforeEach(async () => {
@@ -20,6 +21,7 @@ describe('Web Storefront public routes', () => {
     api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'Brew House' }));
     api.getBranch.and.returnValue(of({ id: 'branch-12', merchantId: 'merchant-44', name: 'Station Cafe' }));
     api.getActiveProducts.and.returnValue(of([]));
+    api.getTableAvailability.and.returnValue(of({ total: 8, free: 3, freeSeats: 10 }));
     api.getPaymentCapabilities.and.returnValue(of({ enabledPaymentFlows: [] }));
     api.getOrder.and.returnValue(of({ orderId: 'order-200', status: 'CREATED', items: [] }));
 
@@ -39,6 +41,7 @@ describe('Web Storefront public routes', () => {
     expect(harness.routeNativeElement?.textContent).toContain('Shop online');
     expect(harness.routeNativeElement?.textContent).toContain('Station Cafe');
     expect(api.getActiveProducts).toHaveBeenCalledWith('merchant-44', 'branch-12', null);
+    expect(harness.routeNativeElement?.textContent).toContain('3 of 8 tables free · 10 free seats');
   });
 
   it('renders the QR Order Landing for a universal order URL', async () => {

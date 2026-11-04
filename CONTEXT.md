@@ -52,6 +52,10 @@ _Avoid_: KDS, kitchen app, order board
 The one shared login per Branch that its Kitchen Screens sign in with. A Merchant Manager enables, resets or disables it; enabling or resetting shows a new password once, and the password is never stored or shown again. The dashboard keeps the password only in the Branch page's component state.
 _Avoid_: kitchen account, kitchen user, device login
 
+**Table**, **Table Code**, **Table Name**, **Table Link**, **Branch Link**, **Floor Plan**, **Table Placement**, **Table Status**, **Occupied Table**, **Guest Count**, **Branch Capacity**:
+Defined in the backend glossary (zack-pay `CONTEXT.md`, zack-pay#195). The dashboard manages them on the Branch's **Tables** page (`/merchants/:id/branches/:branchId/tables`): Tables with seats and printable QR codes, Floor Plans with Tables dragged onto the picture (positions stored as fractions 0..1 of the picture), and a read-only **Live floor**. Table pins always show seats ("5 · 4 seats"; live: "5 · 3/4 seats" for Guest Count over seats; "?" when seats are not set). A Platform Admin never clears Tables, sets Guest Counts or takes or confirms payments here. Branch Capacity is edited on the Branch page; seats above it only warn.
+_Avoid_: seat, map, layout, seating chart
+
 ## Relationships
 
 - A **Printed Catalog** is scoped to exactly one **Branch** of one **Merchant** and presents the same active **Products** as that Branch's Web Catalog

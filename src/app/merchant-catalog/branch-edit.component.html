@@ -76,6 +76,21 @@
             <label class="form-label">Geofence Radius (m)</label>
             <input class="form-control" [(ngModel)]="form.geofenceRadiusMeters" type="number" />
           </div>
+
+          <div class="col-12"><hr class="my-0" /></div>
+          <div class="col-md-3">
+            <label class="form-label" for="branch-capacity">Branch Capacity (guests)</label>
+            <input id="branch-capacity" class="form-control" [(ngModel)]="form.capacity" type="number" min="0" step="1" placeholder="Not set" data-test="branch-capacity" />
+          </div>
+          <div class="col-md-9 d-flex align-items-end">
+            <div class="small">
+              <span class="text-body-secondary" *ngIf="seatedCapacity != null">The active tables seat {{ seatedCapacity }} guests. </span>
+              <a [routerLink]="['/merchants', merchantId, 'branches', branchId, 'tables']">Tables and floor plans</a>
+              <div class="alert alert-warning py-1 px-2 mt-2 mb-0" *ngIf="overCapacity" data-test="capacity-warning">
+                The tables seat more guests ({{ seatedCapacity }}) than the Branch Capacity ({{ capacityValue }}). This does not block ordering.
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

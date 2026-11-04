@@ -72,7 +72,14 @@ export class StorefrontSessionService {
     this.write();
   }
 
-  setBrowseState(query: string, category: string): void {
+  /** Empties the cart once its Order exists without an online payment step (Cash). */
+  clearLines(): void {
+    if (!this.state) return;
+    this.state.lines = [];
+    this.write();
+  }
+
+    setBrowseState(query: string, category: string): void {
     if (!this.state) return;
     this.state.query = query;
     this.state.category = category;

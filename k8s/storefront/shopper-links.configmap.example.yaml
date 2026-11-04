@@ -1,0 +1,23 @@
+# EXAMPLE ONLY: not applied by CI (cd-deploy-k8s.yml applies deployment.yaml and ingress.yaml only).
+#
+# App identities for /.well-known/apple-app-site-association and /.well-known/assetlinks.json, which the
+# storefront container writes at startup (projects/blitz-pay-web/deploy/40-storefront-links.sh). They let the
+# shopper app open Universal Order URLs (/order/*) and Table Links (/t/*) directly.
+#
+# Without this ConfigMap the storefront serves valid empty association files and claims no app.
+# The container refuses to start with malformed values, so replace every TODO before applying:
+#
+#   kubectl apply -n blitzpay-staging -f k8s/storefront/shopper-links.configmap.example.yaml
+#   kubectl rollout restart -n blitzpay-staging deployment/blitz-pay-web
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blitzpay-shopper-links
+data:
+  # TODO: replace TODO_TEAM_ID with the Apple Developer Team ID (10 characters) that signs the shopper app.
+  # Bundle ID app.blitzpay.mobile is from elegant-software/blitz-pay-mobile blitz-pay/app.config.js (ios.bundleIdentifier).
+  SHOPPER_IOS_APP_ID: "TODO_TEAM_ID.app.blitzpay.mobile"
+  # Android package from the same app.config.js (android.package).
+  SHOPPER_ANDROID_PACKAGE: "app.blitzpay.mobile"
+  # TODO: the Play App Signing release certificate SHA-256 fingerprint(s), colon separated, comma between several.
+  SHOPPER_ANDROID_SHA256: "TODO"

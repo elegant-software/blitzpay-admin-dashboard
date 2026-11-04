@@ -21,9 +21,11 @@ const PREPARATION_LABELS: Record<StorefrontPreparationStatus, string> = {
     <article class="surface confirmation">
       <span *ngIf="paid" class="confirmation-mark" aria-hidden="true">&#10003;</span>
       <p class="eyebrow">Guest Checkout</p>
-      <h1>{{ paid ? 'Payment confirmed' : 'Checking your payment' }}</h1>
+      <h1>{{ paid ? 'Payment confirmed' : cash ? 'Order placed' : 'Checking your payment' }}</h1>
       <p *ngIf="paid">Your payment{{ reference ? ' for order ' + reference : '' }} has been received.</p>
-      <p *ngIf="!paid">We're waiting for live payment confirmation. You can check again or return to checkout.</p>
+      <p *ngIf="!paid && cash" data-testid="cash-note">Please pay staff in cash. Your order shows as paid once they confirm they received it.</p>
+      <p *ngIf="!paid && !cash">We're waiting for live payment confirmation. You can check again or return to checkout.</p>
+      <p *ngIf="tableName" class="fulfillment-label">Your table: {{ tableName }}</p>
       <section *ngIf="pickupNumber != null || preparationStatus" class="pickup" aria-live="polite">
         <ng-container *ngIf="pickupNumber != null">
           <p class="eyebrow">Pickup Number</p>
@@ -33,7 +35,7 @@ const PREPARATION_LABELS: Record<StorefrontPreparationStatus, string> = {
       </section>
       <p *ngIf="errorMessage" class="storefront-alert" role="alert">{{ errorMessage }}</p>
       <button *ngIf="!paid" class="checkout-button" type="button" [disabled]="loading" (click)="refresh()">{{ loading ? 'Checking...' : 'Check payment status' }}</button>
-      <a class="back-link" *ngIf="!paid && checkoutLink" [routerLink]="checkoutLink">Back to checkout</a>
+      <a class="back-link" *ngIf="!paid && !cash && checkoutLink" [routerLink]="checkoutLink">Back to checkout</a>
       <p class="muted">Install BlitzPay to keep payment ready for your next visit.</p>
     </article>
   `
@@ -52,6 +54,9 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
   preparationStatus: StorefrontPreparationStatus | null = null;
 
   readonly orderId = this.route.snapshot.paramMap.get('orderId') ?? '';
+  /** The guest chose Cash Payment: the order is placed and waits for staff to confirm the cash. */
+  readonly cash = this.route.snapshot.queryParamMap?.get('payment') === 'cash';
+  tableName: string | null = null;
 
   get preparationLabel(): string {
     return this.preparationStatus ? PREPARATION_LABELS[this.preparationStatus] : '';
@@ -93,6 +98,7 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
     this.checkoutLink = order.merchantId && order.branchId ? ['/m', order.merchantId, 'b', order.branchId, 'checkout'] : null;
     this.pickupNumber = order.pickupNumber ?? null;
     this.preparationStatus = order.preparationStatus ?? null;
+    this.tableName = order.tableName ?? null;
     if (this.paid) this.errorMessage = '';
     if (this.preparationStatus === 'READY') this.closeEvents();
   }
