@@ -53,6 +53,10 @@ export const appRoutes: Routes = [
         loadComponent: () => import('./printed-catalog/printed-catalog.component').then(m => m.PrintedCatalogComponent)
       },
       {
+        path: 'merchants/:id/branches/:branchId/tables',
+        loadComponent: () => import('./tables/branch-tables.component').then(m => m.BranchTablesComponent)
+      },
+      {
         path: 'merchants/:id/products/:productId/edit',
         loadComponent: () => import('./merchant-catalog/product-edit.component').then(m => m.ProductEditComponent)
       },

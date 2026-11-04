@@ -1,0 +1,53 @@
+<div class="floor-layout">
+  <div
+    #canvas
+    class="floor-canvas"
+    [class.floor-canvas-blank]="!floorPlan.imageUrl"
+    [class.floor-canvas-drop]="dropActive"
+    data-test="floor-canvas"
+    (dragover)="allowDrop($event)"
+    (dragleave)="dropActive = false"
+    (drop)="drop($event)"
+  >
+    <img *ngIf="floorPlan.imageUrl" [src]="floorPlan.imageUrl" [alt]="'Picture of ' + floorPlan.name" draggable="false" />
+    <p *ngIf="!floorPlan.imageUrl" class="floor-canvas-hint">Upload a picture of {{ floorPlan.name }} to place Tables on it. You can already place them here.</p>
+    <span
+      *ngFor="let table of placed"
+      class="floor-pin"
+      draggable="true"
+      [ngStyle]="pinPosition(table.placement!)"
+      [title]="table.name + ' — drag to move'"
+      [attr.data-test]="'pin-' + table.code"
+      (dragstart)="dragStart($event, table)"
+      (dragend)="dragEnd()"
+    >{{ pinLabel(table) }}</span>
+  </div>
+
+  <aside class="floor-side">
+    <h3 class="h6">Not on this plan</h3>
+    <p class="small text-body-secondary">Drag a table onto the picture.</p>
+    <ul class="floor-table-list" data-test="off-plan">
+      <li
+        *ngFor="let table of offPlan"
+        draggable="true"
+        class="floor-table-item"
+        (dragstart)="dragStart($event, table)"
+        (dragend)="dragEnd()"
+      >
+        <span class="floor-table-grip" aria-hidden="true">⠿</span>
+        <span class="floor-table-name">{{ pinLabel(table) }}<small>{{ whereIs(table) }}</small></span>
+        <button class="btn btn-sm btn-link" type="button" [disabled]="busy" (click)="placeInMiddle(table)">Place</button>
+      </li>
+      <li *ngIf="!offPlan.length" class="small text-body-secondary">Every active table is on this plan.</li>
+    </ul>
+
+    <h3 class="h6 mt-3">On this plan</h3>
+    <ul class="floor-table-list" data-test="on-plan">
+      <li *ngFor="let table of placed" class="floor-table-item">
+        <span class="floor-table-name">{{ pinLabel(table) }}<small *ngIf="!table.active">Inactive</small></span>
+        <button class="btn btn-sm btn-link text-danger" type="button" [disabled]="busy" (click)="unplace.emit(table)">Remove</button>
+      </li>
+      <li *ngIf="!placed.length" class="small text-body-secondary">No tables placed yet.</li>
+    </ul>
+  </aside>
+</div>

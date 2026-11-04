@@ -1,0 +1,206 @@
+/* Floor Plan picture with Table pins (setup and live floor). */
+.floor-layout {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr) 17rem;
+}
+
+.floor-canvas {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.6rem;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+}
+
+.floor-canvas img {
+  display: block;
+  width: 100%;
+}
+
+.floor-canvas-blank {
+  aspect-ratio: 4 / 3;
+  background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+  background-size: 1.25rem 1.25rem;
+}
+
+.floor-canvas-drop {
+  outline: 3px dashed #2563eb;
+  outline-offset: -3px;
+}
+
+.floor-canvas-hint {
+  color: #6b7280;
+  left: 50%;
+  margin: 0;
+  max-width: 80%;
+  position: absolute;
+  text-align: center;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Pins always show name and seats ("5 · 4 seats"), centred on their placement. */
+.floor-pin {
+  background: #1f2937;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+  color: #fff;
+  cursor: grab;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 0.25rem 0.6rem;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+button.floor-pin {
+  cursor: pointer;
+}
+
+.floor-pin-selected {
+  outline: 3px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.floor-pin-count {
+  background: #fff;
+  border-radius: 999px;
+  color: #111827;
+  display: inline-block;
+  font-size: 0.7rem;
+  margin-left: 0.35rem;
+  min-width: 1.1rem;
+  padding: 0 0.3rem;
+  text-align: center;
+}
+
+.floor-chip {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.65rem;
+}
+
+.tone-free { background: #6b7280; }
+.tone-paid { background: #15803d; }
+.tone-unpaid { background: #c2410c; }
+.tone-reserved { background: #7c3aed; }
+
+.floor-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.8rem;
+}
+
+.floor-dot {
+  border-radius: 50%;
+  display: inline-block;
+  height: 0.7rem;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+  width: 0.7rem;
+}
+
+.floor-side {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.6rem;
+  padding: 0.9rem;
+}
+
+.floor-table-list,
+.floor-order-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.floor-table-item {
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+}
+
+.floor-table-item[draggable='true'] {
+  cursor: grab;
+}
+
+.floor-table-grip {
+  color: #9ca3af;
+}
+
+.floor-table-name {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  font-weight: 600;
+}
+
+.floor-table-name small {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.floor-order {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 0.55rem 0;
+}
+
+/* Printable QR cards: hidden on screen, the only thing printed. */
+.table-qr-print-sheet {
+  display: none;
+}
+
+:host ::ng-deep .table-qr-card {
+  border: 1px dashed #9ca3af;
+  break-inside: avoid;
+  margin: 0;
+  padding: 0.8rem;
+  text-align: center;
+}
+
+:host ::ng-deep .table-qr-card img {
+  height: 5.5cm;
+  width: 5.5cm;
+}
+
+:host ::ng-deep .table-qr-card figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+:host ::ng-deep .table-qr-card strong {
+  font-size: 1.2rem;
+}
+
+@media print {
+  .tables-screen,
+  dialog {
+    display: none !important;
+  }
+
+  .table-qr-print-sheet {
+    display: grid;
+    gap: 0.6cm;
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 991.98px) {
+  .floor-layout {
+    grid-template-columns: 1fr;
+  }
+}

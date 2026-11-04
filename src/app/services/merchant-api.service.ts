@@ -1,4 +1,4 @@
-import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpDownloadProgressEvent, HttpEventType, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -10,6 +10,14 @@ import {
   OperationalAppearanceItem,
   Branch,
   BranchCustomer,
+  BranchFloor,
+  BranchTable,
+  CreateTablesRequest,
+  TableLive,
+  FloorPlan,
+  FloorPlanImageUploadResponse,
+  TablePlacement,
+  UpdateTableRequest,
   CatalogTranslation,
   CreateOrderRequest,
   CreateProductCategoryRequest,
@@ -48,6 +56,7 @@ import {
 import { BackendEnvironment } from '../models/merchant-catalog.models';
 import { buildApiBaseUrl } from './merchant-environment.service';
 import { HANDLE_FORBIDDEN_LOCALLY } from '../auth/interceptors/auth.interceptor';
+import { parseServerSentEvents } from '../tables/server-sent-events';
 
 @Injectable({ providedIn: 'root' })
 export class MerchantApiService {
@@ -444,6 +453,125 @@ export class MerchantApiService {
 
   private kitchenContext(): HttpContext {
     return new HttpContext().set(HANDLE_FORBIDDEN_LOCALLY, true);
+  }
+
+  // ── Tables and Floor Plans (zack-pay#195) ─────────────────────────────
+
+  getTables(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string): Observable<BranchTable[]> {
+    return this.http.get<BranchTable[]>(`${this.branchUrl(environment, apiVersion, merchantId, branchId)}/tables`);
+  }
+
+  /** Creates several Tables at once, one per name; [seats] applies to all of them. */
+  createTables(
+    environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, names: string[], seats?: number | null
+  ): Observable<BranchTable[]> {
+    const body: CreateTablesRequest = seats ? { names, seats } : { names };
+    return this.http.post<BranchTable[]>(`${this.branchUrl(environment, apiVersion, merchantId, branchId)}/tables`, body);
+  }
+
+  updateTable(
+    environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, tableId: string, payload: UpdateTableRequest
+  ): Observable<BranchTable> {
+    return this.http.patch<BranchTable>(this.tableUrl(environment, apiVersion, merchantId, branchId, tableId), payload);
+  }
+
+  /** Deletes a Table without orders; 409 when it has orders (deactivate it instead). */
+  deleteTable(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, tableId: string): Observable<void> {
+    return this.http.delete<void>(this.tableUrl(environment, apiVersion, merchantId, branchId, tableId));
+  }
+
+  placeTable(
+    environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, tableId: string, placement: TablePlacement
+  ): Observable<BranchTable> {
+    return this.http.put<BranchTable>(`${this.tableUrl(environment, apiVersion, merchantId, branchId, tableId)}/placement`, placement);
+  }
+
+  unplaceTable(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, tableId: string): Observable<unknown> {
+    return this.http.delete(`${this.tableUrl(environment, apiVersion, merchantId, branchId, tableId)}/placement`);
+  }
+
+  getFloorPlans(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string): Observable<FloorPlan[]> {
+    return this.http.get<FloorPlan[]>(`${this.branchUrl(environment, apiVersion, merchantId, branchId)}/floor-plans`);
+  }
+
+  createFloorPlan(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, name: string): Observable<FloorPlan> {
+    return this.http.post<FloorPlan>(`${this.branchUrl(environment, apiVersion, merchantId, branchId)}/floor-plans`, { name });
+  }
+
+  renameFloorPlan(
+    environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, floorPlanId: string, name: string
+  ): Observable<FloorPlan> {
+    return this.http.patch<FloorPlan>(this.floorPlanUrl(environment, apiVersion, merchantId, branchId, floorPlanId), { name });
+  }
+
+  /** Deletes a Floor Plan; the Tables on it become unplaced. */
+  deleteFloorPlan(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, floorPlanId: string): Observable<void> {
+    return this.http.delete<void>(this.floorPlanUrl(environment, apiVersion, merchantId, branchId, floorPlanId));
+  }
+
+  /** Presigned upload for a Floor Plan picture, same pattern as the merchant logo upload. */
+  createFloorPlanImageUploadUrl(
+    environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, floorPlanId: string, contentType: string
+  ): Observable<FloorPlanImageUploadResponse> {
+    return this.http.post<FloorPlanImageUploadResponse>(
+      `${this.floorPlanUrl(environment, apiVersion, merchantId, branchId, floorPlanId)}/image/upload-url`, { contentType }
+    );
+  }
+
+  /** The live floor: Floor Plans plus every active Table with its Table Status and open orders. */
+  getFloor(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string): Observable<BranchFloor> {
+    return this.http.get<BranchFloor>(`${this.branchUrl(environment, apiVersion, merchantId, branchId)}/floor`);
+  }
+
+  /**
+   * Live floor changes over SSE: one `table` event with the Table's live state whenever it changes. Goes through
+   * HttpClient (not EventSource) so the auth interceptor adds the bearer token. Completes after a few MB so the
+   * buffered response does not grow forever; callers then reload the floor and reconnect.
+   */
+  floorEvents(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string): Observable<TableLive> {
+    const url = `${this.branchUrl(environment, apiVersion, merchantId, branchId)}/floor/events`;
+    return new Observable<TableLive>((subscriber) => {
+      let consumed = 0;
+      let buffer = '';
+      const request = this.http.get(url, {
+        observe: 'events',
+        reportProgress: true,
+        responseType: 'text',
+        headers: new HttpHeaders({ Accept: 'text/event-stream' })
+      }).subscribe({
+        next: (event) => {
+          if (event.type === HttpEventType.Response) return subscriber.complete();
+          if (event.type !== HttpEventType.DownloadProgress) return;
+          const text = (event as HttpDownloadProgressEvent).partialText ?? '';
+          buffer += text.slice(consumed);
+          consumed = text.length;
+          const parsed = parseServerSentEvents(buffer);
+          buffer = parsed.rest;
+          for (const sse of parsed.events) {
+            if (sse.event !== 'table') continue;
+            try {
+              subscriber.next(JSON.parse(sse.data) as TableLive);
+            } catch { /* skip a malformed event; the next reload corrects the floor */ }
+          }
+          if (consumed > 4_000_000) subscriber.complete();
+        },
+        error: (error) => subscriber.error(error),
+        complete: () => subscriber.complete()
+      });
+      return () => request.unsubscribe();
+    });
+  }
+
+  private branchUrl(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string): string {
+    return `${this.base(environment, apiVersion)}/merchants/${encodeURIComponent(merchantId)}/branches/${encodeURIComponent(branchId)}`;
+  }
+
+  private tableUrl(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, tableId: string): string {
+    return `${this.branchUrl(environment, apiVersion, merchantId, branchId)}/tables/${encodeURIComponent(tableId)}`;
+  }
+
+  private floorPlanUrl(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, floorPlanId: string): string {
+    return `${this.branchUrl(environment, apiVersion, merchantId, branchId)}/floor-plans/${encodeURIComponent(floorPlanId)}`;
   }
 
   searchMerchants(

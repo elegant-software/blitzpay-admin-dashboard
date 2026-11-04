@@ -1,0 +1,86 @@
+<div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+  <label class="d-flex align-items-center gap-2 mb-0" *ngIf="floor?.floorPlans?.length">
+    <span class="form-label mb-0">Floor plan</span>
+    <select class="form-select form-select-sm w-auto" [(ngModel)]="floorPlanId" data-test="live-floor-plan">
+      <option *ngFor="let plan of floor?.floorPlans" [ngValue]="plan.id">{{ plan.name }}</option>
+    </select>
+  </label>
+  <span class="small" *ngIf="floor" data-test="live-floor-summary">
+    <strong>{{ summary }}</strong>
+    <span class="text-body-secondary"> · updated {{ lastUpdated | displayDate }}</span>
+  </span>
+  <span *ngIf="loading" class="spinner-border spinner-border-sm text-secondary" role="status" aria-label="Loading"></span>
+  <ul class="floor-legend ms-auto" aria-label="Legend">
+    <li *ngFor="let tone of tones"><span class="floor-dot" [ngClass]="'tone-' + tone"></span>{{ toneLabel(tone) }}</li>
+  </ul>
+</div>
+
+<p class="alert alert-info py-2 small" data-test="read-only-note">
+  View only. Staff set guests, clear tables and take or confirm payments in the merchant app.
+</p>
+<div *ngIf="error" class="alert alert-warning py-1 px-2 small">{{ error }}</div>
+<div *ngIf="overCapacity" class="alert alert-warning py-1 px-2 small" data-test="capacity-warning">
+  The tables seat more guests than the Branch Capacity of {{ floor?.branchCapacity }}. This does not block ordering.
+</div>
+
+<p *ngIf="floor && !floor.tables.length" class="text-body-secondary">This branch has no active tables.</p>
+
+<div class="floor-layout" *ngIf="floor && floor.tables.length">
+  <div>
+    <div *ngIf="floorPlan" class="floor-canvas" [class.floor-canvas-blank]="!floorPlan.imageUrl" data-test="live-floor-canvas">
+      <img *ngIf="floorPlan.imageUrl" [src]="floorPlan.imageUrl" [alt]="'Picture of ' + floorPlan.name" draggable="false" />
+      <button
+        *ngFor="let live of placed"
+        type="button"
+        class="floor-pin"
+        [ngClass]="'tone-' + tone(live)"
+        [class.floor-pin-selected]="selectedTableId === live.table.id"
+        [ngStyle]="pinPosition(live.table.placement!)"
+        [attr.aria-label]="live.table.name + ': ' + toneLabel(tone(live))"
+        [attr.data-test]="'live-pin-' + live.table.code"
+        (click)="select(live)"
+      >{{ pinLabel(live) }}<span class="floor-pin-count" *ngIf="live.orders.length">{{ live.orders.length }}</span></button>
+    </div>
+    <p *ngIf="!floorPlan" class="text-body-secondary small">No floor plans yet. Tables are listed below.</p>
+
+    <div *ngIf="unplaced.length" class="mt-3">
+      <h3 class="h6">Not on a floor plan</h3>
+      <div class="d-flex flex-wrap gap-2">
+        <button
+          *ngFor="let live of unplaced"
+          type="button"
+          class="floor-chip"
+          [ngClass]="'tone-' + tone(live)"
+          [class.floor-pin-selected]="selectedTableId === live.table.id"
+          (click)="select(live)"
+        >{{ pinLabel(live) }}</button>
+      </div>
+    </div>
+  </div>
+
+  <aside class="floor-side" aria-live="polite" data-test="table-detail">
+    <ng-container *ngIf="selected as live; else pick">
+      <h3 class="h6 mb-1">Table {{ pinLabel(live) }}</h3>
+      <p class="small mb-2">
+        <span class="floor-dot" [ngClass]="'tone-' + tone(live)"></span>{{ toneLabel(tone(live)) }}
+        <span *ngIf="live.occupiedSince"> · since {{ live.occupiedSince | displayDate }}</span>
+        <span *ngIf="live.guestCount != null"> · {{ live.guestCount }} {{ live.guestCount === 1 ? 'guest' : 'guests' }}</span>
+      </p>
+      <p *ngIf="!live.orders.length" class="small text-body-secondary">No open orders.</p>
+      <ul class="floor-order-list">
+        <li *ngFor="let order of live.orders" class="floor-order">
+          <div class="d-flex justify-content-between">
+            <strong>{{ order.pickupNumber != null ? 'Pickup ' + order.pickupNumber : 'Order' }}</strong>
+            <span>{{ amount(order) }}</span>
+          </div>
+          <div class="d-flex flex-wrap gap-1 mt-1">
+            <span class="status-tag" [ngClass]="isUnpaid(order) ? 'status-tag-warning' : 'status-tag-success'">{{ paymentLabel(order.paymentStatus) }}</span>
+            <span class="status-tag status-tag-neutral">{{ preparationLabel(order.preparationStatus) }}</span>
+          </div>
+          <small class="text-body-secondary">{{ order.createdAt | displayDate }}</small>
+        </li>
+      </ul>
+    </ng-container>
+    <ng-template #pick><p class="small text-body-secondary">Select a table to see its orders.</p></ng-template>
+  </aside>
+</div>
