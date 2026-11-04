@@ -6,7 +6,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription, finalize, forkJoin, map, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { WebCartComponent } from '../components/web-cart.component';
-import { StorefrontBranch, StorefrontMerchant, StorefrontProduct } from '../models/storefront.models';
+import { StorefrontBranch, StorefrontMerchant, StorefrontProduct, StorefrontTableAvailability } from '../models/storefront.models';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
 import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from '../services/storefront-language.service';
@@ -33,6 +33,9 @@ import { StorefrontTableService } from '../table/storefront-table.service';
     <p class="storefront-alert" *ngIf="errorMessage" role="alert">{{ errorMessage }}</p>
     <p class="table-note" *ngIf="tableCheckIn?.tableCode" data-testid="table-note">
       <strong>Your table: {{ tableCheckIn?.tableName }}</strong><span>Your order is brought to your table.</span>
+    </p>
+    <p class="table-availability muted" *ngIf="!tableCheckIn && availability && availability.total > 0" data-testid="table-availability">
+      {{ availability.free }} of {{ availability.total }} tables free<span *ngIf="availability.freeSeats != null"> &middot; {{ availability.freeSeats }} free seats</span>
     </p>
     <p class="table-note counter" *ngIf="tableCheckIn && !tableCheckIn.tableCode" data-testid="counter-note">
       This table is not taking orders right now. Order here and collect your order at the counter.
@@ -193,8 +196,17 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
   category = '';
   loading = true;
   errorMessage = '';
+  /** Free Tables and seats, for guests deciding whether to come in or sit down; hidden when the Branch has no Tables. */
+  availability: StorefrontTableAvailability | null = null;
+  private availabilityRequest?: Subscription;
 
   ngOnInit(): void {
+    if (!this.tableCheckIn) {
+      this.availabilityRequest = this.api.getTableAvailability(this.branchId).subscribe({
+        next: (availability) => this.availability = availability,
+        error: () => this.availability = null
+      });
+    }
     if (!this.cart.useScope(this.merchantId, this.branchId)) {
       this.errorMessage = 'Your cart contains items from another location.';
     } else {
@@ -258,6 +270,7 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
 
   ngOnDestroy(): void {
     this.catalogRequest?.unsubscribe();
+    this.availabilityRequest?.unsubscribe();
   }
 
   ngAfterViewChecked(): void {

@@ -11,6 +11,8 @@ export interface TableCheckIn {
   /** Null when the Table is deactivated; the order is then collected at the counter. */
   tableCode: string | null;
   tableName: string | null;
+  /** True when the Table already had guests; the guest is then not asked how many people they are. */
+  occupied: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -24,7 +26,8 @@ export class StorefrontTableService {
       merchantId: resolution.merchantId,
       branchId: resolution.branchId,
       tableCode: active ? tableCode : null,
-      tableName: active ? resolution.tableName : null
+      tableName: active ? resolution.tableName : null,
+      occupied: !!resolution.occupied
     };
     this.write();
     return this.state;
@@ -33,6 +36,13 @@ export class StorefrontTableService {
   /** The check-in for this Branch, or null when the guest did not arrive through a Table Link of it. */
   forBranch(merchantId: string, branchId: string): TableCheckIn | null {
     return this.state?.merchantId === merchantId && this.state.branchId === branchId ? this.state : null;
+  }
+
+  /** After this guest's first order the Table has a Guest Count, so "How many people?" is asked only once. */
+  markOccupied(): void {
+    if (!this.state || this.state.occupied) return;
+    this.state = { ...this.state, occupied: true };
+    this.write();
   }
 
   clear(): void {

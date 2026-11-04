@@ -115,6 +115,8 @@ _Avoid_: Inferred country currency, post-order currency guess
 - A **Universal Order URL** resolves to the native `OrderDetail` screen when the BlitzPay app intercepts it
 - A **Guest Checkout** at a Table sends the Table Code and a fresh browser location; a guest who denies location access cannot order at the Table
 - A guest at a Table pays now online or chooses **Cash Payment**; guests never get Deferred Payment
+- When the Table was free at check-in, **Guest Checkout** asks "How many people?" (default 2) once and sends it as the Guest Count
+- A **Web Catalog** opened without a Table shows how many Tables and seats are free, when the Branch has Tables
 - **Guest Checkout** applies to both the **Web Cart** checkout path and the **QR Order Landing** payment path
 - The **Branch Catalog QR** journey remains public from browsing through **Guest Checkout**; no BlitzPay account sign-in is required
 - An **App Install Prompt** appears on every screen of the **Web Storefront** — it is never absent

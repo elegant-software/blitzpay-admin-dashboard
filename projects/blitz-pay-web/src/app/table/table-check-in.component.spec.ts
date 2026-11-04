@@ -26,11 +26,12 @@ describe('Table Link check-in (/t/:code)', () => {
   beforeEach(async () => {
     sessionStorage.clear();
     api = jasmine.createSpyObj<StorefrontApiService>('StorefrontApiService', [
-      'resolveTable', 'getMerchant', 'getBranch', 'getActiveProducts'
+      'resolveTable', 'getMerchant', 'getBranch', 'getActiveProducts', 'getTableAvailability'
     ]);
     api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'Brew House' }));
     api.getBranch.and.returnValue(of({ id: 'branch-12', merchantId: 'merchant-44', name: 'Station Cafe' }));
     api.getActiveProducts.and.returnValue(of([]));
+    api.getTableAvailability.and.returnValue(of({ total: 4, free: 1, freeSeats: 2 }));
     await TestBed.configureTestingModule({
       providers: [provideRouter(storefrontRoutes), { provide: StorefrontApiService, useValue: api }]
     }).compileComponents();
@@ -46,7 +47,7 @@ describe('Table Link check-in (/t/:code)', () => {
     expect(api.resolveTable).toHaveBeenCalledWith('AB3K7Q');
     expect(TestBed.inject(Router).url).toBe('/m/merchant-44/b/branch-12');
     expect(TestBed.inject(StorefrontTableService).forBranch('merchant-44', 'branch-12'))
-      .toEqual({ merchantId: 'merchant-44', branchId: 'branch-12', tableCode: 'AB3K7Q', tableName: 'Terrace 3' });
+      .toEqual({ merchantId: 'merchant-44', branchId: 'branch-12', tableCode: 'AB3K7Q', tableName: 'Terrace 3', occupied: false });
     expect(harness.routeNativeElement?.textContent).toContain('Your table: Terrace 3');
     expect(harness.routeNativeElement?.textContent).not.toContain('table-uuid');
   });

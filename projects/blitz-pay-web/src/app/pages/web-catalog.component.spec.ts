@@ -12,7 +12,8 @@ describe('WebCatalogComponent', () => {
     'getMerchant',
     'getBranch',
     'getActiveProducts',
-    'getPaymentCapabilities'
+    'getPaymentCapabilities',
+    'getTableAvailability'
   ]);
 
   beforeEach(async () => {
@@ -28,6 +29,7 @@ describe('WebCatalogComponent', () => {
       of([{ productId: 'p1', branchId: 'branch-12', name: 'Coffee', unitPrice: 3.5, active: true }])
     );
     api.getPaymentCapabilities.and.returnValue(of({ enabledPaymentFlows: ['PAY_BY_BANK'] }));
+    api.getTableAvailability.and.returnValue(of({ total: 0, free: 0, freeSeats: 0 }));
     sessionStorage.clear();
 
     await TestBed.configureTestingModule({

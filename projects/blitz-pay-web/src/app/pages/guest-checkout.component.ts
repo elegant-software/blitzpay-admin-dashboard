@@ -72,6 +72,10 @@ type GuestCheckoutChoice = StorefrontPaymentMethod | 'CASH';
           <span><strong>Cash</strong><small>Pay staff at your table. Your order is unpaid until they confirm the cash.</small></span>
         </label>
         <p class="muted" *ngIf="!cardAvailable && !payByBankAvailable && !cashAvailable">No online payment method is available for this merchant.</p>
+        <label class="payment-choice guest-count" *ngIf="askGuestCount">
+          <span><strong>How many people?</strong><small>At your table, including you.</small></span>
+          <input type="number" name="guestCount" min="1" max="50" step="1" data-testid="guest-count" [(ngModel)]="guestCount" />
+        </label>
         <p class="muted small" *ngIf="tableCode">To order at your table we check your location once when you place the order.</p>
         <div #cardHost class="card-element" data-testid="card-element" [hidden]="!cardForm"></div>
         <div class="storefront-alert" *ngIf="cartNeedsReview">
@@ -104,7 +108,11 @@ export class GuestCheckoutComponent implements OnInit {
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly currency = environment.currency;
-  private readonly tableCheckIn = inject(StorefrontTableService).forBranch(this.merchantId, this.branchId);
+  private readonly tables = inject(StorefrontTableService);
+  private readonly tableCheckIn = this.tables.forBranch(this.merchantId, this.branchId);
+  /** Asked once, only when the Table was free when the guest checked in. */
+  readonly askGuestCount = !!this.tableCheckIn?.tableCode && !this.tableCheckIn.occupied;
+  guestCount = 2;
   /** Set when the guest checked in at an active Table of this Branch; the order is then a Walk-In at that Table. */
   readonly tableCode = this.tableCheckIn?.tableCode ?? null;
   readonly tableName = this.tableCode ? this.tableCheckIn?.tableName ?? null : null;
@@ -202,6 +210,12 @@ export class GuestCheckoutComponent implements OnInit {
     this.checkingOut = false;
   }
 
+  /** 1–50; anything else falls back to 2 rather than blocking the order. */
+  private get validGuestCount(): number {
+    const count = Math.round(Number(this.guestCount));
+    return count >= 1 && count <= 50 ? count : 2;
+  }
+
   private placeCashOrder(): void {
     this.guestOrderId(true).pipe(finalize(() => this.checkingOut = false)).subscribe({
       next: (orderId) => {
@@ -232,9 +246,13 @@ export class GuestCheckoutComponent implements OnInit {
         branchId: this.branchId,
         items: this.cart.lines.map((line) => ({ productId: line.product.productId, quantity: line.quantity })),
         ...(this.tableCode && customerLocation ? { tableCode: this.tableCode, customerLocation } : {}),
-        ...(cash ? { checkoutPaymentMethod: 'CASH' as const } : {})
+        ...(cash ? { checkoutPaymentMethod: 'CASH' as const } : {}),
+        ...(this.askGuestCount && customerLocation ? { guestCount: this.validGuestCount } : {})
       })),
-      map((order) => this.orderId = order.orderId)
+      map((order) => {
+        if (this.tableCode) this.tables.markOccupied();
+        return this.orderId = order.orderId;
+      })
     );
   }
 

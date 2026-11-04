@@ -146,7 +146,8 @@ describe('GuestCheckoutComponent at a Table', () => {
       branchId: 'branch-12',
       items: [{ productId: 'p1', quantity: 1 }],
       tableCode: 'AB3K7Q',
-      customerLocation: here
+      customerLocation: here,
+      guestCount: 2
     });
     expect(api.startGuestPayment).toHaveBeenCalledWith('order-200', 'CARD');
   });
@@ -167,11 +168,41 @@ describe('GuestCheckoutComponent at a Table', () => {
       items: [{ productId: 'p1', quantity: 1 }],
       tableCode: 'AB3K7Q',
       customerLocation: here,
-      checkoutPaymentMethod: 'CASH'
+      checkoutPaymentMethod: 'CASH',
+      guestCount: 2
     });
     expect(api.startGuestPayment).not.toHaveBeenCalled();
     expect(TestBed.inject(StorefrontSessionService).itemCount).toBe(0);
     expect(navigate).toHaveBeenCalledWith(['/order', 'order-200', 'confirmation'], { queryParams: { payment: 'cash' } });
+  });
+
+  it('asks "How many people?" (default 2) at a free Table and sends the answer once', async () => {
+    const harness = await open();
+    const input = harness.routeNativeElement!.querySelector<HTMLInputElement>('[data-testid="guest-count"]')!;
+    expect(input).not.toBeNull();
+    await harness.fixture.whenStable();
+    input.value = '4';
+    input.dispatchEvent(new Event('input'));
+
+    harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-testid="confirm-payment"]')!.click();
+    await harness.fixture.whenStable();
+
+    expect(api.createOrder.calls.mostRecent().args[0].guestCount).toBe(4);
+    expect(TestBed.inject(StorefrontTableService).forBranch('merchant-44', 'branch-12')?.occupied).toBeTrue();
+  });
+
+  it('does not ask how many people when the Table is already occupied', async () => {
+    TestBed.inject(StorefrontTableService).checkIn('AB3K7Q', {
+      merchantId: 'merchant-44', merchantName: 'Brew House', branchId: 'branch-12', branchName: 'Station Cafe',
+      tableId: 'table-1', tableName: '5', active: true, occupied: true
+    });
+    const harness = await open();
+    expect(harness.routeNativeElement?.querySelector('[data-testid="guest-count"]')).toBeNull();
+
+    harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-testid="confirm-payment"]')!.click();
+    await harness.fixture.whenStable();
+
+    expect(api.createOrder.calls.mostRecent().args[0].guestCount).toBeUndefined();
   });
 
   it('asks for location access and creates no order when it is denied', async () => {

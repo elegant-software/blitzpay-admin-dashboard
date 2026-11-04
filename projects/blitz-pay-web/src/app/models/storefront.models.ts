@@ -62,6 +62,15 @@ export interface CreateStorefrontOrderRequest {
   tableCode?: string;
   customerLocation?: StorefrontCustomerLocation;
   checkoutPaymentMethod?: StorefrontCheckoutPaymentMethod;
+  /** Guest Count (1–50), asked when the Table was free; the backend ignores it once the Table has one. */
+  guestCount?: number;
+}
+
+/** Shopper-facing view of a Branch's Table Status: counts only, never orders. */
+export interface StorefrontTableAvailability {
+  total: number;
+  free: number;
+  freeSeats?: number | null;
 }
 
 /** What a Table Link resolves to. A deactivated Table has active=false and no tableId: order at the counter instead. */
@@ -73,6 +82,8 @@ export interface StorefrontTableResolution {
   tableId: string | null;
   tableName: string | null;
   active: boolean;
+  /** Whether someone is already seated or has ordered at the Table; no other occupancy detail. */
+  occupied?: boolean;
 }
 
 /** CARD: Payment Element credentials (direct charge on the connected account). PAY_BY_BANK: hosted checkout URL. */
