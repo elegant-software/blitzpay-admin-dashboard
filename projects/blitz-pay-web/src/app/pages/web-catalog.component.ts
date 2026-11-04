@@ -10,6 +10,7 @@ import { StorefrontBranch, StorefrontMerchant, StorefrontProduct } from '../mode
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
 import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from '../services/storefront-language.service';
+import { StorefrontTableService } from '../table/storefront-table.service';
 
 @Component({
   selector: 'web-catalog',
@@ -30,6 +31,12 @@ import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from 
     </section>
 
     <p class="storefront-alert" *ngIf="errorMessage" role="alert">{{ errorMessage }}</p>
+    <p class="table-note" *ngIf="tableCheckIn?.tableCode" data-testid="table-note">
+      <strong>Your table: {{ tableCheckIn?.tableName }}</strong><span>Your order is brought to your table.</span>
+    </p>
+    <p class="table-note counter" *ngIf="tableCheckIn && !tableCheckIn.tableCode" data-testid="counter-note">
+      This table is not taking orders right now. Order here and collect your order at the counter.
+    </p>
     <section class="unavailable surface" *ngIf="!loading && branch && branch.active === false">
       <p class="eyebrow">Unavailable Branch Notice</p>
       <h2>This location is not accepting online orders.</h2>
@@ -177,6 +184,7 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly currency = environment.currency;
+  readonly tableCheckIn = inject(StorefrontTableService).forBranch(this.merchantId, this.branchId);
 
   merchant: StorefrontMerchant | null = null;
   branch: StorefrontBranch | null = null;

@@ -2,10 +2,11 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { StorefrontSessionService } from '../services/storefront-session.service';
+import { TableCodeFormComponent } from '../table/table-code-form.component';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, TableCodeFormComponent],
   templateUrl: './storefront-home.component.html',
   styleUrl: './storefront-home.component.css'
 })
