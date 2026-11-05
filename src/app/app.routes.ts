@@ -46,7 +46,8 @@ export const appRoutes: Routes = [
       },
       {
         path: 'merchants/:id/branches/:branchId/edit',
-        loadComponent: () => import('./merchant-catalog/branch-edit.component').then(m => m.BranchEditComponent)
+        loadComponent: () => import('./merchant-catalog/branch-edit.component').then(m => m.BranchEditComponent),
+        canDeactivate: [(component: { canLeave(): boolean }) => component.canLeave()]
       },
       {
         path: 'merchants/:id/branches/:branchId/printed-catalog',

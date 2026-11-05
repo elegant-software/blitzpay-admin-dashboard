@@ -35,6 +35,7 @@ import {
   MerchantVerticalResponse,
   OrderResponse,
   Product,
+  PreparationConfiguration,
   ProductCategory,
   ProductListResponse,
   ProviderAccountResponse,
@@ -61,6 +62,14 @@ import { parseServerSentEvents } from '../tables/server-sent-events';
 @Injectable({ providedIn: 'root' })
 export class MerchantApiService {
   constructor(private readonly http: HttpClient) {}
+
+  getPreparationConfiguration(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string): Observable<PreparationConfiguration> {
+    return this.http.get<PreparationConfiguration>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/branches/${branchId}/preparation-configuration`);
+  }
+
+  savePreparationConfiguration(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, configuration: PreparationConfiguration): Observable<PreparationConfiguration> {
+    return this.http.put<PreparationConfiguration>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/branches/${branchId}/preparation-configuration`, configuration);
+  }
 
   getMerchant(environment: BackendEnvironment, apiVersion: string, merchantId: string): Observable<Merchant> {
     // Bearer credentials are injected centrally by the auth interceptor.
