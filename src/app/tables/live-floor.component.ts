@@ -8,6 +8,7 @@ import { BranchFloor, FloorPlan, TableLive, TableOrderSummary } from '../models/
 import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
+import { TableQrCardComponent } from './table-qr-card.component';
 import { TableTone, exceedsCapacity, isUnpaid, livePinLabel, paymentLabel, pinPosition, preparationLabel, tableTone } from './floor-plan';
 
 /** Wait before reconnecting after the stream drops; the floor is reloaded on every reconnect. */
@@ -28,7 +29,7 @@ const TONE_LABELS: Record<TableTone, string> = {
 @Component({
   selector: 'app-live-floor',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe],
+  imports: [CommonModule, FormsModule, DisplayDatePipe, TableQrCardComponent],
   templateUrl: './live-floor.component.html',
   styleUrls: ['../merchant-catalog/merchant-catalog.component.css', './branch-tables.component.css']
 })
