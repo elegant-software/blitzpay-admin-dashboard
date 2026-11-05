@@ -66,6 +66,11 @@
         <span *ngIf="live.occupiedSince"> · since {{ live.occupiedSince | displayDate }}</span>
         <span *ngIf="live.guestCount != null"> · {{ live.guestCount }} {{ live.guestCount === 1 ? 'guest' : 'guests' }}</span>
       </p>
+      <p class="small mb-2" data-test="nfc-status">
+        <ng-container *ngIf="live.table.nfcTagWrittenAt; else noTag">NFC tag written {{ live.table.nfcTagWrittenAt | displayDate }}</ng-container>
+        <ng-template #noTag><span class="text-body-secondary">No NFC tag written yet</span></ng-template>
+      </p>
+      <app-table-qr-card [url]="live.table.link" [title]="'Table ' + live.table.name" [code]="live.table.code" />
       <p *ngIf="!live.orders.length" class="small text-body-secondary">No open orders.</p>
       <ul class="floor-order-list">
         <li *ngFor="let order of live.orders" class="floor-order">

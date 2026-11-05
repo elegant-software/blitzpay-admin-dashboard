@@ -694,6 +694,8 @@ export interface BranchTable {
   placement: TablePlacement | null;
   /** Seats at the Table (1–50), or null when not set. */
   seats?: number | null;
+  /** When an NFC tag carrying the Table Link was last written (merchant app); null when none was. */
+  nfcTagWrittenAt?: string | null;
 }
 
 export interface CreateTablesRequest {

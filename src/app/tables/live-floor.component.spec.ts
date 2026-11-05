@@ -58,6 +58,21 @@ describe('LiveFloorComponent', () => {
     expect(detail).not.toContain('o-1');
   });
 
+  it('shows the Table QR code and whether an NFC tag was written', () => {
+    const fixture = create();
+    fixture.nativeElement.querySelector('[data-test="live-pin-CODEt1"]').click();
+    fixture.detectChanges();
+    const detail = fixture.nativeElement.querySelector('[data-test="table-detail"]');
+    expect(detail.querySelector('app-table-qr-card')).not.toBeNull();
+    expect(detail.textContent).toContain('Table code CODEt1');
+    expect(detail.querySelector('[data-test="nfc-status"]').textContent).toContain('No NFC tag written yet');
+
+    events.next({ ...free('t1', '5', 4), table: { ...table('t1', '5', 4), nfcTagWrittenAt: '2026-11-05T09:30:00Z' } });
+    fixture.detectChanges();
+    expect(detail.querySelector('[data-test="nfc-status"]').textContent).toContain('NFC tag written');
+    expect(detail.querySelector('[data-test="nfc-status"]').textContent).not.toContain('yet');
+  });
+
   it('is read-only: no clear, guest or payment actions', () => {
     const fixture = create();
     const text = fixture.nativeElement.textContent;
