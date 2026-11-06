@@ -1,3 +1,14 @@
+.cash-receipt-section {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--cui-border-color, #d8dee8);
+  border-radius: .75rem;
+  background: var(--cui-tertiary-bg, #f7f8fa);
+}
+.cash-receipt-section p { line-height: 1.6; }
+.cash-receipt-section textarea { resize: vertical; }
+.cash-receipt-section .form-check-input { flex-shrink: 0; }
+
 .datatable-shell {
   border: 1px solid #eef1f6;
   border-radius: 0.9rem;

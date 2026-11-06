@@ -781,6 +781,20 @@ export class MerchantApiService {
     );
   }
 
+  getOrder(environment: BackendEnvironment, apiVersion: string, orderId: string): Observable<OrderResponse> {
+    return this.http.get<OrderResponse>(
+      `${this.base(environment, apiVersion)}/merchant/orders/${encodeURIComponent(orderId)}`
+    );
+  }
+
+  settleCashOrder(environment: BackendEnvironment, apiVersion: string, orderId: string, note?: string): Observable<OrderResponse> {
+    const trimmedNote = note?.trim();
+    return this.http.post<OrderResponse>(
+      `${this.base(environment, apiVersion)}/merchant/orders/${encodeURIComponent(orderId)}/settle`,
+      trimmedNote ? { note: trimmedNote } : {}
+    );
+  }
+
   createOrder(
     environment: BackendEnvironment,
     apiVersion: string,

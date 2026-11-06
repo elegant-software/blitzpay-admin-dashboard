@@ -1,8 +1,8 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NotificationService } from '../notifications/notification.service';
 import { Branch, MerchantSearchResultItem, OrderResponse } from '../models/merchant-catalog.models';
@@ -57,7 +57,9 @@ describe('OrderManagementComponent', () => {
       'getProducts',
       'getBranchCustomers',
       'searchShopperByEmail',
-      'createOrder'
+      'createOrder',
+      'getOrder',
+      'settleCashOrder'
     ]);
     merchantApi.getBranches.and.returnValue(of([branch]));
     merchantApi.getOrders.and.returnValue(of([]));
@@ -89,6 +91,141 @@ describe('OrderManagementComponent', () => {
     expect(root.querySelector('#orders-scope-title')?.textContent).toContain('Order scope');
     expect(root.querySelector('.orders-welcome-card')?.textContent).toContain('Select a branch to view orders');
   });
+
+  function openCashOrder(fresh = order({ status: 'CREATED', checkoutPaymentMethod: 'CASH' })): void {
+    component.merchantId = merchant.merchantId;
+    component.selectedMerchantItem = merchant;
+    component.selectedBranchId = branch.branchId!;
+    component.orders = [order({ status: 'CREATED', checkoutPaymentMethod: 'CASH' })];
+    merchantApi.getOrder.and.returnValue(of(fresh));
+    component.openDetailDialog(component.orders[0]);
+    fixture.detectChanges();
+  }
+
+  it('loads fresh cash order details and requires confirmation of the amount', () => {
+    openCashOrder();
+    expect(merchantApi.getOrder).toHaveBeenCalledOnceWith(component.selectedEnvironment, 'v1', 'order-12345678');
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="cash-receipt-panel"]')?.textContent).toContain('€12.00');
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="confirm-cash"]')?.disabled).toBeTrue();
+  });
+
+  it('updates the order, counts, and active filters from the paid response', () => {
+    const success = spyOn(TestBed.inject(NotificationService), 'success');
+    openCashOrder();
+    component.statusFilter = 'CREATED';
+    component.onFilterChange();
+    const paid = order({ status: 'PAID', checkoutPaymentMethod: 'CASH', paymentSource: 'MANUAL_SETTLEMENT', paidAt: '2026-11-06T10:00:00Z' });
+    merchantApi.settleCashOrder.and.returnValue(of(paid));
+    component.cashReceiptConfirmed = true;
+    component.cashSettlementNote = 'Cash received at table 1';
+    component.confirmCashReceived();
+    fixture.detectChanges();
+    expect(merchantApi.settleCashOrder).toHaveBeenCalledOnceWith(component.selectedEnvironment, 'v1', paid.orderId, 'Cash received at table 1');
+    expect(component.selectedOrder).toEqual(paid);
+    expect(component.orders[0]).toEqual(paid);
+    expect(component.paidOrderCount).toBe(1);
+    expect(component.filteredOrders).toEqual([]);
+    expect(success).toHaveBeenCalledOnceWith('Cash receipt confirmed. Order marked as paid.');
+    expect(fixture.nativeElement.querySelector('[data-testid="confirm-cash"]')).toBeNull();
+  });
+
+  it('confirms cash through the checkbox and button, then displays the paid date', fakeAsync(() => {
+    spyOn(TestBed.inject(NotificationService), 'success');
+    openCashOrder();
+    tick();
+    const paid = order({ status: 'PAID', checkoutPaymentMethod: 'CASH', paymentSource: 'MANUAL_SETTLEMENT', paidAt: '2026-11-06T10:00:00Z' });
+    merchantApi.settleCashOrder.and.returnValue(of(paid));
+    const root = fixture.nativeElement as HTMLElement;
+    root.querySelector<HTMLInputElement>('#cash-receipt-confirmed')!.click();
+    fixture.detectChanges();
+    const action = root.querySelector<HTMLButtonElement>('[data-testid="confirm-cash"]')!;
+    expect(action.disabled).toBeFalse();
+    action.click();
+    fixture.detectChanges();
+    expect(merchantApi.settleCashOrder).toHaveBeenCalledTimes(1);
+    expect(root.textContent).toContain('Manually confirmed');
+    expect(root.textContent).toContain('6 Nov 2026');
+  }));
+
+  it('does not submit without explicit confirmation', () => {
+    openCashOrder();
+    component.confirmCashReceived();
+    expect(merchantApi.settleCashOrder).not.toHaveBeenCalled();
+  });
+
+  it('does not use cached eligibility while fresh order details are pending', () => {
+    const pending = new Subject<OrderResponse>();
+    component.merchantId = merchant.merchantId;
+    component.selectedBranchId = branch.branchId!;
+    merchantApi.getOrder.and.returnValue(pending);
+    component.openDetailDialog(order({ status: 'CREATED', checkoutPaymentMethod: 'CASH' }));
+    component.cashReceiptConfirmed = true;
+    component.confirmCashReceived();
+    expect(merchantApi.settleCashOrder).not.toHaveBeenCalled();
+    component.closeDialog();
+    pending.next(order({ status: 'CREATED', checkoutPaymentMethod: 'CASH' }));
+    expect(component.activeDialog).toBeNull();
+    expect(component.selectedOrder).toBeNull();
+  });
+
+  it('blocks confirmation when loading fresh details fails', () => {
+    spyOn(TestBed.inject(NotificationService), 'apiError');
+    merchantApi.getOrder.and.returnValue(throwError(() => new HttpErrorResponse({ status: 403, error: { detail: 'Access denied for this order.' } })));
+    component.openDetailDialog(order({ status: 'CREATED', checkoutPaymentMethod: 'CASH' }));
+    component.cashReceiptConfirmed = true;
+    component.confirmCashReceived();
+    fixture.detectChanges();
+    expect(merchantApi.settleCashOrder).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[data-testid="cash-error"]')?.textContent).toContain('Access denied for this order.');
+  });
+
+  it('sends one request and prevents closing or changing the dialog while confirmation is pending', () => {
+    openCashOrder();
+    const pending = new Subject<OrderResponse>();
+    merchantApi.settleCashOrder.and.returnValue(pending);
+    component.cashReceiptConfirmed = true;
+    component.confirmCashReceived();
+    component.confirmCashReceived();
+    component.closeDialog(true);
+    component.openCreateDialog();
+    component.openDetailDialog(order({ orderId: 'other-order' }));
+    expect(merchantApi.settleCashOrder).toHaveBeenCalledTimes(1);
+    expect(component.activeDialog).toBe('detail');
+    expect(component.selectedOrder?.orderId).toBe('order-12345678');
+    pending.complete();
+  });
+
+  it('shows the server error next to the action, emits one toast, and preserves the note for retry', () => {
+    const notify = spyOn(TestBed.inject(NotificationService), 'apiError');
+    openCashOrder();
+    const failure = new HttpErrorResponse({ status: 409, error: { error: 'Order is already paid.' } });
+    merchantApi.settleCashOrder.and.returnValue(throwError(() => failure));
+    component.cashReceiptConfirmed = true;
+    component.cashSettlementNote = 'Staff test';
+    component.confirmCashReceived();
+    fixture.detectChanges();
+    expect(component.selectedOrder?.status).toBe('CREATED');
+    expect(component.cashSettlementNote).toBe('Staff test');
+    expect(component.settlingCash).toBeFalse();
+    expect(fixture.nativeElement.querySelector('[data-testid="cash-error"]')?.textContent).toContain('Order is already paid.');
+    expect(notify).toHaveBeenCalledOnceWith(failure, 'Unable to confirm cash receipt. Please try again.');
+  });
+
+  for (const state of [
+    { status: 'PAID' as const, checkoutPaymentMethod: 'CASH' as const },
+    { status: 'CANCELLED' as const, checkoutPaymentMethod: 'CASH' as const },
+    { status: 'PAYMENT_INITIATED' as const, checkoutPaymentMethod: 'CASH' as const },
+    { status: 'CREATED' as const, checkoutPaymentMethod: 'CARD' as const }
+  ]) {
+    it(`does not settle ${state.checkoutPaymentMethod} orders in ${state.status} state`, () => {
+      openCashOrder(order(state));
+      component.cashReceiptConfirmed = true;
+      component.confirmCashReceived();
+      expect(merchantApi.settleCashOrder).not.toHaveBeenCalled();
+      expect(fixture.nativeElement.querySelector('[data-testid="confirm-cash"]')).toBeNull();
+    });
+  }
 
   it('adds an order and emits one success notification', () => {
     const notifications = TestBed.inject(NotificationService);

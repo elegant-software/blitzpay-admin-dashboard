@@ -2,6 +2,7 @@ import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DisplayDatePipe } from '../pipes/display-date.pipe';
@@ -79,6 +80,13 @@ export class OrderManagementComponent implements OnInit {
   activeDialog: OrderDialog = null;
   selectedOrder: OrderResponse | null = null;
   dialogError = '';
+  detailLoading = false;
+  detailReady = false;
+  settlingCash = false;
+  cashReceiptConfirmed = false;
+  cashSettlementNote = '';
+  readonly statusOptions: readonly OrderStatus[] = ['PENDING', 'CREATED', 'PAYMENT_INITIATED', 'FAILED', 'PAID', 'CANCELLED', 'EXPIRED'];
+  private detailRequestId = 0;
 
   // Support data
   products: Product[] = [];
@@ -137,7 +145,7 @@ export class OrderManagementComponent implements OnInit {
     return getEnvironmentByKey(this.selectedEnvironmentKey);
   }
 
-  get pendingOrderCount(): number { return this.orders.filter(order => order.status === 'PENDING').length; }
+  get pendingOrderCount(): number { return this.orders.filter(order => ['PENDING', 'CREATED', 'PAYMENT_INITIATED'].includes(order.status)).length; }
   get paidOrderCount(): number { return this.orders.filter(order => order.status === 'PAID').length; }
   get invoiceOrderCount(): number { return this.orders.filter(order => this.isInvoiceOrder(order)).length; }
   get visibleOrderCount(): number { return this.filteredOrders.length; }
@@ -166,6 +174,7 @@ export class OrderManagementComponent implements OnInit {
   }
 
   selectMerchantForFilter(m: MerchantSearchResultItem): void {
+    if (this.settlingCash) return;
     this.errorMessage = '';
 
     this.branchDropdownOpen = false;
@@ -187,6 +196,7 @@ export class OrderManagementComponent implements OnInit {
   }
 
   clearMerchantFilter(): void {
+    if (this.settlingCash) return;
     this.supportDataRequestId++;
     this.branchDropdownOpen = false;
     this.selectedMerchantItem = null;
@@ -217,6 +227,7 @@ export class OrderManagementComponent implements OnInit {
   }
 
   selectBranchFilter(branchId: string): void {
+    if (this.settlingCash) return;
     this.selectedBranchId = branchId;
     this.branchDropdownOpen = false;
     this.onBranchFilterChange();
@@ -264,6 +275,7 @@ export class OrderManagementComponent implements OnInit {
   }
 
   loadOrders(): void {
+    if (this.settlingCash) return;
     if (!this.merchantId || !this.selectedBranchId) {
       this.errorMessage = 'Select a merchant and branch before searching.';
       return;
@@ -291,6 +303,7 @@ export class OrderManagementComponent implements OnInit {
   }
 
   clearSearch(): void {
+    if (this.settlingCash) return;
     this.clearMerchantFilter();
     this.statusFilter = '';
     this.typeFilter = '';
@@ -326,9 +339,9 @@ export class OrderManagementComponent implements OnInit {
       event.preventDefault();
       this.filterDropdownOpen = filter;
       const selectedIndex = filter === 'status'
-        ? ['', 'PENDING', 'PAID', 'CANCELLED', 'EXPIRED'].indexOf(this.statusFilter)
+        ? ['', ...this.statusOptions].indexOf(this.statusFilter)
         : ['', 'invoice', 'standard'].indexOf(this.typeFilter);
-      const optionCount = filter === 'status' ? 5 : 3;
+      const optionCount = filter === 'status' ? this.statusOptions.length + 1 : 3;
       const index = event.key === 'ArrowUp' ? optionCount - 1 : Math.max(selectedIndex, 0);
       this.focusFilterOption(filter, index);
     } else if (event.key === 'Escape' && this.filterDropdownOpen === filter) {
@@ -433,6 +446,9 @@ export class OrderManagementComponent implements OnInit {
   orderStatusTone(status: OrderStatus): string {
     switch (status) {
       case 'PENDING': return 'status-tag-warning';
+      case 'CREATED':
+      case 'PAYMENT_INITIATED': return 'status-tag-warning';
+      case 'FAILED': return 'status-tag-danger';
       case 'PAID': return 'status-tag-success';
       case 'CANCELLED': return 'status-tag-neutral';
       case 'EXPIRED': return 'status-tag-danger';
@@ -442,6 +458,9 @@ export class OrderManagementComponent implements OnInit {
   orderStatusLabel(status: OrderStatus): string {
     switch (status) {
       case 'PENDING': return 'Pending';
+      case 'CREATED': return 'Awaiting payment';
+      case 'PAYMENT_INITIATED': return 'Payment in progress';
+      case 'FAILED': return 'Payment failed';
       case 'PAID': return 'Paid';
       case 'CANCELLED': return 'Cancelled';
       case 'EXPIRED': return 'Expired';
@@ -450,6 +469,11 @@ export class OrderManagementComponent implements OnInit {
 
   isInvoiceOrder(order: OrderResponse): boolean {
     return !!order.targetShopperId;
+  }
+
+  paymentMethodLabel(method: OrderResponse['checkoutPaymentMethod']): string {
+    if (!method) return '—';
+    return { CASH: 'Cash', CARD: 'Card', PAY_BY_BANK: 'Pay by bank', BANK_ACCOUNT: 'Bank account', TERMINAL: 'Card terminal', PAYPAL: 'PayPal' }[method];
   }
 
   formatCurrency(amount: number, currency: string): string {
@@ -475,6 +499,7 @@ export class OrderManagementComponent implements OnInit {
   // ── Create order dialog ─────────────────────────────────────────────────
 
   openCreateDialog(): void {
+    if (this.settlingCash) return;
     if (!this.merchantId) {
       this.errorMessage = 'Load orders for a merchant first.';
       return;
@@ -499,12 +524,84 @@ export class OrderManagementComponent implements OnInit {
   }
 
   openDetailDialog(order: OrderResponse): void {
+    if (this.settlingCash) return;
+    const requestId = ++this.detailRequestId;
     this.selectedOrder = order;
     this.dialogError = '';
+    this.cashReceiptConfirmed = false;
+    this.cashSettlementNote = '';
+    this.detailReady = false;
+    this.detailLoading = true;
     this.activeDialog = 'detail';
+    this.merchantApi.getOrder(this.selectedEnvironment, this.apiVersion, order.orderId).subscribe({
+      next: fresh => {
+        if (requestId !== this.detailRequestId || this.activeDialog !== 'detail') return;
+        this.detailLoading = false;
+        if (fresh.orderId !== order.orderId || fresh.merchantId !== order.merchantId || fresh.branchId !== order.branchId) {
+          this.dialogError = 'Unable to verify this order. Reload its details before confirming cash.';
+          this.notifications.error(this.dialogError);
+          return;
+        }
+        this.detailReady = true;
+        this.selectedOrder = fresh;
+        this.replaceLoadedOrder(fresh);
+      },
+      error: error => {
+        if (requestId !== this.detailRequestId || this.activeDialog !== 'detail') return;
+        this.detailLoading = false;
+        this.dialogError = this.orderErrorMessage(error, 'Unable to load fresh order details. Please try again.');
+        this.notifications.apiError(error, 'Unable to load fresh order details. Please try again.');
+      }
+    });
+  }
+
+  get canConfirmCash(): boolean {
+    const order = this.selectedOrder;
+    return this.activeDialog === 'detail' && this.detailReady && !this.detailLoading && !!order
+      && order.merchantId === this.merchantId && order.branchId === this.selectedBranchId
+      && order.checkoutPaymentMethod === 'CASH' && ['CREATED', 'FAILED'].includes(order.status);
+  }
+
+  confirmCashReceived(): void {
+    if (!this.canConfirmCash || !this.cashReceiptConfirmed || this.settlingCash || this.cashSettlementNote.length > 2000) return;
+    const order = this.selectedOrder!;
+    this.settlingCash = true;
+    this.dialogError = '';
+    this.merchantApi.settleCashOrder(this.selectedEnvironment, this.apiVersion, order.orderId, this.cashSettlementNote)
+      .pipe(finalize(() => this.settlingCash = false))
+      .subscribe({
+        next: settled => {
+          this.selectedOrder = settled;
+          this.replaceLoadedOrder(settled);
+          this.cashReceiptConfirmed = false;
+          this.cashSettlementNote = '';
+          this.notifications.success('Cash receipt confirmed. Order marked as paid.');
+        },
+        error: error => {
+          this.dialogError = this.orderErrorMessage(error, 'Unable to confirm cash receipt. Please try again.');
+          this.notifications.apiError(error, 'Unable to confirm cash receipt. Please try again.');
+        }
+      });
+  }
+
+  private replaceLoadedOrder(order: OrderResponse): void {
+    this.orders = this.orders.map(candidate => candidate.orderId === order.orderId ? order : candidate);
+    this.applyFilters();
+  }
+
+  private orderErrorMessage(error: unknown, fallback: string): string {
+    if (!(error instanceof HttpErrorResponse)) return fallback;
+    const message = error.error?.detail ?? error.error?.message ?? error.error?.error;
+    return typeof message === 'string' && message.trim() ? message : fallback;
   }
 
   closeDialog(force = false): void {
+    if (this.settlingCash) return;
+    this.detailRequestId++;
+    this.detailLoading = false;
+    this.detailReady = false;
+    this.cashReceiptConfirmed = false;
+    this.cashSettlementNote = '';
     this.activeDialog = null;
     this.selectedOrder = null;
     this.dialogError = '';

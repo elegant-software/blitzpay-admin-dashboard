@@ -560,7 +560,8 @@ export interface NoteEditFormModel {
 // ── Orders ──────────────────────────────────────────────────────────────────
 
 export type OrderType = 'WALK_IN_ORDERING' | 'PRE_ORDER';
-export type OrderStatus = 'PENDING' | 'PAID' | 'CANCELLED' | 'EXPIRED';
+export type OrderStatus = 'PENDING' | 'CREATED' | 'PAYMENT_INITIATED' | 'PAID' | 'FAILED' | 'CANCELLED' | 'EXPIRED';
+export type OrderCheckoutPaymentMethod = 'BANK_ACCOUNT' | 'CARD' | 'PAY_BY_BANK' | 'TERMINAL' | 'PAYPAL' | 'CASH';
 
 export interface OrderItemResponse {
   itemId: string;
@@ -589,6 +590,10 @@ export interface OrderResponse {
   currency: string;
   createdAt: string;
   paidAt?: string | null;
+  checkoutPaymentMethod?: OrderCheckoutPaymentMethod | null;
+  paymentSource?: 'APP_PAYMENT' | 'MANUAL_SETTLEMENT' | null;
+  tableName?: string | null;
+  pickupNumber?: number | null;
 }
 
 export interface CreateOrderItemRequest {
