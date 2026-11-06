@@ -2,7 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { NotificationService } from '../notifications/notification.service';
 import { Branch, MerchantSearchResultItem, OrderResponse } from '../models/merchant-catalog.models';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { OrderManagementComponent } from './order-management.component';
@@ -88,6 +90,38 @@ describe('OrderManagementComponent', () => {
     expect(root.querySelector('.orders-welcome-card')?.textContent).toContain('Select a branch to view orders');
   });
 
+  it('adds an order and emits one success notification', () => {
+    const notifications = TestBed.inject(NotificationService);
+    const success = spyOn(notifications, 'success');
+    component.merchantId = merchant.merchantId;
+    component.createBranchId = branch.branchId!;
+    component.createItems = [{ productId: 'product-1', productName: 'Coffee', unitPrice: 3, quantity: 1 }];
+    component.activeDialog = 'create';
+    merchantApi.createOrder.and.returnValue(of(order()));
+    component.createOrder();
+    expect(success).toHaveBeenCalledOnceWith('Order added successfully');
+    expect(component.orders.length).toBe(1);
+    expect(component.activeDialog).toBeNull();
+    expect(component.loading).toBeFalse();
+  });
+
+  it('reports a failed add-order once and preserves the form for retry', () => {
+    const notifications = TestBed.inject(NotificationService);
+    const apiError = spyOn(notifications, 'apiError');
+    const failure = new HttpErrorResponse({ status: 0 });
+    component.merchantId = merchant.merchantId;
+    component.createBranchId = branch.branchId!;
+    component.createItems = [{ productId: 'product-1', productName: 'Coffee', unitPrice: 3, quantity: 1 }];
+    component.activeDialog = 'create';
+    merchantApi.createOrder.and.returnValue(throwError(() => failure));
+    component.createOrder();
+    expect(apiError).toHaveBeenCalledOnceWith(failure, 'Could not add order. Please try again.');
+    expect(component.loading).toBeFalse();
+    expect(component.activeDialog).toBe('create');
+    expect(component.createItems.length).toBe(1);
+    expect(component.dialogError).toBe('');
+  });
+
   it('uses the selected branch from the dialog header without asking for branch selection again', () => {
     component.selectedMerchantItem = merchant;
     component.createBranchId = branch.branchId!;
@@ -121,18 +155,23 @@ describe('OrderManagementComponent', () => {
     expect(merchantCopy.getBoundingClientRect().bottom).toBeLessThanOrEqual(selectedControl.getBoundingClientRect().bottom);
   });
 
-  it('loads the selected merchant branches so orders can be scoped', () => {
-    component.selectMerchantForFilter(merchant);
-    fixture.detectChanges();
+ it("loads the selected merchant branches so orders can be scoped", () => {
+   const notifications = TestBed.inject(NotificationService);
+   const errorSpy = spyOn(notifications, "apiError");
 
-    expect(merchantApi.getBranches).toHaveBeenCalledWith(
-      component.selectedEnvironment,
-      component.apiVersion,
-      merchant.merchantId
-    );
-    expect(component.branches.map(item => item.name)).toEqual(['Central']);
-    expect(component.supportDataError).toBe('');
-  });
+   component.selectMerchantForFilter(merchant);
+   fixture.detectChanges();
+
+   expect(merchantApi.getBranches).toHaveBeenCalledWith(
+     component.selectedEnvironment,
+     component.apiVersion,
+     merchant.merchantId,
+   );
+
+   expect(component.branches.map((item) => item.name)).toEqual(["Central"]);
+
+   expect(errorSpy).not.toHaveBeenCalled();
+ });
 
   it('shows a styled, keyboard-operable branch options popover and loads the selected branch', () => {
     component.selectMerchantForFilter(merchant);
@@ -256,3 +295,5 @@ describe('OrderManagementComponent — minor-unit amounts', () => {
     expect(component.formatMinorAmount(undefined, 'EUR')).toBe('—');
   });
 });
+
+

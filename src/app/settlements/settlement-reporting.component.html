@@ -64,7 +64,7 @@
     </div>
   </section>
 
-  <section class="settlement-summary-section" *ngIf="summary || loadingSummary || errorSummary" aria-label="Settlement summary">
+  <section class="settlement-summary-section" *ngIf="summary || loadingSummary || loadFailedSummary" aria-label="Settlement summary">
     <div class="settlement-section-heading">
       <div>
         <h2>Overview</h2>
@@ -76,7 +76,7 @@
       <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       Loading summary…
     </div>
-    <div class="alert alert-danger settlement-alert" *ngIf="errorSummary">{{ errorSummary }}</div>
+
 
     <div class="settlement-summary-grid" *ngIf="summary && !loadingSummary">
       <article class="settlement-stat-card">
@@ -121,7 +121,7 @@
     </div>
   </section>
 
-  <section class="card settlement-panel settlement-results-panel" *ngIf="page || loadingList || errorList">
+  <section class="card settlement-panel settlement-results-panel" *ngIf="page || loadingList || loadFailedList">
     <div class="settlement-results-heading">
       <div>
         <h2>Settlement activity</h2>
@@ -140,9 +140,9 @@
     </div>
 
     <div class="settlement-alerts">
-      <div *ngIf="refreshMessage" class="alert alert-success">{{ refreshMessage }}</div>
-      <div *ngIf="refreshError" class="alert alert-danger">{{ refreshError }}</div>
-      <div *ngIf="errorList" class="alert alert-danger">{{ errorList }}</div>
+
+
+
     </div>
 
     <div *ngIf="loadingList" class="settlement-feedback settlement-loading">
@@ -150,7 +150,7 @@
       Loading settlements…
     </div>
 
-    <ng-container *ngIf="page && !loadingList && !errorList">
+    <ng-container *ngIf="page && !loadingList && !loadFailedList">
       <div class="settlement-table-wrap" *ngIf="rows.length > 0">
         <table class="table table-hover mb-0 settlement-table">
           <thead>

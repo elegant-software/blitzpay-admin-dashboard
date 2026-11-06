@@ -1,5 +1,6 @@
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { DisplayDatePipe } from '../pipes/display-date.pipe';
@@ -24,6 +25,7 @@ import { environment } from '../../environments/environment';
   styleUrl: './merchant-catalog.component.css'
 })
 export class MerchantCatalogComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   private searchRequestId = 0;
 
   selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
@@ -39,7 +41,7 @@ export class MerchantCatalogComponent implements OnInit {
   searchTotalElements = 0;
   searchLoading = false;
   searchAttempted = false;
-  errorMessage = '';
+  searchFailed = false;
   statusMessage = '';
 
   verticals: MerchantVerticalResponse[] = [];
@@ -84,7 +86,7 @@ export class MerchantCatalogComponent implements OnInit {
 
   runCatalogSearch(page = 0): void {
     const requestId = ++this.searchRequestId;
-    this.errorMessage = '';
+    this.searchFailed = false;
     this.statusMessage = '';
     this.searchLoading = true;
     this.searchAttempted = true;
@@ -117,7 +119,7 @@ export class MerchantCatalogComponent implements OnInit {
       error: (error) => {
         if (requestId !== this.searchRequestId) return;
         this.searchLoading = false;
-        this.errorMessage = this.toMessage(error, 'Search failed. Please try again.');
+        this.searchFailed = true; this.notifications.apiError(error, 'Search failed. Please try again.');
       }
     });
   }
@@ -163,8 +165,4 @@ export class MerchantCatalogComponent implements OnInit {
     return this.verticals.find(v => v.code === code)?.displayName ?? code;
   }
 
-  private toMessage(error: unknown, fallback: string): string {
-    const body = (error as { error?: { detail?: string; message?: string } })?.error;
-    return body?.detail || body?.message || fallback;
-  }
 }

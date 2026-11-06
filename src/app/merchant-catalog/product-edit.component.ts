@@ -1,5 +1,6 @@
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
@@ -25,6 +26,7 @@ import { environment } from '../../environments/environment';
   styleUrl: './merchant-catalog.component.css'
 })
 export class ProductEditComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   readonly selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   readonly apiVersion = 'v1';
 
@@ -102,7 +104,7 @@ export class ProductEditComponent implements OnInit {
       },
       error: (error) => {
         this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Failed to load product.');
+        this.notifications.apiError(error, 'Failed to load product.');
       }
     });
   }
@@ -155,7 +157,7 @@ export class ProductEditComponent implements OnInit {
 
     this.merchantApi.updateProduct(this.selectedEnvironment, this.apiVersion, this.merchantId, this.productId, formData).subscribe({
       next: () => { this.saving = false; this.router.navigate(['/merchants', this.merchantId]); },
-      error: (error) => { this.saving = false; this.errorMessage = this.toMessage(error, 'Failed to save product.'); }
+      error: (error) => { this.saving = false; this.notifications.apiError(error, 'Failed to save product.'); }
     });
   }
 
@@ -175,7 +177,7 @@ export class ProductEditComponent implements OnInit {
       description: row.description.trim() || undefined,
     }).subscribe({
       next: (saved) => Object.assign(row, toTranslationRow(row.language, saved)),
-      error: (error) => { row.saving = false; row.error = this.toMessage(error, 'Failed to save translation.'); }
+      error: (error) => { row.saving = false; this.notifications.apiError(error, 'Failed to save translation.'); }
     });
   }
 
@@ -186,13 +188,8 @@ export class ProductEditComponent implements OnInit {
     row.error = '';
     this.merchantApi.deleteProductTranslation(this.selectedEnvironment, this.apiVersion, this.merchantId, this.productId, row.language).subscribe({
       next: () => Object.assign(row, toTranslationRow(row.language)),
-      error: (error) => { row.saving = false; row.error = this.toMessage(error, 'Failed to delete translation.'); }
+      error: (error) => { row.saving = false; this.notifications.apiError(error, 'Failed to delete translation.'); }
     });
   }
 
-  private toMessage(error: unknown, fallback: string): string {
-    const body = (error as { error?: { detail?: string; message?: string; error?: unknown } })?.error;
-    const apiError = typeof body?.error === 'string' ? body.error : undefined;
-    return body?.detail || body?.message || apiError || fallback;
-  }
 }

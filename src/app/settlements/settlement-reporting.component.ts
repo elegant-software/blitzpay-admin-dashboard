@@ -1,5 +1,6 @@
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
@@ -24,6 +25,7 @@ import {
   styleUrl: './settlement-reporting.component.css',
 })
 export class SettlementReportingComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   readonly environment: BackendEnvironment;
   readonly apiVersion = 'v1';
 
@@ -42,12 +44,11 @@ export class SettlementReportingComponent implements OnInit {
 
   loadingSummary = false;
   loadingList = false;
-  errorSummary: string | null = null;
-  errorList: string | null = null;
+  loadFailedSummary = false;
+  loadFailedList = false;
 
   refreshing = false;
-  refreshMessage: string | null = null;
-  refreshError: string | null = null;
+
 
   constructor(
     private readonly reportingService: SettlementReportingService,
@@ -127,8 +128,7 @@ export class SettlementReportingComponent implements OnInit {
     if (!this.merchantId.trim() || paymentRequestIds.length === 0) return;
 
     this.refreshing = true;
-    this.refreshMessage = null;
-    this.refreshError = null;
+
     this.reportingService
       .refreshVisible(
         this.environment,
@@ -139,15 +139,15 @@ export class SettlementReportingComponent implements OnInit {
       .subscribe({
         next: result => {
           this.refreshing = false;
-          this.refreshMessage =
+          this.notifications.success(
             `Stripe refresh complete: ${result.refreshed} refreshed, ` +
-            `${result.skipped} skipped, ${result.failed} failed.`;
+            `${result.skipped} skipped, ${result.failed} failed.`);
           this.loadSummary();
           this.loadList();
         },
         error: (error: HttpErrorResponse) => {
           this.refreshing = false;
-          this.refreshError = this.errorMessage(error, 'Failed to refresh settlements from Stripe.');
+          this.notifications.apiError(error, 'Failed to refresh settlements from Stripe.');
         },
       });
   }
@@ -159,7 +159,7 @@ export class SettlementReportingComponent implements OnInit {
 
   private loadSummary(): void {
     this.loadingSummary = true;
-    this.errorSummary = null;
+    this.loadFailedSummary = false;
     this.reportingService
       .getSummary(this.environment, this.apiVersion, this.merchantId.trim(), this.from, this.to)
       .subscribe({
@@ -167,8 +167,8 @@ export class SettlementReportingComponent implements OnInit {
           this.summary = data;
           this.loadingSummary = false;
         },
-        error: () => {
-          this.errorSummary = 'Failed to load settlement summary.';
+        error: (error) => {
+          this.loadFailedSummary = true; this.notifications.apiError(error, 'Failed to load settlement summary.');
           this.loadingSummary = false;
         },
       });
@@ -176,7 +176,7 @@ export class SettlementReportingComponent implements OnInit {
 
   private loadList(): void {
     this.loadingList = true;
-    this.errorList = null;
+    this.loadFailedList = false;
     this.reportingService
       .getList(
         this.environment,
@@ -192,8 +192,8 @@ export class SettlementReportingComponent implements OnInit {
           this.page = data;
           this.loadingList = false;
         },
-        error: () => {
-          this.errorList = 'Failed to load settlement list.';
+        error: (error) => {
+          this.loadFailedList = true; this.notifications.apiError(error, 'Failed to load settlement list.');
           this.loadingList = false;
         },
       });
@@ -217,11 +217,4 @@ export class SettlementReportingComponent implements OnInit {
     return d.toISOString().slice(0, 10);
   }
 
-  private errorMessage(error: HttpErrorResponse, fallback: string): string {
-    return error.error?.error?.detail
-      ?? error.error?.detail
-      ?? error.error?.error?.message
-      ?? error.error?.message
-      ?? fallback;
-  }
 }

@@ -1,5 +1,6 @@
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../environments/environment';
 import { EnvironmentKey, MenuLanguage, ProductCategory } from '../models/merchant-catalog.models';
@@ -41,7 +42,7 @@ import { getEnvironmentByKey } from '../services/merchant-environment.service';
               <button class="btn btn-sm btn-outline-danger" type="button" *ngIf="row.exists" [disabled]="row.saving" (click)="delete(row)">Delete</button>
             </div>
           </div>
-          <div class="alert alert-danger mb-3" *ngIf="dialogError">{{ dialogError }}</div>
+
           <div class="dialog-actions">
             <button class="btn btn-outline-secondary" type="button" (click)="close()">Done</button>
           </div>
@@ -51,6 +52,7 @@ import { getEnvironmentByKey } from '../services/merchant-environment.service';
   `
 })
 export class CategoryTranslationsDialogComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   @Input({ required: true }) merchantId = '';
   @Input({ required: true }) category!: ProductCategory;
   @Input() supportedLanguages: string[] = [];
@@ -62,7 +64,7 @@ export class CategoryTranslationsDialogComponent implements OnInit {
 
   rows: TranslationRow[] = [];
   loading = false;
-  dialogError = '';
+
 
   constructor(private readonly merchantApi: MerchantApiService) {}
 
@@ -72,13 +74,13 @@ export class CategoryTranslationsDialogComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.dialogError = '';
+
     this.merchantApi.getCategoryTranslations(this.selectedEnvironment, this.apiVersion, this.merchantId, this.category.id).subscribe({
       next: (translations) => {
         this.rows = this.supportedLanguages.map((language) => toTranslationRow(language, translations.find((t) => t.language === language)));
         this.loading = false;
       },
-      error: (error) => { this.loading = false; this.dialogError = toMessage(error, 'Failed to load translations.'); }
+      error: (error) => { this.loading = false; this.notifications.apiError(error, 'Failed to load translations.'); }
     });
   }
 
@@ -95,7 +97,7 @@ export class CategoryTranslationsDialogComponent implements OnInit {
       name: row.name.trim(),
     }).subscribe({
       next: (saved) => Object.assign(row, toTranslationRow(row.language, saved)),
-      error: (error) => { row.saving = false; row.error = toMessage(error, 'Failed to save translation.'); }
+      error: (error) => { row.saving = false; this.notifications.apiError(error, 'Failed to save translation.'); }
     });
   }
 
@@ -106,15 +108,9 @@ export class CategoryTranslationsDialogComponent implements OnInit {
     row.error = '';
     this.merchantApi.deleteCategoryTranslation(this.selectedEnvironment, this.apiVersion, this.merchantId, this.category.id, row.language).subscribe({
       next: () => Object.assign(row, toTranslationRow(row.language)),
-      error: (error) => { row.saving = false; row.error = toMessage(error, 'Failed to delete translation.'); }
+      error: (error) => { row.saving = false; this.notifications.apiError(error, 'Failed to delete translation.'); }
     });
   }
 
   close(): void { this.closed.emit(); }
-}
-
-function toMessage(error: unknown, fallback: string): string {
-  const body = (error as { error?: { detail?: string; message?: string; error?: unknown } })?.error;
-  const apiError = typeof body?.error === 'string' ? body.error : undefined;
-  return body?.detail || body?.message || apiError || fallback;
 }

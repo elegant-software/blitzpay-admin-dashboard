@@ -12,7 +12,6 @@
   </header>
 
   <div class="alert alert-danger orders-alert" *ngIf="errorMessage" role="alert">{{ errorMessage }}</div>
-  <div class="alert alert-success orders-alert" *ngIf="statusMessage" role="status">{{ statusMessage }}</div>
 
   <section class="card orders-filter-card" aria-labelledby="orders-scope-title">
     <div class="orders-filter-heading">
@@ -104,8 +103,8 @@
             </button>
           </div>
         </div>
-        <span *ngIf="supportDataError" class="orders-field-error" role="alert">{{ supportDataError }}</span>
-        <span *ngIf="selectedMerchantItem && !supportDataLoading && !supportDataError && !branches.length" class="orders-field-hint">No branches are available for this merchant.</span>
+
+        <span *ngIf="selectedMerchantItem && !supportDataLoading && !supportDataFailed && !branches.length" class="orders-field-hint">No branches are available for this merchant.</span>
       </div>
 
       <div class="orders-filter-actions">
@@ -431,9 +430,9 @@
             <span class="create-order-empty-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M7 3h10l3 3v15H4V3h3ZM8 10h8M8 14h8M8 18h5" /></svg>
             </span>
-            <strong>{{ productsLoading ? 'Loading branch products…' : (productsLoadError ? 'Products could not be loaded' : (createBranchId ? (products.length ? 'No items added yet' : 'No products available') : 'Choose a branch to get started')) }}</strong>
-            <span *ngIf="!productsLoading && productsLoadError" role="alert">{{ productsLoadError }}</span>
-            <span *ngIf="!productsLoading && !productsLoadError">{{ createBranchId ? (products.length ? 'Add products to build this order.' : 'This branch has no products to order.') : 'Select the branch that will fulfill this order.' }}</span>
+            <strong>{{ productsLoading ? 'Loading branch products…' : (productsLoadFailed ? 'Products could not be loaded' : (createBranchId ? (products.length ? 'No items added yet' : 'No products available') : 'Choose a branch to get started')) }}</strong>
+            <span *ngIf="!productsLoading && productsLoadFailed" role="alert">Try selecting the branch again.</span>
+            <span *ngIf="!productsLoading && !productsLoadFailed">{{ createBranchId ? (products.length ? 'Add products to build this order.' : 'This branch has no products to order.') : 'Select the branch that will fulfill this order.' }}</span>
           </div>
 
           <div *ngIf="createItems.length > 0" class="create-order-item-list">

@@ -1,6 +1,7 @@
 import { BranchPreparationComponent } from './branch-preparation.component';
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Branch, EnvironmentKey, UpdateBranchRequest } from '../models/merchant-catalog.models';
@@ -20,6 +21,7 @@ import { exceedsCapacity, seatedCapacity } from '../tables/floor-plan';
 export class BranchEditComponent implements OnInit {
   @ViewChild(BranchPreparationComponent) preparation?: BranchPreparationComponent;
   canLeave(): boolean { return this.preparation?.canLeave() ?? true; }
+  private readonly notifications = inject(NotificationService);
   readonly selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   readonly apiVersion = 'v1';
 
@@ -75,7 +77,7 @@ export class BranchEditComponent implements OnInit {
       },
       error: (error) => {
         this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Failed to load branch.');
+        this.notifications.apiError(error, 'Failed to load branch.');
       }
     });
   }
@@ -143,7 +145,7 @@ export class BranchEditComponent implements OnInit {
 
     this.merchantApi.updateBranch(this.selectedEnvironment, this.apiVersion, this.merchantId, this.branchId, payload).subscribe({
       next: () => { this.saving = false; this.router.navigate(['/merchants', this.merchantId]); },
-      error: (error) => { this.saving = false; this.errorMessage = this.toMessage(error, 'Failed to save branch.'); }
+      error: (error) => { this.saving = false; this.notifications.apiError(error, 'Failed to save branch.'); }
     });
   }
 
@@ -156,8 +158,4 @@ export class BranchEditComponent implements OnInit {
 
   cancel(): void { this.router.navigate(['/merchants', this.merchantId]); }
 
-  private toMessage(error: unknown, fallback: string): string {
-    const body = (error as { error?: { detail?: string; message?: string } })?.error;
-    return body?.detail || body?.message || fallback;
-  }
 }

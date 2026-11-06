@@ -1,3 +1,4 @@
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
@@ -37,6 +38,7 @@ const byName = (left: { name: string }, right: { name: string }) =>
   styleUrls: ['../merchant-catalog/merchant-catalog.component.css', './branch-tables.component.css']
 })
 export class BranchTablesComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   private readonly merchantApi = inject(MerchantApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -63,7 +65,7 @@ export class BranchTablesComponent implements OnInit {
   busy = false;
   uploading = false;
   errorMessage = '';
-  notice = '';
+
 
   newTableNames = '';
   newTableSeats = '';
@@ -137,7 +139,7 @@ export class BranchTablesComponent implements OnInit {
       this.tables = [...this.tables, ...created];
       this.newTableNames = '';
       this.newTableSeats = '';
-      this.notice = created.length === 1 ? `Added table ${created[0].name}.` : `Added ${created.length} tables.`;
+      this.notifications.success(created.length === 1 ? `Added table ${created[0].name}.` : `Added ${created.length} tables.`);
     });
   }
 
@@ -152,7 +154,7 @@ export class BranchTablesComponent implements OnInit {
     if (this.busy || !confirm(`Delete table ${table.name}? Its QR code and NFC tag stop working.`)) return;
     this.run(this.merchantApi.deleteTable(this.env, this.apiVersion, this.merchantId, this.branchId, table.id), 'Failed to delete the table.', () => {
       this.tables = this.tables.filter((candidate) => candidate.id !== table.id);
-      this.notice = `Deleted table ${table.name}.`;
+      this.notifications.success(`Deleted table ${table.name}.`);
     }, (error) => error instanceof HttpErrorResponse && error.status === 409
       ? `Table ${table.name} has orders, so it cannot be deleted. Deactivate it instead.`
       : null);
@@ -191,8 +193,8 @@ export class BranchTablesComponent implements OnInit {
       switchMap((upload) => this.merchantApi.uploadMerchantLogo(upload.uploadUrl, file)),
       switchMap(() => this.merchantApi.getFloorPlans(this.env, this.apiVersion, this.merchantId, this.branchId))
     ).subscribe({
-      next: (floorPlans) => { this.uploading = false; this.floorPlans = floorPlans; this.notice = `Picture of ${floorPlan.name} updated.`; },
-      error: (error) => { this.uploading = false; this.errorMessage = this.toMessage(error, 'Failed to upload the picture.'); }
+      next: (floorPlans) => { this.uploading = false; this.floorPlans = floorPlans; this.notifications.success(`Picture of ${floorPlan.name} updated.`); },
+      error: (error) => { this.uploading = false; this.notifications.apiError(error, 'Failed to upload the picture.'); }
     });
   }
 
@@ -293,7 +295,7 @@ export class BranchTablesComponent implements OnInit {
       },
       error: (error) => {
         this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Failed to load the tables of this branch.');
+        this.notifications.apiError(error, 'Failed to load the tables of this branch.');
       }
     });
   }
@@ -311,24 +313,16 @@ export class BranchTablesComponent implements OnInit {
   ): void {
     this.busy = true;
     this.errorMessage = '';
-    this.notice = '';
+
     call$.subscribe({
       next: (result) => { this.busy = false; onSuccess(result); },
       error: (error) => {
         this.busy = false;
         onError?.();
-        this.errorMessage = specialMessage?.(error) ?? this.toMessage(error, fallback);
+        this.notifications.apiError(error, specialMessage?.(error) ?? fallback);
       }
     });
   }
 
   /** Server detail first (CONSTITUTION §VIII); a 404 message would carry an ID, so it gets a plain sentence instead. */
-  private toMessage(error: unknown, fallback: string): string {
-    const httpError = error as HttpErrorResponse;
-    if (httpError?.status === 0) return 'Could not reach the server. Check your connection and try again.';
-    if (httpError?.status === 404) return 'Not found. It may have been deleted; reload the page.';
-    if (httpError?.status === 403) return 'Only a Merchant Manager of this merchant or a platform admin can change tables.';
-    const body = httpError?.error as { detail?: string; message?: string } | null | undefined;
-    return body?.detail || body?.message || fallback;
-  }
 }

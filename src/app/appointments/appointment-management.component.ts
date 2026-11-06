@@ -1,8 +1,8 @@
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { HttpErrorResponse } from '@angular/common/http';
 import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import {
   AppointmentFormModel,
@@ -38,6 +38,7 @@ type AppointmentDialog = 'create' | 'detail' | 'reschedule' | 'override' | 'edit
   styleUrl: './appointment-management.component.css'
 })
 export class AppointmentManagementComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   apiVersion = 'v1';
 
@@ -57,7 +58,7 @@ export class AppointmentManagementComponent implements OnInit {
 
   loading = false;
   errorMessage = '';
-  statusMessage = '';
+
 
   selectedAppointment: AppointmentResponse | null = null;
   activeDialog: AppointmentDialog = null;
@@ -175,7 +176,7 @@ export class AppointmentManagementComponent implements OnInit {
 
     this.merchantId = merchantId;
     this.errorMessage = '';
-    this.statusMessage = '';
+
     this.loading = true;
     this.appointments = [];
     this.filteredAppointments = [];
@@ -199,7 +200,7 @@ export class AppointmentManagementComponent implements OnInit {
         this.loading = false;
         this.appointments = appointments;
         this.applyStatusFilter();
-        this.statusMessage = `Loaded ${appointments.length} appointment${appointments.length === 1 ? '' : 's'}.`;
+
 
         if (this.branches.length === 0 && this.categories.length === 0 && this.products.length === 0) {
           this.loadSupportData(merchantId);
@@ -207,7 +208,7 @@ export class AppointmentManagementComponent implements OnInit {
       },
       error: (error) => {
         this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Unable to load appointments.');
+        this.notifications.apiError(error, 'Unable to load appointments.');
       }
     });
   }
@@ -226,7 +227,7 @@ export class AppointmentManagementComponent implements OnInit {
     this.categories = [];
     this.products = [];
     this.errorMessage = '';
-    this.statusMessage = '';
+
     this.closeDialog(true);
   }
 
@@ -346,11 +347,11 @@ export class AppointmentManagementComponent implements OnInit {
           this.loading = false;
           this.updateAppointmentInList(updated);
           this.closeDialog(true);
-          this.statusMessage = 'Appointment updated.';
+          this.notifications.success('Appointment updated.');
         },
         error: (error) => {
           this.loading = false;
-          this.dialogError = this.toMessage(error, 'Unable to update appointment.');
+          this.notifications.apiError(error, 'Unable to update appointment.');
         }
       });
   }
@@ -398,11 +399,11 @@ export class AppointmentManagementComponent implements OnInit {
         this.appointments = [appointment, ...this.appointments];
         this.applyStatusFilter();
         this.closeDialog(true);
-        this.statusMessage = 'Appointment created.';
+        this.notifications.success('Appointment created.');
       },
       error: (error) => {
         this.loading = false;
-        this.dialogError = this.toMessage(error, 'Unable to create appointment.');
+        this.notifications.apiError(error, 'Unable to create appointment.');
       }
     });
   }
@@ -418,11 +419,11 @@ export class AppointmentManagementComponent implements OnInit {
       next: () => {
         this.loading = false;
         this.updateAppointmentInList({ ...appointment, status: 'CANCELLED' });
-        this.statusMessage = 'Appointment cancelled.';
+        this.notifications.success('Appointment cancelled.');
       },
       error: (error) => {
         this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Unable to cancel appointment.');
+        this.notifications.apiError(error, 'Unable to cancel appointment.');
       }
     });
   }
@@ -438,11 +439,11 @@ export class AppointmentManagementComponent implements OnInit {
       next: (updated) => {
         this.loading = false;
         this.updateAppointmentInList(updated);
-        this.statusMessage = 'Appointment marked as complete.';
+        this.notifications.success('Appointment marked as complete.');
       },
       error: (error) => {
         this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Unable to complete appointment.');
+        this.notifications.apiError(error, 'Unable to complete appointment.');
       }
     });
   }
@@ -479,11 +480,11 @@ export class AppointmentManagementComponent implements OnInit {
           this.loading = false;
           this.updateAppointmentInList(updated);
           this.closeDialog(true);
-          this.statusMessage = 'Appointment rescheduled.';
+          this.notifications.success('Appointment rescheduled.');
         },
         error: (error) => {
           this.loading = false;
-          this.dialogError = this.toMessage(error, 'Unable to reschedule appointment.');
+          this.notifications.apiError(error, 'Unable to reschedule appointment.');
         }
       });
   }
@@ -525,11 +526,11 @@ export class AppointmentManagementComponent implements OnInit {
           this.loading = false;
           this.updateAppointmentInList(updated);
           this.closeDialog(true);
-          this.statusMessage = 'Appointment override applied.';
+          this.notifications.success('Appointment override applied.');
         },
         error: (error) => {
           this.loading = false;
-          this.dialogError = this.toMessage(error, 'Unable to apply override.');
+          this.notifications.apiError(error, 'Unable to apply override.');
         }
       });
   }
@@ -635,12 +636,4 @@ export class AppointmentManagementComponent implements OnInit {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
-  toMessage(error: unknown, fallback: string): string {
-    const httpError = error as HttpErrorResponse;
-    if (httpError?.status === 403) {
-      return 'Access denied: your account does not have the appointment management role for this merchant. Ask a platform engineer to grant it via the backend.';
-    }
-    const body = httpError?.error as { detail?: string; message?: string } | undefined;
-    return body?.detail || body?.message || fallback;
-  }
 }
