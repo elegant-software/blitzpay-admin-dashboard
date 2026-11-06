@@ -6,6 +6,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { WebCatalogComponent } from './web-catalog.component';
 import { StorefrontSessionService } from '../services/storefront-session.service';
+import { NotificationService } from '../notifications/notification.service';
 
 describe('WebCatalogComponent', () => {
   const api = jasmine.createSpyObj<StorefrontApiService>('StorefrontApiService', [
@@ -257,15 +258,20 @@ describe('WebCatalogComponent', () => {
     expect(TestBed.inject(StorefrontSessionService).itemCount).toBe(1);
   });
 
-  it('shows a language-load error and keeps the previous products available', async () => {
+  it('shows one safe server-error toast and keeps the previous products available', async () => {
     const harness = await RouterTestingHarness.create();
     const component = await harness.navigateByUrl('/m/merchant-44/b/branch-12', WebCatalogComponent);
+    const toasts: string[] = [];
+    TestBed.inject(NotificationService).messageObserver.subscribe(message => {
+      for (const item of Array.isArray(message) ? message : [message]) toasts.push(item.detail ?? '');
+    });
     const request = new Subject<any[]>();
     api.getActiveProducts.and.returnValue(request);
     component.chooseLanguage('ar');
     request.error(new HttpErrorResponse({ status: 503, error: { detail: 'Translations temporarily unavailable' } }));
     harness.detectChanges();
-    expect(harness.routeNativeElement!.textContent).toContain('Translations temporarily unavailable');
+    expect(harness.routeNativeElement!.textContent).toContain('Unable to load this branch catalog.');
+    expect(toasts).toEqual(['Unable to load this branch catalog.']);
     expect(harness.routeNativeElement!.textContent).toContain('Coffee');
     expect(harness.routeNativeElement!.querySelector('[data-testid="catalog-skeleton"]')).toBeNull();
   });

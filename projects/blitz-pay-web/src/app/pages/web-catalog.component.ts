@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { AfterViewChecked, Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -11,6 +10,7 @@ import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
 import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from '../services/storefront-language.service';
 import { StorefrontTableService } from '../table/storefront-table.service';
+import { NotificationService } from '../notifications/notification.service';
 
 @Component({
   selector: 'web-catalog',
@@ -171,6 +171,7 @@ import { StorefrontTableService } from '../table/storefront-table.service';
   `
 })
 export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy {
+  private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
   private readonly host = inject(ElementRef<HTMLElement>);
@@ -209,6 +210,7 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
     }
     if (!this.cart.useScope(this.merchantId, this.branchId)) {
       this.errorMessage = 'Your cart contains items from another location.';
+      this.notifications.warning(this.errorMessage);
     } else {
       this.query = this.cart.query;
       this.category = this.cart.category;
@@ -357,7 +359,10 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
   }
 
   addProduct(product: StorefrontProduct): void {
-    if (this.cart.useScope(this.merchantId, this.branchId)) this.cart.add(product);
+    if (this.cart.useScope(this.merchantId, this.branchId)) {
+      this.cart.add(product);
+      this.notifications.success('Added to your cart.');
+    }
   }
 
   productQuantity(productId: string): number {
@@ -371,11 +376,7 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
   }
 
   private toMessage(error: unknown, fallback: string): string {
-    if (error instanceof HttpErrorResponse) {
-      const detail = error.error?.error?.detail ?? error.error?.detail ?? error.error?.message;
-      if (typeof detail === 'string' && detail.trim()) return detail;
-    }
-    return fallback;
+    return this.notifications.apiError(error, fallback);
   }
 
   private openLanguageMenu(index: number): void {

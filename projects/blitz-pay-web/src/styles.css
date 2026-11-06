@@ -37,6 +37,14 @@
   color-scheme: dark;
 }
 
+.app-toast {
+  top: max(1rem, env(safe-area-inset-top)) !important;
+  max-width: calc(100vw - 2rem);
+  font-family: inherit;
+}
+.app-toast .p-toast-message-text { min-width: 0; overflow-wrap: anywhere; }
+.app-toast .p-toast-close-button { min-width: 44px; min-height: 44px; }
+
 button, select, input:not([type=radio]) { min-height: 44px; }
 input, select { font-size: max(16px, 1em); max-width: 100%; }
 button, a, input, select { touch-action: manipulation; }

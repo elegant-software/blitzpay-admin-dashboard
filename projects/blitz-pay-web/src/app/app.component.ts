@@ -4,11 +4,12 @@ import { StorefrontPwaService } from './services/storefront-pwa.service';
 import { RouterOutlet } from '@angular/router';
 import { StorefrontThemeService } from './services/storefront-theme.service';
 import { environment } from '../environments/environment';
+import { NotificationComponent } from './notifications/notification.component';
 
 @Component({
   selector: 'web-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule],
+  imports: [RouterOutlet, CommonModule, NotificationComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })

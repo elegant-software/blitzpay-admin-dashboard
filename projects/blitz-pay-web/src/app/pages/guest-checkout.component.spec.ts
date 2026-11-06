@@ -1,12 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { NEVER, of } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
 import { LocationUnavailableError, StorefrontLocationService } from '../table/storefront-location.service';
 import { StorefrontTableService } from '../table/storefront-table.service';
 import { GuestCheckoutComponent } from './guest-checkout.component';
+import { NotificationService } from '../notifications/notification.service';
 
 describe('GuestCheckoutComponent', () => {
   const api = jasmine.createSpyObj<StorefrontApiService>('StorefrontApiService', [
@@ -203,6 +205,37 @@ describe('GuestCheckoutComponent at a Table', () => {
     await harness.fixture.whenStable();
 
     expect(api.createOrder.calls.mostRecent().args[0].guestCount).toBeUndefined();
+  });
+
+  it('shows an actionable accuracy rejection beside Place order and preserves the cart for retry', async () => {
+    const toasts: string[] = [];
+    TestBed.inject(NotificationService).messageObserver.subscribe(message => {
+      for (const item of Array.isArray(message) ? message : [message]) toasts.push(item.detail ?? '');
+    });
+    const detail = 'customerLocation accuracy is insufficient for WALK_IN_ORDERING';
+    api.createOrder.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 400, error: { error: detail }
+    })));
+    const harness = await open();
+    harness.routeNativeElement!.querySelector<HTMLInputElement>('[data-testid="pay-cash"]')!.click();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+    harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-testid="confirm-payment"]')!.click();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+
+    const panel = harness.routeNativeElement!.querySelector('.payment-panel')!;
+    const alert = panel.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain('Your location is too approximate');
+    expect(alert?.textContent).toContain('precise location');
+    expect(alert?.textContent).not.toContain('WALK_IN_ORDERING');
+    expect(toasts.length).toBe(1);
+    expect(toasts[0]).toContain('precise location');
+    const button = panel.querySelector<HTMLButtonElement>('[data-testid="confirm-payment"]')!;
+    expect(button.disabled).toBeFalse();
+    expect(button.textContent).toContain('Place order');
+    expect(TestBed.inject(StorefrontSessionService).itemCount).toBe(1);
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('asks for location access and creates no order when it is denied', async () => {
