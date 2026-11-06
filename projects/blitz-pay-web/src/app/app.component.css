@@ -22,6 +22,15 @@
 .brand-mark svg { width: 30px; height: 30px; fill: #fff; }
 .brand-wordmark { font-size: 1.35rem; font-weight: 750; letter-spacing: -.055em; line-height: 1.15; }
 .brand-wordmark > span { display: block; color: var(--storefront-muted); font-size: .6rem; font-weight: 500; letter-spacing: .035em; margin-top: .25rem; }
+.boname-brand { flex-direction: column; align-items: flex-start; gap: .15rem; padding-block: .35rem; }
+.boname-wordmark { display: block; width: clamp(120px, 15vw, 170px); height: auto; object-fit: contain; }
+.brand-caption { color: var(--storefront-muted); font-size: .55rem; font-weight: 650; letter-spacing: .2em; padding-left: .35rem; }
+.boname-wordmark-fallback { color: var(--storefront-primary); font: 2.4rem Georgia, serif; }
+:host-context([data-storefront-brand="bona-me"]) .storefront-header { border-top: 3px solid #926b1d; }
+:host-context([data-storefront-brand="bona-me"]) .guest-label { border-radius: .3rem; text-transform: uppercase; letter-spacing: .07em; font-size: .64rem; }
+:host-context([data-storefront-brand="bona-me"]) .header-note { font-size: .78rem; font-style: italic; }
+:host-context([data-storefront-brand="bona-me"]) .download-toggle { border-radius: .35rem; }
+:host-context([data-storefront-brand="bona-me"][data-theme="dark"]) .boname-wordmark { background: #fff9ef; padding: .2rem .45rem; border-radius: .25rem; }
 .header-note { font-size: .75rem; color: var(--storefront-muted); }
 .guest-label { display: inline-flex; align-items: center; gap: .4rem; color: var(--storefront-positive); background: var(--storefront-mint); border: 1px solid var(--storefront-stroke); border-radius: 999px; padding: .55rem .8rem; font-size: .72rem; font-weight: 600; white-space: nowrap; }
 .guest-label svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -33,7 +42,7 @@
 .pwa-install-actions { display: flex; align-items: center; gap: .5rem; flex: 0 0 auto; }
 .pwa-install-actions button { min-height: 44px; border-radius: .65rem; padding: .55rem .85rem; font: inherit; font-size: .78rem; cursor: pointer; }
 .pwa-install-button { color: #fff; background: var(--storefront-action); border: 1px solid var(--storefront-action); font-weight: 650; }
-.pwa-install-button:hover:not(:disabled) { background: #066c58; }
+.pwa-install-button:hover:not(:disabled) { background: var(--storefront-action-hover); }
 .pwa-install-button:disabled { cursor: not-allowed; opacity: .6; }
 .pwa-install-dismiss { color: var(--storefront-ink); background: transparent; border: 1px solid var(--storefront-stroke); }
 .pwa-install-actions button:focus-visible { outline: 3px solid var(--storefront-action); outline-offset: 2px; }

@@ -1,11 +1,16 @@
 <app-notifications />
 <header class="storefront-header">
   <div class="header-inner">
-    <a class="brand" href="/" aria-label="BlitzPay home">
+    <a class="brand boname-brand" href="/" aria-label="bona’me home" *ngIf="brand.isBonaMe(); else platformBrand">
+      <img *ngIf="!logoFailed; else logoFallback" class="boname-wordmark" [src]="brand.logoUrl" alt="bona’me" width="791" height="316" (error)="logoFailed = true" />
+      <ng-template #logoFallback><span class="boname-wordmark-fallback">bona’me</span></ng-template>
+      <span class="brand-caption">OUR HOUSE. YOUR TABLE.</span>
+    </a>
+    <ng-template #platformBrand><a class="brand" href="/" aria-label="BlitzPay home">
       <span class="brand-mark"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m18 5-11 13h8l-1 9 12-15h-9z"/></svg></span>
       <span class="brand-wordmark">BlitzPay<span>Order. Pay. Enjoy.</span></span>
-    </a>
-    <span class="header-note">More time for the good moments.</span>
+    </a></ng-template>
+    <span class="header-note">{{ brand.isBonaMe() ? 'Fresh from our kitchen. Made for your table.' : 'More time for the good moments.' }}</span>
     <button class="theme-toggle" type="button" data-testid="theme-toggle" [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'" [attr.title]="theme.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'" (click)="theme.toggle()">
       <svg *ngIf="theme.theme() === 'light'" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 13.2A8.5 8.5 0 0 1 10.8 3.5a8.5 8.5 0 1 0 9.7 9.7Z"/></svg>
       <svg *ngIf="theme.theme() === 'dark'" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg>

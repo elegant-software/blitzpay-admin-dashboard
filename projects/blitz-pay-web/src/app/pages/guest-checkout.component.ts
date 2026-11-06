@@ -19,6 +19,8 @@ import { CardPaymentForm, GuestPaymentService } from '../services/guest-payment.
 import { StorefrontTableService } from '../table/storefront-table.service';
 import { StorefrontLocationService } from '../table/storefront-location.service';
 import { NotificationService } from '../notifications/notification.service';
+import { StorefrontBrandService } from '../services/storefront-brand.service';
+import { MerchantLogoComponent } from '../components/merchant-logo.component';
 
 /** Online methods are paid now; CASH (only at a Table) is paid to staff, and the Order stays unpaid until they confirm it. */
 type GuestCheckoutChoice = StorefrontPaymentMethod | 'CASH';
@@ -26,10 +28,10 @@ type GuestCheckoutChoice = StorefrontPaymentMethod | 'CASH';
 @Component({
   selector: 'guest-checkout',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, MerchantLogoComponent],
   template: `
     <section class="merchant-hero compact">
-      <div class="merchant-logo"><span>{{ (merchant?.merchantName || 'M').charAt(0) }}</span></div>
+      <web-merchant-logo [merchant]="merchant" [merchantId]="merchantId" />
       <div>
         <p class="eyebrow">Guest checkout</p>
         <h1>Checkout securely</h1>
@@ -101,6 +103,7 @@ type GuestCheckoutChoice = StorefrontPaymentMethod | 'CASH';
   `
 })
 export class GuestCheckoutComponent implements OnInit {
+  private readonly brand = inject(StorefrontBrandService);
   private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
@@ -135,6 +138,7 @@ export class GuestCheckoutComponent implements OnInit {
   @ViewChild('cardHost') private cardHost?: ElementRef<HTMLElement>;
 
   ngOnInit(): void {
+    this.brand.useMerchant(this.merchantId);
     if (!this.cart.useScope(this.merchantId, this.branchId)) {
       this.errorMessage = 'Your cart contains items from another location.';
       this.notifications.warning(this.errorMessage);

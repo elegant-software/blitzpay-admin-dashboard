@@ -1,8 +1,8 @@
 <section class="welcome-hero" aria-labelledby="welcome-title">
   <div class="welcome-copy">
-    <p class="welcome-label"><span></span> A little less waiting. A lot more enjoying.</p>
-    <h1 id="welcome-title">Good food.<br><span>Your way.</span></h1>
-    <p class="welcome-intro">The menu, your order, and an easy way to pay.<br class="desktop-break"> All from the comfort of your table.</p>
+    <p class="welcome-label"><span></span> Willkommen bei bona’me</p>
+    <h1 id="welcome-title">Our house.<br><span>Your table.</span></h1>
+    <p class="welcome-intro">Fresh flavours. Good company. Make yourself at home.<br class="desktop-break"> Explore the menu, order, and enjoy your time together.</p>
     <div class="welcome-actions">
       <a *ngIf="cart.scope as scope; else gettingStarted" class="welcome-button" data-testid="return-menu" [routerLink]="['/m', scope.merchantId, 'b', scope.branchId]">
         Return to your menu <span aria-hidden="true">↗</span>
@@ -18,7 +18,7 @@
     <div class="scene-orbit"></div>
     <div class="scene-caption">A great meal starts here</div>
     <div class="menu-preview">
-      <div class="preview-top"><span class="preview-logo">B</span><span>AT YOUR TABLE</span><span>•••</span></div>
+      <div class="preview-top"><img class="preview-brand-logo" src="/bona-me-logo.png" alt="" width="791" height="316" /><span>AT YOUR TABLE</span><span>•••</span></div>
       <div class="meal-art">
         <div class="plate"><div class="salad"><i></i><i></i><i></i><i></i><i></i><i></i><b></b><b></b><b></b></div></div>
         <span class="meal-tag">Freshly made. Enjoyed together.</span>

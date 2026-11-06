@@ -7,6 +7,7 @@ import { StorefrontOrder, StorefrontPreparationStatus } from '../models/storefro
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
 import { NotificationService } from '../notifications/notification.service';
+import { StorefrontBrandService } from '../services/storefront-brand.service';
 
 const PREPARATION_LABELS: Record<StorefrontPreparationStatus, string> = {
   RECEIVED: 'Received',
@@ -42,6 +43,7 @@ const PREPARATION_LABELS: Record<StorefrontPreparationStatus, string> = {
   `
 })
 export class OrderConfirmationComponent implements OnInit, OnDestroy {
+  private readonly brand = inject(StorefrontBrandService);
   private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
@@ -97,6 +99,7 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
   }
 
   private apply(order: StorefrontOrder): void {
+    this.brand.useMerchant(order.merchantId);
     if (order.status === 'PAID' && !this.paid) this.notifications.success('Your payment has been confirmed.');
     if (order.preparationStatus === 'READY' && this.preparationStatus !== 'READY') this.notifications.info('Your order is ready for pickup.');
     this.paid = order.status === 'PAID';

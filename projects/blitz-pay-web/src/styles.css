@@ -9,6 +9,7 @@
   --storefront-warm: #fffaf0;
   --storefront-surface: #fff;
   --storefront-action: #087f68;
+  --storefront-action-hover: #066c58;
   --storefront-positive: #16634f;
   --storefront-glow: #dbeee5;
   --storefront-danger-bg: #fff1ef;
@@ -990,4 +991,91 @@ button:disabled {
   background: var(--storefront-warm);
   border: 1px solid var(--storefront-stroke);
   color: var(--storefront-ink);
+}
+
+/* bona’me: merchant-scoped tokens; the neutral palette above remains available to other merchants. */
+:root[data-storefront-brand="bona-me"] {
+  --storefront-ink: #29231b;
+  --storefront-muted: #756754;
+  --storefront-primary: #926b1d;
+  --storefront-mint: #f0e6d2;
+  --storefront-stroke: #e4d8c3;
+  --storefront-bg: #fff9ef;
+  --storefront-warm: #f7efdf;
+  --storefront-surface: #fffdf8;
+  --storefront-action: #634a23;
+  --storefront-action-hover: #49351a;
+  --storefront-positive: #634a23;
+  --storefront-glow: #f0e3c9;
+  font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+}
+
+:root[data-storefront-brand="bona-me"][data-theme="dark"] {
+  --storefront-ink: #f7edde;
+  --storefront-muted: #c4b399;
+  --storefront-primary: #dbb771;
+  --storefront-mint: #3b2e1e;
+  --storefront-stroke: #564633;
+  --storefront-bg: #211b15;
+  --storefront-warm: #30261c;
+  --storefront-surface: #2b231b;
+  --storefront-action: #785627;
+  --storefront-action-hover: #8b642c;
+  --storefront-positive: #e7c68b;
+  --storefront-glow: #392b1d;
+}
+
+:root[data-storefront-brand="bona-me"] body { background: var(--storefront-bg); }
+:root[data-storefront-brand="bona-me"] h1,
+:root[data-storefront-brand="bona-me"] .catalog-toolbar h2,
+:root[data-storefront-brand="bona-me"] .cart h2,
+:root[data-storefront-brand="bona-me"] .payment-panel h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -.035em;
+}
+:root[data-storefront-brand="bona-me"] .merchant-hero {
+  border-bottom: 1px solid var(--storefront-stroke);
+  padding-block: 1rem 2rem;
+  gap: 1.75rem;
+}
+:root[data-storefront-brand="bona-me"] .merchant-logo.boname-logo {
+  flex: 0 0 9rem;
+  width: 9rem;
+  height: 4.5rem;
+  padding: .45rem;
+  background: #fff9ef;
+  border-radius: .3rem;
+}
+:root[data-storefront-brand="bona-me"] .merchant-logo.boname-logo span { font: 1.8rem Georgia, serif; color: #634a23; }
+:root[data-storefront-brand="bona-me"] .merchant-hero h1 { font-size: clamp(2.4rem, 5vw, 3.5rem); }
+:root[data-storefront-brand="bona-me"] .eyebrow { font-size: .68rem; letter-spacing: .2em; }
+:root[data-storefront-brand="bona-me"] .surface { border-radius: .45rem; padding: 1.6rem; }
+:root[data-storefront-brand="bona-me"] .product-grid { gap: 1.25rem; }
+:root[data-storefront-brand="bona-me"] .product-card { border-radius: .35rem; padding: .75rem; gap: 1rem; }
+:root[data-storefront-brand="bona-me"] .product-image { border-radius: .2rem; height: 11rem; background: var(--storefront-warm); }
+:root[data-storefront-brand="bona-me"] .product-copy { padding-inline: .25rem; }
+:root[data-storefront-brand="bona-me"] .product-copy h3 { font-size: 1.1rem; line-height: 1.35; margin-block: .4rem; }
+:root[data-storefront-brand="bona-me"] .product-copy p { line-height: 1.65; }
+:root[data-storefront-brand="bona-me"] .product-copy strong { color: var(--storefront-primary); }
+:root[data-storefront-brand="bona-me"] .product-card.is-selected { background: var(--storefront-warm); }
+:root[data-storefront-brand="bona-me"] .add-button,
+:root[data-storefront-brand="bona-me"] .checkout-button,
+:root[data-storefront-brand="bona-me"] .checkout-link { border-radius: .3rem; letter-spacing: .03em; }
+:root[data-storefront-brand="bona-me"] :is(.add-button, .checkout-button, .checkout-link):hover:not(:disabled) { background: var(--storefront-action-hover); }
+:root[data-storefront-brand="bona-me"] .category-chips { gap: .6rem; padding-bottom: .5rem; }
+:root[data-storefront-brand="bona-me"] .category-chips button { border-radius: .25rem; padding: .6rem 1rem; font-weight: 600; }
+:root[data-storefront-brand="bona-me"] .fulfillment-label { display: block; width: fit-content; border-radius: .2rem; font-weight: 400; line-height: 1.5; }
+:root[data-storefront-brand="bona-me"] .table-note { border-left: 3px solid var(--storefront-primary); border-radius: .2rem; padding: 1rem 1.25rem; }
+:root[data-storefront-brand="bona-me"] .cart { border-top: 3px solid var(--storefront-primary); }
+:root[data-storefront-brand="bona-me"] .cart h2 { font-size: 1.65rem; }
+:root[data-storefront-brand="bona-me"] .overview-image { height: auto; min-height: 15rem; }
+@media (max-width: 600px) {
+  :root[data-storefront-brand="bona-me"] .merchant-hero { gap: 1rem; padding-bottom: 1.4rem; }
+  :root[data-storefront-brand="bona-me"] .merchant-logo.boname-logo { flex-basis: 6.5rem; width: 6.5rem; height: 3.8rem; }
+  :root[data-storefront-brand="bona-me"] .merchant-hero h1 { font-size: 2.1rem; }
+  :root[data-storefront-brand="bona-me"] .surface { padding: 1rem; }
+  :root[data-storefront-brand="bona-me"] .product-grid { gap: .8rem; }
+  :root[data-storefront-brand="bona-me"] .category-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .75rem; scroll-snap-type: x proximity; }
+  :root[data-storefront-brand="bona-me"] .category-chips button { flex: 0 0 auto; white-space: nowrap; scroll-snap-align: start; }
 }

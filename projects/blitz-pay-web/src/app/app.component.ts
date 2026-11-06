@@ -5,6 +5,7 @@ import { RouterOutlet } from '@angular/router';
 import { StorefrontThemeService } from './services/storefront-theme.service';
 import { environment } from '../environments/environment';
 import { NotificationComponent } from './notifications/notification.component';
+import { StorefrontBrandService } from './services/storefront-brand.service';
 
 @Component({
   selector: 'web-root',
@@ -14,6 +15,8 @@ import { NotificationComponent } from './notifications/notification.component';
   styleUrl: './app.component.css'
 })
 export class AppComponent implements AfterViewInit, OnDestroy {
+  readonly brand = inject(StorefrontBrandService);
+  logoFailed = false;
   readonly pwa = inject(StorefrontPwaService);
   readonly theme = inject(StorefrontThemeService);
   readonly environment = environment;
