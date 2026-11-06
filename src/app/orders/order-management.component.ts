@@ -1,5 +1,6 @@
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -33,6 +34,7 @@ type OrderFilterDropdown = 'status' | 'type' | null;
   styleUrl: './order-management.component.css'
 })
 export class OrderManagementComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   apiVersion = 'v1';
 
@@ -70,8 +72,8 @@ export class OrderManagementComponent implements OnInit {
 
   loading = false;
   errorMessage = '';
-  statusMessage = '';
-  supportDataError = '';
+
+  supportDataFailed = false;
 
   // Dialog
   activeDialog: OrderDialog = null;
@@ -81,7 +83,7 @@ export class OrderManagementComponent implements OnInit {
   // Support data
   products: Product[] = [];
   productsLoading = false;
-  productsLoadError = '';
+  productsLoadFailed = false;
   supportDataLoading = false;
 
   // Create form
@@ -126,7 +128,7 @@ export class OrderManagementComponent implements OnInit {
           };
           this.selectMerchantForFilter(item);
         },
-        error: (error) => { this.errorMessage = this.toMessage(error, 'Unable to load the selected merchant.'); }
+        error: (error) => { this.notifications.apiError(error, 'Unable to load the selected merchant.'); }
       });
     }
   }
@@ -158,14 +160,14 @@ export class OrderManagementComponent implements OnInit {
       },
       error: error => {
         this.merchantSearchLoading = false;
-        this.merchantSearchError = this.toMessage(error, 'Unable to search merchants.');
+        this.notifications.apiError(error, 'Unable to search merchants.');
       }
     });
   }
 
   selectMerchantForFilter(m: MerchantSearchResultItem): void {
     this.errorMessage = '';
-    this.statusMessage = '';
+
     this.branchDropdownOpen = false;
     this.selectedMerchantItem = m;
     this.merchantIdInput = m.merchantId;
@@ -198,7 +200,7 @@ export class OrderManagementComponent implements OnInit {
     this.filteredOrders = [];
     this.ordersLoaded = false;
     this.selectedBranchId = '';
-    this.supportDataError = '';
+    this.supportDataFailed = false;
     this.supportDataLoading = false;
     this.merchantSearchError = '';
     this.orderQuery = '';
@@ -268,7 +270,7 @@ export class OrderManagementComponent implements OnInit {
     }
 
     this.errorMessage = '';
-    this.statusMessage = '';
+
     this.loading = true;
     this.ordersLoaded = false;
     this.orders = [];
@@ -283,7 +285,7 @@ export class OrderManagementComponent implements OnInit {
       },
       error: (error) => {
         this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Unable to load orders.');
+        this.notifications.apiError(error, 'Unable to load orders.');
       }
     });
   }
@@ -293,7 +295,7 @@ export class OrderManagementComponent implements OnInit {
     this.statusFilter = '';
     this.typeFilter = '';
     this.errorMessage = '';
-    this.statusMessage = '';
+
     this.closeDialog(true);
   }
 
@@ -410,7 +412,7 @@ export class OrderManagementComponent implements OnInit {
   private loadSupportData(merchantId: string): void {
     const requestId = ++this.supportDataRequestId;
     this.supportDataLoading = true;
-    this.supportDataError = '';
+    this.supportDataFailed = false;
     this.merchantApi.getBranches(this.selectedEnvironment, this.apiVersion, merchantId).subscribe({
       next: branches => {
         if (requestId !== this.supportDataRequestId) return;
@@ -421,7 +423,7 @@ export class OrderManagementComponent implements OnInit {
         if (requestId !== this.supportDataRequestId) return;
         this.branches = [];
         this.supportDataLoading = false;
-        this.supportDataError = this.toMessage(error, 'Unable to load branches for this merchant.');
+        this.supportDataFailed = true; this.notifications.apiError(error, 'Unable to load branches for this merchant.');
       }
     });
   }
@@ -517,7 +519,7 @@ export class OrderManagementComponent implements OnInit {
     if (!this.merchantId) return;
     this.products = [];
     this.productsLoading = true;
-    this.productsLoadError = '';
+    this.productsLoadFailed = false;
     this.merchantApi.getProducts(this.selectedEnvironment, this.apiVersion, this.merchantId, branchId, false).subscribe({
       next: (products) => {
         this.products = products;
@@ -526,7 +528,7 @@ export class OrderManagementComponent implements OnInit {
       error: (error) => {
         this.products = [];
         this.productsLoading = false;
-        this.productsLoadError = this.toMessage(error, 'Unable to load products for this branch.');
+        this.productsLoadFailed = true; this.notifications.apiError(error, 'Unable to load products for this branch.');
       }
     });
   }
@@ -583,7 +585,7 @@ export class OrderManagementComponent implements OnInit {
         if (httpError?.status === 404) {
           this.shopperSearchError = 'No shopper found with that email address.';
         } else {
-          this.shopperSearchError = this.toMessage(error, 'Unable to search for shopper.');
+          this.notifications.apiError(error, 'Unable to search for shopper.');
         }
       }
     });
@@ -663,13 +665,13 @@ export class OrderManagementComponent implements OnInit {
         this.ordersLoaded = true;
         this.applyFilters();
         this.closeDialog(true);
-        this.statusMessage = this.createPayByInvoice
-          ? 'Invoice order created.'
-          : 'Order created.';
+        this.notifications.success(this.createPayByInvoice
+          ? 'Invoice order added successfully'
+          : 'Order added successfully');
       },
       error: (error) => {
         this.loading = false;
-        this.dialogError = this.toMessage(error, 'Unable to create order.');
+        this.notifications.apiError(error, 'Could not add order. Please try again.');
       }
     });
   }
@@ -712,9 +714,4 @@ export class OrderManagementComponent implements OnInit {
     setTimeout(() => this.branchOptions?.get(index)?.nativeElement.focus());
   }
 
-  private toMessage(error: unknown, fallback: string): string {
-    const httpError = error as HttpErrorResponse;
-    const body = httpError?.error as { detail?: string; message?: string } | undefined;
-    return body?.detail || body?.message || fallback;
-  }
 }

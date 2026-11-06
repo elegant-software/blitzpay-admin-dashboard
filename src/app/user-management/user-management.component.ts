@@ -1,5 +1,6 @@
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment as appEnv } from '../../environments/environment';
 import { BackendEnvironment } from '../models/merchant-catalog.models';
@@ -16,13 +17,14 @@ import { UserDetailComponent } from './user-detail.component';
   styleUrl: './user-management.component.css',
 })
 export class UserManagementComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   searchQuery = '';
   searchResults: UserSearchResult[] = [];
   selectedUser: UserSearchResult | null = null;
   assignments: MerchantUserAssignment[] = [];
   loading = false;
   searching = false;
-  errorMessage: string | null = null;
+  loadFailedMessage = false;
 
   readonly environment: BackendEnvironment;
   readonly apiVersion = 'v1';
@@ -36,7 +38,7 @@ export class UserManagementComponent implements OnInit {
     const query = this.searchQuery.trim();
     if (!query) return;
     this.searching = true;
-    this.errorMessage = null;
+    this.loadFailedMessage = false;
     this.selectedUser = null;
     this.assignments = [];
     this.api.searchUsers(this.environment, this.apiVersion, query).subscribe({
@@ -44,8 +46,10 @@ export class UserManagementComponent implements OnInit {
         this.searchResults = results;
         this.searching = false;
       },
-      error: () => {
-        this.errorMessage = 'User search failed. Please try again.';
+      error: (error) => {
+        this.loadFailedMessage = true;
+        this.searchResults = [];
+        this.notifications.apiError(error, 'Could not search users. Please try again.');
         this.searching = false;
       }
     });
@@ -58,14 +62,14 @@ export class UserManagementComponent implements OnInit {
 
   loadAssignments(userId: string): void {
     this.loading = true;
-    this.errorMessage = null;
     this.api.getAssignments(this.environment, this.apiVersion, userId).subscribe({
       next: assignments => {
         this.assignments = assignments;
         this.loading = false;
       },
-      error: () => {
-        this.errorMessage = 'Failed to load assignments.';
+      error: (error) => {
+        this.assignments = [];
+        this.notifications.apiError(error, 'Could not load assignments. Please try again.');
         this.loading = false;
       }
     });

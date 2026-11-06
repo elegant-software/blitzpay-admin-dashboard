@@ -1,3 +1,4 @@
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, ElementRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -26,6 +27,7 @@ const euro = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR'
   styleUrl: './printed-catalog.component.css'
 })
 export class PrintedCatalogComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   private readonly merchantApi = inject(MerchantApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -49,7 +51,7 @@ export class PrintedCatalogComponent implements OnInit {
   showcase: CategoryShowcase = { entries: [], hasMoreCategories: false };
 
   loading = false;
-  errorMessage = '';
+  loadFailed = false;
 
   get selectedEnvironment() { return getEnvironmentByKey(this.selectedEnvironmentKey); }
 
@@ -114,13 +116,13 @@ export class PrintedCatalogComponent implements OnInit {
           if (reload) this.load();
         }
       });
-    if (!this.merchantId || !this.branchId) { this.errorMessage = 'Missing route parameters.'; return; }
+    if (!this.merchantId || !this.branchId) { this.loadFailed = true; this.notifications.warning('Missing route parameters.'); return; }
     this.load();
   }
 
   load(): void {
     this.loading = true;
-    this.errorMessage = '';
+    this.loadFailed = false;
     const env = this.selectedEnvironment;
     // The merchant comes first: its languages decide which Catalog Language the products are read in.
     this.merchantApi.getMerchant(env, this.apiVersion, this.merchantId).pipe(
@@ -144,7 +146,7 @@ export class PrintedCatalogComponent implements OnInit {
       },
       error: (error) => {
         this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Failed to load the Printed Catalog.');
+        this.loadFailed = true; this.notifications.apiError(error, 'Failed to load the Printed Catalog.');
       }
     });
   }
@@ -178,8 +180,4 @@ export class PrintedCatalogComponent implements OnInit {
     this.fallbackCount = products.filter((p) => p.active && this.isFallback(p)).length;
   }
 
-  private toMessage(error: unknown, fallback: string): string {
-    const body = (error as { error?: { detail?: string; message?: string } })?.error;
-    return body?.detail || body?.message || fallback;
-  }
 }

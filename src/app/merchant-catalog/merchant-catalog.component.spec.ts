@@ -1,3 +1,4 @@
+import { NotificationService } from '../notifications/notification.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { throwError, of } from 'rxjs';
@@ -85,6 +86,8 @@ describe('MerchantDetailComponent product category management', () => {
       ]
     }).compileComponents();
 
+    spyOn(TestBed.inject(NotificationService), 'success');
+    spyOn(TestBed.inject(NotificationService), 'apiError');
     fixture = TestBed.createComponent(MerchantDetailComponent);
     component = fixture.componentInstance;
     component.selectedMerchant = merchant;
@@ -148,7 +151,7 @@ describe('MerchantDetailComponent product category management', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.alert-success')).toBeNull();
-    expect(component.statusMessage).toBe('');
+    expect(fixture.nativeElement.querySelector('.alert-success')).toBeNull();
   });
 
   it('supports arrow-key navigation between merchant detail tabs', () => {
@@ -260,7 +263,7 @@ describe('MerchantDetailComponent product category management', () => {
     );
     expect(component.categories).toEqual([beverages, category]);
     expect(component.categoryDialogOpen).toBeFalse();
-    expect(component.statusMessage).toBe('Category created.');
+    expect(TestBed.inject(NotificationService).success).toHaveBeenCalledWith('Category created.');
   });
 
   it('filters product categories by category name only', () => {
@@ -318,7 +321,7 @@ describe('MerchantDetailComponent product category management', () => {
       { name: 'Hot Drinks' }
     );
     expect(component.categories).toEqual([renamedCategory]);
-    expect(component.statusMessage).toBe('Category renamed.');
+    expect(TestBed.inject(NotificationService).success).toHaveBeenCalledWith('Category renamed.');
   });
 
   it('keeps the active category filter and sort after a rename, removing a row that no longer matches', () => {
@@ -356,7 +359,7 @@ describe('MerchantDetailComponent product category management', () => {
       merchant.merchantId,
       beverages.id
     );
-    expect(component.errorMessage).toBe('Category is still used by products.');
+    expect(TestBed.inject(NotificationService).apiError).toHaveBeenCalled();
     expect(component.categories).toEqual([beverages]);
   });
 
@@ -367,7 +370,7 @@ describe('MerchantDetailComponent product category management', () => {
     component.removeCategory(beverages);
 
     expect(component.categories).toEqual([]);
-    expect(component.statusMessage).toBe('Category deleted.');
+    expect(TestBed.inject(NotificationService).success).toHaveBeenCalledWith('Category deleted.');
   });
 
   it('normalizes category pagination after delete while keeping the active filter', () => {

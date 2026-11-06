@@ -1,11 +1,28 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { BackendEnvironment, Branch, MerchantSearchResultItem } from '../models/merchant-catalog.models';
-import { CreateAssignmentRequest, MerchantOperationsRole, MerchantUserAssignment, UserSearchResult } from '../models/user-management.models';
-import { UserManagementApiService } from '../services/user-management-api.service';
-import { MerchantApiService } from '../services/merchant-api.service';
-import { MerchantSearchComponent } from '../shared/merchant-search.component';
+import { NotificationService } from "../notifications/notification.service";
+import { CommonModule } from "@angular/common";
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
+  inject,
+} from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import {
+  BackendEnvironment,
+  Branch,
+  MerchantSearchResultItem,
+} from "../models/merchant-catalog.models";
+import {
+  CreateAssignmentRequest,
+  MerchantOperationsRole,
+  MerchantUserAssignment,
+  UserSearchResult,
+} from "../models/user-management.models";
+import { UserManagementApiService } from "../services/user-management-api.service";
+import { MerchantApiService } from "../services/merchant-api.service";
+import { MerchantSearchComponent } from "../shared/merchant-search.component";
 
 interface AssignDialogState {
   open: boolean;
@@ -19,26 +36,25 @@ interface AssignDialogState {
   employeeId: string | null;
   loadingBranches: boolean;
   saving: boolean;
-  error: string | null;
 }
 
 @Component({
-  selector: 'app-user-detail',
+  selector: "app-user-detail",
   standalone: true,
   imports: [CommonModule, FormsModule, MerchantSearchComponent],
-  templateUrl: './user-detail.component.html',
-  styleUrl: './user-detail.component.css',
+  templateUrl: "./user-detail.component.html",
+  styleUrl: "./user-detail.component.css",
 })
 export class UserDetailComponent implements OnChanges {
+  private readonly notifications = inject(NotificationService);
   @Input() user!: UserSearchResult;
   @Input() assignments: MerchantUserAssignment[] = [];
   @Input() loading = false;
   @Input() environment!: BackendEnvironment;
-  @Input() apiVersion = 'v1';
+  @Input() apiVersion = "v1";
   @Output() assignmentsChanged = new EventEmitter<void>();
 
   revoking: string | null = null;
-  revokeError: string | null = null;
 
   dialog: AssignDialogState = this.freshDialog();
 
@@ -48,7 +64,6 @@ export class UserDetailComponent implements OnChanges {
   ) {}
 
   ngOnChanges(): void {
-    this.revokeError = null;
     this.revoking = null;
   }
 
@@ -64,11 +79,19 @@ export class UserDetailComponent implements OnChanges {
   searchMerchants(): void {
     const q = this.dialog.merchantQuery.trim();
     if (!q) return;
-    this.dialog.error = null;
-    this.merchantApi.searchMerchants(this.environment, this.apiVersion, { q, page: 0 }).subscribe({
-      next: response => { this.dialog.merchantResults = response.results; },
-      error: () => { this.dialog.error = 'Merchant search failed.'; }
-    });
+    this.merchantApi
+      .searchMerchants(this.environment, this.apiVersion, { q, page: 0 })
+      .subscribe({
+        next: (response) => {
+          this.dialog.merchantResults = response.results;
+        },
+        error: (error) => {
+          this.notifications.apiError(
+            error,
+            "Could not search merchants. Please try again.",
+          );
+        },
+      });
   }
 
   selectMerchant(m: MerchantSearchResultItem): void {
@@ -85,7 +108,6 @@ export class UserDetailComponent implements OnChanges {
   saveAssignment(): void {
     if (!this.dialog.selectedMerchant) return;
     this.dialog.saving = true;
-    this.dialog.error = null;
 
     const request: CreateAssignmentRequest = {
       merchantId: this.dialog.selectedMerchant.merchantId,
@@ -94,87 +116,118 @@ export class UserDetailComponent implements OnChanges {
       employeeId: this.dialog.employeeId || null,
     };
 
-    this.api.createAssignment(this.environment, this.apiVersion, this.user.id, request).subscribe({
-      next: () => {
-        this.dialog.saving = false;
-        this.dialog.open = false;
-        this.assignmentsChanged.emit();
-      },
-      error: (err) => {
-        this.dialog.saving = false;
-        this.dialog.error = err?.error?.message ?? 'Failed to create assignment.';
-      }
-    });
+    this.api
+      .createAssignment(
+        this.environment,
+        this.apiVersion,
+        this.user.id,
+        request,
+      )
+      .subscribe({
+        next: () => {
+          this.dialog.saving = false;
+          this.dialog.open = false;
+          this.notifications.success("Assignment added successfully");
+          this.assignmentsChanged.emit();
+        },
+        error: (err) => {
+          this.dialog.saving = false;
+          this.notifications.apiError(
+            err,
+            "Could not add assignment. Please try again.",
+          );
+        },
+      });
   }
 
   revoke(assignment: MerchantUserAssignment): void {
     this.revoking = assignment.id;
-    this.revokeError = null;
-    this.api.revokeAssignment(this.environment, this.apiVersion, this.user.id, assignment.id).subscribe({
-      next: () => {
-        this.revoking = null;
-        this.assignmentsChanged.emit();
-      },
-      error: () => {
-        this.revoking = null;
-        this.revokeError = 'Failed to revoke assignment. Please try again.';
-      }
-    });
+
+    this.api
+      .revokeAssignment(
+        this.environment,
+        this.apiVersion,
+        this.user.id,
+        assignment.id,
+      )
+      .subscribe({
+        next: () => {
+          this.revoking = null;
+          this.notifications.success("Assignment revoked successfully");
+          this.assignmentsChanged.emit();
+        },
+        error: (error) => {
+          this.revoking = null;
+          this.notifications.apiError(
+            error,
+            "Could not revoke assignment. Please try again.",
+          );
+        },
+      });
   }
 
   get roleLabel(): Record<MerchantOperationsRole, string> {
     return {
-      MERCHANT_MANAGER: 'Merchant Manager',
-      MERCHANT_EMPLOYEE: 'Merchant Employee',
+      MERCHANT_MANAGER: "Merchant Manager",
+      MERCHANT_EMPLOYEE: "Merchant Employee",
     };
   }
 
   get filteredBranches(): Branch[] {
     const query = this.dialog.branchQuery.trim().toLowerCase();
     if (!query) return this.dialog.branches;
-    const normalizedQuery = query.replace(/-/g, '');
-    return this.dialog.branches.filter(branch => {
-      const code = (branch.branchCode ?? '').toLowerCase();
-      const normalizedCode = code.replace(/-/g, '');
+    const normalizedQuery = query.replace(/-/g, "");
+    return this.dialog.branches.filter((branch) => {
+      const code = (branch.branchCode ?? "").toLowerCase();
+      const normalizedCode = code.replace(/-/g, "");
       const name = branch.name.toLowerCase();
-      return code.includes(query) || normalizedCode.includes(normalizedQuery) || name.includes(query);
+      return (
+        code.includes(query) ||
+        normalizedCode.includes(normalizedQuery) ||
+        name.includes(query)
+      );
     });
   }
 
   branchIdentity(branch: Branch): string {
-    return branch.branchId ?? branch.id ?? '';
+    return branch.branchId ?? branch.id ?? "";
   }
 
   private loadBranches(merchantId: string): void {
     this.dialog.loadingBranches = true;
-    this.dialog.error = null;
-    this.dialog.branchQuery = '';
-    this.merchantApi.getBranches(this.environment, this.apiVersion, merchantId).subscribe({
-      next: branches => {
-        this.dialog.branches = branches.filter(branch => branch.active !== false && this.branchIdentity(branch));
-        this.dialog.loadingBranches = false;
-      },
-      error: () => {
-        this.dialog.loadingBranches = false;
-        this.dialog.error = 'Branch list failed to load.';
-      }
-    });
+    this.dialog.branchQuery = "";
+    this.merchantApi
+      .getBranches(this.environment, this.apiVersion, merchantId)
+      .subscribe({
+        next: (branches) => {
+          this.dialog.branches = branches.filter(
+            (branch) => branch.active !== false && this.branchIdentity(branch),
+          );
+          this.dialog.loadingBranches = false;
+        },
+        error: (error) => {
+          this.dialog.loadingBranches = false;
+          this.notifications.apiError(
+            error,
+            "Could not load branches. Please try again.",
+          );
+        },
+      });
   }
 
   private freshDialog(): AssignDialogState {
     return {
       open: false,
-      merchantQuery: '',
+      merchantQuery: "",
       merchantResults: [],
       selectedMerchant: null,
       branches: [],
-      branchQuery: '',
+      branchQuery: "",
       branchId: null,
-      role: 'MERCHANT_MANAGER',
+      role: "MERCHANT_MANAGER",
       employeeId: null,
       loadingBranches: false,
       saving: false,
-      error: null,
     };
   }
 }

@@ -1,5 +1,6 @@
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, Observable, of } from 'rxjs';
@@ -27,6 +28,7 @@ import { INTERNATIONAL_MENU, languageLabel } from '../menu-language/menu-languag
   styleUrl: './merchant-catalog.component.css'
 })
 export class MerchantEditComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   readonly selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   readonly apiVersion = 'v1';
 
@@ -43,7 +45,7 @@ export class MerchantEditComponent implements OnInit {
   loading = false;
   saving = false;
   errorMessage = '';
-  statusMessage = '';
+
 
   form = {
     merchantName: '',
@@ -74,7 +76,7 @@ export class MerchantEditComponent implements OnInit {
   logoStorageKey = '';
   logoUploadFile: File | null = null;
   logoUploading = false;
-  logoError = '';
+
   logoPreviewUrl = '';
 
   readonly serviceOptions = [
@@ -117,7 +119,7 @@ export class MerchantEditComponent implements OnInit {
         }
         this.loadMerchant();
       },
-      error: (error) => { this.loading = false; this.errorMessage = this.toMessage(error, 'Failed to load merchant form.'); }
+      error: (error) => { this.loading = false; this.notifications.apiError(error, 'Failed to load merchant form.'); }
     });
   }
 
@@ -132,7 +134,7 @@ export class MerchantEditComponent implements OnInit {
         this.populateForm(merchant, location);
         this.loading = false;
       },
-      error: (error) => { this.loading = false; this.errorMessage = this.toMessage(error, 'Failed to load merchant.'); }
+      error: (error) => { this.loading = false; this.notifications.apiError(error, 'Failed to load merchant.'); }
     });
   }
 
@@ -213,14 +215,14 @@ export class MerchantEditComponent implements OnInit {
   uploadLogo(): void {
     if (!this.logoUploadFile || this.logoUploading || !this.merchantId) return;
     this.logoUploading = true;
-    this.logoError = '';
+
     this.uploadLogoForMerchant(this.merchantId, this.logoUploadFile).subscribe({
       next: (updated) => {
         this.logoPreviewUrl = updated.logoUrl ?? this.logoPreviewUrl;
         this.logoUploading = false;
         this.logoUploadFile = null;
       },
-      error: (err) => { this.logoUploading = false; this.logoError = this.toMessage(err, 'Logo upload failed.'); }
+      error: (err) => { this.logoUploading = false; this.notifications.apiError(err, 'Logo upload failed.'); }
     });
   }
 
@@ -232,7 +234,7 @@ export class MerchantEditComponent implements OnInit {
     }
     this.saving = true;
     this.errorMessage = '';
-    this.statusMessage = '';
+
 
     if (!this.form.originalMenuLanguage && (this.isOfferingSelected(INTERNATIONAL_MENU) || this.form.supportedMenuLanguages.length)) {
       this.saving = false;
@@ -272,7 +274,7 @@ export class MerchantEditComponent implements OnInit {
       },
       error: (error) => {
         this.saving = false;
-        this.errorMessage = this.toMessage(error, wasCreating ? 'Failed to create merchant.' : 'Failed to save merchant.');
+        this.notifications.apiError(error, wasCreating ? 'Failed to create merchant.' : 'Failed to save merchant.');
       }
     });
   }
@@ -294,7 +296,7 @@ export class MerchantEditComponent implements OnInit {
       },
       error: (error) => {
         this.saving = false;
-        this.errorMessage = this.toMessage(error, 'Merchant saved, but location or logo could not be saved. Review the form and try again.');
+        this.notifications.apiError(error, 'Merchant saved, but location or logo could not be saved. Review the form and try again.');
       }
     });
   }
@@ -332,8 +334,4 @@ export class MerchantEditComponent implements OnInit {
     this.router.navigate(this.isCreateMode ? ['/merchants'] : ['/merchants', this.merchantId]);
   }
 
-  private toMessage(error: unknown, fallback: string): string {
-    const body = (error as { error?: { detail?: string; message?: string } })?.error;
-    return body?.detail || body?.message || fallback;
-  }
 }

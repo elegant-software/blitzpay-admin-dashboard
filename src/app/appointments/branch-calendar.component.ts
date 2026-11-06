@@ -1,5 +1,6 @@
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import {
@@ -26,6 +27,7 @@ type BranchCalendarDialog = 'detail' | 'override' | null;
   styleUrl: './branch-calendar.component.css'
 })
 export class BranchCalendarComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   apiVersion = 'v1';
 
@@ -49,7 +51,7 @@ export class BranchCalendarComponent implements OnInit {
 
   loading = false;
   errorMessage = '';
-  statusMessage = '';
+
 
   selectedAppointment: AppointmentResponse | null = null;
   activeDialog: BranchCalendarDialog = null;
@@ -140,7 +142,7 @@ export class BranchCalendarComponent implements OnInit {
 
     this.branchId = branchId;
     this.errorMessage = '';
-    this.statusMessage = '';
+
     this.loading = true;
     this.appointments = [];
     this.filteredAppointments = [];
@@ -155,11 +157,11 @@ export class BranchCalendarComponent implements OnInit {
           this.loading = false;
           this.appointments = appointments;
           this.applyStatusFilter();
-          this.statusMessage = `Loaded ${appointments.length} appointment${appointments.length === 1 ? '' : 's'}.`;
+
         },
         error: (error) => {
           this.loading = false;
-          this.errorMessage = this.toMessage(error, 'Unable to load appointments.');
+          this.notifications.apiError(error, 'Unable to load appointments.');
         }
       });
   }
@@ -177,7 +179,7 @@ export class BranchCalendarComponent implements OnInit {
     this.appointments = [];
     this.filteredAppointments = [];
     this.errorMessage = '';
-    this.statusMessage = '';
+
     this.closeDialog();
   }
 
@@ -226,11 +228,11 @@ export class BranchCalendarComponent implements OnInit {
         if (this.selectedAppointment?.id === appointment.id) {
           this.selectedAppointment = { ...appointment, status: 'CANCELLED' };
         }
-        this.statusMessage = 'Appointment cancelled.';
+        this.notifications.success('Appointment cancelled.');
       },
       error: (error) => {
         this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Unable to cancel appointment.');
+        this.notifications.apiError(error, 'Unable to cancel appointment.');
       }
     });
   }
@@ -278,11 +280,11 @@ export class BranchCalendarComponent implements OnInit {
           this.loading = false;
           this.updateAppointmentInList(updated);
           this.closeDialog();
-          this.statusMessage = 'Appointment override applied.';
+          this.notifications.success('Appointment override applied.');
         },
         error: (error) => {
           this.loading = false;
-          this.dialogError = this.toMessage(error, 'Unable to apply override.');
+          this.notifications.apiError(error, 'Unable to apply override.');
         }
       });
   }
@@ -344,8 +346,4 @@ export class BranchCalendarComponent implements OnInit {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
-  toMessage(error: unknown, fallback: string): string {
-    const body = (error as { error?: { detail?: string; message?: string } })?.error;
-    return body?.detail || body?.message || fallback;
-  }
 }

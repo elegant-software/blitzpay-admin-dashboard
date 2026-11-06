@@ -24,7 +24,11 @@
   padding: 1rem 1.1rem;
   border-bottom: 1px solid var(--user-border);
   background:
-    radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--user-accent) 7%, transparent), transparent 55%),
+    radial-gradient(
+      ellipse at 0% 0%,
+      color-mix(in srgb, var(--user-accent) 7%, transparent),
+      transparent 55%
+    ),
     var(--user-surface);
 }
 
@@ -34,7 +38,8 @@
   height: 2.8rem;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--user-accent) 16%, var(--user-border));
+  border: 1px solid
+    color-mix(in srgb, var(--user-accent) 16%, var(--user-border));
   border-radius: 50%;
   background: color-mix(in srgb, var(--user-accent) 11%, var(--user-surface));
   color: var(--user-accent);
@@ -119,12 +124,6 @@
   stroke: currentColor;
   stroke-linecap: round;
   stroke-width: 2;
-}
-
-.user-assignment-error {
-  margin: 0.8rem 1rem 0;
-  border-radius: 0.6rem;
-  font-size: 0.73rem;
 }
 
 .user-assignment-heading {
@@ -239,7 +238,9 @@
   border: 1px solid var(--user-border);
   border-radius: 0.75rem;
   background: var(--user-surface);
-  transition: border-color 140ms ease, background-color 140ms ease;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease;
 }
 
 .user-assignment-card:hover {
@@ -370,7 +371,11 @@
   padding: 1.1rem 1.25rem;
   border-bottom-color: var(--user-border);
   background:
-    radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--user-accent) 8%, transparent), transparent 60%),
+    radial-gradient(
+      ellipse at 0% 0%,
+      color-mix(in srgb, var(--user-accent) 8%, transparent),
+      transparent 60%
+    ),
     var(--user-surface);
 }
 
@@ -511,7 +516,7 @@
   z-index: 1055;
 }
 
-:host-context(html[data-coreui-theme='dark']) .user-assignment-workspace {
+:host-context(html[data-coreui-theme="dark"]) .user-assignment-workspace {
   --user-surface: #1b2535;
   --user-soft-surface: #232f42;
   --user-border: #354154;
@@ -520,18 +525,19 @@
   --user-accent: #b7adff;
 }
 
-:host-context(html[data-coreui-theme='dark']) .user-detail-status-active,
-:host-context(html[data-coreui-theme='dark']) .user-assignment-selected-indicator {
+:host-context(html[data-coreui-theme="dark"]) .user-detail-status-active,
+:host-context(html[data-coreui-theme="dark"])
+  .user-assignment-selected-indicator {
   background: #153a2c;
   color: #8fe0b8;
 }
 
-:host-context(html[data-coreui-theme='dark']) .user-role-employee {
+:host-context(html[data-coreui-theme="dark"]) .user-role-employee {
   background: #1c344b;
   color: #9dc5ff;
 }
 
-:host-context(html[data-coreui-theme='dark']) .user-assignment-modal-content {
+:host-context(html[data-coreui-theme="dark"]) .user-assignment-modal-content {
   --user-surface: #1b2535;
   --user-soft-surface: #232f42;
   --user-border: #354154;
@@ -540,7 +546,9 @@
   --user-accent: #b7adff;
 }
 
-:host-context(html[data-coreui-theme='dark']) .user-assignment-modal .btn-close {
+:host-context(html[data-coreui-theme="dark"])
+  .user-assignment-modal
+  .btn-close {
   filter: invert(1) grayscale(100%) brightness(200%);
 }
 

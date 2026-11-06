@@ -14,15 +14,14 @@
       <button type="button" class="btn" [class.btn-primary]="layout === 'showcase'" [class.btn-outline-primary]="layout !== 'showcase'"
               (click)="setLayout('showcase')">Category Showcase</button>
     </div>
-    <button type="button" class="btn btn-sm btn-success pc-print" [disabled]="loading || isEmpty || !!errorMessage" (click)="print()">
+    <button type="button" class="btn btn-sm btn-success pc-print" [disabled]="loading || isEmpty || !!loadFailed" (click)="print()">
       Print
     </button>
   </div>
 
-  <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
   <div *ngIf="loading" class="text-center py-5 text-muted">Loading…</div>
 
-  <ng-container *ngIf="!loading && !errorMessage && merchant && branch">
+  <ng-container *ngIf="!loading && !loadFailed && merchant && branch">
     <div class="alert alert-info" *ngIf="isEmpty">
       Diese Filiale hat keine aktiven Produkte – es gibt nichts zu drucken.
     </div>

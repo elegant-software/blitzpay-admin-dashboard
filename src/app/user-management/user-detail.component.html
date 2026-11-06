@@ -15,9 +15,7 @@
     </button>
   </header>
 
-  <div *ngIf="revokeError" class="alert alert-danger user-assignment-error" role="alert">
-    {{ revokeError }}
-  </div>
+
 
   <div class="user-assignment-heading">
     <div>
@@ -87,7 +85,6 @@
       </div>
 
       <div class="modal-body user-assignment-modal-body">
-        <div *ngIf="dialog.error" class="alert alert-danger user-assignment-error" role="alert">{{ dialog.error }}</div>
 
         <section class="user-assignment-form-section">
           <label class="form-label" for="assignment-merchant-search">Merchant</label>

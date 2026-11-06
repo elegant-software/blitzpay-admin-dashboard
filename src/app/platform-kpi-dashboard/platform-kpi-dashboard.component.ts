@@ -1,5 +1,6 @@
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { environment as appEnv } from '../../environments/environment';
@@ -22,6 +23,7 @@ import {
   styleUrl: './platform-kpi-dashboard.component.css',
 })
 export class PlatformKpiDashboardComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   readonly environment: BackendEnvironment;
   readonly apiVersion = 'v1';
 
@@ -33,7 +35,7 @@ export class PlatformKpiDashboardComponent implements OnInit {
 
   report: PlatformKpiReport | null = null;
   loading = false;
-  error: string | null = null;
+
 
   constructor(
     private readonly kpiService: PlatformKpiService,
@@ -70,7 +72,7 @@ export class PlatformKpiDashboardComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.error = null;
+
     this.kpiService
       .getReport(
         this.environment,
@@ -85,7 +87,7 @@ export class PlatformKpiDashboardComponent implements OnInit {
           this.loading = false;
         },
         error: (err: HttpErrorResponse) => {
-          this.error = this.extractError(err, 'Failed to load platform KPI data.');
+          this.notifications.apiError(err, 'Failed to load platform KPI data.');
           this.loading = false;
         },
       });
@@ -115,13 +117,4 @@ export class PlatformKpiDashboardComponent implements OnInit {
     return d.toISOString().slice(0, 10);
   }
 
-  private extractError(error: HttpErrorResponse, fallback: string): string {
-    return (
-      error.error?.error?.detail ??
-      error.error?.detail ??
-      error.error?.error?.message ??
-      error.error?.message ??
-      fallback
-    );
-  }
 }

@@ -16,7 +16,6 @@
   </ul>
 
   <div class="alert alert-danger py-2" *ngIf="errorMessage" role="alert">{{ errorMessage }}</div>
-  <div class="alert alert-success py-2" *ngIf="notice" role="status">{{ notice }}</div>
   <div class="alert alert-warning py-2" *ngIf="overCapacity && view !== 'live'" data-test="capacity-warning">
     The active tables seat {{ seatedCapacity }} guests, more than the Branch Capacity of {{ branchCapacity }}.
     This does not block ordering. Change the seats here or the capacity on the

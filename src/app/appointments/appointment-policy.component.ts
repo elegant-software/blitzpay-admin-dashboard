@@ -1,7 +1,7 @@
+import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
 import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import {
   AppointmentPolicy,
@@ -23,6 +23,7 @@ import { MerchantSearchComponent } from '../shared/merchant-search.component';
   styleUrl: './appointment-policy.component.css'
 })
 export class AppointmentPolicyComponent {
+  private readonly notifications = inject(NotificationService);
   selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   apiVersion = 'v1';
 
@@ -40,7 +41,7 @@ export class AppointmentPolicyComponent {
   editMode = false;
 
   errorMessage = '';
-  statusMessage = '';
+
   formError = '';
 
   constructor(private readonly merchantApi: MerchantApiService) {}
@@ -86,7 +87,7 @@ export class AppointmentPolicyComponent {
 
     this.merchantId = merchantId;
     this.errorMessage = '';
-    this.statusMessage = '';
+
     this.loading = true;
     this.policy = null;
     this.editMode = false;
@@ -99,7 +100,7 @@ export class AppointmentPolicyComponent {
       },
       error: (error) => {
         this.loading = false;
-        this.errorMessage = this.toMessage(error, 'Unable to load appointment policy.');
+        this.notifications.apiError(error, 'Unable to load appointment policy.');
       }
     });
   }
@@ -114,7 +115,7 @@ export class AppointmentPolicyComponent {
     this.editMode = false;
     this.form = this.emptyForm();
     this.errorMessage = '';
-    this.statusMessage = '';
+
     this.formError = '';
   }
 
@@ -171,11 +172,11 @@ export class AppointmentPolicyComponent {
         this.saving = false;
         this.policy = updated;
         this.editMode = false;
-        this.statusMessage = 'Appointment policy updated.';
+        this.notifications.success('Appointment policy updated.');
       },
       error: (error) => {
         this.saving = false;
-        this.formError = this.toMessage(error, 'Unable to update appointment policy.');
+        this.notifications.apiError(error, 'Unable to update appointment policy.');
       }
     });
   }
@@ -193,12 +194,4 @@ export class AppointmentPolicyComponent {
     return { bookingIntervalMinutes: '', leadTimeMinutes: '', bookingHorizonDays: '', reminderLeadTimeMinutes: '' };
   }
 
-  toMessage(error: unknown, fallback: string): string {
-    const httpError = error as HttpErrorResponse;
-    if (httpError?.status === 403) {
-      return 'Access denied: your account does not have the appointment management role for this merchant. Ask a platform engineer to grant it via the backend, or check that this merchant has the Appointment Booking offering enabled.';
-    }
-    const body = httpError?.error as { detail?: string; message?: string } | undefined;
-    return body?.detail || body?.message || fallback;
-  }
 }
