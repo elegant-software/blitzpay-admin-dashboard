@@ -2507,19 +2507,7 @@ th[aria-sort='descending'] .sort-header-icon {
   white-space: nowrap;
 }
 
-.branch-selection-chevron {
-  grid-column: 2;
-  grid-row: 1;
-  color: var(--merchant-detail-muted, #6b7280);
-  font-size: 1.15rem;
-  line-height: 1;
-  transition: transform 140ms ease;
-}
 
-.branch-selection-card-active .branch-selection-chevron {
-  transform: translateX(2px);
-  color: var(--merchant-detail-accent, #6752d9);
-}
 
 .branch-selection-meta {
   display: flex;
@@ -2544,15 +2532,17 @@ th[aria-sort='descending'] .sort-header-icon {
 }
 
 .branch-selection-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.25rem;
+  display: grid;
+  grid-template-columns: repeat(2, 2rem);
+  align-items: center;
+  justify-content: end;
+  gap: 0.3rem;
+  padding-block: 0.3rem;
 }
 
 .branch-selection-actions .icon-action-btn {
-  width: 1.85rem;
-  height: 1.85rem;
+  width: 2rem;
+  height: 2rem;
   border-color: transparent;
   background: transparent;
   color: var(--merchant-detail-muted, #6b7280);

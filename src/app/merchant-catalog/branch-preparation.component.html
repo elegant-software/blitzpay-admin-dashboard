@@ -1,0 +1,57 @@
+<div class="card mt-4">
+  <div class="card-body">
+    <h2 class="h5">Preparation stations</h2>
+    <p class="text-body-secondary">Set up Food Kitchen, Drinks Bar and category or product assignments for this branch.</p>
+    <p class="small text-body-secondary">Each kitchen display selects its station. Products without an assignment appear in Unassigned / General kitchen. Changes apply to newly submitted items.</p>
+    <div *ngIf="message" class="alert alert-success" role="status">{{ message }}</div>
+    <button type="button" class="btn btn-outline-primary" (click)="open()">Configure preparation stations</button>
+  </div>
+</div>
+<div *ngIf="visible" class="product-dialog-backdrop">
+  <section class="product-dialog card" role="dialog" aria-modal="true" aria-labelledby="preparation-title">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 id="preparation-title" class="h5 mb-0">Branch preparation settings</h2>
+      <button type="button" class="btn-close" aria-label="Close preparation settings" [disabled]="saving" (click)="close()"></button>
+    </div>
+    <div class="card-body">
+      <p *ngIf="loading" role="status">Loading preparation settings...</p>
+      <fieldset *ngIf="loaded" [disabled]="saving" class="border-0 p-0">
+        <legend class="h6">Stations</legend>
+        <p class="small text-body-secondary">Use a unique name for each preparation area.</p>
+        <div *ngFor="let station of configuration.stations; let i = index" class="d-flex gap-2 mb-2">
+          <label class="visually-hidden" [for]="'station-' + i">Station name {{ i + 1 }}</label>
+          <input class="form-control" [id]="'station-' + i" [(ngModel)]="station.name" maxlength="100" required />
+          <button type="button" class="btn btn-outline-danger" (click)="removeStation(station.id)" [attr.aria-label]="'Remove station ' + (station.name || (i + 1))">Remove</button>
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="addStation()" [disabled]="configuration.stations.length >= 50">Add station</button>
+        <p *ngIf="!valid" class="text-danger mt-2">Enter a unique name for every station.</p>
+        <div class="dialog-section mt-4">Category defaults</div>
+        <p class="small text-body-secondary">These defaults apply only to this branch.</p>
+        <div *ngFor="let category of categories" class="mb-2">
+          <label class="form-label" [for]="'category-station-' + category.id">{{ category.name }}</label>
+          <select class="form-select" [id]="'category-station-' + category.id" [ngModel]="configuration.categoryDefaults[category.id] || ''" (ngModelChange)="assign('categoryDefaults', category.id, $event)">
+            <option value="">Unassigned</option>
+            <option *ngFor="let station of configuration.stations" [value]="station.id">{{ station.name }}</option>
+          </select>
+        </div>
+        <p *ngIf="!categories.length" class="text-body-secondary">No categories available.</p>
+        <div class="dialog-section mt-4">Product overrides</div>
+        <div *ngFor="let product of products" class="mb-2">
+          <label class="form-label" [for]="'product-station-' + product.productId">{{ product.name }}</label>
+          <select class="form-select" [id]="'product-station-' + product.productId" [ngModel]="configuration.productOverrides[product.productId] || ''" (ngModelChange)="assign('productOverrides', product.productId, $event)">
+            <option value="">Use category default</option>
+            <option *ngFor="let station of configuration.stations" [value]="station.id">{{ station.name }}</option>
+          </select>
+        </div>
+        <p *ngIf="!products.length" class="text-body-secondary">No products available in this branch.</p>
+      </fieldset>
+    </div>
+    <div class="card-footer">
+      <div *ngIf="error" class="alert alert-danger" role="alert">{{ error }}</div>
+      <div class="d-flex gap-2 justify-content-end">
+      <button type="button" class="btn btn-outline-secondary" [disabled]="saving" (click)="close()">Cancel</button>
+      <button type="button" class="btn btn-primary" [disabled]="!loaded || saving || !valid" (click)="save()">{{ saving ? 'Saving...' : 'Save preparation settings' }}</button>
+      </div>
+    </div>
+  </section>
+</div>

@@ -761,3 +761,14 @@ export interface BranchFloor {
   totalGuests?: number;
 }
 
+
+export interface PreparationStation {
+  id: string;
+  name: string;
+}
+
+export interface PreparationConfiguration {
+  stations: PreparationStation[];
+  categoryDefaults: Record<string, string>;
+  productOverrides: Record<string, string>;
+}

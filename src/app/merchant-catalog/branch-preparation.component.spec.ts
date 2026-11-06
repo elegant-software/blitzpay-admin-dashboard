@@ -1,0 +1,33 @@
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { BranchPreparationComponent } from './branch-preparation.component';
+
+describe('Branch preparation settings', () => {
+  it('loads fresh settings on open and retains unsaved changes when closing is declined', async () => {
+    await TestBed.configureTestingModule({ imports: [BranchPreparationComponent], providers: [provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
+    const fixture = TestBed.createComponent(BranchPreparationComponent);
+    fixture.componentRef.setInput('merchantId', 'merchant');
+    fixture.componentRef.setInput('branchId', 'branch');
+    fixture.componentRef.setInput('language', 'de');
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    const http = TestBed.inject(HttpTestingController);
+    component.open();
+    http.expectOne(r => r.url.endsWith('/preparation-configuration')).flush({ stations: [], categoryDefaults: {}, productOverrides: {} });
+    http.expectOne(r => r.url.endsWith('/product-categories') && r.params.get('language') === 'de').flush([]);
+    http.expectOne(r => r.url.endsWith('/products') && r.params.get('branchId') === 'branch' && r.params.get('language') === 'de').flush([]);
+    component.addStation();
+    component.configuration.stations[0].name = 'Food Kitchen';
+    spyOn(window, 'confirm').and.returnValue(false);
+    component.close();
+    expect(component.visible).toBeTrue();
+    component.save();
+    const save = http.expectOne(r => r.method === 'PUT' && r.url.endsWith('/preparation-configuration'));
+    expect(save.request.body.stations[0].name).toBe('Food Kitchen');
+    save.flush(save.request.body);
+    expect(component.visible).toBeFalse();
+    http.verify();
+    fixture.destroy();
+  });
+});
