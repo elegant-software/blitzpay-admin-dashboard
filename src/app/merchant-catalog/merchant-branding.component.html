@@ -1,0 +1,76 @@
+<section class="branding-entry" aria-labelledby="branding-entry-title">
+  <div class="branding-entry-icon" aria-hidden="true"><i class="pi pi-palette"></i></div>
+  <div><h2 id="branding-entry-title">Shopper branding</h2><p>Make the shopping experience feel like this merchant. Set a shared identity or tailor it for a branch.</p></div>
+  <button type="button" class="btn btn-outline-primary" (click)="open()">Manage branding <span aria-hidden="true">&rarr;</span></button>
+</section>
+<p *ngIf="message && !visible" class="alert alert-success" role="status">{{ message }}</p>
+<div *ngIf="visible" class="product-dialog-backdrop branding-backdrop">
+  <section class="product-dialog card branding-dialog" role="dialog" aria-modal="true" aria-labelledby="branding-title" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
+    <header class="branding-header">
+      <div><span class="branding-eyebrow">CUSTOMER EXPERIENCE</span><h2 id="branding-title">Shopper branding</h2><p>Your merchant's identity, inside Simpleio.</p></div>
+      <button type="button" class="branding-close" aria-label="Close branding settings" [disabled]="busy" (click)="close()">&times;</button>
+    </header>
+    <div class="branding-scope">
+      <div><label for="branding-scope">Editing</label><select id="branding-scope" class="form-select" [value]="scope" (change)="selectScopeElement($event)" [disabled]="busy || loading">
+        <option value="">Merchant defaults</option><option *ngFor="let branch of branches" [value]="branchKey(branch)">{{ branch.name }}</option>
+      </select></div>
+      <p>{{ scope ? 'Only this branch. Unset fields follow the merchant.' : 'The starting point for every branch. Branches can override individual settings.' }}</p>
+    </div>
+    <div *ngIf="loading" class="branding-loading" role="status"><span class="spinner-border spinner-border-sm"></span> Loading branding settings...</div>
+    <div class="branding-layout" *ngIf="loaded">
+      <form class="branding-fields" (ngSubmit)="save()">
+        <fieldset [disabled]="busy" class="border-0 p-0 m-0">
+          <legend class="visually-hidden">{{ scopeLabel }} settings</legend>
+          <div class="branding-enable">
+            <div><label for="branding-enabled">Merchant branding</label><p>Use a custom identity on the merchant page, menu, cart and checkout.</p></div>
+            <select id="branding-enabled" class="form-select" [(ngModel)]="draft.enabled" name="enabled">
+              <option *ngIf="scope" [ngValue]="null">Follow merchant</option><option [ngValue]="true">Enabled</option><option [ngValue]="false">Disabled</option>
+              <option *ngIf="!scope" [ngValue]="null">Platform default (disabled)</option>
+            </select>
+          </div>
+          <p class="branding-notice" *ngIf="parentDisabled">Merchant branding is disabled. These branch settings are saved for when it is enabled.</p>
+          <p class="branding-hint" *ngIf="!preview.enabled && !parentDisabled">Simpleio styling is active. Your custom settings are kept when you disable branding.</p>
+          <div class="dialog-section">Brand identity</div>
+          <div class="branding-label"><label for="branding-name">Display name</label><button type="button" class="branding-reset" (click)="reset('displayName')" [disabled]="!draft.displayName">{{ resetLabel }}</button></div>
+          <input id="branding-name" name="displayName" class="form-control" [(ngModel)]="draft.displayName" maxlength="120" [placeholder]="scope ? (parent?.settings?.displayName || merchantName) : merchantName" [attr.aria-invalid]="!!fieldErrors['displayName']" aria-describedby="branding-name-help" />
+          <p id="branding-name-help" class="branding-hint">Presentation only. Legal business details stay unchanged.</p>
+          <p *ngFor="let error of fieldErrors['displayName']" class="branding-field-error">{{ error }}</p>
+          <div class="branding-label"><label for="branding-logo">Brand logo</label><button type="button" class="branding-reset" (click)="reset('logoStorageKey')" [disabled]="!draft.logoStorageKey">{{ resetLabel }}</button></div>
+          <div class="branding-upload"><span class="branding-upload-icon" aria-hidden="true"><i class="pi pi-image"></i></span><div><input id="branding-logo" type="file" accept="image/png,image/jpeg,image/webp" (change)="upload($event)" aria-describedby="branding-logo-help" /><p id="branding-logo-help" class="branding-hint">PNG, JPG or WebP, up to 5 MB. A square logo works best.</p></div></div>
+          <p class="branding-hint" role="status" *ngIf="uploading">Uploading logo. Your published logo is unchanged until you save.</p>
+          <p class="branding-hint" *ngIf="draft.logoStorageKey && !uploading">Custom logo selected. Shown in the preview when branding is enabled.</p>
+          <p *ngFor="let error of fieldErrors['logoStorageKey']" class="branding-field-error">{{ error }}</p>
+          <div class="dialog-section">Brand colors</div>
+          <div class="branding-color-field" *ngFor="let field of colorFields">
+            <div class="branding-label"><label [for]="'branding-' + field">{{ field === 'primaryColor' ? 'Primary color' : 'Accent color' }}</label><button type="button" class="branding-reset" (click)="reset(field)" [disabled]="!draft[field]">{{ resetLabel }}</button></div>
+            <div class="branding-color-input"><input type="color" [attr.aria-label]="field === 'primaryColor' ? 'Choose primary color' : 'Choose accent color'" [ngModel]="colorValid(draft[field]) ? draft[field] : inheritedColor(field)" (ngModelChange)="draft[field] = $event" [name]="field + '-picker'" /><input [id]="'branding-' + field" class="form-control" [name]="field" [(ngModel)]="draft[field]" [placeholder]="inheritedColor(field)" maxlength="7" [attr.aria-invalid]="!!draft[field] && !colorValid(draft[field])" [attr.aria-describedby]="'branding-' + field + '-help'" /><span class="branding-source">{{ draft[field] ? 'Custom' : (scope ? 'Inherited' : 'Default') }}</span></div>
+            <p [id]="'branding-' + field + '-help'" class="branding-field-error" *ngIf="draft[field] && !colorValid(draft[field])">Enter a hex color such as #123456.</p>
+            <p *ngFor="let error of fieldErrors[field]" class="branding-field-error">{{ error }}</p>
+          </div>
+          <p class="branding-hint"><i class="pi pi-check-circle" aria-hidden="true"></i> Text colors adjust automatically for readable contrast.</p>
+        </fieldset>
+      </form>
+      <aside class="branding-preview-area" aria-label="Live branding preview">
+        <div class="branding-preview-heading"><h3>Live preview</h3><span>{{ dirty ? 'Unpublished changes' : 'Saved settings' }}</span></div>
+        <div class="branding-preview-tabs" role="group" aria-label="Preview surface"><button *ngFor="let tab of previewTabs" type="button" [class.active]="previewTab === tab" [attr.aria-pressed]="previewTab === tab" (click)="previewTab = tab">{{ tab | titlecase }}</button></div>
+        <div class="branding-phone" data-testid="brand-preview" [style.--brand-primary]="preview.primaryColor" [style.--brand-primary-text]="preview.primaryTextColor" [style.--brand-accent]="preview.accentColor" [style.--brand-accent-text]="preview.accentTextColor">
+          <div class="branding-phone-top"><span>9:41</span><span aria-hidden="true">&#9679; &#9679; &#9646;</span></div>
+          <div class="branding-phone-nav"><span aria-hidden="true">&larr;</span><span>Simpleio</span><span aria-hidden="true">&#9825;</span></div>
+          <div class="branding-phone-hero"><div class="branding-preview-logo"><img *ngIf="preview.logoUrl; else brandInitial" [src]="preview.logoUrl" alt="Brand logo preview" /><ng-template #brandInitial>{{ preview.displayName.slice(0, 1) }}</ng-template></div><h4>{{ preview.displayName }}</h4><p>{{ scope ? scopeLabel : 'A little more you.' }}</p></div>
+          <div class="branding-phone-content">
+            <ng-container *ngIf="previewTab === 'menu'"><span class="branding-preview-chip">Our favorites</span><h5>Made for your day</h5><div class="branding-preview-item"><div class="branding-item-art" aria-hidden="true"><i class="pi pi-sparkles"></i></div><div><strong>Seasonal special</strong><p>A customer favorite</p><b>12.50 &euro;</b></div></div></ng-container>
+            <ng-container *ngIf="previewTab !== 'menu'"><span class="branding-preview-chip">{{ previewTab === 'cart' ? 'Your selection' : 'Secure checkout' }}</span><h5>{{ previewTab === 'cart' ? 'Your cart' : 'Ready when you are' }}</h5><div class="branding-preview-total"><span>Seasonal special &times; 1</span><strong>12.50 &euro;</strong></div><div class="branding-preview-total"><span>Total</span><strong>12.50 &euro;</strong></div></ng-container>
+            <div class="branding-preview-cta">{{ previewTab === 'menu' ? 'View cart' : previewTab === 'cart' ? 'Continue to checkout' : 'Pay 12.50 €' }} <span aria-hidden="true">&rarr;</span></div>
+          </div>
+          <div class="branding-phone-bottom"></div>
+        </div>
+        <p class="branding-preview-note">Illustrative content. Discovery and account screens keep Simpleio branding.</p>
+      </aside>
+    </div>
+    <footer class="branding-footer">
+      <div *ngIf="error" class="alert alert-danger" role="alert">{{ error }} <button *ngIf="!loaded && !loading" class="btn btn-sm btn-outline-danger" type="button" (click)="retry()">Try again</button></div>
+      <div *ngIf="message" class="alert alert-success" role="status">{{ message }}</div>
+      <div class="branding-footer-row"><span>{{ uploading ? 'Uploading logo...' : saving ? 'Publishing branding...' : dirty ? 'You have unpublished changes' : 'Changes go live when you save' }}</span><div><button type="button" class="btn btn-outline-secondary" [disabled]="busy" (click)="close()">{{ dirty ? 'Cancel' : 'Close' }}</button><button type="button" class="btn btn-primary" [disabled]="!loaded || !dirty || !valid || busy" (click)="save()">{{ saving ? 'Publishing...' : 'Save and publish' }}</button></div></div>
+    </footer>
+  </section>
+</div>

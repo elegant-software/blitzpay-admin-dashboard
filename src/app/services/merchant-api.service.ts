@@ -1,3 +1,5 @@
+import { MerchantTheme, MerchantThemeRequest, ThemeApp } from '../models/merchant-theme.models';
+import { BrandingResponse, BrandingSettings } from '../models/merchant-branding.models';
 import { HttpClient, HttpContext, HttpDownloadProgressEvent, HttpEventType, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -62,6 +64,44 @@ import { parseServerSentEvents } from '../tables/server-sent-events';
 @Injectable({ providedIn: 'root' })
 export class MerchantApiService {
   constructor(private readonly http: HttpClient) {}
+
+  getMerchantThemes(environment: BackendEnvironment, apiVersion: string, merchantId: string, app: ThemeApp = 'SHOPPER'): Observable<MerchantTheme[]> {
+    return this.http.get<MerchantTheme[]>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/themes`, {
+      params: app === 'SHOPPER' ? {} : { app }, context: new HttpContext().set(HANDLE_FORBIDDEN_LOCALLY, true)
+    });
+  }
+
+  createMerchantTheme(environment: BackendEnvironment, apiVersion: string, merchantId: string, payload: MerchantThemeRequest, app: ThemeApp = 'SHOPPER'): Observable<MerchantTheme> {
+    return this.http.post<MerchantTheme>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/themes`, payload, {
+      params: app === 'SHOPPER' ? {} : { app }, context: new HttpContext().set(HANDLE_FORBIDDEN_LOCALLY, true)
+    });
+  }
+
+  updateMerchantTheme(environment: BackendEnvironment, apiVersion: string, merchantId: string, themeId: string, payload: MerchantThemeRequest, app: ThemeApp = 'SHOPPER'): Observable<MerchantTheme> {
+    return this.http.put<MerchantTheme>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/themes/${themeId}`, payload, {
+      params: app === 'SHOPPER' ? {} : { app }, context: new HttpContext().set(HANDLE_FORBIDDEN_LOCALLY, true)
+    });
+  }
+
+
+
+  getBranding(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId?: string): Observable<BrandingResponse> {
+    return this.http.get<BrandingResponse>(this.brandingUrl(environment, apiVersion, merchantId, branchId));
+  }
+
+  saveBranding(environment: BackendEnvironment, apiVersion: string, merchantId: string, settings: BrandingSettings, branchId?: string): Observable<BrandingResponse> {
+    return this.http.put<BrandingResponse>(this.brandingUrl(environment, apiVersion, merchantId, branchId), settings,
+      { context: new HttpContext().set(HANDLE_FORBIDDEN_LOCALLY, true) });
+  }
+
+  createBrandingLogoUpload(environment: BackendEnvironment, apiVersion: string, merchantId: string, contentType: string, branchId?: string): Observable<MerchantLogoUploadResponse> {
+    return this.http.post<MerchantLogoUploadResponse>(`${this.brandingUrl(environment, apiVersion, merchantId, branchId)}/logo/upload-url`,
+      { contentType }, { context: new HttpContext().set(HANDLE_FORBIDDEN_LOCALLY, true) });
+  }
+
+  private brandingUrl(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId?: string): string {
+    return `${this.base({ ...environment, baseUrl: environment.baseUrl.replace(/\/+$/, '') }, apiVersion)}/merchants/${merchantId}${branchId ? `/branches/${branchId}` : ''}/branding`;
+  }
 
   getPreparationConfiguration(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string): Observable<PreparationConfiguration> {
     return this.http.get<PreparationConfiguration>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/branches/${branchId}/preparation-configuration`);

@@ -131,6 +131,11 @@
       </div>
     </section>
 
+    <app-merchant-branding [merchantId]="merchant.merchantId" [merchantName]="merchant.merchantName" [merchantLogo]="merchant.logoUrl || null" [branches]="branches" [backendEnvironment]="selectedEnvironment" />
+
+    <app-merchant-themes app="SHOPPER" [merchantId]="merchant.merchantId" [environment]="selectedEnvironment" [apiVersion]="apiVersion" />
+    <app-merchant-themes app="MERCHANT" [merchantId]="merchant.merchantId" [environment]="selectedEnvironment" [apiVersion]="apiVersion" />
+
     <section
       class="merchant-detail-overview mb-4"
       aria-label="Merchant overview"

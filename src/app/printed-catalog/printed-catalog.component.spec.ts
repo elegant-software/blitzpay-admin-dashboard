@@ -340,7 +340,12 @@ describe("PrintedCatalogComponent", () => {
   it("waits for images before opening the browser print dialog", async () => {
     await setup("full");
     const printSpy = spyOn(window, "print");
-    await component.print();
+    const images = Array.from(fixture.nativeElement.querySelectorAll("img")) as HTMLImageElement[];
+    images.forEach(image => spyOnProperty(image, "complete", "get").and.returnValue(false));
+    const printing = component.print();
+    expect(printSpy).not.toHaveBeenCalled();
+    images.forEach(image => image.dispatchEvent(new Event("load")));
+    await printing;
     expect(printSpy).toHaveBeenCalled();
   });
 });

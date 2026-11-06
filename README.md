@@ -132,3 +132,7 @@ If you still see ENOENT, verify the repository was fully copied/cloned and that 
 - APIs are expected at `http://localhost:8080/{version}` (local) or `https://api-blitzpay-staging.zackpay.de/{version}` (staging).
 - Product create/update requests are sent as multipart form data.
 - Branch secret fields are entered for creation but are cleared from UI form state after save.
+
+## Shopper branding
+
+Manage merchant defaults and branch overrides from the merchant profile. See the [branding guide](docs/reference/merchant-branding.md) for previews, publishing, backend requirements, and local authentication setup.

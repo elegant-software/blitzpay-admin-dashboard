@@ -1,6 +1,8 @@
+import { MerchantThemesComponent } from "./merchant-themes.component";
+import { MerchantBrandingComponent } from "./merchant-branding.component";
 import { NotificationService } from "../notifications/notification.service";
 import { CommonModule } from "@angular/common";
-import { Component, OnDestroy, OnInit, inject } from "@angular/core";
+import { Component, OnDestroy, OnInit, ViewChild, ViewChildren, QueryList, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import { Subscription, forkJoin, of } from "rxjs";
@@ -61,11 +63,20 @@ import { BranchCatalogQrComponent } from "./branch-catalog-qr.component";
     PaginatorModule,
     CategoryTranslationsDialogComponent,
     BranchCatalogQrComponent,
+    MerchantBrandingComponent,
+    MerchantThemesComponent,
   ],
   templateUrl: "./merchant-detail.component.html",
   styleUrl: "./merchant-catalog.component.css",
 })
 export class MerchantDetailComponent implements OnInit, OnDestroy {
+  @ViewChild(MerchantBrandingComponent) branding?: MerchantBrandingComponent;
+  @ViewChildren(MerchantThemesComponent) private themesEditors?: QueryList<MerchantThemesComponent>;
+  canLeave(): boolean {
+    return (this.branding?.canLeave() ?? true) &&
+      (this.themesEditors?.toArray().every(editor => editor.canLeave()) ?? true);
+  }
+
   private readonly notifications = inject(NotificationService);
   selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   apiVersion = "v1";

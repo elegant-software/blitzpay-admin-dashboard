@@ -1,0 +1,59 @@
+<section class="card mb-4" [attr.aria-labelledby]="idPrefix + '-brand-themes-title'">
+  <div class="card-body d-flex flex-wrap justify-content-between gap-3 align-items-center">
+    <div>
+      <h2 [id]="idPrefix + '-brand-themes-title'" class="h5">{{ appLabel }} branding</h2>
+      <p class="text-muted mb-0">Save named color palettes for this merchant's {{ appLabel.toLowerCase() }}.</p>
+    </div>
+    <button type="button" class="btn btn-outline-primary" (click)="open()">Manage themes</button>
+    <p *ngIf="message" class="w-100 mb-0 text-success" role="status">{{ message }}</p>
+  </div>
+</section>
+
+<div *ngIf="dialogOpen" class="product-dialog-backdrop">
+  <section class="product-dialog card theme-dialog" role="dialog" aria-modal="true" [attr.aria-labelledby]="idPrefix + '-theme-dialog-title'" [attr.aria-busy]="loading || saving">
+    <div class="card-header"><h2 [id]="idPrefix + '-theme-dialog-title'" class="h5 mb-0">{{ appLabel }} themes</h2></div>
+    <div class="card-body">
+      <p *ngIf="loading" role="status">Loading themes...</p>
+      <form *ngIf="loaded" [id]="idPrefix + '-theme-form'" (ngSubmit)="save()">
+        <label [attr.for]="idPrefix + '-theme-selection'" class="form-label">Theme</label>
+        <select [id]="idPrefix + '-theme-selection'" class="form-select mb-3" [value]="selectedId" (change)="selectTheme($any($event.target).value); $any($event.target).value = selectedId" [disabled]="saving">
+          <option value="">Add a new theme</option>
+          <option *ngFor="let theme of themes" [value]="theme.id">{{ theme.name }}</option>
+        </select>
+        <p *ngIf="!themes.length" class="text-muted">No saved themes yet. Create the first palette below.</p>
+        <fieldset [disabled]="saving">
+          <label [attr.for]="idPrefix + '-theme-name'" class="form-label">Theme name</label>
+          <input [id]="idPrefix + '-theme-name'" name="name" class="form-control mb-3" [(ngModel)]="form.name" required maxlength="120" placeholder="For example, Summer" />
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label [attr.for]="idPrefix + '-theme-primary'" class="form-label">Primary color</label>
+              <div class="d-flex gap-2">
+                <input type="color" [id]="idPrefix + '-theme-primary'" name="primaryPicker" class="form-control form-control-color" [(ngModel)]="form.primaryColor" />
+                <input name="primaryHex" aria-label="Primary color hex value" class="form-control" [(ngModel)]="form.primaryColor" required pattern="^#[0-9a-fA-F]{6}$" maxlength="7" />
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <label [attr.for]="idPrefix + '-theme-accent'" class="form-label">Accent color</label>
+              <div class="d-flex gap-2">
+                <input type="color" [id]="idPrefix + '-theme-accent'" name="accentPicker" class="form-control form-control-color" [(ngModel)]="form.accentColor" />
+                <input name="accentHex" aria-label="Accent color hex value" class="form-control" [(ngModel)]="form.accentColor" required pattern="^#[0-9a-fA-F]{6}$" maxlength="7" />
+              </div>
+            </div>
+          </div>
+        </fieldset>
+        <div class="theme-preview mt-4" aria-label="Theme preview" [style.border-color]="valid ? form.primaryColor : '#ced4da'">
+          <strong>{{ form.name || 'Theme preview' }}</strong>
+          <p class="text-muted">Preview your {{ appLabel.toLowerCase() }} palette.</p>
+          <span class="theme-swatch" [style.background-color]="form.primaryColor" [style.color]="foreground(form.primaryColor)">Primary</span>
+          <span class="theme-swatch" [style.background-color]="form.accentColor" [style.color]="foreground(form.accentColor)">Accent</span>
+        </div>
+      </form>
+      <div *ngIf="error" class="alert alert-danger mt-3" role="alert">{{ error }}</div>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button type="button" class="btn btn-outline-secondary" (click)="close()" [disabled]="saving">Cancel</button>
+        <button *ngIf="!loaded && !loading" type="button" class="btn btn-outline-primary" (click)="open()">Retry</button>
+        <button *ngIf="loaded" type="submit" [attr.form]="idPrefix + '-theme-form'" class="btn btn-primary" [disabled]="!valid || saving">{{ saving ? 'Saving...' : 'Save theme' }}</button>
+      </div>
+    </div>
+  </section>
+</div>
