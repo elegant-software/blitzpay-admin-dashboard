@@ -1,174 +1,132 @@
-<div class="container-fluid px-4 pt-2 pb-4 tables-screen">
-  <div class="d-flex align-items-center gap-2 mb-2">
-    <a class="btn btn-link btn-sm ps-0" [routerLink]="['/merchants', merchantId]">← Back to merchant</a>
-  </div>
+﻿<main class="tables-screen">
+  <nav class="tables-breadcrumb" aria-label="Breadcrumb">
+    <a routerLink="/merchants">Merchants</a><span aria-hidden="true">/</span>
+    <a [routerLink]="['/merchants', merchantId]">{{ merchantName }}</a><span aria-hidden="true">/</span>
+    <span>{{ branch?.name || 'Branch' }}</span>
+  </nav>
 
-  <div class="d-flex flex-wrap align-items-baseline gap-2 mb-3">
-    <h1 class="h4 mb-0">Tables</h1>
-    <span class="text-body-secondary" *ngIf="branch">{{ merchantName }} · {{ branch.name }}</span>
-  </div>
+  <header class="tables-hero">
+    <div class="tables-hero-copy">
+      <p class="tables-eyebrow">BRANCH OPERATIONS</p>
+      <h1>Tables &amp; seats</h1>
+      <p>Set up your space, connect every table, and keep service in view.</p>
+    </div>
+    <div class="tables-hero-actions">
+      <a class="btn btn-outline-secondary" [routerLink]="['/merchants', merchantId, 'branches', branchId, 'edit']"><i class="pi pi-sliders-h" aria-hidden="true"></i> Branch settings</a>
+      <button class="btn btn-primary" type="button" [disabled]="!activeTables.length || busy || loading" (click)="printQrCodes()"><i class="pi pi-print" aria-hidden="true"></i> Print QR codes</button>
+    </div>
+  </header>
 
-  <ul class="nav nav-tabs mb-3" role="tablist">
-    <li class="nav-item" *ngFor="let option of views" role="presentation">
-      <button class="nav-link" type="button" role="tab" [class.active]="view === option.key" [attr.aria-selected]="view === option.key"
-        [attr.data-test]="'view-' + option.key" (click)="selectView(option.key)">{{ option.label }}</button>
-    </li>
-  </ul>
+  <section class="tables-context" *ngIf="branch" aria-label="Selected branch">
+    <span class="tables-context-icon" aria-hidden="true"><i class="pi pi-map-marker"></i></span>
+    <div><strong>{{ branch.name }}</strong><span>{{ merchantName }}<ng-container *ngIf="branch.city"> · {{ branch.city }}</ng-container></span></div>
+    <span class="status-tag" [ngClass]="branch.active === false || branch.status === 'INACTIVE' ? 'status-tag-neutral' : 'status-tag-success'">{{ branch.active === false || branch.status === 'INACTIVE' ? 'Inactive branch' : 'Active branch' }}</span>
+    <button class="tables-refresh" type="button" [disabled]="loading || busy || uploading" (click)="reload()" aria-label="Refresh tables and floor plans"><i class="pi pi-refresh" aria-hidden="true"></i><span>Refresh</span></button>
+  </section>
 
-  <div class="alert alert-danger py-2" *ngIf="errorMessage" role="alert">{{ errorMessage }}</div>
-  <div class="alert alert-warning py-2" *ngIf="overCapacity && view !== 'live'" data-test="capacity-warning">
-    The active tables seat {{ seatedCapacity }} guests, more than the Branch Capacity of {{ branchCapacity }}.
-    This does not block ordering. Change the seats here or the capacity on the
-    <a [routerLink]="['/merchants', merchantId, 'branches', branchId, 'edit']">branch page</a>.
+  <section class="tables-metrics" *ngIf="branch && !loading" aria-label="Seating overview">
+    <article class="tables-metric"><span class="tables-metric-icon violet" aria-hidden="true"><i class="pi pi-th-large"></i></span><div><small>Active tables</small><strong>{{ activeTables.length }}<span> / {{ tables.length }}</span></strong><p>{{ inactiveTableCount ? inactiveTableCount + ' inactive' : 'All tables ready for guests' }}</p></div></article>
+    <article class="tables-metric"><span class="tables-metric-icon blue" aria-hidden="true"><i class="pi pi-users"></i></span><div><small>Configured seats</small><strong>{{ seatedCapacity }}</strong><p>{{ missingSeatsCount ? missingSeatsCount + (missingSeatsCount === 1 ? ' table needs a seat count' : ' tables need a seat count') : 'Across active tables' }}</p></div></article>
+    <article class="tables-metric"><span class="tables-metric-icon amber" aria-hidden="true"><i class="pi pi-building"></i></span><div><small>Branch capacity</small><strong>{{ branchCapacity ?? '—' }}</strong><p>{{ branchCapacity == null ? 'Set in branch settings' : 'Planned guest capacity' }}</p></div></article>
+    <article class="tables-metric"><span class="tables-metric-icon green" aria-hidden="true"><i class="pi pi-map"></i></span><div><small>Floor plans</small><strong>{{ floorPlans.length }}</strong><p>{{ unplacedTableCount ? unplacedTableCount + ' active tables not placed' : 'All active tables placed' }}</p></div></article>
+  </section>
+
+  <nav class="tables-tabs" role="tablist" aria-label="Tables and seating views">
+    <button #viewTab *ngFor="let option of views" type="button" role="tab" [id]="'tables-tab-' + option.key" [class.active]="view === option.key" [attr.aria-selected]="view === option.key" [attr.aria-controls]="'tables-panel-' + option.key" [attr.tabindex]="view === option.key ? 0 : -1" [attr.data-test]="'view-' + option.key" (click)="selectView(option.key)" (keydown)="onTabKeydown($event, option.key)">
+      <i class="pi" [ngClass]="option.key === 'tables' ? 'pi-th-large' : option.key === 'floor-plans' ? 'pi-map' : 'pi-circle-fill'" aria-hidden="true"></i>
+      <span>{{ option.label }}</span><small *ngIf="option.key === 'tables'">{{ tables.length }}</small><small *ngIf="option.key === 'floor-plans'">{{ floorPlans.length }}</small>
+    </button>
+  </nav>
+
+  <div class="alert alert-danger" *ngIf="errorMessage && !nameDialog" role="alert">{{ errorMessage }}</div>
+  <div class="tables-capacity-note" *ngIf="overCapacity && view !== 'live'" data-test="capacity-warning" role="status">
+    <i class="pi pi-exclamation-triangle" aria-hidden="true"></i><div><strong>Check your seating capacity</strong><p>The active tables seat {{ seatedCapacity }} guests, more than the Branch Capacity of {{ branchCapacity }}. This does not block ordering. Update seats below or adjust capacity in <a [routerLink]="['/merchants', merchantId, 'branches', branchId, 'edit']">branch settings</a>.</p></div>
   </div>
-  <div *ngIf="loading" class="text-center py-5 text-muted">Loading…</div>
+  <section *ngIf="loading" class="tables-state tables-panel" role="status" aria-live="polite"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span><h2>Loading your space</h2><p>Getting tables, seats, and floor plans ready.</p></section>
+  <section *ngIf="!loading && !branch" class="tables-state tables-panel"><i class="pi pi-building" aria-hidden="true"></i><h2>Unable to open this branch</h2><p>Check your connection and try loading the page again.</p><button class="btn btn-outline-primary" type="button" (click)="reload()">Try again</button></section>
 
   <ng-container *ngIf="!loading && branch">
-    <!-- ── Tables ─────────────────────────────────────────────────── -->
-    <ng-container *ngIf="view === 'tables'">
-      <div class="row g-4">
-        <div class="col-lg-8">
-          <section class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <span>{{ tables.length }} tables · {{ seatedCapacity }} seats<span *ngIf="branchCapacity != null"> · Branch Capacity {{ branchCapacity }}</span></span>
-              <button class="btn btn-sm btn-outline-primary" type="button" [disabled]="!activeTables.length" (click)="printQrCodes()">
-                <i class="pi pi-print me-1" aria-hidden="true"></i>Print QR codes
-              </button>
-            </div>
-            <div class="table-responsive">
-              <table class="table table-hover align-middle mb-0">
-                <thead>
-                  <tr><th>Name</th><th>Seats</th><th>Table code</th><th>Floor plan</th><th>Status</th><th class="text-end">Actions</th></tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let table of sortedTables" [attr.data-test]="'table-row-' + table.code">
-                    <td class="fw-semibold">{{ table.name }}</td>
-                    <td [class.text-warning]="table.seats == null">{{ table.seats ?? '?' }}</td>
-                    <td><code>{{ table.code }}</code></td>
-                    <td>{{ floorPlanName(table) }}</td>
-                    <td><span class="status-tag" [ngClass]="table.active ? 'status-tag-success' : 'status-tag-neutral'">{{ table.active ? 'Active' : 'Inactive' }}</span></td>
-                    <td class="text-end text-nowrap">
-                      <button class="icon-action-btn" type="button" title="Show QR code" [attr.aria-label]="'Show QR code of table ' + table.name" (click)="showQr(table)">
-                        <i class="pi pi-qrcode" aria-hidden="true"></i>
-                      </button>
-                      <button class="icon-action-btn" type="button" title="Edit" [attr.aria-label]="'Edit table ' + table.name" [disabled]="busy" (click)="openNameDialog({ kind: 'edit-table', table })">
-                        <i class="pi pi-pencil" aria-hidden="true"></i>
-                      </button>
-                      <button class="btn btn-sm btn-link" type="button" [disabled]="busy" (click)="setActive(table, !table.active)">{{ table.active ? 'Deactivate' : 'Activate' }}</button>
-                      <button class="icon-action-btn" type="button" title="Delete" [attr.aria-label]="'Delete table ' + table.name" [disabled]="busy" (click)="deleteTable(table)">
-                        <i class="pi pi-trash" aria-hidden="true"></i>
-                      </button>
-                    </td>
-                  </tr>
-                  <tr *ngIf="!tables.length"><td colspan="6" class="text-center text-body-secondary py-4">No tables yet. Add them on the right.</td></tr>
-                </tbody>
-              </table>
+    <section *ngIf="view === 'tables'" id="tables-panel-tables" class="tables-view" role="tabpanel" aria-labelledby="tables-tab-tables" tabindex="0">
+      <div class="tables-setup-layout">
+        <section class="tables-panel tables-directory" aria-labelledby="table-directory-title">
+          <header class="tables-panel-heading"><div><p class="tables-eyebrow">YOUR SPACE</p><h2 id="table-directory-title">Table directory</h2><p>{{ tables.length }} tables · {{ seatedCapacity }} seats</p></div><span class="tables-count">{{ filteredTables.length }} results</span></header>
+          <div class="tables-directory-filters">
+            <label class="tables-search" for="table-search"><span>Find a table</span><div><i class="pi pi-search" aria-hidden="true"></i><input id="table-search" class="form-control" type="search" [(ngModel)]="tableQuery" (ngModelChange)="filterTables()" placeholder="Name, table code, or floor plan" /></div></label>
+            <label for="table-status-filter"><span>Status</span><select id="table-status-filter" class="form-select" [(ngModel)]="tableStatus" (ngModelChange)="filterTables()"><option value="all">All tables</option><option value="active">Active</option><option value="inactive">Inactive</option></select></label>
+            <button *ngIf="tableQuery || tableStatus !== 'all'" class="btn btn-link tables-clear" type="button" (click)="clearTableFilters()">Clear filters</button>
+          </div>
+          <div class="table-responsive tables-table-wrap">
+            <table class="table align-middle mb-0 tables-directory-table">
+              <thead><tr><th>Table</th><th>Seats</th><th>Table code</th><th>Floor plan</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let table of visibleTables" [attr.data-test]="'table-row-' + table.code">
+                  <td data-label="Table"><span class="table-name-mark" aria-hidden="true"><i class="pi pi-th-large"></i></span><strong>{{ table.name }}</strong></td>
+                  <td data-label="Seats"><span class="table-seat-count" [class.missing]="table.seats == null">{{ table.seats ?? '—' }}</span></td>
+                  <td data-label="Table code"><code>{{ table.code }}</code><small class="table-nfc-label" [title]="table.nfcTagWrittenAt ? 'NFC tag written ' + (table.nfcTagWrittenAt | displayDate) : 'No NFC tag written yet'"><i class="pi" [ngClass]="table.nfcTagWrittenAt ? 'pi-check-circle' : 'pi-minus-circle'" aria-hidden="true"></i>{{ table.nfcTagWrittenAt ? 'NFC linked' : 'No NFC tag' }}</small></td>
+                  <td data-label="Floor plan"><span [class.text-body-secondary]="!table.placement">{{ table.placement ? floorPlanName(table) : 'Not placed' }}</span></td>
+                  <td data-label="Status"><span class="status-tag" [ngClass]="table.active ? 'status-tag-success' : 'status-tag-neutral'">{{ table.active ? 'Active' : 'Inactive' }}</span></td>
+                  <td data-label="Actions"><div class="table-row-actions">
+                    <button class="icon-action-btn" type="button" title="Show QR code" [attr.aria-label]="'Show QR code of table ' + table.name" (click)="showQr(table)"><i class="pi pi-qrcode" aria-hidden="true"></i></button>
+                    <button class="icon-action-btn" type="button" title="Edit" [attr.aria-label]="'Edit table ' + table.name" [disabled]="busy" (click)="openNameDialog({ kind: 'edit-table', table })"><i class="pi pi-pencil" aria-hidden="true"></i></button>
+                    <button class="table-activation" type="button" [disabled]="busy" (click)="setActive(table, !table.active)">{{ table.active ? 'Deactivate' : 'Activate' }}</button>
+                    <button class="icon-action-btn table-delete" type="button" title="Delete" [attr.aria-label]="'Delete table ' + table.name" [disabled]="busy" (click)="deleteTable(table)"><i class="pi pi-trash" aria-hidden="true"></i></button>
+                  </div></td>
+                </tr>
+                <tr *ngIf="!filteredTables.length"><td colspan="6"><div class="tables-state tables-empty-directory"><i class="pi pi-th-large" aria-hidden="true"></i><h3>{{ tables.length ? 'No matching tables' : 'Your space starts here' }}</h3><p>{{ tables.length ? 'Try another name, table code, or status.' : 'Add your first tables using the setup panel.' }}</p><button *ngIf="tables.length" class="btn btn-outline-secondary" type="button" (click)="clearTableFilters()">Clear filters</button></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p-paginator *ngIf="filteredTables.length" class="tables-paginator" [first]="pageFirst" [rows]="tableRows" [totalRecords]="filteredTables.length" [rowsPerPageOptions]="[5, 10, 20, 50]" [showCurrentPageReport]="true" currentPageReportTemplate="{first}–{last} of {totalRecords} tables" (onPageChange)="onTablePageChange($event)" />
+        </section>
+        <aside class="tables-setup-side">
+          <section class="tables-panel" aria-labelledby="add-tables-title">
+            <header class="tables-panel-heading"><span class="tables-section-icon" aria-hidden="true"><i class="pi pi-plus"></i></span><div><h2 id="add-tables-title">Add tables</h2><p>One table or a whole section.</p></div></header>
+            <div class="tables-panel-body">
+              <label class="form-label" for="new-table-names">Table names</label><textarea id="new-table-names" class="form-control" rows="4" data-test="new-table-names" [(ngModel)]="newTableNames" placeholder="1-10&#10;Terrace 1-4&#10;Bar"></textarea>
+              <p class="tables-field-help">One name per line. Use <code>1-10</code> to add a range.</p>
+              <label class="form-label" for="new-table-seats">Seats per table <span class="tables-optional">Optional</span></label><input id="new-table-seats" class="form-control" type="number" min="1" max="50" step="1" data-test="new-table-seats" [(ngModel)]="newTableSeats" placeholder="e.g. 4" />
+              <p class="tables-field-help">The same seat count is applied to each new table.</p>
+              <button class="btn btn-primary w-100 tables-add-action" type="button" data-test="add-tables" [disabled]="busy || !namesToAdd.length" (click)="addTables()"><i class="pi pi-plus" aria-hidden="true"></i>{{ busy ? 'Saving…' : !namesToAdd.length ? 'Add tables' : namesToAdd.length === 1 ? 'Add 1 table' : 'Add ' + namesToAdd.length + ' tables' }}</button>
             </div>
           </section>
-        </div>
+          <details class="tables-panel tables-branch-link"><summary><span class="tables-section-icon" aria-hidden="true"><i class="pi pi-qrcode"></i></span><span><strong>Branch Link</strong><small>For counter &amp; entrance ordering</small></span><i class="pi pi-chevron-down" aria-hidden="true"></i></summary><div class="tables-panel-body"><p class="tables-field-help">This link opens the branch menu without a table. Guests collect their order at the counter.</p><app-branch-catalog-qr [url]="branchLink" /></div></details>
+        </aside>
+      </div>
+    </section>
 
-        <div class="col-lg-4">
-          <section class="card mb-4">
-            <div class="card-header">Add tables</div>
-            <div class="card-body">
-              <label class="form-label" for="new-table-names">Table names</label>
-              <textarea id="new-table-names" class="form-control" rows="5" data-test="new-table-names" [(ngModel)]="newTableNames"
-                placeholder="1-10&#10;Terrace 1-4&#10;Bar"></textarea>
-              <p class="small text-body-secondary mt-1 mb-2">One name per line. A range like <code>1-10</code> adds ten tables.</p>
-              <label class="form-label" for="new-table-seats">Seats per table</label>
-              <input id="new-table-seats" class="form-control mb-3" type="number" min="1" max="50" step="1" data-test="new-table-seats"
-                [(ngModel)]="newTableSeats" placeholder="Optional" />
-              <button class="btn btn-primary w-100" type="button" data-test="add-tables" [disabled]="busy || !namesToAdd.length" (click)="addTables()">
-                {{ namesToAdd.length === 1 ? 'Add 1 table' : 'Add ' + namesToAdd.length + ' tables' }}
-              </button>
-            </div>
-          </section>
-
-          <section class="card">
-            <div class="card-header">Branch Link</div>
-            <div class="card-body">
-              <p class="small text-body-secondary">For a standee at the counter or entrance. Orders from it are collected at the counter.</p>
-              <app-branch-catalog-qr [url]="branchLink" />
-            </div>
-          </section>
+    <section *ngIf="view === 'floor-plans'" id="tables-panel-floor-plans" class="tables-panel tables-floor-workspace" role="tabpanel" aria-labelledby="tables-tab-floor-plans" tabindex="0">
+      <header class="tables-panel-heading"><div><p class="tables-eyebrow">SPACE PLANNING</p><h2>Bring your floor to life</h2><p>Place tables where guests sit, so the whole team sees the same space.</p></div><button class="btn btn-primary" type="button" [disabled]="busy" (click)="openNameDialog({ kind: 'create-floor-plan' })"><i class="pi pi-plus" aria-hidden="true"></i> New floor plan</button></header>
+      <div class="tables-floor-toolbar" *ngIf="floorPlans.length">
+        <label for="setup-floor-plan"><span>Floor plan</span><select id="setup-floor-plan" class="form-select" data-test="floor-plan-select" [(ngModel)]="floorPlanId"><option *ngFor="let plan of floorPlans" [ngValue]="plan.id">{{ plan.name }}</option></select></label>
+        <div class="tables-floor-actions" *ngIf="floorPlan as plan">
+          <button class="btn btn-outline-secondary" type="button" [disabled]="busy" (click)="openNameDialog({ kind: 'rename-floor-plan', floorPlan: plan })"><i class="pi pi-pencil" aria-hidden="true"></i> Rename</button>
+          <button class="btn btn-outline-secondary" type="button" [disabled]="uploading || busy" (click)="floorImageInput.click()"><i class="pi pi-image" aria-hidden="true"></i>{{ uploading ? 'Uploading…' : plan.imageUrl ? 'Replace picture' : 'Upload picture' }}</button><input #floorImageInput type="file" accept="image/*" hidden [disabled]="uploading || busy" (change)="uploadImage($event)" />
+          <button class="btn btn-outline-danger" type="button" [disabled]="busy || uploading" (click)="deleteFloorPlan()"><i class="pi pi-trash" aria-hidden="true"></i><span class="visually-hidden">Delete floor plan</span></button>
         </div>
       </div>
-    </ng-container>
+      <div *ngIf="!floorPlans.length" class="tables-state"><span class="tables-state-icon"><i class="pi pi-map" aria-hidden="true"></i></span><h3>A clear view of your space</h3><p>Create a floor plan for each room or area, such as Inside or Terrace. Add a picture, then place your tables on it.</p><button class="btn btn-outline-primary" type="button" [disabled]="busy" (click)="openNameDialog({ kind: 'create-floor-plan' })">Create your first floor plan</button></div>
+      <div class="tables-floor-content" *ngIf="floorPlan"><app-floor-plan-editor [floorPlan]="floorPlan" [floorPlans]="floorPlans" [tables]="tables" [busy]="busy" (place)="place($event)" (unplace)="unplace($event)" /></div>
+    </section>
 
-    <!-- ── Floor Plans ────────────────────────────────────────────── -->
-    <ng-container *ngIf="view === 'floor-plans'">
-      <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <label class="d-flex align-items-center gap-2 mb-0" *ngIf="floorPlans.length">
-          <span class="form-label mb-0">Floor plan</span>
-          <select class="form-select form-select-sm w-auto" data-test="floor-plan-select" [(ngModel)]="floorPlanId">
-            <option *ngFor="let plan of floorPlans" [ngValue]="plan.id">{{ plan.name }}</option>
-          </select>
-        </label>
-        <button class="btn btn-sm btn-primary" type="button" [disabled]="busy" (click)="openNameDialog({ kind: 'create-floor-plan' })">New floor plan</button>
-        <ng-container *ngIf="floorPlan as plan">
-          <button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="busy" (click)="openNameDialog({ kind: 'rename-floor-plan', floorPlan: plan })">Rename</button>
-          <label class="btn btn-sm btn-outline-secondary mb-0" [class.disabled]="uploading">
-            {{ uploading ? 'Uploading…' : plan.imageUrl ? 'Replace picture' : 'Upload picture' }}
-            <input type="file" accept="image/*" hidden [disabled]="uploading" (change)="uploadImage($event)" />
-          </label>
-          <button class="btn btn-sm btn-outline-danger" type="button" [disabled]="busy" (click)="deleteFloorPlan()">Delete</button>
-        </ng-container>
-      </div>
-
-      <p *ngIf="!floorPlans.length" class="text-body-secondary">
-        A floor plan is a picture of a room or area, such as "Inside" or "Terrace". Create one, upload its picture and drag your tables onto it.
-      </p>
-
-      <app-floor-plan-editor
-        *ngIf="floorPlan"
-        [floorPlan]="floorPlan"
-        [floorPlans]="floorPlans"
-        [tables]="tables"
-        [busy]="busy"
-        (place)="place($event)"
-        (unplace)="unplace($event)"
-      />
-    </ng-container>
-
-    <!-- ── Live floor (read-only) ─────────────────────────────────── -->
-    <app-live-floor *ngIf="view === 'live'" [merchantId]="merchantId" [branchId]="branchId" />
+    <section *ngIf="view === 'live'" id="tables-panel-live" class="tables-view" role="tabpanel" aria-labelledby="tables-tab-live" tabindex="0"><app-live-floor [merchantId]="merchantId" [branchId]="branchId" /></section>
   </ng-container>
-</div>
+</main>
 
-<!-- Print sheet: only visible when printing. -->
 <section class="table-qr-print-sheet" *ngIf="branch" aria-hidden="true">
   <app-table-qr-card [url]="branchLink" [title]="branch.name" subtitle="Scan to order. Collect at the counter." />
   <app-table-qr-card *ngFor="let table of activeTables" [url]="table.link" [title]="'Table ' + table.name" subtitle="Scan to order at this table" [code]="table.code" />
 </section>
 
-<dialog #nameDialogElement class="branch-qr-dialog" aria-labelledby="name-dialog-title" (close)="nameDialog = null">
+<dialog #nameDialogElement class="branch-qr-dialog tables-name-dialog" aria-labelledby="name-dialog-title" (close)="nameDialog = null" (cancel)="busy && $event.preventDefault()">
   <form (ngSubmit)="saveName()">
-    <h2 id="name-dialog-title" class="h5">{{ nameDialogTitle }}</h2>
-    <label class="form-label" for="name-dialog-input">Name</label>
-    <input id="name-dialog-input" name="name" class="form-control" data-test="name-dialog-input" [(ngModel)]="nameValue" required autofocus />
-    <ng-container *ngIf="nameDialog?.kind === 'edit-table'">
-      <label class="form-label mt-3" for="seats-dialog-input">Seats</label>
-      <input id="seats-dialog-input" name="seats" class="form-control" type="number" min="1" max="50" step="1" data-test="seats-dialog-input"
-        [(ngModel)]="seatsValue" placeholder="Not set" />
-      <p class="small text-body-secondary mt-1 mb-0">Renaming never changes the table's QR code or NFC tag.</p>
-    </ng-container>
-    <div class="alert alert-danger py-1 px-2 small mt-3 mb-0" *ngIf="errorMessage">{{ errorMessage }}</div>
-    <div class="d-flex justify-content-end gap-2 mt-3">
-      <button class="btn btn-secondary" type="button" (click)="closeNameDialog()">Cancel</button>
-      <button class="btn btn-primary" type="submit" [disabled]="busy || !nameValue.trim()">Save</button>
-    </div>
+    <p class="tables-eyebrow">SPACE SETTINGS</p><h2 id="name-dialog-title">{{ nameDialogTitle }}</h2>
+    <p class="tables-field-help">{{ nameDialog?.kind === 'edit-table' ? 'Keep table names clear for your team and your guests.' : 'Give this area a name your team will recognise.' }}</p>
+    <label class="form-label" for="name-dialog-input">Name</label><input id="name-dialog-input" name="name" class="form-control" data-test="name-dialog-input" [(ngModel)]="nameValue" [disabled]="busy" required autofocus />
+    <ng-container *ngIf="nameDialog?.kind === 'edit-table'"><label class="form-label mt-3" for="seats-dialog-input">Seats</label><input id="seats-dialog-input" name="seats" class="form-control" type="number" min="1" max="50" step="1" data-test="seats-dialog-input" [(ngModel)]="seatsValue" [disabled]="busy" placeholder="Not set" /><p class="tables-field-help">Renaming never changes the table's QR code or NFC tag.</p></ng-container>
+    <div class="alert alert-danger mt-3 mb-0" *ngIf="nameError" role="alert">{{ nameError }}</div>
+    <div class="tables-dialog-actions"><button class="btn btn-outline-secondary" type="button" [disabled]="busy" (click)="closeNameDialog()">Cancel</button><button class="btn btn-primary" type="submit" [disabled]="busy || !nameValue.trim()">{{ busy ? 'Saving…' : 'Save changes' }}</button></div>
   </form>
 </dialog>
-
 <dialog #qrDialogElement class="branch-qr-dialog" aria-labelledby="table-qr-title" (close)="qrTable = null">
-  <ng-container *ngIf="qrTable as table">
-    <h2 id="table-qr-title" class="h5">Table {{ table.name }}</h2>
-    <p class="small text-body-secondary">Scan to open the menu at this table. NFC tags carry the same link.</p>
-    <app-branch-catalog-qr [url]="table.link" />
-    <p class="small mt-2 mb-0">Table code <code>{{ table.code }}</code></p>
-    <div class="d-flex justify-content-end gap-2 mt-3">
-      <a class="btn btn-outline-primary" [href]="table.link" target="_blank" rel="noopener noreferrer">Open link</a>
-      <button class="btn btn-secondary" type="button" (click)="closeQr()">Close</button>
-    </div>
-  </ng-container>
+  <ng-container *ngIf="qrTable as table"><p class="tables-eyebrow">GUEST CHECK-IN</p><h2 id="table-qr-title">Table {{ table.name }}</h2><p class="tables-field-help">Scan to open the menu at this table. NFC tags carry the same link.</p><app-branch-catalog-qr [url]="table.link" /><p class="tables-field-help mt-3">Table code <code>{{ table.code }}</code></p><div class="tables-dialog-actions"><a class="btn btn-outline-primary" [href]="table.link" target="_blank" rel="noopener noreferrer">Open link</a><button class="btn btn-primary" type="button" (click)="closeQr()">Done</button></div></ng-container>
 </dialog>

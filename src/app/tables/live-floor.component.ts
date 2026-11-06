@@ -1,25 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, Input, OnChanges, OnDestroy } from '@angular/core';
+import { Component, ElementRef, Input, OnChanges, OnDestroy, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription, defer, repeat, retry, switchMap, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { BranchFloor, FloorPlan, TableLive, TableOrderSummary } from '../models/merchant-catalog.models';
+import { BranchFloor, TableLive, TableOrderSummary } from '../models/merchant-catalog.models';
 import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { TableQrCardComponent } from './table-qr-card.component';
-import { TableTone, exceedsCapacity, isUnpaid, livePinLabel, paymentLabel, pinPosition, preparationLabel, tableTone } from './floor-plan';
+import { TableTone, exceedsCapacity, isUnpaid, paymentLabel, preparationLabel, tableTone } from './floor-plan';
 
 /** Wait before reconnecting after the stream drops; the floor is reloaded on every reconnect. */
 const RECONNECT_MS = 3000;
-
-const TONE_LABELS: Record<TableTone, string> = {
-  free: 'Free',
-  paid: 'Occupied, paid',
-  unpaid: 'Occupied, to pay',
-  reserved: 'Reserved'
-};
 
 /**
  * Live floor of a Branch for a Platform Admin: every Table's status, Guest Count and open orders. Loads `/floor` once,
@@ -31,34 +24,34 @@ const TONE_LABELS: Record<TableTone, string> = {
   standalone: true,
   imports: [CommonModule, FormsModule, DisplayDatePipe, TableQrCardComponent],
   templateUrl: './live-floor.component.html',
-  styleUrls: ['../merchant-catalog/merchant-catalog.component.css', './branch-tables.component.css']
+  styleUrls: ['../merchant-catalog/merchant-catalog.component.css', './branch-tables.component.css', './live-floor.component.css']
 })
 export class LiveFloorComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) merchantId = '';
   @Input({ required: true }) branchId = '';
 
   readonly apiVersion = 'v1';
-  readonly tones: TableTone[] = ['free', 'unpaid', 'paid'];
-  readonly toneLabel = (tone: TableTone) => TONE_LABELS[tone];
-  readonly pinPosition = pinPosition;
-  readonly pinLabel = livePinLabel;
   readonly paymentLabel = paymentLabel;
   readonly preparationLabel = preparationLabel;
   readonly isUnpaid = isUnpaid;
 
   floor: BranchFloor | null = null;
   floorPlanId: string | null = null;
+  query = '';
+  statusFilter: 'all' | 'free' | 'occupied' | 'unpaid' | 'reserved' = 'all';
   selectedTableId: string | null = null;
   loading = false;
   error = '';
   lastUpdated: Date | null = null;
 
   private live?: Subscription;
+  @ViewChild('detailDialog') private detailDialog?: ElementRef<HTMLDialogElement>;
 
   constructor(private readonly merchantApi: MerchantApiService) {}
 
   ngOnChanges(): void {
     this.live?.unsubscribe();
+    this.closeDetails();
     this.floor = null;
     this.selectedTableId = null;
     if (!this.merchantId || !this.branchId) return;
@@ -86,7 +79,8 @@ export class LiveFloorComponent implements OnChanges, OnDestroy {
     this.error = '';
     this.floor = floor;
     this.lastUpdated = new Date();
-    if (!floor.floorPlans.some((plan) => plan.id === this.floorPlanId)) this.floorPlanId = floor.floorPlans[0]?.id ?? null;
+    if (this.floorPlanId !== 'unassigned' && !floor.floorPlans.some(plan => plan.id === this.floorPlanId)) this.floorPlanId = null;
+    if (this.selectedTableId && !floor.tables.some(live => live.table.id === this.selectedTableId)) this.closeDetails();
   }
 
   /** One Table changed: replace it, add it, or drop it when it was deactivated. */
@@ -100,20 +94,71 @@ export class LiveFloorComponent implements OnChanges, OnDestroy {
       tables.splice(index === -1 ? tables.length : index, 0, live);
     }
     this.floor = { ...this.floor, tables };
+    if (!live.table.active && live.table.id === this.selectedTableId) this.closeDetails();
     this.lastUpdated = new Date();
   }
 
-  get floorPlan(): FloorPlan | null {
-    return this.floor?.floorPlans.find((plan) => plan.id === this.floorPlanId) ?? null;
+  get groups(): { id: string; name: string; tables: TableLive[] }[] {
+    const query = this.query.trim().toLocaleLowerCase();
+    const plans = this.floor?.floorPlans ?? [];
+    const groups = [...plans.map(plan => ({ id: plan.id, name: plan.name })), { id: 'unassigned', name: 'Unassigned' }];
+    return groups.filter(group => !this.floorPlanId || group.id === this.floorPlanId).map(group => ({
+      ...group,
+      tables: (this.floor?.tables ?? []).filter(live => {
+        const area = plans.some(plan => plan.id === live.table.placement?.floorPlanId) ? live.table.placement!.floorPlanId : 'unassigned';
+        return area === group.id &&
+          (!query || `${live.table.name} ${live.table.code} ${group.name}`.toLocaleLowerCase().includes(query)) &&
+          (this.statusFilter === 'all' || (this.statusFilter === 'occupied' ? live.status === 'OCCUPIED' : this.tone(live) === this.statusFilter));
+      }).sort((a, b) => a.table.name.localeCompare(b.table.name, undefined, { numeric: true, sensitivity: 'base' }))
+    })).filter(group => group.tables.length > 0);
   }
 
-  get placed(): TableLive[] {
-    return (this.floor?.tables ?? []).filter((live) => !!this.floorPlanId && live.table.placement?.floorPlanId === this.floorPlanId);
+  get availableCount(): number { return this.floor?.tables.filter(live => live.status === 'FREE').length ?? 0; }
+  get occupiedCount(): number { return this.floor?.tables.filter(live => live.status === 'OCCUPIED').length ?? 0; }
+  get unpaidCount(): number { return this.floor?.tables.filter(live => this.tone(live) === 'unpaid').length ?? 0; }
+  get guestCount(): number { return this.floor?.tables.reduce((sum, live) => sum + (live.status === 'OCCUPIED' ? live.guestCount ?? 0 : 0), 0) ?? 0; }
+
+  clearFilters(): void { this.query = ''; this.floorPlanId = null; this.statusFilter = 'all'; }
+
+  trackGroup(_index: number, group: { id: string }): string { return group.id; }
+  trackTable(_index: number, live: TableLive): string { return live.table.id; }
+
+  /** Draw individual chairs only for small tables; capacity remains explicit for larger ones. */
+  chairs(live: TableLive): { x: number; y: number; rotation: number; occupied: boolean }[] {
+    const seats = live.table.seats;
+    if (seats == null || seats < 1 || seats > 8) return [];
+    return Array.from({ length: seats }, (_, index) => {
+      const angle = (index * 360 / seats) - 90;
+      return {
+        x: 50 + 42 * Math.cos(angle * Math.PI / 180),
+        y: 50 + 40 * Math.sin(angle * Math.PI / 180),
+        rotation: angle + 90,
+        occupied: live.status === 'OCCUPIED' && index < (live.guestCount ?? 0)
+      };
+    });
   }
 
-  /** Active Tables that are on no Floor Plan; shown as a list so their status is still visible. */
-  get unplaced(): TableLive[] {
-    return (this.floor?.tables ?? []).filter((live) => !live.table.placement);
+  seatingLabel(live: TableLive): string {
+    const seats = live.table.seats == null ? 'Seats not set' : `${live.table.seats} ${live.table.seats === 1 ? 'seat' : 'seats'}`;
+    if (live.status !== 'OCCUPIED') return seats;
+    const guests = live.guestCount == null ? 'Guest count not set' : `${live.guestCount} ${live.guestCount === 1 ? 'guest' : 'guests'}`;
+    return `${guests} · ${seats.toLowerCase()}`;
+  }
+
+  statusLabel(live: TableLive): string {
+    if (live.status === 'FREE') return 'Available';
+    if (live.status === 'RESERVED') return 'Reserved';
+    if (this.tone(live) === 'unpaid') return 'To pay';
+    return live.orders.length ? 'Occupied · Paid' : 'Occupied';
+  }
+
+  unpaidAmounts(live: TableLive): string[] {
+    const totals = new Map<string, number>();
+    live.orders.filter(isUnpaid).forEach(order => {
+      const currency = order.currency || 'EUR';
+      totals.set(currency, (totals.get(currency) ?? 0) + order.totalAmountMinor);
+    });
+    return [...totals].map(([currency, total]) => this.formatAmount(total, currency));
   }
 
   get selected(): TableLive | null {
@@ -144,14 +189,24 @@ export class LiveFloorComponent implements OnChanges, OnDestroy {
   tone(live: TableLive): TableTone { return tableTone(live); }
 
   select(live: TableLive): void {
-    this.selectedTableId = this.selectedTableId === live.table.id ? null : live.table.id;
+    this.selectedTableId = live.table.id;
+    this.detailDialog?.nativeElement.showModal();
+  }
+
+  closeDetails(): void {
+    this.detailDialog?.nativeElement.close();
+    this.selectedTableId = null;
   }
 
   amount(order: TableOrderSummary): string {
+    return this.formatAmount(order.totalAmountMinor, order.currency || 'EUR');
+  }
+
+  private formatAmount(totalMinor: number, currency: string): string {
     try {
-      return new Intl.NumberFormat('de-DE', { style: 'currency', currency: order.currency || 'EUR' }).format(order.totalAmountMinor / 100);
+      return new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(totalMinor / 100);
     } catch {
-      return `${(order.totalAmountMinor / 100).toFixed(2)} ${order.currency}`;
+      return `${(totalMinor / 100).toFixed(2)} ${currency}`;
     }
   }
 
