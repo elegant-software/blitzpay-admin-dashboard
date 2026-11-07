@@ -74,6 +74,15 @@ export class NotificationService extends MessageService implements OnDestroy {
 }
 
 /** Show only short, plain-language 4xx API details; never render raw diagnostics. */
+/** Customer wording for backend error codes (ProblemDetail `code`). Branch on codes, never on `detail` text. */
+const MESSAGES_BY_CODE: Readonly<Record<string, string>> = {
+  LOCATION_REQUIRED: "Allow location access to confirm you are at the restaurant, then try again.",
+  LOCATION_INACCURATE:
+    "Your location is too approximate to confirm you are at the restaurant. Enable precise location and try again.",
+  LOCATION_EXPIRED: "Your location has expired. Please try again so we can check your current location.",
+  OUTSIDE_GEOFENCE: "You need to be at the restaurant to order at this table. Check your location and try again.",
+};
+
 export function apiErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof LocationUnavailableError) return error.message;
   if (!(error instanceof HttpErrorResponse)) return fallback;
@@ -84,37 +93,16 @@ export function apiErrorMessage(error: unknown, fallback: string): string {
 
   const body = error.error;
   if (!body || typeof body !== "object" || Array.isArray(body)) return fallback;
-  const candidates: unknown[] = [
-    body.detail,
-    body.message,
-    body.error?.detail,
-    body.error?.message,
-    body.error,
-  ];
-  const locationMessages: Record<string, string> = {
-    'customerLocation accuracy is insufficient for WALK_IN_ORDERING':
-      'Your location is too approximate to confirm you are at the restaurant. Enable precise location and try again.',
-    'customerLocation is too old for WALK_IN_ORDERING':
-      'Your location has expired. Please try again so we can check your current location.',
-    'customerLocation is required for WALK_IN_ORDERING':
-      'Allow location access to confirm you are at the restaurant, then try again.',
-    'Customer is outside the branch geofence':
-      'You need to be at the restaurant to order at this table. Check your location and try again.'
-  };
-  for (const candidate of candidates) {
-    if (typeof candidate === 'string' && Object.hasOwn(locationMessages, candidate.trim())) {
-      return locationMessages[candidate.trim()];
-    }
-  }
-  const safe = candidates.find(
-    (value): value is string =>
-      typeof value === "string" &&
-      value.trim().length > 0 &&
-      value.length <= 300 &&
-      !/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b|\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/i.test(value) &&
-      !/[<>\r\n]|https?:\/\/|\b(?:exception|stacktrace|traceback|SQL|syntax|java\.|org\.|password|secret|token|authorization|bearer|database|localhost)\b|(?:\b(?:SELECT|INSERT|UPDATE|DELETE)\b\s+\w+)/i.test(
-        value,
-      ),
-  );
-  return safe?.trim() || fallback;
+  const code: unknown = body.code;
+  if (typeof code === "string" && Object.hasOwn(MESSAGES_BY_CODE, code)) return MESSAGES_BY_CODE[code];
+  const detail: unknown = body.detail;
+  const safe =
+    typeof detail === "string" &&
+    detail.trim().length > 0 &&
+    detail.length <= 300 &&
+    !/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b|\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/i.test(detail) &&
+    !/[<>\r\n]|https?:\/\/|\b(?:exception|stacktrace|traceback|SQL|syntax|java\.|org\.|password|secret|token|authorization|bearer|database|localhost)\b|(?:\b(?:SELECT|INSERT|UPDATE|DELETE)\b\s+\w+)/i.test(
+      detail,
+    );
+  return safe ? detail.trim() : fallback;
 }

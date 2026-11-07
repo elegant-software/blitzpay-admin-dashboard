@@ -214,7 +214,7 @@ describe('GuestCheckoutComponent at a Table', () => {
     });
     const detail = 'customerLocation accuracy is insufficient for WALK_IN_ORDERING';
     api.createOrder.and.returnValue(throwError(() => new HttpErrorResponse({
-      status: 400, error: { error: detail }
+      status: 400, error: { status: 400, detail, code: 'LOCATION_INACCURATE' }
     })));
     const harness = await open();
     harness.routeNativeElement!.querySelector<HTMLInputElement>('[data-testid="pay-cash"]')!.click();
