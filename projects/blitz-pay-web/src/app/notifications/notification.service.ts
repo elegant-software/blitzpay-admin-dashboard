@@ -1,4 +1,4 @@
-﻿import { HttpErrorResponse } from "@angular/common/http";
+import { HttpErrorResponse } from "@angular/common/http";
 import { Injectable, NgZone, OnDestroy, inject } from "@angular/core";
 import { MessageService, ToastMessageOptions } from "primeng/api";
 import { LocationUnavailableError } from '../table/storefront-location.service';
@@ -25,8 +25,8 @@ export class NotificationService extends MessageService implements OnDestroy {
     this.notify("error", message);
   }
 
-  apiError(error: unknown, fallback: string): string {
-    const message = apiErrorMessage(error, fallback);
+  apiError(error: unknown, fallback: string, byCode?: Readonly<Record<string, string>>): string {
+    const message = apiErrorMessage(error, fallback, byCode);
     if (error !== null && typeof error === "object") {
       if (this.reportedErrors.has(error)) return message;
       this.reportedErrors.add(error);
@@ -73,7 +73,6 @@ export class NotificationService extends MessageService implements OnDestroy {
   }
 }
 
-/** Show only short, plain-language 4xx API details; never render raw diagnostics. */
 /** Customer wording for backend error codes (ProblemDetail `code`). Branch on codes, never on `detail` text. */
 const MESSAGES_BY_CODE: Readonly<Record<string, string>> = {
   LOCATION_REQUIRED: "Allow location access to confirm you are at the restaurant, then try again.",
@@ -81,11 +80,30 @@ const MESSAGES_BY_CODE: Readonly<Record<string, string>> = {
     "Your location is too approximate to confirm you are at the restaurant. Enable precise location and try again.",
   LOCATION_EXPIRED: "Your location has expired. Please try again so we can check your current location.",
   OUTSIDE_GEOFENCE: "You need to be at the restaurant to order at this table. Check your location and try again.",
+  TOO_MANY_REQUESTS: "Too many payment attempts for this order. Please ask a member of staff for help.",
 };
 
-export function apiErrorMessage(error: unknown, fallback: string): string {
+/** Backend errors are ProblemDetail bodies: `{ status, detail, code }`. Branch on `code`, never on `detail` text. */
+export function apiErrorCode(error: unknown): string | undefined {
+  if (!(error instanceof HttpErrorResponse)) return undefined;
+  const code = error.error?.code;
+  return typeof code === "string" ? code : undefined;
+}
+
+/**
+ * Text for an API failure: the caller's `byCode` wording, then the storefront's `MESSAGES_BY_CODE`,
+ * else a short, plain-language 4xx `detail`; never raw diagnostics.
+ */
+export function apiErrorMessage(
+  error: unknown,
+  fallback: string,
+  byCode: Readonly<Record<string, string>> = {},
+): string {
   if (error instanceof LocationUnavailableError) return error.message;
   if (!(error instanceof HttpErrorResponse)) return fallback;
+  const code = apiErrorCode(error);
+  if (code && Object.hasOwn(byCode, code)) return byCode[code];
+  if (code && Object.hasOwn(MESSAGES_BY_CODE, code)) return MESSAGES_BY_CODE[code];
   if (error.status === 0)
     return "Could not reach the server. Check your connection and try again.";
   // Authentication/authorization and server failures are handled with a friendly fallback.
@@ -93,8 +111,6 @@ export function apiErrorMessage(error: unknown, fallback: string): string {
 
   const body = error.error;
   if (!body || typeof body !== "object" || Array.isArray(body)) return fallback;
-  const code: unknown = body.code;
-  if (typeof code === "string" && Object.hasOwn(MESSAGES_BY_CODE, code)) return MESSAGES_BY_CODE[code];
   const detail: unknown = body.detail;
   const safe =
     typeof detail === "string" &&

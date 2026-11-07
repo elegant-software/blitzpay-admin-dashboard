@@ -16,8 +16,11 @@ The storefront uses the admin dashboard's PrimeNG notification pattern from
   do not delay checkout stability or service-worker registration.
 - Keep persistent empty, unavailable, offline, and field-validation states in
   their pages. Toasts supplement checkout errors beside the retry action.
-- Known table-location errors have actionable wording. Unknown server diagnostics
-  use a safe fallback; network failures explain connectivity.
+- Backend errors are ProblemDetail bodies `{ status, detail, code }`. Pick wording by
+  `code`, never by `detail` text: `MESSAGES_BY_CODE` next to `apiErrorMessage` holds the
+  storefront's own wording (table-location codes, `TOO_MANY_REQUESTS`); a caller can pass
+  `byCode` for page-specific wording. Otherwise a short 4xx `detail` is shown, unknown
+  diagnostics use a safe fallback, and network failures explain connectivity.
 
 The toast host supports native modal dialogs, keyboard dismissal, mobile widths,
 and both storefront themes. Only Aura base and toast tokens are loaded.
