@@ -23,12 +23,12 @@ export class NotificationService extends MessageService implements OnDestroy {
     this.notify("error", message);
   }
 
-  apiError(error: unknown, fallback: string): void {
+  apiError(error: unknown, fallback: string, byCode?: Readonly<Record<string, string>>): void {
     if (error !== null && typeof error === "object") {
       if (this.reportedErrors.has(error)) return;
       this.reportedErrors.add(error);
     }
-    this.error(apiErrorMessage(error, fallback));
+    this.error(apiErrorMessage(error, fallback, byCode));
   }
 
   dismissed(message: ToastMessageOptions): void {
@@ -69,9 +69,25 @@ export class NotificationService extends MessageService implements OnDestroy {
   }
 }
 
-/** Show only short, plain-language 4xx API details; never render raw diagnostics. */
-export function apiErrorMessage(error: unknown, fallback: string): string {
+/** Backend errors are ProblemDetail bodies: `{ status, detail, code }`. Branch on `code`, never on `detail` text. */
+export function apiErrorCode(error: unknown): string | undefined {
+  if (!(error instanceof HttpErrorResponse)) return undefined;
+  const code = error.error?.code;
+  return typeof code === "string" ? code : undefined;
+}
+
+/**
+ * Text for an API failure: `byCode[code]` when the caller has its own wording for that code,
+ * else a short, plain-language 4xx `detail`; never raw diagnostics.
+ */
+export function apiErrorMessage(
+  error: unknown,
+  fallback: string,
+  byCode: Readonly<Record<string, string>> = {},
+): string {
   if (!(error instanceof HttpErrorResponse)) return fallback;
+  const code = apiErrorCode(error);
+  if (code && Object.hasOwn(byCode, code)) return byCode[code];
   if (error.status === 0)
     return "Could not reach the server. Check your connection and try again.";
   // Authentication/authorization and server failures are handled with a friendly fallback.
@@ -79,20 +95,13 @@ export function apiErrorMessage(error: unknown, fallback: string): string {
 
   const body = error.error;
   if (!body || typeof body !== "object" || Array.isArray(body)) return fallback;
-  const candidates: unknown[] = [
-    body.detail,
-    body.message,
-    body.error?.detail,
-    body.error?.message,
-  ];
-  const safe = candidates.find(
-    (value): value is string =>
-      typeof value === "string" &&
-      value.trim().length > 0 &&
-      value.length <= 300 &&
-      !/[<>\r\n]|https?:\/\/|\b(?:exception|stacktrace|traceback|SQL|syntax|java\.|org\.|password|secret|token|authorization|bearer|database|localhost)\b|(?:\b(?:SELECT|INSERT|UPDATE|DELETE)\b\s+\w+)/i.test(
-        value,
-      ),
-  );
-  return safe?.trim() || fallback;
+  const detail: unknown = body.detail;
+  const safe =
+    typeof detail === "string" &&
+    detail.trim().length > 0 &&
+    detail.length <= 300 &&
+    !/[<>\r\n]|https?:\/\/|\b(?:exception|stacktrace|traceback|SQL|syntax|java\.|org\.|password|secret|token|authorization|bearer|database|localhost)\b|(?:\b(?:SELECT|INSERT|UPDATE|DELETE)\b\s+\w+)/i.test(
+      detail,
+    );
+  return safe ? detail.trim() : fallback;
 }

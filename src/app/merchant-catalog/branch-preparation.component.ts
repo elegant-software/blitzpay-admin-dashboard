@@ -7,6 +7,7 @@ import { environment } from '../../environments/environment';
 import { PreparationConfiguration, Product, ProductCategory } from '../models/merchant-catalog.models';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
+import { apiErrorMessage } from '../notifications/notification.service';
 
 @Component({
   selector: 'app-branch-preparation',
@@ -119,7 +120,6 @@ export class BranchPreparationComponent implements OnDestroy {
   ngOnDestroy(): void { this.request?.unsubscribe(); }
 
   private toMessage(error: HttpErrorResponse): string {
-    return error.error?.detail || error.error?.message || error.error?.error ||
-      (error.status === 0 ? 'Could not reach the server.' : 'Could not load or save preparation settings.');
+    return apiErrorMessage(error, 'Could not load or save preparation settings.');
   }
 }
