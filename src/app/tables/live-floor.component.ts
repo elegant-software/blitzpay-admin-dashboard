@@ -10,6 +10,7 @@ import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { TableQrCardComponent } from './table-qr-card.component';
 import { TableTone, exceedsCapacity, isUnpaid, livePinLabel, paymentLabel, pinPosition, preparationLabel, tableTone } from './floor-plan';
+import { apiErrorMessage } from '../notifications/notification.service';
 
 /** Wait before reconnecting after the stream drops; the floor is reloaded on every reconnect. */
 const RECONNECT_MS = 3000;
@@ -159,7 +160,6 @@ export class LiveFloorComponent implements OnChanges, OnDestroy {
     const httpError = error as HttpErrorResponse;
     if (httpError?.status === 0) return 'Could not reach the server. Retrying…';
     if (httpError?.status === 404) return 'Branch not found.';
-    const body = httpError?.error as { detail?: string; message?: string } | null | undefined;
-    return body?.detail || body?.message || 'Failed to load the live floor. Retrying…';
+    return apiErrorMessage(error, 'Failed to load the live floor. Retrying…');
   }
 }
