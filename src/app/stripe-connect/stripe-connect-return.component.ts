@@ -5,6 +5,7 @@ import { MerchantApiService } from '../services/merchant-api.service';
 import { PaymentAccountStatus, StripeConnectStatusResponse } from '../models/merchant-catalog.models';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { EnvironmentKey } from '../models/merchant-catalog.models';
+import { apiErrorMessage } from '../notifications/notification.service';
 
 @Component({
   selector: 'app-stripe-connect-return',
@@ -125,7 +126,7 @@ export class StripeConnectReturnComponent implements OnInit {
       error: (err) => {
         this.redirecting = false;
         this.status = 'error';
-        this.errorMessage = err?.error?.detail ?? err?.error?.message ?? 'Failed to refresh onboarding link.';
+        this.errorMessage = apiErrorMessage(err, 'Failed to refresh onboarding link.');
       }
     });
   }

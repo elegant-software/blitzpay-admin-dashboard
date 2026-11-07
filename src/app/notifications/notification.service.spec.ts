@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from "@angular/common/http";
 import { fakeAsync, TestBed, tick } from "@angular/core/testing";
 import { ToastMessageOptions } from "primeng/api";
-import { NotificationService } from "./notification.service";
+import { apiErrorCode, apiErrorMessage, NotificationService } from "./notification.service";
 
 describe("NotificationService", () => {
   let notifications: NotificationService;
@@ -71,6 +71,17 @@ describe("NotificationService", () => {
     ]);
     tick(12000);
   }));
+
+  it("prefers the caller's wording for a known error code", () => {
+    const outsideGeofence = new HttpErrorResponse({
+      status: 422,
+      error: { status: 422, detail: "Customer is outside the branch geofence", code: "OUTSIDE_GEOFENCE" },
+    });
+    const byCode = { OUTSIDE_GEOFENCE: "You need to be at the restaurant to order." };
+    expect(apiErrorCode(outsideGeofence)).toBe("OUTSIDE_GEOFENCE");
+    expect(apiErrorMessage(outsideGeofence, "Fallback", byCode)).toBe("You need to be at the restaurant to order.");
+    expect(apiErrorMessage(outsideGeofence, "Fallback")).toBe("Customer is outside the branch geofence");
+  });
 
   it("reports one failure once even if two handlers report the same response", fakeAsync(() => {
     const error = new HttpErrorResponse({
