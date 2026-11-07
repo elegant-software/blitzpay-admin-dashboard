@@ -8,6 +8,7 @@ import { StorefrontBranch, StorefrontMerchant, StorefrontProduct } from '../mode
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
 import { StorefrontLanguageService } from '../services/storefront-language.service';
+import { NotificationService } from '../notifications/notification.service';
 
 @Component({
   selector: 'product-overview',
@@ -59,6 +60,7 @@ import { StorefrontLanguageService } from '../services/storefront-language.servi
   `
 })
 export class ProductOverviewComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
   private readonly cart = inject(StorefrontSessionService);
@@ -89,13 +91,14 @@ export class ProductOverviewComponent implements OnInit {
         this.branch = result.branch;
         this.product = result.product;
       },
-      error: () => this.errorMessage = 'Unable to load this product.'
+      error: (error: unknown) => this.errorMessage = this.notifications.apiError(error, 'Unable to load this product.')
     });
   }
 
   addProduct(): void {
     if (this.product?.active && this.branch?.active !== false && this.cart.useScope(this.merchantId, this.branchId)) {
       this.cart.add(this.product, this.quantity);
+      this.notifications.success('Added to your cart.');
     }
   }
 }

@@ -2,8 +2,22 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { environment } from '../environments/environment';
 import { AppComponent } from './app.component';
+import { NotificationService } from './notifications/notification.service';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
 describe('Web Storefront shell', () => {
+  it('mounts the global toast host and shows action feedback', async () => {
+    await TestBed.configureTestingModule({
+      imports: [AppComponent], providers: [provideRouter([]), provideNoopAnimations()]
+    }).compileComponents();
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    TestBed.inject(NotificationService).success('Your order was placed. Please pay staff in cash.');
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement.querySelector('app-notifications');
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain('Your order was placed.');
+  });
+
   const dispatchInstallPrompt = (prompt: () => Promise<void>): void => {
     const event = Object.assign(new Event('beforeinstallprompt', { cancelable: true }), {
       prompt,

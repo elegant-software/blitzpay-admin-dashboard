@@ -6,6 +6,7 @@ import { finalize, Subscription } from 'rxjs';
 import { StorefrontOrder, StorefrontPreparationStatus } from '../models/storefront.models';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
+import { NotificationService } from '../notifications/notification.service';
 
 const PREPARATION_LABELS: Record<StorefrontPreparationStatus, string> = {
   RECEIVED: 'Received',
@@ -41,6 +42,7 @@ const PREPARATION_LABELS: Record<StorefrontPreparationStatus, string> = {
   `
 })
 export class OrderConfirmationComponent implements OnInit, OnDestroy {
+  private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
   private readonly cart = inject(StorefrontSessionService);
@@ -67,6 +69,7 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
     // Stripe appends redirect_status after a card redirect (e.g. 3DS). Only the order status, set by the webhook, means paid.
     if (this.route.snapshot.queryParamMap?.get('redirect_status') === 'failed') {
       this.errorMessage = 'Your payment did not go through. Please try again.';
+      this.notifications.error(this.errorMessage);
     }
     this.refresh();
   }
@@ -87,12 +90,15 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
         // 404 also covers a missing or expired guest_token cookie (order is only visible in the browser that created it).
         this.errorMessage = error instanceof HttpErrorResponse && error.status === 404
           ? 'This order can only be viewed in the browser it was placed in, for up to an hour.'
-          : 'Unable to check payment. Please try again.';
+          : this.notifications.apiError(error, 'Unable to check payment. Please try again.');
+        if (error instanceof HttpErrorResponse && error.status === 404) this.notifications.error(this.errorMessage);
       }
     });
   }
 
   private apply(order: StorefrontOrder): void {
+    if (order.status === 'PAID' && !this.paid) this.notifications.success('Your payment has been confirmed.');
+    if (order.preparationStatus === 'READY' && this.preparationStatus !== 'READY') this.notifications.info('Your order is ready for pickup.');
     this.paid = order.status === 'PAID';
     this.reference = order.reference ?? '';
     this.checkoutLink = order.merchantId && order.branchId ? ['/m', order.merchantId, 'b', order.branchId, 'checkout'] : null;
@@ -108,7 +114,10 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
     if (this.events || this.preparationStatus === 'READY') return;
     this.events = this.api.guestOrderEvents(this.orderId).subscribe({
       next: order => this.apply(order),
-      error: () => this.events = null
+      error: () => {
+        this.events = null;
+        this.notifications.warning('Live updates are unavailable. Use Check payment status to refresh your order.');
+      }
     });
   }
 

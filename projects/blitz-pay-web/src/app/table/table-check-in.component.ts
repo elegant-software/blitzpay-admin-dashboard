@@ -7,6 +7,7 @@ import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontTableService } from './storefront-table.service';
 import { parseTableCode } from './table-code';
 import { TableCodeFormComponent } from './table-code-form.component';
+import { NotificationService } from '../notifications/notification.service';
 
 type CheckInState = 'loading' | 'not-found' | 'error';
 
@@ -33,6 +34,7 @@ type CheckInState = 'loading' | 'not-found' | 'error';
   `
 })
 export class TableCheckInComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(StorefrontApiService);
@@ -59,10 +61,13 @@ export class TableCheckInComponent implements OnInit {
       next: (resolution) => {
         // The Web Catalog then scopes the cart, disclosing a cart from another location exactly as on a Branch link.
         this.tables.checkIn(code, resolution);
+        if (!resolution.active) this.notifications.info('This table is unavailable. You can order for collection at the counter.');
         void this.router.navigate(['/m', resolution.merchantId, 'b', resolution.branchId], { replaceUrl: true });
       },
       error: (error: unknown) => {
         this.state = error instanceof HttpErrorResponse && error.status === 404 ? 'not-found' : 'error';
+        if (this.state === 'not-found') this.notifications.warning('We could not find this table. Check the code or ask a member of staff.');
+        else this.notifications.apiError(error, 'Unable to open this table. Please try again.');
       }
     });
   }

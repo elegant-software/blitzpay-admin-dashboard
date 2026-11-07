@@ -1,5 +1,4 @@
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -7,6 +6,7 @@ import { StorefrontOrder } from '../models/storefront.models';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { GuestPaymentService } from '../services/guest-payment.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
+import { NotificationService } from '../notifications/notification.service';
 
 @Component({
   selector: 'web-qr-order-landing',
@@ -52,6 +52,7 @@ import { StorefrontSessionService } from '../services/storefront-session.service
   `
 })
 export class QrOrderLandingComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
   private readonly payment = inject(GuestPaymentService);
@@ -103,10 +104,6 @@ export class QrOrderLandingComponent implements OnInit {
   }
 
   private toMessage(error: unknown, fallback: string): string {
-    if (error instanceof HttpErrorResponse) {
-      const detail = error.error?.error?.detail ?? error.error?.detail ?? error.error?.message;
-      if (typeof detail === 'string' && detail.trim()) return detail;
-    }
-    return fallback;
+    return this.notifications.apiError(error, fallback);
   }
 }

@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, forkJoin, from, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -19,6 +18,7 @@ import { StorefrontLanguageService } from '../services/storefront-language.servi
 import { CardPaymentForm, GuestPaymentService } from '../services/guest-payment.service';
 import { StorefrontTableService } from '../table/storefront-table.service';
 import { StorefrontLocationService } from '../table/storefront-location.service';
+import { NotificationService } from '../notifications/notification.service';
 
 /** Online methods are paid now; CASH (only at a Table) is paid to staff, and the Order stays unpaid until they confirm it. */
 type GuestCheckoutChoice = StorefrontPaymentMethod | 'CASH';
@@ -37,7 +37,7 @@ type GuestCheckoutChoice = StorefrontPaymentMethod | 'CASH';
         <p class="fulfillment-label" *ngIf="tableName" data-testid="checkout-table">Your table: {{ tableName }}</p>
       </div>
     </section>
-    <p class="storefront-alert" *ngIf="errorMessage" role="alert">{{ errorMessage }}</p>
+    <p class="storefront-alert" *ngIf="errorMessage && (loading || !branch || branch.active === false)" role="alert">{{ errorMessage }}</p>
     <section class="unavailable surface" *ngIf="!loading && branch?.active === false">
       <p class="eyebrow">Unavailable Branch Notice</p>
       <h2>This location is not accepting online orders.</h2>
@@ -82,6 +82,9 @@ type GuestCheckoutChoice = StorefrontPaymentMethod | 'CASH';
           Product availability or pricing has changed. Review and accept the updated cart before paying.
           <button class="review-button" type="button" (click)="acceptCartUpdates()">Accept updates</button>
         </div>
+        <div class="storefront-alert" *ngIf="errorMessage" role="alert" aria-live="assertive">
+          <p>{{ errorMessage }}</p>
+        </div>
         <button
           class="checkout-button"
           type="button"
@@ -98,6 +101,7 @@ type GuestCheckoutChoice = StorefrontPaymentMethod | 'CASH';
   `
 })
 export class GuestCheckoutComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
   private readonly payment = inject(GuestPaymentService);
@@ -133,6 +137,7 @@ export class GuestCheckoutComponent implements OnInit {
   ngOnInit(): void {
     if (!this.cart.useScope(this.merchantId, this.branchId)) {
       this.errorMessage = 'Your cart contains items from another location.';
+      this.notifications.warning(this.errorMessage);
     }
     forkJoin({
       merchant: this.api.getMerchant(this.merchantId),
@@ -152,7 +157,7 @@ export class GuestCheckoutComponent implements OnInit {
         this.cartNeedsReview = this.cart.reconcile(products, false);
         this.selectedPaymentMethod = this.cardAvailable ? 'CARD' : this.payByBankAvailable ? 'PAY_BY_BANK' : this.cashAvailable ? 'CASH' : undefined;
       },
-      error: () => this.errorMessage = 'Unable to load guest checkout.'
+      error: (error: unknown) => this.errorMessage = this.toMessage(error, 'Unable to load guest checkout.')
     });
   }
 
@@ -194,7 +199,7 @@ export class GuestCheckoutComponent implements OnInit {
         try {
           this.cardForm = await this.payment.mountCard(payment, this.cardHost!.nativeElement);
         } catch (error) {
-          this.errorMessage = (error as Error).message;
+          this.errorMessage = this.toMessage(error, 'Unable to open card payment. Please try again.');
         }
       },
       error: (error: unknown) => this.errorMessage = this.toMessage(error, 'Unable to start payment.')
@@ -206,8 +211,14 @@ export class GuestCheckoutComponent implements OnInit {
     this.checkingOut = true;
     this.errorMessage = '';
     // Resolves only on failure; on success Stripe navigates to the confirmation page.
-    this.errorMessage = await this.cardForm.confirm(`${window.location.origin}/order/${encodeURIComponent(this.orderId)}/confirmation`);
-    this.checkingOut = false;
+    try {
+      this.errorMessage = await this.cardForm.confirm(`${window.location.origin}/order/${encodeURIComponent(this.orderId)}/confirmation`);
+      if (this.errorMessage) this.notifications.error(this.errorMessage);
+    } catch (error) {
+      this.errorMessage = this.toMessage(error, 'Unable to complete card payment. Please try again.');
+    } finally {
+      this.checkingOut = false;
+    }
   }
 
   /** 1–50; anything else falls back to 2 rather than blocking the order. */
@@ -219,6 +230,7 @@ export class GuestCheckoutComponent implements OnInit {
   private placeCashOrder(): void {
     this.guestOrderId(true).pipe(finalize(() => this.checkingOut = false)).subscribe({
       next: (orderId) => {
+        this.notifications.success('Your order was placed. Please pay staff in cash.');
         this.cart.clearLines();
         void this.router.navigate(['/order', orderId, 'confirmation'], { queryParams: { payment: 'cash' } });
       },
@@ -257,7 +269,6 @@ export class GuestCheckoutComponent implements OnInit {
   }
 
   private toMessage(error: unknown, fallback: string): string {
-    if (error instanceof HttpErrorResponse) return error.error?.detail ?? error.error?.message ?? error.error?.error ?? fallback;
-    return error instanceof Error && error.message ? error.message : fallback;
+    return this.notifications.apiError(error, fallback);
   }
 }
