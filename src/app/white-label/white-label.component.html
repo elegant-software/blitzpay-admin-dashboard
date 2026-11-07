@@ -1,0 +1,135 @@
+<main class="white-label-page">
+  <nav *ngIf="!selfService" class="page-breadcrumb" aria-label="Breadcrumb">
+    <a routerLink="/merchants">Merchants</a><span aria-hidden="true">/</span>
+    <a [routerLink]="['/merchants', merchantId]" [queryParams]="{environment: environment.key}">{{ merchantName || 'Merchant' }}</a>
+    <span aria-hidden="true">/</span><span aria-current="page">White label</span>
+  </nav>
+  <header class="page-heading">
+    <div><span class="eyebrow">BRAND EXPERIENCE</span><h1>White label</h1>
+      <p>Give {{ merchantName || 'your business' }} a consistent identity across every application.</p></div>
+    <span class="draft-indicator" [class.has-changes]="dirty">{{ dirty ? 'Unsaved changes' : 'All changes saved' }}</span>
+  </header>
+  <nav class="section-nav" aria-label="White-label sections">
+    <a href="#brand-identity" (click)="scrollToSection($event, 'brand-identity')">Identity</a><a href="#brand-logos" (click)="scrollToSection($event, 'brand-logos')">Logos</a><a href="#brand-library" (click)="scrollToSection($event, 'brand-library')">Saved themes</a>
+    <a href="#brand-colors" (click)="scrollToSection($event, 'brand-colors')">Colors &amp; appearance</a><a href="#brand-features" (click)="scrollToSection($event, 'brand-features')">Features</a>
+  </nav>
+      <section class="scope-panel" aria-label="Application and branch">
+        <label>Application
+          <select class="form-select" [ngModel]="app" (ngModelChange)="changeScope($event, branchId)" [disabled]="saving || uploading || librarySaving">
+            <option *ngFor="let item of apps" [ngValue]="item.value">{{ item.label }}</option>
+          </select>
+        </label>
+        <label>Configuration scope
+          <select class="form-select" [ngModel]="branchId" (ngModelChange)="changeScope(app, $event)" [disabled]="saving || uploading || librarySaving">
+            <option value="">Merchant defaults - all branches</option>
+            <option *ngFor="let branch of branches" [value]="branch.branchId || branch.id">{{ branch.name }}</option>
+          </select>
+        </label>
+      </section>
+      <p *ngIf="loading" role="status">Loading white-label settings...</p>
+      <div *ngIf="!loading && response" class="editor-grid">
+        <form id="white-label-form" #editorForm="ngForm" (ngSubmit)="save()">
+          <fieldset [disabled]="saving || uploading">
+            <section id="brand-identity" tabindex="-1" class="editor-section" aria-labelledby="brand-identity-title"><header class="section-heading"><span class="section-number">01</span><div><h2 id="brand-identity-title">Brand identity</h2><p>Choose how this business appears to customers and staff.</p></div></header>
+            <label>Branding
+              <select name="enabled" class="form-select" [(ngModel)]="settings.enabled" (ngModelChange)="markDirty()">
+                <option [ngValue]="null">{{ branchId ? 'Inherit from merchant' : 'Use platform defaults' }}</option>
+                <option [ngValue]="true">Enabled</option><option [ngValue]="false">Disabled</option>
+              </select>
+            </label>
+            <p class="help" *ngIf="branchId">A branch cannot enable branding while its merchant has disabled it.</p>
+            <label>Display name<input name="displayName" class="form-control" maxlength="120"
+              [(ngModel)]="settings.displayName" (ngModelChange)="markDirty()" [placeholder]="parent?.effective?.displayName || merchantName"></label>
+            <label>App / page title<input name="title" class="form-control" maxlength="120"
+              [(ngModel)]="settings.title" (ngModelChange)="markDirty()" [placeholder]="parent?.effective?.title || merchantName"></label>
+            <p class="help">Presentation only. Legal identity and payment records stay separate. Leave fields empty to inherit.</p>
+            </section><section id="brand-logos" tabindex="-1" class="editor-section" aria-labelledby="brand-logos-title"><header class="section-heading"><span class="section-number">02</span><div><h2 id="brand-logos-title">Brand assets</h2><p>Use a logo that stays readable in each appearance.</p></div></header>
+            <label>Light / default logo<input type="file" class="form-control" accept="image/png,image/jpeg,image/webp" (change)="upload($event, false)"></label>
+            <button type="button" class="btn btn-sm btn-outline-secondary mb-2" (click)="clearLogo(false)">Use inherited logo</button>
+            <label>Dark-mode logo<input type="file" class="form-control" accept="image/png,image/jpeg,image/webp" (change)="upload($event, true)"></label>
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearLogo(true)">Use inherited dark logo</button>
+            <p class="help">PNG, JPEG or WebP, up to 5 MB. Use a transparent logo with readable contrast in each mode.</p>
+            </section><section id="brand-library" tabindex="-1" class="editor-section" aria-labelledby="brand-library-title"><header class="section-heading"><span class="section-number">03</span><div><h2 id="brand-library-title">Saved themes</h2><p>Start from a saved palette or keep a reusable version of your current colors.</p></div></header>
+            <label>Saved palettes<select name="theme" class="form-select" [(ngModel)]="themeId">
+              <option value="">Choose a palette</option><option *ngFor="let theme of themes" [value]="theme.id">{{ theme.name }}</option>
+            </select></label>
+            <button type="button" class="btn btn-outline-primary" [disabled]="!themeId" (click)="applyTheme()">Apply to draft</button>
+            <div class="d-flex gap-2 mt-2">
+              <input name="themeName" class="form-control" aria-label="New palette name" placeholder="Name this palette" maxlength="120" [(ngModel)]="themeName">
+              <button type="button" class="btn btn-outline-secondary" [disabled]="!themeName.trim() || librarySaving || validationErrors.length > 0" (click)="saveTheme()">Save palette</button>
+            </div>
+            </section><section id="brand-colors" tabindex="-1" class="editor-section" aria-labelledby="brand-colors-title"><header class="section-heading"><span class="section-number">04</span><div><h2 id="brand-colors-title">Colors and appearance</h2><p>Define both appearances using consistent color roles.</p></div></header>
+            <label>Preferred appearance<select name="themeMode" class="form-select" [(ngModel)]="settings.themeMode" (ngModelChange)="markDirty()">
+              <option [ngValue]="null">Inherit default</option><option value="SYSTEM">Follow device setting</option>
+              <option value="LIGHT">Light</option><option value="DARK">Dark</option>
+            </select></label>
+            <div class="d-flex gap-2 my-3" aria-label="Palette to edit">
+              <button type="button" class="btn" [class.btn-primary]="mode === 'light'" [class.btn-outline-secondary]="mode !== 'light'" [attr.aria-pressed]="mode === 'light'" (click)="mode = 'light'">Light</button>
+              <button type="button" class="btn" [class.btn-primary]="mode === 'dark'" [class.btn-outline-secondary]="mode !== 'dark'" [attr.aria-pressed]="mode === 'dark'" (click)="mode = 'dark'">Dark</button>
+              <button type="button" class="btn btn-link" (click)="inheritPalette()">Use inherited {{ mode }} palette</button>
+            </div>
+            <p class="help">{{ settings[mode] ? 'Custom palette for this scope' : 'Inherited palette - editing a color creates a local copy' }}</p>
+            <div class="color-grid">
+              <label *ngFor="let role of roles">{{ role.label }}
+                <div class="color-input"><input type="color" [attr.aria-label]="role.label + ' picker'" [ngModel]="previewPalette[role.key]"
+                  [ngModelOptions]="{standalone: true}" (ngModelChange)="setColor(role.key, $event)">
+                  <input class="form-control" [attr.aria-label]="role.label + ' hex'" maxlength="7" [ngModel]="previewPalette[role.key]"
+                    [ngModelOptions]="{standalone: true}" (ngModelChange)="setColor(role.key, $event)"></div>
+              </label>
+            </div>
+            </section><section id="brand-features" tabindex="-1" class="editor-section" aria-labelledby="brand-features-title"><header class="section-heading"><span class="section-number">05</span><div><h2 id="brand-features-title">Visible features</h2><p>Choose which enabled offerings appear in this application.</p></div></header>
+            <p class="help">Only the merchant's enabled offerings are available. Hiding a feature changes app presentation; operational permissions remain enforced by the backend.</p>
+            <p *ngIf="!response.availableFeatures.length">No offerings enabled for this merchant.</p>
+            <label *ngFor="let code of response.availableFeatures" class="feature">
+              <input type="checkbox" [checked]="featureVisible(code)" [disabled]="featureLocked(code)"
+                (change)="toggleFeature(code, $any($event.target).checked)"> {{ featureLabel(code) }}
+              <span *ngIf="featureLocked(code)" class="help">Hidden by merchant</span>
+            </label>
+            </section>
+          </fieldset>
+        </form>
+        <aside class="preview-column" aria-label="Brand preview">
+          <div class="preview-heading"><div><span class="eyebrow">LIVE PREVIEW</span><h2>Your brand in context</h2></div><span class="mode-badge">{{ mode | titlecase }}</span></div>
+          <p class="help">Changes here are a preview until you publish.</p>
+          <div class="preview" [style.background]="previewPalette.background" [style.color]="previewPalette.onBackground"
+            [style.border-color]="previewPalette.border">
+            <header [style.background]="previewPalette.surface" [style.color]="previewPalette.onSurface">
+              <img *ngIf="previewLogo" [src]="previewLogo" alt="Logo preview">
+              <strong>{{ previewName }}</strong>
+            </header>
+            <div class="preview-body">
+              <h4>{{ previewTitle }}</h4>
+              <p [style.color]="previewPalette.muted">Your brand, across every customer touchpoint.</p>
+              <article [style.background]="previewPalette.card" [style.color]="previewPalette.onCard" [style.border-color]="previewPalette.border">
+                <strong>{{ app === 'KITCHEN' ? 'Order #104' : 'Welcome to ' + previewName }}</strong>
+                <p [style.color]="previewPalette.muted">{{ app === 'KITCHEN' ? 'Preparing - 2 items' : 'Products, services and appointments' }}</p>
+                <span class="preview-pill" [style.background]="previewPalette.accent" [style.color]="previewPalette.onAccent">Featured</span>
+                <button type="button" [style.background]="previewPalette.primary" [style.color]="previewPalette.onPrimary">Continue</button>
+              </article>
+              <div class="preview-status" *ngFor="let state of ['success', 'warning', 'error']"
+                [style.background]="$any(previewPalette)[state]" [style.color]="$any(previewPalette)['on' + state.charAt(0).toUpperCase() + state.slice(1)]">{{ state | titlecase }}</div>
+            </div>
+          </div>
+          <p class="help mt-3">This preview shows palette roles. Mobile, storefront and kitchen rendering will use the published configuration when those clients are integrated.</p>
+          <p class="help">App store names, installed icons and domains require a separate release or hosting configuration.</p>
+        </aside>
+      </div>
+  <div class="publish-bar" aria-label="Publishing">
+      <div *ngIf="validationErrors.length" class="alert alert-warning mt-3" role="alert">
+        <strong>Improve contrast before publishing</strong><ul class="mb-0"><li *ngFor="let message of validationErrors">{{ message }}</li></ul>
+      </div>
+      <div *ngIf="error" class="alert alert-danger mt-3" role="alert">{{ error }} <button type="button" class="btn btn-link" (click)="changeScope(app, branchId)">Reload settings</button></div>
+      <div *ngIf="notice" class="alert alert-success mt-3" role="status">{{ notice }}</div>
+
+    <footer class="publish-actions">
+      <div class="publish-summary"><strong>{{ dirty ? 'Ready to review your changes?' : 'Your published settings' }}</strong>
+        <span>{{ dirty ? 'Publishing updates this application and scope.' : 'Edit a setting to create a new draft.' }}</span></div>
+      <div class="publish-buttons">
+        <button type="button" class="btn btn-link" (click)="reset()" [disabled]="loading || saving || uploading || librarySaving || !response">Reset defaults</button>
+        <button type="button" class="btn btn-outline-secondary" (click)="cancel()" [disabled]="!dirty || saving || uploading || librarySaving">Discard changes</button>
+        <button type="submit" form="white-label-form" class="btn btn-primary"
+          [disabled]="loading || saving || uploading || librarySaving || !response || !dirty || validationErrors.length > 0">{{ saving ? 'Publishing...' : uploading ? 'Uploading...' : 'Publish changes' }}</button>
+      </div>
+    </footer>
+  </div>
+</main>

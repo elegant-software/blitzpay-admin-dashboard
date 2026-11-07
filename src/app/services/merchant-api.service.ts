@@ -1,3 +1,4 @@
+import { WhiteLabelApp, WhiteLabelResponse, WhiteLabelUpdate, WhiteLabelTheme, WhiteLabelThemeRequest } from '../white-label/white-label.models';
 import { HttpClient, HttpContext, HttpDownloadProgressEvent, HttpEventType, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -812,6 +813,31 @@ export class MerchantApiService {
       `${this.base(environment, apiVersion)}/merchant/orders/shoppers/search`,
       { params }
     );
+  }
+
+
+  getWhiteLabel(environment: BackendEnvironment, version: string, merchantId: string, branchId: string, app: WhiteLabelApp): Observable<WhiteLabelResponse> {
+    return this.http.get<WhiteLabelResponse>(this.whiteLabelUrl(environment, version, merchantId, branchId) + '?app=' + app, {context: new HttpContext().set(HANDLE_FORBIDDEN_LOCALLY, true)});
+  }
+
+  saveWhiteLabel(environment: BackendEnvironment, version: string, merchantId: string, branchId: string, app: WhiteLabelApp, body: WhiteLabelUpdate): Observable<WhiteLabelResponse> {
+    return this.http.put<WhiteLabelResponse>(this.whiteLabelUrl(environment, version, merchantId, branchId) + '?app=' + app, body, {context: new HttpContext().set(HANDLE_FORBIDDEN_LOCALLY, true)});
+  }
+
+  listWhiteLabelThemes(environment: BackendEnvironment, version: string, merchantId: string, app: WhiteLabelApp): Observable<WhiteLabelTheme[]> {
+    return this.http.get<WhiteLabelTheme[]>(this.base(environment, version) + '/merchants/' + merchantId + '/themes?app=' + app, {context: new HttpContext().set(HANDLE_FORBIDDEN_LOCALLY, true)});
+  }
+
+  createWhiteLabelTheme(environment: BackendEnvironment, version: string, merchantId: string, app: WhiteLabelApp, body: WhiteLabelThemeRequest): Observable<WhiteLabelTheme> {
+    return this.http.post<WhiteLabelTheme>(this.base(environment, version) + '/merchants/' + merchantId + '/themes?app=' + app, body, {context: new HttpContext().set(HANDLE_FORBIDDEN_LOCALLY, true)});
+  }
+
+  createWhiteLabelLogoUpload(environment: BackendEnvironment, version: string, merchantId: string, branchId: string, contentType: string): Observable<MerchantLogoUploadResponse> {
+    return this.http.post<MerchantLogoUploadResponse>(this.whiteLabelUrl(environment, version, merchantId, branchId) + '/logo/upload-url', {contentType}, {context: new HttpContext().set(HANDLE_FORBIDDEN_LOCALLY, true)});
+  }
+
+  private whiteLabelUrl(environment: BackendEnvironment, version: string, merchantId: string, branchId: string): string {
+    return this.base(environment, version) + '/merchants/' + merchantId + (branchId ? '/branches/' + branchId : '') + '/white-label';
   }
 
   private base(environment: BackendEnvironment, apiVersion: string): string {

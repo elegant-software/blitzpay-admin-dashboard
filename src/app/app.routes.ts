@@ -1,3 +1,4 @@
+import { merchantWhiteLabelGuard } from './white-label/white-label.guard';
 import { Routes } from '@angular/router';
 import { AccessDeniedComponent } from './auth/components/access-denied.component';
 import { AuthShellComponent } from './auth/components/auth-shell.component';
@@ -5,6 +6,14 @@ import { LoginPageComponent } from './auth/components/login-page.component';
 import { authGuard } from './auth/guards/auth.guard';
 
 export const appRoutes: Routes = [
+  {
+    path: 'merchant-branding/:id',
+    canActivate: [merchantWhiteLabelGuard],
+    canDeactivate: [(component: { canLeave(): boolean }) => component.canLeave()],
+    data: {merchantSelfService: true},
+    loadComponent: () => import('./white-label/white-label.component').then(m => m.WhiteLabelComponent)
+  },
+
   {
     path: 'auth/login',
     component: LoginPageComponent
@@ -39,6 +48,11 @@ export const appRoutes: Routes = [
       {
         path: 'merchants/:id',
         loadComponent: () => import('./merchant-catalog/merchant-detail.component').then(m => m.MerchantDetailComponent)
+      },
+      {
+        path: 'merchants/:id/white-label',
+        loadComponent: () => import('./white-label/white-label.component').then(m => m.WhiteLabelComponent),
+        canDeactivate: [(component: { canLeave(): boolean }) => component.canLeave()]
       },
       {
         path: 'merchants/:id/edit',
