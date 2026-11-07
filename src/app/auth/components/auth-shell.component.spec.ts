@@ -98,4 +98,67 @@ describe('AuthShellComponent', () => {
     expect(getComputedStyle(topbar!).backgroundColor).not.toBe(lightBackground);
     expect(getComputedStyle(brand!).color).not.toBe(lightText);
   });
+
+  it('opens the sidebar within a mobile viewport instead of leaving it offscreen', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const frame = document.createElement('iframe');
+    frame.style.width = '390px';
+    document.body.appendChild(frame);
+    try {
+      const frameDocument = frame.contentDocument!;
+      const style = frameDocument.createElement('style');
+      style.textContent = Array.from(document.styleSheets)
+        .flatMap(sheet => Array.from(sheet.cssRules).map(rule => rule.cssText)).join('\n') +
+        '\n* { transition: none !important; }';
+      frameDocument.head.appendChild(style);
+      element.querySelector<HTMLButtonElement>('.header-toggle')!.click();
+      fixture.detectChanges();
+      frameDocument.body.appendChild(element.querySelector('#sidebar')!.cloneNode(true));
+      const sidebar = frameDocument.querySelector<HTMLElement>('#sidebar')!;
+      expect(sidebar.getBoundingClientRect().left).toBe(0);
+      expect(sidebar.getBoundingClientRect().right).toBeGreaterThan(0);
+      const link = sidebar.querySelector<HTMLAnchorElement>('.nav-link')!;
+      expect(link.getAttribute('href')).toBe('/dashboard');
+      expect(frame.contentWindow!.getComputedStyle(link).display).not.toBe('none');
+      expect(frame.contentWindow!.getComputedStyle(link.querySelector('.nav-label')!).display).not.toBe('none');
+
+      sidebar.classList.remove('sidebar-narrow');
+      expect(sidebar.getBoundingClientRect().right).toBeLessThanOrEqual(0);
+      frame.style.width = '1200px';
+      expect(sidebar.getBoundingClientRect().left).toBe(0);
+      sidebar.classList.add('sidebar-narrow');
+      expect(sidebar.getBoundingClientRect().width).toBe(64);
+      frame.style.width = '390px';
+      expect(sidebar.getBoundingClientRect().left).toBe(0);
+    } finally {
+      frame.remove();
+    }
+  });
+
+  it('dismisses mobile navigation using the toggle, backdrop, Escape, or a navigation link', () => {
+    spyOn(window, 'matchMedia').and.returnValue({ matches: true } as MediaQueryList);
+    const element = fixture.nativeElement as HTMLElement;
+    const toggle = element.querySelector<HTMLButtonElement>('.header-toggle')!;
+    const open = () => {
+      toggle.click();
+      fixture.detectChanges();
+      expect(element.querySelector('.sidebar-backdrop')).not.toBeNull();
+    };
+    const expectClosed = () => {
+      fixture.detectChanges();
+      expect(element.querySelector('.sidebar-backdrop')).toBeNull();
+    };
+    open();
+    toggle.click();
+    expectClosed();
+    open();
+    element.querySelector<HTMLButtonElement>('.sidebar-backdrop')!.click();
+    expectClosed();
+    open();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expectClosed();
+    open();
+    element.querySelector<HTMLAnchorElement>('.nav-link')!.dispatchEvent(new MouseEvent('click', { button: 1 }));
+    expectClosed();
+  });
 });
