@@ -30,10 +30,14 @@ describe('LiveFloorComponent', () => {
     return fixture;
   }
 
-  it('always shows guests over seats on every pin', () => {
+  it('shows table icons with capacity and unknown seats without a floor-plan image', () => {
     const fixture = create();
-    const pins = [...fixture.nativeElement.querySelectorAll('.floor-pin')].map((pin: HTMLElement) => pin.textContent?.trim());
-    expect(pins).toEqual(['5 · –/4 seats', '6 · –/? seats']);
+    const cards = fixture.nativeElement.querySelectorAll('.live-table-card');
+    expect(cards.length).toBe(2);
+    expect(cards[0].textContent).toContain('4 seats');
+    expect(cards[0].querySelectorAll('.live-chair').length).toBe(4);
+    expect(cards[1].textContent).toContain('Seats not set');
+    expect(fixture.nativeElement.querySelector('[data-test="live-floor-canvas"]')).toBeNull();
   });
 
   it('applies table events without reloading the floor', () => {
@@ -45,11 +49,14 @@ describe('LiveFloorComponent', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('5 · 3/4 seats');
+    expect(text).toContain('3 guests · 4 seats');
     expect(text).toContain('1/2 tables occupied · 3 guests · 4/4 seats in occupied tables · Branch Capacity 6');
     expect(api.getFloor).toHaveBeenCalledTimes(1);
 
-    fixture.nativeElement.querySelector('[data-test="live-pin-CODEt1"]').click();
+    const card = fixture.nativeElement.querySelector('[data-test="live-card-CODEt1"]');
+    expect(card.querySelectorAll('.live-chair.occupied').length).toBe(3);
+    expect(card.textContent).toContain('12,50');
+    card.click();
     fixture.detectChanges();
     const detail = fixture.nativeElement.querySelector('[data-test="table-detail"]').textContent;
     expect(detail).toContain('Pickup 12');
@@ -60,7 +67,7 @@ describe('LiveFloorComponent', () => {
 
   it('shows the Table QR code and whether an NFC tag was written', () => {
     const fixture = create();
-    fixture.nativeElement.querySelector('[data-test="live-pin-CODEt1"]').click();
+    fixture.nativeElement.querySelector('[data-test="live-card-CODEt1"]').click();
     fixture.detectChanges();
     const detail = fixture.nativeElement.querySelector('[data-test="table-detail"]');
     expect(detail.querySelector('app-table-qr-card')).not.toBeNull();
@@ -77,7 +84,59 @@ describe('LiveFloorComponent', () => {
     const fixture = create();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('View only');
-    const buttons = [...fixture.nativeElement.querySelectorAll('button')].map((button: HTMLElement) => button.textContent ?? '');
-    expect(buttons.some((label) => /clear|settle|pay|guests/i.test(label))).toBeFalse();
+    expect(fixture.nativeElement.querySelector('[data-test="read-only-note"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('form')).toBeNull();
+  });
+
+  it('includes unassigned tables in the grid and combines search, area and live status filters', () => {
+    const fixture = create();
+    const unassigned = { ...free('t3', 'Terrace 10', 4), table: { ...table('t3', 'Terrace 10', 4), placement: null } };
+    events.next(unassigned);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.live-table-card').length).toBe(3);
+    const component = fixture.componentInstance;
+    component.floorPlanId = 'unassigned';
+    component.query = ' terrace ';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.live-table-card').length).toBe(1);
+    component.statusFilter = 'occupied';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No matching tables');
+    events.next({ ...unassigned, status: 'OCCUPIED', guestCount: 2 });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.live-table-card').length).toBe(1);
+    expect(api.getFloor).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses compact capacity icons for large tables and closes details when a table is deactivated', () => {
+    const fixture = create();
+    events.next(free('t3', 'Banquet', 20));
+    fixture.detectChanges();
+    const card = fixture.nativeElement.querySelector('[data-test="live-card-CODEt3"]');
+    expect(card.textContent).toContain('20 seats');
+    expect(card.querySelectorAll('.live-chair').length).toBe(0);
+    card.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('dialog').open).toBeTrue();
+    events.next({ ...free('t3', 'Banquet', 20), table: { ...table('t3', 'Banquet', 20), active: false } });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('dialog').open).toBeFalse();
+    expect(fixture.nativeElement.querySelector('[data-test="live-card-CODEt3"]')).toBeNull();
+  });
+
+  it('preserves the focused card as live updates arrive and keeps unpaid currencies separate', () => {
+    const fixture = create();
+    const card = fixture.nativeElement.querySelector('[data-test="live-card-CODEt1"]') as HTMLButtonElement;
+    card.focus();
+    const order = { orderId: 'o1', pickupNumber: 1, totalAmountMinor: 1000, currency: 'EUR', paymentStatus: 'CREATED', preparationStatus: 'PREPARING', createdAt: '2026-11-06T10:00:00Z' };
+    events.next({ ...free('t1', '5', 4), status: 'OCCUPIED', guestCount: 2,
+      orders: [order, { ...order, orderId: 'o2', currency: 'USD', totalAmountMinor: 500 }, { ...order, orderId: 'o3', paymentStatus: 'CANCELLED', totalAmountMinor: 9000 }] });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="live-card-CODEt1"]')).toBe(card);
+    expect(document.activeElement).toBe(card);
+    const unpaid = card.querySelectorAll('.live-card-footer strong');
+    expect(unpaid.length).toBe(2);
+    expect(unpaid[0].textContent).toContain('10,00');
+    expect(unpaid[1].textContent).toContain('5,00');
   });
 });

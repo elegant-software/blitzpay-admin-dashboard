@@ -1,7 +1,8 @@
-import { NotificationService } from '../notifications/notification.service';
+import { NotificationService, apiErrorMessage } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
+import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
@@ -15,6 +16,7 @@ import { FloorPlanEditorComponent, TablePlacementChange } from './floor-plan-edi
 import { exceedsCapacity, parseSeats, parseTableNames, seatedCapacity, seatsLabel } from './floor-plan';
 import { LiveFloorComponent } from './live-floor.component';
 import { TableQrCardComponent } from './table-qr-card.component';
+import { DisplayDatePipe } from '../pipes/display-date.pipe';
 
 export type BranchTablesView = 'tables' | 'floor-plans' | 'live';
 
@@ -33,7 +35,7 @@ const byName = (left: { name: string }, right: { name: string }) =>
 @Component({
   selector: 'app-branch-tables',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, BranchCatalogQrComponent, TableQrCardComponent, FloorPlanEditorComponent, LiveFloorComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PaginatorModule, DisplayDatePipe, BranchCatalogQrComponent, TableQrCardComponent, FloorPlanEditorComponent, LiveFloorComponent],
   templateUrl: './branch-tables.component.html',
   styleUrls: ['../merchant-catalog/merchant-catalog.component.css', './branch-tables.component.css']
 })
@@ -46,8 +48,8 @@ export class BranchTablesComponent implements OnInit {
   readonly selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   readonly apiVersion = 'v1';
   readonly views: { key: BranchTablesView; label: string }[] = [
-    { key: 'tables', label: 'Tables' },
-    { key: 'floor-plans', label: 'Floor Plans' },
+    { key: 'tables', label: 'Tables & seats' },
+    { key: 'floor-plans', label: 'Floor plans' },
     { key: 'live', label: 'Live floor' }
   ];
 
@@ -65,6 +67,11 @@ export class BranchTablesComponent implements OnInit {
   busy = false;
   uploading = false;
   errorMessage = '';
+  nameError = '';
+  tableQuery = '';
+  tableStatus: 'all' | 'active' | 'inactive' = 'all';
+  tableFirst = 0;
+  tableRows = 10;
 
 
   newTableNames = '';
@@ -77,6 +84,7 @@ export class BranchTablesComponent implements OnInit {
 
   @ViewChild('nameDialogElement') private nameDialogElement?: ElementRef<HTMLDialogElement>;
   @ViewChild('qrDialogElement') private qrDialogElement?: ElementRef<HTMLDialogElement>;
+  @ViewChildren('viewTab') private viewTabs?: QueryList<ElementRef<HTMLButtonElement>>;
 
   get env() { return getEnvironmentByKey(this.selectedEnvironmentKey); }
 
@@ -88,6 +96,36 @@ export class BranchTablesComponent implements OnInit {
   get sortedTables(): BranchTable[] { return [...this.tables].sort(byName); }
 
   get activeTables(): BranchTable[] { return this.sortedTables.filter((table) => table.active); }
+
+  get inactiveTableCount(): number { return this.tables.filter(table => !table.active).length; }
+  get unplacedTableCount(): number { return this.tables.filter(table => table.active && !table.placement).length; }
+  get missingSeatsCount(): number { return this.tables.filter(table => table.active && table.seats == null).length; }
+
+  get filteredTables(): BranchTable[] {
+    const query = this.tableQuery.trim().toLocaleLowerCase();
+    return this.sortedTables.filter(table =>
+      (this.tableStatus === 'all' || table.active === (this.tableStatus === 'active')) &&
+      (!query || `${table.name} ${table.code} ${this.floorPlanName(table)}`.toLocaleLowerCase().includes(query))
+    );
+  }
+
+  get pageFirst(): number {
+    return Math.min(this.tableFirst, Math.max(0, Math.ceil(this.filteredTables.length / this.tableRows) - 1) * this.tableRows);
+  }
+
+  get visibleTables(): BranchTable[] { return this.filteredTables.slice(this.pageFirst, this.pageFirst + this.tableRows); }
+
+  filterTables(): void { this.tableFirst = 0; }
+  clearTableFilters(): void { this.tableQuery = ''; this.tableStatus = 'all'; this.filterTables(); }
+  onTablePageChange(event: PaginatorState): void {
+    const rows = event.rows ?? this.tableRows;
+    this.tableFirst = rows === this.tableRows ? event.first ?? 0 : 0;
+    this.tableRows = rows;
+  }
+
+  reload(): void {
+    if (this.merchantId && this.branchId && !this.busy && !this.uploading) this.load();
+  }
 
   get namesToAdd(): string[] { return parseTableNames(this.newTableNames); }
 
@@ -118,6 +156,19 @@ export class BranchTablesComponent implements OnInit {
   selectView(view: BranchTablesView): void {
     this.view = view;
     void this.router.navigate([], { relativeTo: this.route, queryParams: { view }, replaceUrl: true });
+  }
+
+  onTabKeydown(event: KeyboardEvent, view: BranchTablesView): void {
+    const index = this.views.findIndex(option => option.key === view);
+    let next: number;
+    if (event.key === 'ArrowRight') next = (index + 1) % this.views.length;
+    else if (event.key === 'ArrowLeft') next = (index + this.views.length - 1) % this.views.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = this.views.length - 1;
+    else return;
+    event.preventDefault();
+    this.selectView(this.views[next].key);
+    this.viewTabs?.get(next)?.nativeElement.focus();
   }
 
   floorPlanName(table: BranchTable): string {
@@ -227,6 +278,7 @@ export class BranchTablesComponent implements OnInit {
   // ── Name dialog (rename table, create or rename floor plan) ───────────
 
   openNameDialog(dialog: NameDialog): void {
+    this.nameError = '';
     this.nameDialog = dialog;
     this.nameValue = dialog.kind === 'edit-table' ? dialog.table.name : dialog.kind === 'rename-floor-plan' ? dialog.floorPlan.name : '';
     this.seatsValue = dialog.kind === 'edit-table' && dialog.table.seats != null ? String(dialog.table.seats) : '';
@@ -242,18 +294,21 @@ export class BranchTablesComponent implements OnInit {
   }
 
   closeNameDialog(): void {
+    if (this.busy) return;
     this.nameDialogElement?.nativeElement.close();
     this.nameDialog = null;
+    this.nameError = '';
   }
 
   saveName(): void {
     const dialog = this.nameDialog;
     const name = this.nameValue.trim();
     if (!dialog || !name || this.busy) return;
+    this.nameError = '';
     if (dialog.kind === 'edit-table') {
       const seats = parseSeats(this.seatsValue);
       if (seats === undefined) {
-        this.errorMessage = 'Seats must be a whole number from 1 to 50.';
+        this.nameError = 'Seats must be a whole number from 1 to 50.';
         return;
       }
       this.run(this.merchantApi.updateTable(this.env, this.apiVersion, this.merchantId, this.branchId, dialog.table.id, { name, seats }),
@@ -295,6 +350,7 @@ export class BranchTablesComponent implements OnInit {
       },
       error: (error) => {
         this.loading = false;
+        this.errorMessage = apiErrorMessage(error, 'Failed to load the tables of this branch.');
         this.notifications.apiError(error, 'Failed to load the tables of this branch.');
       }
     });
@@ -319,6 +375,10 @@ export class BranchTablesComponent implements OnInit {
       error: (error) => {
         this.busy = false;
         onError?.();
+        if (this.nameDialog) {
+          const detail = error instanceof HttpErrorResponse ? error.error?.detail ?? error.error?.message ?? error.error?.error : null;
+          this.nameError = typeof detail === 'string' && detail.trim() ? detail : fallback;
+        }
         this.notifications.apiError(error, specialMessage?.(error) ?? fallback);
       }
     });

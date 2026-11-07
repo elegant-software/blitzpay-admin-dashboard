@@ -5,7 +5,7 @@ import {
   convertToParamMap,
   provideRouter,
 } from "@angular/router";
-import { of, throwError } from "rxjs";
+import { NEVER, of, throwError } from "rxjs";
 import { BranchTable, Merchant } from "../models/merchant-catalog.models";
 import { MerchantApiService } from "../services/merchant-api.service";
 import { BranchTablesComponent } from "./branch-tables.component";
@@ -43,6 +43,8 @@ describe("BranchTablesComponent", () => {
       "deleteTable",
       "updateTable",
       "placeTable",
+      "getFloor",
+      "floorEvents",
     ]);
     api.getMerchant.and.returnValue(
       of({ merchantId: "m-1", merchantName: "Café Blitz" } as Merchant),
@@ -58,6 +60,8 @@ describe("BranchTablesComponent", () => {
       }),
     );
     api.getTables.and.returnValue(of(tables));
+    api.getFloor.and.returnValue(of({ floorPlans: [], tables: [], branchCapacity: capacity }));
+    api.floorEvents.and.returnValue(NEVER);
     api.getFloorPlans.and.returnValue(
       of([{ id: `${uuid}-plan`, name: "Terrace", imageUrl: null }]),
     );
@@ -89,6 +93,52 @@ describe("BranchTablesComponent", () => {
     expect(text).not.toContain(uuid);
   });
 
+  it('presents branch context and fully connected keyboard-accessible tabs', () => {
+    const fixture = create([table('Q', 4)]);
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('h1')?.textContent).toContain('Tables & seats');
+    expect(root.textContent).toContain('Mitte');
+    const tabs = root.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    expect(tabs[0].getAttribute('tabindex')).toBe('0');
+    expect(tabs[1].getAttribute('tabindex')).toBe('-1');
+    tabs[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.view).toBe('floor-plans');
+    expect(document.activeElement).toBe(tabs[1]);
+    const panel = root.querySelector('[role="tabpanel"]');
+    expect(panel?.id).toBe(tabs[1].getAttribute('aria-controls')!);
+    expect(panel?.getAttribute('aria-labelledby')).toBe(tabs[1].id);
+  });
+
+  it('filters locally by table name or code and active state without reloading data', () => {
+    const fixture = create([table('Terrace 1', 4), table('Bar', 2, { active: false })]);
+    const component = fixture.componentInstance;
+    component.tableQuery = ' terrace ';
+    component.filterTables();
+    expect(component.filteredTables.map(row => row.name)).toEqual(['Terrace 1']);
+    component.tableQuery = 'AB3K7Bar';
+    component.tableStatus = 'inactive';
+    component.filterTables();
+    expect(component.filteredTables.map(row => row.name)).toEqual(['Bar']);
+    expect(api.getTables).toHaveBeenCalledTimes(1);
+    component.clearTableFilters();
+    expect(component.filteredTables.length).toBe(2);
+  });
+
+  it('changes page size locally and returns to a valid page after filtering', () => {
+    const fixture = create(Array.from({ length: 25 }, (_, index) => table(String(index + 1), 4)));
+    const component = fixture.componentInstance;
+    component.onTablePageChange({ first: 20, rows: 10 });
+    expect(component.visibleTables.map(row => row.name)).toEqual(['21', '22', '23', '24', '25']);
+    component.onTablePageChange({ first: 0, rows: 20 });
+    expect(component.visibleTables.length).toBe(20);
+    component.tableQuery = 'AB3K725';
+    component.filterTables();
+    expect(component.tableFirst).toBe(0);
+    expect(component.visibleTables.map(row => row.name)).toEqual(['25']);
+    expect(api.getTables).toHaveBeenCalledTimes(1);
+  });
+
   it("bulk-creates Tables from a range with one seats value", () => {
     const fixture = create([]);
     api.createTables.and.returnValue(of([table("1", 4), table("2", 4)]));
@@ -104,6 +154,35 @@ describe("BranchTablesComponent", () => {
       4,
     );
     expect(fixture.componentInstance.tables.length).toBe(2);
+  });
+
+  it('keeps every active QR card available for printing while the directory is filtered', () => {
+    const fixture = create([table('1', 4), table('2', 2), table('3', 4, { active: false })]);
+    fixture.componentInstance.tableQuery = 'AB3K71';
+    fixture.componentInstance.filterTables();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('[data-test^="table-row-"]').length).toBe(1);
+    const cards = fixture.nativeElement.querySelectorAll('.table-qr-print-sheet app-table-qr-card');
+    expect(cards.length).toBe(3); // Branch counter card and both active tables.
+    expect(fixture.componentInstance.seatedCapacity).toBe(6);
+  });
+
+  it('keeps update errors inside the dialog and clears them when reopening', () => {
+    const fixture = create([table('1', 4)]);
+    const component = fixture.componentInstance;
+    component.openNameDialog({ kind: 'edit-table', table: component.tables[0] });
+    api.updateTable.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 409, error: { detail: 'A table with this name already exists.' }
+    })));
+    component.saveName();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.tables-name-dialog [role="alert"]').textContent)
+      .toContain('A table with this name already exists.');
+    expect(component.nameDialog).not.toBeNull();
+    component.closeNameDialog();
+    component.openNameDialog({ kind: 'edit-table', table: component.tables[0] });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.tables-name-dialog [role="alert"]')).toBeNull();
   });
 
   it("warns, without blocking, when the Tables seat more than the Branch Capacity", () => {
