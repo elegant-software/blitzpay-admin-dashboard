@@ -56,6 +56,12 @@ describe("ProductEditComponent translations", () => {
     updatedAt: "2026-10-31T12:00:00Z",
   };
 
+  const routing = {
+    stations: [{ id: "s-food", name: "Food Kitchen" }, { id: "s-bar", name: "Drinks Bar" }],
+    categoryDefaults: {},
+    productOverrides: { "p-other": "s-food" },
+  };
+
   async function setup(loadedMerchant: Merchant = merchant) {
     merchantApi = jasmine.createSpyObj<MerchantApiService>(
       "MerchantApiService",
@@ -68,8 +74,11 @@ describe("ProductEditComponent translations", () => {
         "saveProductTranslation",
         "deleteProductTranslation",
         "updateProduct",
+        "getPreparationConfiguration",
+        "savePreparationConfiguration",
       ],
     );
+    merchantApi.getPreparationConfiguration.and.returnValue(of(routing));
     merchantApi.getMerchant.and.returnValue(of(loadedMerchant));
     merchantApi.getProduct.and.returnValue(of(product));
     merchantApi.getProductCategories.and.returnValue(of([]));
@@ -223,5 +232,29 @@ describe("ProductEditComponent translations", () => {
     await setup({ ...merchant, supportedMenuLanguages: [] });
     expect(merchantApi.getProductTranslations).not.toHaveBeenCalled();
     expect(component.translations).toEqual([]);
+  });
+
+  it("saves a kitchen station override onto the latest Branch routing after the product", async () => {
+    await setup();
+    merchantApi.updateProduct.and.returnValue(of(product));
+    const latest = { ...routing, categoryDefaults: { "c-drinks": "s-bar" } };
+    merchantApi.getPreparationConfiguration.and.returnValue(of(latest));
+    merchantApi.savePreparationConfiguration.and.callFake((_e, _v, _m, _b, body) => of(body));
+
+    expect(text()).toContain("Kitchen station");
+    component.stationOverride = "s-bar";
+    component.save();
+
+    const body = merchantApi.savePreparationConfiguration.calls.mostRecent().args[4];
+    expect(merchantApi.savePreparationConfiguration.calls.mostRecent().args[3]).toBe("b-1");
+    expect(body.productOverrides).toEqual({ "p-other": "s-food", "p-1": "s-bar" });
+    expect(body.categoryDefaults).toEqual({ "c-drinks": "s-bar" });
+  });
+
+  it("does not touch Branch routing when the override is unchanged", async () => {
+    await setup();
+    merchantApi.updateProduct.and.returnValue(of(product));
+    component.save();
+    expect(merchantApi.savePreparationConfiguration).not.toHaveBeenCalled();
   });
 });
