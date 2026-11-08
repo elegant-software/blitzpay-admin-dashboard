@@ -9,7 +9,10 @@ import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { TableQrCardComponent } from './table-qr-card.component';
-import { TableTone, exceedsCapacity, isUnpaid, livePinLabel, paymentLabel, pinPosition, preparationLabel, tableTone } from './floor-plan';
+import {
+  TableTone, areaStyle, exceedsCapacity, isUnpaid, livePinLabel, paymentLabel, pinPosition, preparationLabel, seatedFor, tableChairs, tableTone
+} from './floor-plan';
+import { apiErrorMessage } from '../notifications/notification.service';
 
 /** Wait before reconnecting after the stream drops; the floor is reloaded on every reconnect. */
 const RECONNECT_MS = 3000;
@@ -38,9 +41,10 @@ export class LiveFloorComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) branchId = '';
 
   readonly apiVersion = 'v1';
-  readonly tones: TableTone[] = ['free', 'unpaid', 'paid'];
   readonly toneLabel = (tone: TableTone) => TONE_LABELS[tone];
   readonly pinPosition = pinPosition;
+  readonly areaStyle = areaStyle;
+  readonly seatedFor = seatedFor;
   readonly pinLabel = livePinLabel;
   readonly paymentLabel = paymentLabel;
   readonly preparationLabel = preparationLabel;
@@ -52,8 +56,11 @@ export class LiveFloorComponent implements OnChanges, OnDestroy {
   loading = false;
   error = '';
   lastUpdated: Date | null = null;
+  /** Ticks every minute so "seated for" stays current between table events. */
+  now = new Date();
 
   private live?: Subscription;
+  private readonly clock = setInterval(() => (this.now = new Date()), 60_000);
 
   constructor(private readonly merchantApi: MerchantApiService) {}
 
@@ -79,6 +86,7 @@ export class LiveFloorComponent implements OnChanges, OnDestroy {
 
   ngOnDestroy(): void {
     this.live?.unsubscribe();
+    clearInterval(this.clock);
   }
 
   private applyFloor(floor: BranchFloor): void {
@@ -143,6 +151,8 @@ export class LiveFloorComponent implements OnChanges, OnDestroy {
 
   tone(live: TableLive): TableTone { return tableTone(live); }
 
+  chairs(live: TableLive) { return tableChairs(live.table.seats, live.guestCount); }
+
   select(live: TableLive): void {
     this.selectedTableId = this.selectedTableId === live.table.id ? null : live.table.id;
   }
@@ -159,7 +169,6 @@ export class LiveFloorComponent implements OnChanges, OnDestroy {
     const httpError = error as HttpErrorResponse;
     if (httpError?.status === 0) return 'Could not reach the server. Retrying…';
     if (httpError?.status === 404) return 'Branch not found.';
-    const body = httpError?.error as { detail?: string; message?: string } | null | undefined;
-    return body?.detail || body?.message || 'Failed to load the live floor. Retrying…';
+    return apiErrorMessage(error, 'Failed to load the live floor. Retrying…');
   }
 }

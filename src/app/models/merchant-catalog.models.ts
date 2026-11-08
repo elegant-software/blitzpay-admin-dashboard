@@ -600,6 +600,9 @@ export interface OrderResponse {
   currency: string;
   createdAt: string;
   paidAt?: string | null;
+  /** CASH: the shopper pays staff; the order stays PENDING until staff settle it. */
+  checkoutPaymentMethod?: 'BANK_ACCOUNT' | 'CARD' | 'PAY_BY_BANK' | 'TERMINAL' | 'PAYPAL' | 'CASH' | null;
+  paymentSource?: 'APP_PAYMENT' | 'MANUAL_SETTLEMENT' | null;
 }
 
 export interface CreateOrderItemRequest {
@@ -723,10 +726,21 @@ export interface UpdateTableRequest {
 }
 
 /** A named picture of a room or area of a Branch on which Tables are placed. */
+/** A named rectangle traced over the Floor Plan picture; fractions 0..1 of the picture, like Table Placements. */
+export interface FloorArea {
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface FloorPlan {
   id: string;
   name: string;
   imageUrl?: string | null;
+  /** When non-empty the live floor draws these instead of the picture. */
+  areas?: FloorArea[];
 }
 
 export interface FloorPlanImageUploadResponse {

@@ -274,11 +274,11 @@ describe('GuestCheckoutComponent at a Table', () => {
     expect(harness.routeNativeElement?.textContent).toContain('Allow location access to order at your table.');
   });
 
-  it('never offers Deferred Payment, and offers Cash only at a Table', async () => {
+  it('never offers Deferred Payment, and offers Cash without a Table', async () => {
     TestBed.inject(StorefrontTableService).clear();
     const harness = await open();
 
-    expect(harness.routeNativeElement?.querySelector('[data-testid="pay-cash"]')).toBeNull();
+    expect(harness.routeNativeElement?.querySelector('[data-testid="pay-cash"]')).not.toBeNull();
     expect(harness.routeNativeElement?.textContent).not.toMatch(/deferred|pay later/i);
   });
 });

@@ -430,6 +430,10 @@ export class OrderManagementComponent implements OnInit {
 
   // ── Status display ──────────────────────────────────────────────────────
 
+  isCash(order: OrderResponse): boolean {
+    return order.checkoutPaymentMethod === 'CASH' || order.paymentSource === 'MANUAL_SETTLEMENT';
+  }
+
   orderStatusTone(status: OrderStatus): string {
     switch (status) {
       case 'PENDING': return 'status-tag-warning';

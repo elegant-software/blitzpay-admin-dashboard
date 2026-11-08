@@ -82,6 +82,13 @@ describe('OrderManagementComponent', () => {
     fixture.detectChanges();
   });
 
+  it('flags cash orders, unpaid or settled', () => {
+    const order = { checkoutPaymentMethod: 'CASH' } as any;
+    expect(component.isCash(order)).toBeTrue();
+    expect(component.isCash({ paymentSource: 'MANUAL_SETTLEMENT' } as any)).toBeTrue();
+    expect(component.isCash({ checkoutPaymentMethod: 'CARD' } as any)).toBeFalse();
+  });
+
   it('presents a clear order scope and prompts for merchant and branch selection', () => {
     const root = fixture.nativeElement as HTMLElement;
 

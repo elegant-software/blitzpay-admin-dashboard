@@ -12,6 +12,7 @@ This document is the authoritative description of how the admin UI is structured
 |---|---|
 | User-facing display formats (dates, nulls, status labels) | [`docs/reference/user-display.md`](docs/reference/user-display.md) |
 | Architecture decision records | `docs/adr/` |
+| Backend API error format and code catalogue | [`zack-pay/reference/api-error-responses.md`](https://github.com/elegant-software/zack-pay/blob/main/reference/api-error-responses.md) |
 | Feature specs | `specs/001-merchant-catalog-page/` |
 | GitHub Actions naming, run titles, job summaries | [`elegant-ci-cd-pipeline/docs/github-actions-conventions.md`](https://github.com/elegant-software/elegant-ci-cd-pipeline/blob/main/docs/github-actions-conventions.md) |
 
@@ -232,16 +233,32 @@ See full rules → [`docs/reference/user-display.md`](docs/reference/user-displa
 
 ## VIII. API Error Display Rules
 
-All API errors must be shown to the user in full — never silently swallowed. The displayed message must be the server's own detail, not a generic fallback, whenever the server provides one.
+All API errors must be shown to the user — never silently swallowed. Applies to the admin app (`src/`) and the storefront (`projects/blitz-pay-web/`).
 
-### Error extraction priority
+### Backend error format
 
-When reading an error from an `HttpErrorResponse`, extract the message in this order:
-1. `error.error.detail` — preferred; this is the field used by the BlitzPay backend for structured validation errors.
-2. `error.error.message` — fallback for older or different backend shapes.
-3. The caller-supplied fallback string — used only when the response body carries neither.
+The BlitzPay backend returns every error as an RFC 9457 `ProblemDetail`: `{ status, title, detail, code }` (see the backend's `reference/api-error-responses.md`).
 
-This is implemented in the shared `toMessage(error, fallback)` helper on `MerchantCatalogComponent`. All API error handling must go through that helper; never hard-code a fallback message as the final display string without calling it.
+- **`code`** is stable (`NOT_FOUND`, `CONFLICT`, `OUTSIDE_GEOFENCE`, …). **Branch on `code`, never on `detail` text.**
+- **`detail`** is the server's human-readable message; its wording can change at any time.
+- There is no `error` or `message` field. Do not read them.
+
+### One helper per app
+
+Turn an error into display text only with `apiErrorMessage(error, fallback, byCode?)`, or `NotificationService.apiError(...)` for a toast:
+- admin: `src/app/notifications/notification.service.ts`
+- storefront: `projects/blitz-pay-web/src/app/notifications/notification.service.ts`
+
+It picks, in order:
+1. `byCode[code]` — the caller's own wording for a code it knows (storefront location messages are kept in `MESSAGES_BY_CODE` next to the helper);
+2. `detail` — for 400/409/422, when it is short and plain (no stack traces, SQL, URLs or IDs);
+3. the network message for status 0, otherwise the caller's `fallback`.
+
+Use `apiErrorCode(error)` when the code should change behaviour rather than text.
+
+Never read `error.error.*` in a component, write a local `toMessage` parser, or compare `detail` with a string. A component may check `error.status` first for a status-specific message (e.g. 404 → "Branch not found."), then must call `apiErrorMessage` for everything else.
+
+A new specific code in the backend's catalogue that the UI shows its own text for gets an entry in `byCode` / `MESSAGES_BY_CODE` and a spec asserting it.
 
 ### Dialog vs page-level errors
 

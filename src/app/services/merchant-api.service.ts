@@ -14,6 +14,7 @@ import {
   BranchTable,
   CreateTablesRequest,
   TableLive,
+  FloorArea,
   FloorPlan,
   FloorPlanImageUploadResponse,
   TablePlacement,
@@ -517,6 +518,13 @@ export class MerchantApiService {
     environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, floorPlanId: string, name: string
   ): Observable<FloorPlan> {
     return this.http.patch<FloorPlan>(this.floorPlanUrl(environment, apiVersion, merchantId, branchId, floorPlanId), { name });
+  }
+
+  /** Replaces the Floor Areas traced over a Floor Plan; an empty list shows the picture again. */
+  updateFloorAreas(
+    environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string, floorPlanId: string, areas: FloorArea[]
+  ): Observable<FloorPlan> {
+    return this.http.put<FloorPlan>(`${this.floorPlanUrl(environment, apiVersion, merchantId, branchId, floorPlanId)}/areas`, { areas });
   }
 
   /** Deletes a Floor Plan; the Tables on it become unplaced. */

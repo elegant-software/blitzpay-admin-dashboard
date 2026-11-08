@@ -2098,3 +2098,6 @@
     padding-top: 0 !important;
   }
 }
+
+.status-tag-cash { margin-left: 6px; background: #fef3c7; color: #92400e; font-weight: 700; }
+.order-table tr.order-row-cash > td:first-child { box-shadow: inset 4px 0 0 #f59e0b; }

@@ -1217,6 +1217,21 @@
               />
             </div>
           </section>
+
+          <!-- Kitchen of the selected Branch: screen login and station routing are both per Branch. -->
+          <section
+            *ngIf="activeDetailTab === 'branches-products' && selectedMerchant && selectedBranch?.branchId"
+            class="mt-4"
+            aria-labelledby="branch-kitchen-title"
+          >
+            <h2 id="branch-kitchen-title" class="h6 mb-3">Kitchen · {{ selectedBranch!.name }}</h2>
+            <app-branch-kitchen-screen [branchId]="selectedBranch!.branchId!" />
+            <app-branch-kitchen-routing
+              [merchantId]="selectedMerchant.merchantId"
+              [branchId]="selectedBranch!.branchId!"
+              [categories]="categories"
+            />
+          </section>
         </div>
       </div>
     </div>

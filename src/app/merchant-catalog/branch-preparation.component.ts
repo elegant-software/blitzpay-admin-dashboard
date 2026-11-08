@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, Input, OnDestroy } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnDestroy, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { forkJoin, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { PreparationConfiguration, Product, ProductCategory } from '../models/merchant-catalog.models';
+import { PreparationConfiguration } from '../models/merchant-catalog.models';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
+import { apiErrorMessage } from '../notifications/notification.service';
 
 @Component({
   selector: 'app-branch-preparation',
@@ -18,19 +19,18 @@ import { getEnvironmentByKey } from '../services/merchant-environment.service';
 export class BranchPreparationComponent implements OnDestroy {
   @Input({ required: true }) merchantId = '';
   @Input({ required: true }) branchId = '';
-  @Input() language = 'en';
   configuration: PreparationConfiguration = { stations: [], categoryDefaults: {}, productOverrides: {} };
-  categories: ProductCategory[] = [];
-  products: Product[] = [];
   visible = false;
   loading = false;
   saving = false;
   loaded = false;
   error = '';
-  message = '';
   private initial = '';
   private request?: Subscription;
   private readonly environment = getEnvironmentByKey(environment.defaultEnvironmentKey);
+
+  /** Emits the saved configuration so pages showing station assignments can refresh. */
+  @Output() saved = new EventEmitter<PreparationConfiguration>();
 
   constructor(private readonly api: MerchantApiService) {}
 
@@ -46,16 +46,10 @@ export class BranchPreparationComponent implements OnDestroy {
     this.loaded = false;
     this.loading = true;
     this.error = '';
-    this.message = '';
-    this.request = forkJoin({
-      configuration: this.api.getPreparationConfiguration(this.environment, 'v1', this.merchantId, this.branchId),
-      categories: this.api.getProductCategories(this.environment, 'v1', this.merchantId, this.language),
-      products: this.api.getProducts(this.environment, 'v1', this.merchantId, this.branchId, true, this.language),
-    }).subscribe({
-      next: result => {
-        this.configuration = result.configuration;
-        this.categories = result.categories;
-        this.products = result.products;
+    // Fresh load: the save sends the whole configuration, so stale assignments would be overwritten.
+    this.request = this.api.getPreparationConfiguration(this.environment, 'v1', this.merchantId, this.branchId).subscribe({
+      next: configuration => {
+        this.configuration = configuration;
         this.initial = JSON.stringify(this.configuration);
         this.loaded = true;
         this.loading = false;
@@ -65,7 +59,7 @@ export class BranchPreparationComponent implements OnDestroy {
   }
 
   canLeave(): boolean {
-    return !this.saving && (!this.dirty || confirm('Discard unsaved preparation settings?'));
+    return !this.saving && (!this.dirty || confirm('Discard unsaved station changes?'));
   }
 
   close(): void {
@@ -94,11 +88,6 @@ export class BranchPreparationComponent implements OnDestroy {
     }
   }
 
-  assign(kind: 'categoryDefaults' | 'productOverrides', id: string, stationId: string): void {
-    if (stationId) this.configuration[kind][id] = stationId;
-    else delete this.configuration[kind][id];
-  }
-
   save(): void {
     if (!this.loaded || this.saving || !this.valid) return;
     this.saving = true;
@@ -110,7 +99,7 @@ export class BranchPreparationComponent implements OnDestroy {
         this.initial = JSON.stringify(result);
         this.saving = false;
         this.visible = false;
-        this.message = 'Preparation settings saved.';
+        this.saved.emit(result);
       },
       error: error => { this.saving = false; this.error = this.toMessage(error); }
     });
@@ -119,7 +108,6 @@ export class BranchPreparationComponent implements OnDestroy {
   ngOnDestroy(): void { this.request?.unsubscribe(); }
 
   private toMessage(error: HttpErrorResponse): string {
-    return error.error?.detail || error.error?.message || error.error?.error ||
-      (error.status === 0 ? 'Could not reach the server.' : 'Could not load or save preparation settings.');
+    return apiErrorMessage(error, 'Could not load or save preparation stations.');
   }
 }
