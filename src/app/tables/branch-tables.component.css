@@ -1,5 +1,8 @@
 /* Floor Plan picture with Table pins (setup and live floor). */
 .floor-layout {
+  /* Start, not stretch: a long "Not on this plan" list must not make the canvas taller than its picture, or every
+     Placement (a fraction of the canvas height) is stored too high. */
+  align-items: start;
   display: grid;
   gap: 1.25rem;
   grid-template-columns: minmax(0, 1fr) 17rem;
