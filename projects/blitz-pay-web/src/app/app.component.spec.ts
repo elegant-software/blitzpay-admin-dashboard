@@ -8,7 +8,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
 describe('Web Storefront shell', () => {
   it('links the legal notice and privacy policy on every page', async () => {
-    await TestBed.configureTestingModule({ imports: [AppComponent], providers: [provideRouter([])] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [AppComponent], providers: [provideRouter([]), provideHttpClient()] }).compileComponents();
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const hrefs = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="legal-footer"] a') as NodeListOf<HTMLAnchorElement>)
