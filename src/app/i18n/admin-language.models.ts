@@ -1,4 +1,8 @@
-import { LanguageDefinition } from '../models/merchant-catalog.models';
-
-/** A shared catalogue entry eligible for the dashboard selector. */
-export type AdminUiLanguage = Pick<LanguageDefinition, 'code' | 'displayName' | 'nativeName' | 'direction'> & { flagCode: string };
+/** A language the dashboard interface ships in; listed in ./languages.json. */
+export interface AdminUiLanguage {
+  code: string;
+  displayName: string;
+  nativeName: string;
+  flagCode: string;
+  direction: 'ltr' | 'rtl';
+}

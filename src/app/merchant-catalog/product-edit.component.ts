@@ -209,7 +209,7 @@ export class ProductEditComponent implements OnInit {
 
   languageLabel(code: string): string { return languageLabel(code, this.menuLanguages); }
 
-  textDirection(code: string): 'rtl' | 'ltr' { return isRightToLeft(code, this.menuLanguages) ? 'rtl' : 'ltr'; }
+  textDirection(code: string): 'rtl' | 'ltr' { return isRightToLeft(code) ? 'rtl' : 'ltr'; }
 
   saveTranslation(row: TranslationRow): void {
     if (row.saving) return;

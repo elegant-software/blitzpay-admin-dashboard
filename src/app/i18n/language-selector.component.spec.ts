@@ -10,12 +10,12 @@ describe('LanguageSelectorComponent', () => {
   ];
   const selected = signal(entries[0]);
   const language = {
-    selected, languages: signal(entries), loading: signal(false), error: signal(''),
+    selected, languages: signal(entries),
     load: jasmine.createSpy('load'), select: jasmine.createSpy('select'), text: (text: string) => text
   };
 
   beforeEach(() => {
-    selected.set(entries[0]); language.error.set(''); language.load.calls.reset(); language.select.calls.reset();
+    selected.set(entries[0]); language.load.calls.reset(); language.select.calls.reset();
     TestBed.configureTestingModule({ imports: [LanguageSelectorComponent], providers: [{ provide: AdminLanguageService, useValue: language }] });
   });
 
@@ -84,13 +84,4 @@ describe('LanguageSelectorComponent', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  it('shows load errors and allows retrying', () => {
-    language.error.set('Could not load languages. English is being used.');
-    const fixture = TestBed.createComponent(LanguageSelectorComponent); fixture.detectChanges();
-    const page = fixture.nativeElement as HTMLElement;
-    page.querySelector<HTMLButtonElement>('.language-trigger')!.click(); fixture.detectChanges();
-    expect(page.querySelector('[role="alert"]')?.textContent).toContain('Could not load languages');
-    page.querySelector<HTMLButtonElement>('.language-error button')!.click();
-    expect(language.load).toHaveBeenCalledTimes(2);
-  });
 });

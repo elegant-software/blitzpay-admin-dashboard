@@ -35,15 +35,10 @@ describe('menu language helpers', () => {
     expect(offersInternationalMenu(merchant())).toBeFalse();
   });
 
-  it('uses backend direction metadata rather than a second list of language codes', () => {
-    const languages: MenuLanguage[] = [
-      ...catalogue, { code: 'ar', displayName: 'Arabic', nativeName: 'العربية', direction: 'rtl' },
-      { code: 'xx', displayName: 'Future language', nativeName: 'Future', direction: 'rtl' }
-    ];
-    expect(isRightToLeft('ar', languages)).toBeTrue();
-    expect(isRightToLeft('xx', languages)).toBeTrue();
-    expect(isRightToLeft('de', languages)).toBeFalse();
-    expect(isRightToLeft(null, languages)).toBeFalse();
+  it('flags right-to-left languages', () => {
+    expect(isRightToLeft('ar')).toBeTrue();
+    expect(isRightToLeft('fa')).toBeTrue();
+    expect(isRightToLeft('de')).toBeFalse();
   });
 
   it('uses the UI language only when the merchant supports it', () => {

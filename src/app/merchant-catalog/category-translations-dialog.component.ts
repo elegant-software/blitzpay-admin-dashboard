@@ -90,7 +90,7 @@ export class CategoryTranslationsDialogComponent implements OnInit {
 
   label(code: string): string { return languageLabel(code, this.menuLanguages); }
 
-  direction(code: string): 'rtl' | 'ltr' { return isRightToLeft(code, this.menuLanguages) ? 'rtl' : 'ltr'; }
+  direction(code: string): 'rtl' | 'ltr' { return isRightToLeft(code) ? 'rtl' : 'ltr'; }
 
   save(row: TranslationRow): void {
     if (row.saving) return;

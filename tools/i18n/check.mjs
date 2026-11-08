@@ -2,19 +2,16 @@
 // Checks Angular template syntax, missing translations and untranslated static UI.
 import fs from 'node:fs';
 import path from 'node:path';
-import vm from 'node:vm';
 import ts from 'typescript';
 import { parseTemplate } from '@angular/compiler';
 import { components, files, templateOf, walk, clean, human, uiAttributes } from './review.mjs';
 
-const code = ts.transpileModule(fs.readFileSync('src/app/i18n/page-translations.ts','utf8'),
-  {compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
-const context = {exports:{}};
-vm.runInNewContext(code,context);
-const rows = context.exports.PAGE_TRANSLATIONS;
+const read = language => JSON.parse(fs.readFileSync(`src/app/i18n/messages/${language}.json`,'utf8'));
+const de = read('de'), ar = read('ar');
+const rows = [...new Set([...Object.keys(de),...Object.keys(ar)])].map(key=>[key,de[key]??'',ar[key]??'']);
 const keys = new Set(rows.map(row=>clean(row[0])));
 const failures = [];
-for(const [key,de,ar] of rows) if(!de.trim()||!ar.trim())failures.push(`Empty translation: ${key}`);
+for(const [key,german,arabic] of rows) if(!german.trim()||!arabic.trim())failures.push(`Missing or empty translation: ${key}`);
 const brand = new Set(['ZackPay','ZackPay Admin','GBP','Instagram']);
 const counts = [];
 for(const file of components) {

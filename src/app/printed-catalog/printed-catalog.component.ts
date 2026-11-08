@@ -86,7 +86,7 @@ export class PrintedCatalogComponent implements OnInit {
 
   get labels(): PrintedCatalogLabels { return printedCatalogLabels(this.catalogLanguage); }
 
-  get textDirection(): 'rtl' | 'ltr' { return isRightToLeft(this.catalogLanguage, this.menuLanguages) ? 'rtl' : 'ltr'; }
+  get textDirection(): 'rtl' | 'ltr' { return isRightToLeft(this.catalogLanguage) ? 'rtl' : 'ltr'; }
 
   languageLabel(code: string): string { return languageLabel(code, this.menuLanguages); }
 

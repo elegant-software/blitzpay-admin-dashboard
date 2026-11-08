@@ -1,7 +1,7 @@
 import { HttpClient, HttpContext, HttpDownloadProgressEvent, HttpEventType, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { map, shareReplay, tap } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 import {
   AppointmentPolicy,
   AppointmentResponse,
@@ -27,7 +27,6 @@ import {
   KitchenAccessStatus,
   KitchenLogin,
   MenuLanguage,
-  LanguageDefinition,
   Merchant,
   MerchantBookAppointmentRequest,
   MerchantLogoUploadResponse,
@@ -63,21 +62,7 @@ import { parseServerSentEvents } from '../tables/server-sent-events';
 
 @Injectable({ providedIn: 'root' })
 export class MerchantApiService {
-  private readonly languageCatalogues = new Map<string, Observable<LanguageDefinition[]>>();
   constructor(private readonly http: HttpClient) {}
-
-  getLanguages(environment: BackendEnvironment, apiVersion: string): Observable<LanguageDefinition[]> {
-    const url = `${this.base(environment, apiVersion)}/merchants/menu-languages`;
-    let catalogue = this.languageCatalogues.get(url);
-    if (!catalogue) {
-      catalogue = this.http.get<LanguageDefinition[]>(url).pipe(
-        tap(languages => { if (!languages.length) this.languageCatalogues.delete(url); }),
-        shareReplay({ bufferSize: 1, refCount: false })
-      );
-      this.languageCatalogues.set(url, catalogue);
-    }
-    return catalogue;
-  }
 
   getPreparationConfiguration(environment: BackendEnvironment, apiVersion: string, merchantId: string, branchId: string): Observable<PreparationConfiguration> {
     return this.http.get<PreparationConfiguration>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/branches/${branchId}/preparation-configuration`);
@@ -301,7 +286,7 @@ export class MerchantApiService {
   }
 
   getMenuLanguages(environment: BackendEnvironment, apiVersion: string): Observable<MenuLanguage[]> {
-    return this.getLanguages(environment, apiVersion).pipe(map(languages => languages.filter(language => language.menuEnabled !== false)));
+    return this.http.get<MenuLanguage[]>(`${this.base(environment, apiVersion)}/merchants/menu-languages`);
   }
 
   getProductTranslations(

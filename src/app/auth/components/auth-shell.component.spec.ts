@@ -18,11 +18,6 @@ describe('AuthShellComponent', () => {
 
     fixture = TestBed.createComponent(AuthShellComponent);
     fixture.detectChanges();
-    TestBed.inject(HttpTestingController).expectOne(r => r.url.endsWith('/merchants/menu-languages')).flush([
-      { code: 'en', displayName: 'English', nativeName: 'English', flagCode: 'GB', direction: 'ltr', adminUiEnabled: true, menuEnabled: true },
-      { code: 'ar', displayName: 'Arabic', nativeName: 'العربية', flagCode: 'SA', direction: 'rtl', adminUiEnabled: true, menuEnabled: true }
-    ]);
-    fixture.detectChanges();
   });
 
   afterEach(() => {
@@ -36,7 +31,7 @@ describe('AuthShellComponent', () => {
     const element = fixture.nativeElement as HTMLElement;
     element.querySelector<HTMLButtonElement>('header app-language-selector button')!.click();
     fixture.detectChanges();
-    element.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]')[1].click();
+    element.querySelector<HTMLButtonElement>('[role="menuitemradio"] [lang="ar"]')!.closest('button')!.click();
     fixture.detectChanges();
     expect(element.querySelector('.nav-label')?.textContent).toBe('لوحة التحكم');
     expect(document.documentElement.dir).toBe('rtl');

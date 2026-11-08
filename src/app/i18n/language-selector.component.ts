@@ -19,17 +19,12 @@ import { AdminTranslatePipe } from './admin-translate.pipe';
       </svg>
     </button>
     <div *ngIf="open" class="language-menu" role="menu" [attr.aria-label]="'Language' | adminTranslate" (keydown)="onKeydown($event)">
-      <p *ngIf="language.loading()" role="status">{{ 'Loading languages…' | adminTranslate }}</p>
       <button *ngFor="let item of language.languages()" type="button" role="menuitemradio"
         [attr.aria-checked]="item.code === language.selected().code" (click)="choose(item.code)">
         <img [src]="flagUrl(item.flagCode)" alt="" width="22" height="16" />
         <span [attr.lang]="item.code" dir="auto">{{ item.nativeName }}</span>
         <span *ngIf="item.code === language.selected().code" aria-hidden="true">✓</span>
       </button>
-      <div *ngIf="language.error()" class="language-error">
-        <p role="alert">{{ language.error() | adminTranslate }}</p>
-        <button type="button" (click)="language.load()">{{ 'Retry' | adminTranslate }}</button>
-      </div>
     </div>
   `,
   styles: `
@@ -55,8 +50,6 @@ import { AdminTranslatePipe } from './admin-translate.pipe';
     .language-menu { position: absolute; inset-inline-end: 0; top: calc(100% + .4rem); min-width: 13rem; max-width: min(20rem, 85vw); border: 1px solid var(--cui-border-color, #d8dbe0); border-radius: .75rem; background: var(--cui-body-bg, white); color: var(--cui-body-color, #17243b); box-shadow: 0 .5rem 1.5rem #0002; padding: .35rem; z-index: 1100; }
     .language-menu button { display: flex; align-items: center; gap: .6rem; width: 100%; text-align: start; border: 0; border-radius: .4rem; padding: .65rem; background: transparent; }
     .language-menu button:hover, [aria-checked=true] { background: var(--cui-tertiary-bg, #f3f4f6); }
-    .language-menu p { margin: .5rem; font-size: .85rem; }
-    .language-error { max-width: 18rem; }
   `
 })
 export class LanguageSelectorComponent implements OnInit {
