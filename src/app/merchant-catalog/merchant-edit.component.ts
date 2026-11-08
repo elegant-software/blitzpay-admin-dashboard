@@ -6,11 +6,13 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import {
+  Branch,
   CreateMerchantRequest,
   EnvironmentKey,
   MenuLanguage,
   Merchant,
   MerchantVerticalResponse,
+  StorefrontTheme,
   UpdateMerchantRequest,
   MerchantLocation,
   UpdateMerchantLocationRequest,
@@ -47,6 +49,24 @@ export class MerchantEditComponent implements OnInit {
   errorMessage = '';
 
 
+  /** All storefront themes, drafts included; maintained in the backend `storefront_themes` table. */
+  storefrontThemes: StorefrontTheme[] = [];
+  /** Theme shown by the storefront preview link; may be a draft. */
+  previewThemeCode = '';
+  /** First branch of the merchant: the storefront needs a branch to show the menu. */
+  previewBranchId = '';
+
+  /** Merchants can only be given published themes; keep the current one listed even if it is not. */
+  get selectableThemes(): StorefrontTheme[] {
+    return this.storefrontThemes.filter((t) => t.status === 'PUBLISHED' || t.code === this.form.storefrontTheme);
+  }
+
+  get themePreviewUrl(): string {
+    if (!this.merchantId || !this.previewBranchId || !this.previewThemeCode) return '';
+    return `${this.selectedEnvironment.storefrontUrl}/m/${encodeURIComponent(this.merchantId)}/b/${encodeURIComponent(this.previewBranchId)}`
+      + `?previewTheme=${encodeURIComponent(this.previewThemeCode)}`;
+  }
+
   form = {
     merchantName: '',
     website: '',
@@ -56,6 +76,7 @@ export class MerchantEditComponent implements OnInit {
     instagramHandle: '',
     businessType: '',
     merchantMobility: '',
+    storefrontTheme: 'DEFAULT',
     offerings: [] as string[],
     defaultVatPercent: '',
     originalMenuLanguage: '',
@@ -109,9 +130,11 @@ export class MerchantEditComponent implements OnInit {
     forkJoin({
       verticals: this.merchantApi.getVerticals(this.selectedEnvironment, this.apiVersion),
       menuLanguages: this.merchantApi.getMenuLanguages(this.selectedEnvironment, this.apiVersion).pipe(catchError(() => of([] as MenuLanguage[]))),
+      themes: this.merchantApi.getStorefrontThemes(this.selectedEnvironment, this.apiVersion).pipe(catchError(() => of([] as StorefrontTheme[]))),
     }).subscribe({
-      next: ({ verticals, menuLanguages }) => {
+      next: ({ verticals, menuLanguages, themes }) => {
         this.verticals = verticals;
+        this.storefrontThemes = themes;
         this.menuLanguages = menuLanguages;
         if (this.isCreateMode) {
           this.loading = false;
@@ -127,11 +150,14 @@ export class MerchantEditComponent implements OnInit {
     forkJoin({
       merchant: this.merchantApi.getMerchant(this.selectedEnvironment, this.apiVersion, this.merchantId),
       location: this.merchantApi.getLocation(this.selectedEnvironment, this.apiVersion, this.merchantId).pipe(catchError(() => of(null))),
+      branches: this.merchantApi.getBranches(this.selectedEnvironment, this.apiVersion, this.merchantId).pipe(catchError(() => of([] as Branch[]))),
     }).subscribe({
-      next: ({ merchant, location }) => {
+      next: ({ merchant, location, branches }) => {
         this.merchant = merchant;
+        this.previewBranchId = branches[0]?.branchId ?? branches[0]?.id ?? '';
         this.location = location;
         this.populateForm(merchant, location);
+        this.previewThemeCode = this.form.storefrontTheme;
         this.loading = false;
       },
       error: (error) => { this.loading = false; this.notifications.apiError(error, 'Failed to load merchant.'); }
@@ -148,6 +174,7 @@ export class MerchantEditComponent implements OnInit {
       instagramHandle: merchant.contactInfo?.instagramHandle ?? '',
       businessType: merchant.businessType ?? '',
       merchantMobility: merchant.merchantMobility ?? '',
+      storefrontTheme: merchant.storefrontTheme ?? 'DEFAULT',
       offerings: [...(merchant.offerings ?? [])],
       defaultVatPercent: merchant.defaultVatPercent != null ? merchant.defaultVatPercent.toString() : '',
       originalMenuLanguage: merchant.originalMenuLanguage ?? '',
@@ -248,6 +275,7 @@ export class MerchantEditComponent implements OnInit {
       offerings: this.form.offerings,
       businessType: this.form.businessType || undefined,
       merchantMobility: this.form.merchantMobility || undefined,
+      storefrontTheme: this.form.storefrontTheme,
       defaultVatPercent: this.form.defaultVatPercent !== '' ? parseFloat(this.form.defaultVatPercent) : undefined,
       originalMenuLanguage: this.form.originalMenuLanguage || undefined,
       supportedMenuLanguages: this.form.originalMenuLanguage ? this.form.supportedMenuLanguages : undefined,

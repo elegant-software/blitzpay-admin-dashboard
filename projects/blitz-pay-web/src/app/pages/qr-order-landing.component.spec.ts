@@ -7,7 +7,8 @@ import { QrOrderLandingComponent } from './qr-order-landing.component';
 describe('QR Order Landing', () => {
   let api: jasmine.SpyObj<StorefrontApiService>;
   beforeEach(() => {
-    api = jasmine.createSpyObj('api', ['getOrder', 'getPaymentCapabilities', 'createPayByBankCheckout']);
+    api = jasmine.createSpyObj('api', ['getOrder', 'getPaymentCapabilities', 'createPayByBankCheckout', 'getMerchant']);
+    api.getMerchant.and.returnValue(NEVER);
     api.getOrder.and.returnValue(of({ orderId: 'uuid-secret', merchantId: 'm', branchId: 'b', status: 'CREATED', reference: 'TABLE-42' } as any));
     api.getPaymentCapabilities.and.returnValue(of({ enabledPaymentFlows: ['PAY_BY_BANK'] }));
     api.createPayByBankCheckout.and.returnValue(NEVER);

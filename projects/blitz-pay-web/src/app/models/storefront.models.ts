@@ -4,10 +4,19 @@ export interface StorefrontMerchant {
   applicationId: string;
   merchantName: string;
   logoUrl?: string | null;
+  /** Code of the storefront theme chosen in the admin dashboard; `DEFAULT` is the neutral look. */
+  storefrontTheme?: string | null;
   offerings?: string[];
   originalMenuLanguage?: string | null;
   originalLanguage?: string | null;
   supportedMenuLanguages?: string[];
+}
+
+/** A theme from `GET /v1/storefront/themes/{code}`: colours per light/dark mode plus a layout built into styles.css. */
+export interface StorefrontThemeLook {
+  code: string;
+  style: 'STANDARD' | 'CLASSIC';
+  tokens: Partial<Record<'light' | 'dark', Record<string, string>>>;
 }
 
 export interface StorefrontBranch {
@@ -51,8 +60,8 @@ export interface StorefrontCustomerLocation {
   capturedAt: string;
 }
 
-/** CASH: the guest pays staff; the Order stays unpaid until staff confirm it. Online methods are chosen later, when paying. */
-export type StorefrontCheckoutPaymentMethod = 'CASH';
+/** CASH / TERMINAL: the guest pays staff (cash or card terminal); the Order stays unpaid until staff confirm it. Online methods are chosen later, when paying. */
+export type StorefrontCheckoutPaymentMethod = 'CASH' | 'TERMINAL';
 
 /** Guest order: the server prices it from the catalog and sets the HttpOnly guest_token session cookie. */
 export interface CreateStorefrontOrderRequest {
