@@ -3,7 +3,10 @@ import {
   exceedsCapacity,
   parseSeats,
   parseTableNames,
+  areaBetween,
   livePinLabel,
+  seatedFor,
+  tableChairs,
   pinLabel,
   seatedCapacity,
   pinPosition,
@@ -138,5 +141,26 @@ describe('Seats and capacity', () => {
     expect(parseSeats('0')).toBeUndefined();
     expect(parseSeats('51')).toBeUndefined();
     expect(parseSeats('2.5')).toBeUndefined();
+  });
+});
+
+describe('Drawn live floor', () => {
+  it('puts one chair per seat round the table, seated guests first', () => {
+    const chairs = tableChairs(4, 3);
+    expect(chairs.map((chair) => [chair.cx, chair.cy])).toEqual([[30, 6], [54, 30], [30, 54], [6, 30]]);
+    expect(chairs.map((chair) => chair.seated)).toEqual([true, true, true, false]);
+    expect(tableChairs(null, 2)).toEqual([]);
+    expect(tableChairs(40, 0).length).toBe(12);
+  });
+
+  it('says how long guests have been seated', () => {
+    const now = new Date('2026-11-08T12:00:00Z');
+    expect(seatedFor('2026-11-08T11:52:00Z', now)).toBe('8 min');
+    expect(seatedFor('2026-11-08T10:50:00Z', now)).toBe('1 h 10');
+    expect(seatedFor(null, now)).toBe('');
+  });
+
+  it('builds an area from two corners dragged either way', () => {
+    expect(areaBetween({ x: 0.5, y: 0.6 }, { x: 0.2, y: 0.1 })).toEqual({ x: 0.2, y: 0.1, width: 0.3, height: 0.5 });
   });
 });

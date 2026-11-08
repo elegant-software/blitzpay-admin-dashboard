@@ -1,4 +1,4 @@
-import { BranchTable, TableLive, TableOrderSummary } from '../models/merchant-catalog.models';
+import { BranchTable, FloorArea, TableLive, TableOrderSummary } from '../models/merchant-catalog.models';
 
 export interface PictureBox {
   left: number;
@@ -21,6 +21,49 @@ export function placementFromPoint(clientX: number, clientY: number, picture: Pi
 /** CSS position of a Table pin on the picture for a stored placement. */
 export function pinPosition(placement: { x: number; y: number }): { left: string; top: string } {
   return { left: `${clamp(placement.x) * 100}%`, top: `${clamp(placement.y) * 100}%` };
+}
+
+/** CSS box of a Floor Area on the picture. */
+export function areaStyle(area: FloorArea): { left: string; top: string; width: string; height: string } {
+  return { left: `${area.x * 100}%`, top: `${area.y * 100}%`, width: `${area.width * 100}%`, height: `${area.height * 100}%` };
+}
+
+/** Rectangle between two corner points (fractions of the picture), whichever way it was dragged. */
+export function areaBetween(a: { x: number; y: number }, b: { x: number; y: number }): Omit<FloorArea, 'name'> {
+  return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(a.x - b.x), height: Math.abs(a.y - b.y) };
+}
+
+export interface Chair {
+  cx: number;
+  cy: number;
+  seated: boolean;
+}
+
+/** ponytail: chairs past 12 would overlap at this size, so a bigger Table still shows 12. */
+const MAX_CHAIRS = 12;
+
+/**
+ * Chairs around a Table drawn in a 60×60 box: one per seat, evenly round the table, starting at the top. The first
+ * `guests` chairs are seated. Unknown seats draw no chairs.
+ */
+export function tableChairs(seats: number | null | undefined, guests: number | null | undefined): Chair[] {
+  const count = Math.min(seats ?? 0, MAX_CHAIRS);
+  return Array.from({ length: count }, (_, index) => {
+    const angle = (index / count) * 2 * Math.PI - Math.PI / 2;
+    return { cx: round(30 + 24 * Math.cos(angle)), cy: round(30 + 24 * Math.sin(angle)), seated: index < (guests ?? 0) };
+  });
+}
+
+/** How long a Table has been occupied: "8 min", "1 h 10". */
+export function seatedFor(since: string | null | undefined, now: Date): string {
+  if (!since) return '';
+  const minutes = Math.max(0, Math.floor((now.getTime() - new Date(since).getTime()) / 60000));
+  if (minutes < 60) return `${minutes} min`;
+  return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')}`;
+}
+
+function round(value: number): number {
+  return Math.round(value * 10) / 10;
 }
 
 /** Seats as always shown on a Table pin: "4 seats", "1 seat", or "? seats" when not set so the gap is visible. */

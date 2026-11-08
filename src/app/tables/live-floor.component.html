@@ -11,7 +11,9 @@
   </span>
   <span *ngIf="loading" class="spinner-border spinner-border-sm text-secondary" role="status" aria-label="Loading"></span>
   <ul class="floor-legend ms-auto" aria-label="Legend">
-    <li *ngFor="let tone of tones"><span class="floor-dot" [ngClass]="'tone-' + tone"></span>{{ toneLabel(tone) }}</li>
+    <li><span class="floor-dot floor-dot-free"></span>Free</li>
+    <li><span class="floor-dot floor-dot-occupied"></span>Guest seated</li>
+    <li><span class="floor-dot floor-dot-unpaid">€</span>To pay</li>
   </ul>
 </div>
 
@@ -27,19 +29,38 @@
 
 <div class="floor-layout" *ngIf="floor && floor.tables.length">
   <div>
-    <div *ngIf="floorPlan" class="floor-canvas" [class.floor-canvas-blank]="!floorPlan.imageUrl" data-test="live-floor-canvas">
+    <div
+      *ngIf="floorPlan"
+      class="floor-canvas"
+      [class.floor-canvas-blank]="!floorPlan.imageUrl"
+      [class.floor-canvas-drawn]="floorPlan.areas?.length"
+      data-test="live-floor-canvas"
+    >
+      <!-- Drawn floors keep the picture invisible so the canvas keeps its shape and Placements still line up. -->
       <img *ngIf="floorPlan.imageUrl" [src]="floorPlan.imageUrl" [alt]="'Picture of ' + floorPlan.name" draggable="false" />
+      <div *ngFor="let area of floorPlan.areas" class="floor-area" [ngStyle]="areaStyle(area)"><span>{{ area.name }}</span></div>
       <button
         *ngFor="let live of placed"
         type="button"
-        class="floor-pin"
+        class="floor-table"
         [ngClass]="'tone-' + tone(live)"
         [class.floor-pin-selected]="selectedTableId === live.table.id"
         [ngStyle]="pinPosition(live.table.placement!)"
-        [attr.aria-label]="live.table.name + ': ' + toneLabel(tone(live))"
+        [attr.aria-label]="pinLabel(live) + ': ' + toneLabel(tone(live))"
         [attr.data-test]="'live-pin-' + live.table.code"
         (click)="select(live)"
-      >{{ pinLabel(live) }}<span class="floor-pin-count" *ngIf="live.orders.length">{{ live.orders.length }}</span></button>
+      >
+        <svg viewBox="0 0 60 60" width="60" height="60" aria-hidden="true">
+          <circle *ngFor="let chair of chairs(live)" class="floor-chair" [class.floor-chair-seated]="chair.seated" [attr.cx]="chair.cx" [attr.cy]="chair.cy" r="5.5" />
+          <rect class="floor-table-top" x="15" y="15" width="30" height="30" rx="7" />
+          <text x="30" y="34.5" text-anchor="middle" class="floor-table-label" [attr.textLength]="live.table.name.length > 3 ? 26 : null" lengthAdjust="spacingAndGlyphs">{{ live.table.name }}</text>
+          <g *ngIf="tone(live) === 'unpaid'">
+            <circle class="floor-badge" cx="49" cy="11" r="7.5" />
+            <text x="49" y="14.5" text-anchor="middle" class="floor-badge-label">€</text>
+          </g>
+        </svg>
+        <span *ngIf="live.status === 'OCCUPIED' && live.occupiedSince" class="floor-table-time">{{ seatedFor(live.occupiedSince, now) }}</span>
+      </button>
     </div>
     <p *ngIf="!floorPlan" class="text-body-secondary small">No floor plans yet. Tables are listed below.</p>
 

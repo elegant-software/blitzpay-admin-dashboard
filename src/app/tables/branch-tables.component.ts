@@ -8,7 +8,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { BranchCatalogQrComponent } from '../merchant-catalog/branch-catalog-qr.component';
-import { Branch, BranchTable, EnvironmentKey, FloorPlan, Merchant } from '../models/merchant-catalog.models';
+import { Branch, BranchTable, EnvironmentKey, FloorArea, FloorPlan, Merchant } from '../models/merchant-catalog.models';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { FloorPlanEditorComponent, TablePlacementChange } from './floor-plan-editor.component';
@@ -216,6 +216,14 @@ export class BranchTablesComponent implements OnInit {
     this.replaceTable({ ...previous, placement: change.placement });
     this.run(this.merchantApi.placeTable(this.env, this.apiVersion, this.merchantId, this.branchId, previous.id, change.placement),
       'Failed to place the table.', (updated) => this.replaceTable(updated), undefined, () => this.replaceTable(previous));
+  }
+
+  saveAreas(areas: FloorArea[]): void {
+    if (this.busy || !this.floorPlanId) return;
+    this.run(this.merchantApi.updateFloorAreas(this.env, this.apiVersion, this.merchantId, this.branchId, this.floorPlanId, areas),
+      'Failed to save the areas.', (updated) => {
+        this.floorPlans = this.floorPlans.map((plan) => plan.id === updated.id ? updated : plan);
+      });
   }
 
   unplace(table: BranchTable): void {

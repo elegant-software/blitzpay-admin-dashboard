@@ -1,16 +1,28 @@
+<div class="btn-group btn-group-sm mb-2" role="group" aria-label="Edit">
+  <button type="button" class="btn" [ngClass]="mode === 'tables' ? 'btn-dark' : 'btn-outline-secondary'" (click)="mode = 'tables'">Tables</button>
+  <button type="button" class="btn" [ngClass]="mode === 'areas' ? 'btn-dark' : 'btn-outline-secondary'" (click)="mode = 'areas'" data-test="areas-mode">Areas</button>
+</div>
+
 <div class="floor-layout">
   <div
     #canvas
     class="floor-canvas"
     [class.floor-canvas-blank]="!floorPlan.imageUrl"
     [class.floor-canvas-drop]="dropActive"
+    [class.floor-canvas-drawing]="mode === 'areas'"
     data-test="floor-canvas"
     (dragover)="allowDrop($event)"
     (dragleave)="dropActive = false"
     (drop)="drop($event)"
+    (pointerdown)="areaStart($event)"
+    (pointermove)="areaMove($event)"
+    (pointerup)="areaEnd()"
+    (pointercancel)="areaEnd()"
   >
     <img *ngIf="floorPlan.imageUrl" [src]="floorPlan.imageUrl" [alt]="'Picture of ' + floorPlan.name" draggable="false" />
     <p *ngIf="!floorPlan.imageUrl" class="floor-canvas-hint">Upload a picture of {{ floorPlan.name }} to place Tables on it. You can already place them here.</p>
+    <div *ngFor="let area of areas" class="floor-area" [class.floor-area-draft]="mode === 'areas'" [ngStyle]="areaStyle(area)"><span>{{ area.name }}</span></div>
+    <div *ngIf="draft" class="floor-area floor-area-draft" [ngStyle]="areaStyle($any(draft))"></div>
     <span
       *ngFor="let table of placed"
       class="floor-pin"
@@ -23,7 +35,26 @@
     >{{ pinLabel(table) }}</span>
   </div>
 
-  <aside class="floor-side">
+  <aside class="floor-side" *ngIf="mode === 'areas'" data-test="areas-panel">
+    <h3 class="h6">Areas</h3>
+    <p class="small text-body-secondary">
+      Trace the rooms once: drag a rectangle over each part of the picture (bar, dining room, terrace) and name it.
+      The live floor then draws these areas with the tables instead of the picture.
+    </p>
+    <ul class="floor-table-list">
+      <li *ngFor="let area of areas; let index = index" class="floor-table-item">
+        <input class="form-control form-control-sm" [(ngModel)]="area.name" [attr.aria-label]="'Name of area ' + (index + 1)" maxlength="100" />
+        <button class="btn btn-sm btn-link text-danger" type="button" (click)="removeArea(index)">Remove</button>
+      </li>
+      <li *ngIf="!areas.length" class="small text-body-secondary">No areas yet. The live floor shows the picture.</li>
+    </ul>
+    <div class="d-flex gap-2 mt-3">
+      <button class="btn btn-sm btn-primary" type="button" [disabled]="busy || !areasChanged" (click)="submitAreas()" data-test="save-areas">Save areas</button>
+      <button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="busy || !areasChanged" (click)="resetAreas()">Undo changes</button>
+    </div>
+  </aside>
+
+  <aside class="floor-side" *ngIf="mode === 'tables'">
     <h3 class="h6">Not on this plan</h3>
     <p class="small text-body-secondary">Drag a table onto the picture.</p>
     <ul class="floor-table-list" data-test="off-plan">
