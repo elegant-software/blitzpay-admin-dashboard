@@ -1,67 +1,54 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, OnDestroy, SimpleChanges, inject } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Branch, PreparationConfiguration, ProductCategory } from '../models/merchant-catalog.models';
+import { PreparationConfiguration, ProductCategory } from '../models/merchant-catalog.models';
 import { NotificationService } from '../notifications/notification.service';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { BranchPreparationComponent } from './branch-preparation.component';
 
 /**
- * Kitchen station per Product Category, shown on the merchant Categories tab.
- * Categories belong to the Merchant but routing is stored per Branch (one screen shows one station),
- * so a Branch picker selects which Branch's routing is edited. Each change is saved immediately.
- * Only active Branches are offered: inactive ones take no orders, and defaulting to one hid the
- * active Branch's missing routing.
+ * Kitchen station per Product Category for one Branch, shown under the Branch selected on the
+ * merchant's Branches & products tab. Categories belong to the Merchant but routing is stored per
+ * Branch (one kitchen screen shows one station). Each change is saved immediately.
  */
 @Component({
-  selector: 'app-category-kitchen-routing',
+  selector: 'app-branch-kitchen-routing',
   standalone: true,
   imports: [CommonModule, FormsModule, BranchPreparationComponent],
-  templateUrl: './category-kitchen-routing.component.html',
+  templateUrl: './branch-kitchen-routing.component.html',
   styleUrl: './merchant-catalog.component.css'
 })
-export class CategoryKitchenRoutingComponent implements OnChanges, OnDestroy {
+export class BranchKitchenRoutingComponent implements OnChanges, OnDestroy {
   private readonly api = inject(MerchantApiService);
   private readonly notifications = inject(NotificationService);
   private readonly environment = getEnvironmentByKey(environment.defaultEnvironmentKey);
 
   @Input({ required: true }) merchantId = '';
-  @Input() branches: Branch[] = [];
+  @Input({ required: true }) branchId = '';
   @Input() categories: ProductCategory[] = [];
 
-  branchId = '';
   configuration: PreparationConfiguration | null = null;
   saving = false;
   private request?: Subscription;
-
-  get branchOptions(): { id: string; name: string }[] {
-    return this.branches.flatMap(b => (b.branchId ?? b.id) && b.active !== false ? [{ id: (b.branchId ?? b.id)!, name: b.name }] : []);
-  }
-
-  get branchName(): string {
-    return this.branchOptions.find(o => o.id === this.branchId)?.name ?? '';
-  }
 
   get unassignedCount(): number {
     const defaults = this.configuration?.categoryDefaults ?? {};
     return this.categories.filter(c => !defaults[c.id]).length;
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (!changes['branches'] && !changes['merchantId']) return;
-    const options = this.branchOptions;
-    if (!options.some(o => o.id === this.branchId)) this.selectBranch(options[0]?.id ?? '');
+  ngOnChanges(): void {
+    this.load();
   }
 
-  selectBranch(branchId: string): void {
+  private load(): void {
     this.request?.unsubscribe();
-    this.branchId = branchId;
     this.configuration = null;
-    if (!branchId) return;
-    this.request = this.api.getPreparationConfiguration(this.environment, 'v1', this.merchantId, branchId).subscribe({
+    this.saving = false;
+    if (!this.branchId) return;
+    this.request = this.api.getPreparationConfiguration(this.environment, 'v1', this.merchantId, this.branchId).subscribe({
       next: configuration => (this.configuration = configuration),
       error: error => this.notifications.apiError(error, 'Unable to load kitchen stations.')
     });
@@ -76,16 +63,18 @@ export class CategoryKitchenRoutingComponent implements OnChanges, OnDestroy {
     const categoryDefaults = { ...this.configuration.categoryDefaults };
     if (stationId) categoryDefaults[categoryId] = stationId;
     else delete categoryDefaults[categoryId];
-    const branchId = this.branchId;
     this.saving = true;
     // ponytail: last write wins (the API has no version check); fine for one admin editing a Branch at a time.
-    this.request = this.api.savePreparationConfiguration(this.environment, 'v1', this.merchantId, branchId,
+    this.request = this.api.savePreparationConfiguration(this.environment, 'v1', this.merchantId, this.branchId,
       { ...this.configuration, categoryDefaults }).subscribe({
-      next: configuration => { this.saving = false; this.configuration = configuration; },
-      error: error => {
+      next: configuration => {
         this.saving = false;
+        this.configuration = configuration;
+        this.notifications.success('Kitchen station saved.');
+      },
+      error: error => {
         this.notifications.apiError(error, 'Unable to save the kitchen station.');
-        this.selectBranch(branchId);
+        this.load();
       }
     });
   }

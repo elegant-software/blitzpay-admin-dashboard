@@ -48,7 +48,8 @@ import { MerchantApiService } from "../services/merchant-api.service";
 import { getEnvironmentByKey } from "../services/merchant-environment.service";
 import { environment } from "../../environments/environment";
 import { BranchCatalogQrComponent } from "./branch-catalog-qr.component";
-import { CategoryKitchenRoutingComponent } from "./category-kitchen-routing.component";
+import { BranchKitchenRoutingComponent } from "./branch-kitchen-routing.component";
+import { BranchKitchenScreenComponent } from "./branch-kitchen-screen.component";
 
 @Component({
   selector: "app-merchant-detail",
@@ -62,7 +63,8 @@ import { CategoryKitchenRoutingComponent } from "./category-kitchen-routing.comp
     PaginatorModule,
     CategoryTranslationsDialogComponent,
     BranchCatalogQrComponent,
-    CategoryKitchenRoutingComponent,
+    BranchKitchenRoutingComponent,
+    BranchKitchenScreenComponent,
   ],
   templateUrl: "./merchant-detail.component.html",
   styleUrl: "./merchant-catalog.component.css",
