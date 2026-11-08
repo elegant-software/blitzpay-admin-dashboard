@@ -1,7 +1,6 @@
-import { BranchPreparationComponent } from './branch-preparation.component';
 import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Branch, EnvironmentKey, UpdateBranchRequest } from '../models/merchant-catalog.models';
@@ -14,13 +13,11 @@ import { exceedsCapacity, seatedCapacity } from '../tables/floor-plan';
 @Component({
   selector: 'app-branch-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, BranchKitchenScreenComponent, BranchPreparationComponent],
+  imports: [CommonModule, FormsModule, RouterModule, BranchKitchenScreenComponent],
   templateUrl: './branch-edit.component.html',
   styleUrl: './merchant-catalog.component.css'
 })
 export class BranchEditComponent implements OnInit {
-  @ViewChild(BranchPreparationComponent) preparation?: BranchPreparationComponent;
-  canLeave(): boolean { return this.preparation?.canLeave() ?? true; }
   private readonly notifications = inject(NotificationService);
   readonly selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   readonly apiVersion = 'v1';

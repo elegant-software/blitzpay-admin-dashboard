@@ -896,6 +896,13 @@
             </div>
           </section>
 
+          <app-category-kitchen-routing
+            *ngIf="activeDetailTab === 'categories' && selectedMerchant"
+            [merchantId]="selectedMerchant.merchantId"
+            [branches]="branches"
+            [categories]="categories"
+          />
+
           <section
             *ngIf="activeDetailTab === 'branches-products'"
             class="card merchant-products-card"
