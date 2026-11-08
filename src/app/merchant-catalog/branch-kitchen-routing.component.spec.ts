@@ -1,29 +1,27 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Branch, ProductCategory } from '../models/merchant-catalog.models';
-import { CategoryKitchenRoutingComponent } from './category-kitchen-routing.component';
+import { ProductCategory } from '../models/merchant-catalog.models';
+import { BranchKitchenRoutingComponent } from './branch-kitchen-routing.component';
 
-describe('Category kitchen routing', () => {
-  const branch = (branchId: string, name: string) => ({ branchId, name, merchantId: 'm', branchCode: name, status: 'ACTIVE' }) as Branch;
+describe('Branch kitchen routing', () => {
   const category = (id: string, name: string) => ({ id, name, createdAt: '', updatedAt: '' }) as ProductCategory;
   const config = { stations: [{ id: 's-bar', name: 'Drinks Bar' }], categoryDefaults: {}, productOverrides: { p: 's-bar' } };
 
-  async function setup(branches: Branch[]) {
-    await TestBed.configureTestingModule({ imports: [CategoryKitchenRoutingComponent], providers: [provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
-    const fixture = TestBed.createComponent(CategoryKitchenRoutingComponent);
+  async function setup() {
+    await TestBed.configureTestingModule({ imports: [BranchKitchenRoutingComponent], providers: [provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
+    const fixture = TestBed.createComponent(BranchKitchenRoutingComponent);
     fixture.componentRef.setInput('merchantId', 'm');
-    fixture.componentRef.setInput('branches', branches);
+    fixture.componentRef.setInput('branchId', 'b-1');
     fixture.componentRef.setInput('categories', [category('c-drinks', 'Drinks'), category('c-mains', 'Mains')]);
     fixture.detectChanges();
     return { fixture, http: TestBed.inject(HttpTestingController), el: fixture.nativeElement as HTMLElement };
   }
 
-  it('saves a category station on the selected branch, keeping product overrides', async () => {
-    const { fixture, http, el } = await setup([branch('b-1', 'Center')]);
+  it('saves a category station on the given branch, keeping product overrides', async () => {
+    const { fixture, http, el } = await setup();
     http.expectOne(r => r.url.endsWith('/branches/b-1/preparation-configuration')).flush(config);
     fixture.detectChanges();
-    expect(el.querySelector('#kitchen-routing-branch')).toBeNull();
     expect(el.textContent).toContain('2 categories go to Unassigned');
 
     fixture.componentInstance.assign('c-drinks', 's-bar');
@@ -36,12 +34,11 @@ describe('Category kitchen routing', () => {
     http.verify();
   });
 
-  it('shows a branch picker for multi-branch merchants and loads the chosen branch', async () => {
-    const { fixture, http, el } = await setup([branch('b-1', 'Center'), branch('b-2', 'Airport')]);
+  it('reloads when the selected branch changes', async () => {
+    const { fixture, http } = await setup();
     http.expectOne(r => r.url.endsWith('/branches/b-1/preparation-configuration')).flush(config);
+    fixture.componentRef.setInput('branchId', 'b-2');
     fixture.detectChanges();
-    expect(el.querySelector('#kitchen-routing-branch')).not.toBeNull();
-    fixture.componentInstance.selectBranch('b-2');
     http.expectOne(r => r.url.endsWith('/branches/b-2/preparation-configuration')).flush(config);
     http.verify();
   });

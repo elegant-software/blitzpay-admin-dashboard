@@ -1,4 +1,4 @@
-<section class="card mb-4 merchant-category-card" aria-labelledby="kitchen-routing-title">
+<section class="card mb-4" aria-labelledby="kitchen-routing-title">
   <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
     <div>
       <h2 id="kitchen-routing-title" class="h6 mb-1">Kitchen stations</h2>
@@ -7,22 +7,12 @@
         Changes apply to newly submitted items.
       </p>
     </div>
-    <div class="d-flex align-items-center gap-2" *ngIf="branchId">
-      <ng-container *ngIf="branchOptions.length > 1">
-        <label class="table-filter-label mb-0" for="kitchen-routing-branch">Branch</label>
-        <select id="kitchen-routing-branch" class="form-select form-select-sm w-auto"
-                [ngModel]="branchId" (ngModelChange)="selectBranch($event)">
-          <option *ngFor="let branch of branchOptions" [value]="branch.id">{{ branch.name }}</option>
-        </select>
-      </ng-container>
-      <app-branch-preparation [merchantId]="merchantId" [branchId]="branchId" (saved)="configuration = $event" />
-    </div>
+    <app-branch-preparation [merchantId]="merchantId" [branchId]="branchId" (saved)="configuration = $event" />
   </div>
   <div class="card-body">
-    <p *ngIf="!branchId" class="text-body-secondary mb-0">Add a branch to set up kitchen stations.</p>
-    <p *ngIf="branchId && !configuration" class="text-body-secondary mb-0" role="status">Loading kitchen stations...</p>
+    <p *ngIf="!configuration" class="text-body-secondary mb-0" role="status">Loading kitchen stations...</p>
     <ng-container *ngIf="configuration">
-      <p *ngIf="!configuration.stations.length" class="text-body-secondary">
+      <p *ngIf="!configuration.stations.length" class="text-body-secondary mb-0">
         No stations yet. Use <strong>Manage stations</strong> to add e.g. Food Kitchen and Drinks Bar.
       </p>
       <div *ngIf="configuration.stations.length && unassignedCount" class="alert alert-warning py-1 px-2" data-test="unassigned-warning">

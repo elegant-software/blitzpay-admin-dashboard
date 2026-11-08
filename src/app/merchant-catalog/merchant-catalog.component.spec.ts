@@ -42,6 +42,7 @@ describe('MerchantDetailComponent product category management', () => {
 
   beforeEach(async () => {
     merchantApi = jasmine.createSpyObj<MerchantApiService>('MerchantApiService', [
+      'getKitchenAccess', 'getPreparationConfiguration',
       'getMerchant',
       'updateMerchant',
       'getLocation',
@@ -77,6 +78,8 @@ describe('MerchantDetailComponent product category management', () => {
       'disableTapToPay',
       'searchMerchants',
     ]);
+    merchantApi.getKitchenAccess.and.returnValue(of({ enabled: false, username: null } as any));
+    merchantApi.getPreparationConfiguration.and.returnValue(of({ stations: [], categoryDefaults: {}, productOverrides: {} }));
 
     await TestBed.configureTestingModule({
       imports: [MerchantDetailComponent],

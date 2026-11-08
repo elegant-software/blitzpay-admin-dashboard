@@ -7,13 +7,12 @@ import { Branch, EnvironmentKey, UpdateBranchRequest } from '../models/merchant-
 import { MerchantApiService } from '../services/merchant-api.service';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { environment } from '../../environments/environment';
-import { BranchKitchenScreenComponent } from './branch-kitchen-screen.component';
 import { exceedsCapacity, seatedCapacity } from '../tables/floor-plan';
 
 @Component({
   selector: 'app-branch-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, BranchKitchenScreenComponent],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './branch-edit.component.html',
   styleUrl: './merchant-catalog.component.css'
 })
