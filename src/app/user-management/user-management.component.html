@@ -4,31 +4,31 @@
       <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM20 8v6M23 11h-6" /></svg>
     </div>
     <div class="user-management-hero-copy">
-      <span class="user-management-eyebrow">ACCESS CONTROL</span>
-      <h1>User management</h1>
-      <p>Find platform users and manage their access to merchants and branches.</p>
+      <span class="user-management-eyebrow">{{ 'ACCESS CONTROL' | adminTranslate }}</span>
+      <h1>{{ 'User management' | adminTranslate }}</h1>
+      <p>{{ 'Find platform users and manage their access to merchants and branches.' | adminTranslate }}</p>
     </div>
     <span class="user-management-hero-tag">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v5c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V6l-8-3Zm-3 9 2 2 4-4" /></svg>
-      Platform access
+      {{ 'Platform access' | adminTranslate }}
     </span>
   </header>
 
-  <section class="user-search-card" aria-label="Search users">
+  <section class="user-search-card" [attr.aria-label]="'Search users' | adminTranslate">
     <div class="user-search-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
     </div>
     <div class="user-search-copy">
-      <h2>Find a user</h2>
-      <p>Search by name or email address.</p>
+      <h2>{{ 'Find a user' | adminTranslate }}</h2>
+      <p>{{ 'Search by name or email address.' | adminTranslate }}</p>
     </div>
     <form class="user-search-form" (ngSubmit)="search()">
-      <label class="visually-hidden" for="user-search-input">Search users by name or email</label>
+      <label class="visually-hidden" for="user-search-input">{{ 'Search users by name or email' | adminTranslate }}</label>
       <input
         id="user-search-input"
         class="user-search-input"
         type="search"
-        placeholder="Enter a name or email"
+        [placeholder]="'Enter a name or email' | adminTranslate"
         [(ngModel)]="searchQuery"
         name="userSearch"
         autocomplete="off"
@@ -36,43 +36,43 @@
       <button class="btn btn-primary user-search-button" type="submit" [disabled]="searching || !searchQuery.trim()">
         <span *ngIf="searching" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
         <svg *ngIf="!searching" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
-        {{ searching ? 'Searching' : 'Search users' }}
+        {{ searching ? (('Searching' | adminTranslate)) : (('Search users' | adminTranslate)) }}
       </button>
     </form>
   </section>
 
 
 
-  <section class="user-management-workspace" aria-label="User search results and assignments">
+  <section class="user-management-workspace" [attr.aria-label]="'User search results and assignments' | adminTranslate">
     <aside class="user-results-panel">
       <header class="user-results-heading">
         <div>
-          <h2>Search results</h2>
-          <p *ngIf="searchResults.length">{{ searchResults.length }} {{ searchResults.length === 1 ? 'user' : 'users' }} found</p>
-          <p *ngIf="!searchResults.length">Users matching your search</p>
+          <h2>{{ 'Search results' | adminTranslate }}</h2>
+          <p *ngIf="searchResults.length">{{ '{0} {1} found' | adminTranslate: [(searchResults.length), (searchResults.length === 1 ? (('user' | adminTranslate)) : (('users' | adminTranslate)))] }}</p>
+          <p *ngIf="!searchResults.length">{{ 'Users matching your search' | adminTranslate }}</p>
         </div>
         <span class="user-results-count" *ngIf="searchResults.length">{{ searchResults.length }}</span>
       </header>
 
       <div *ngIf="searching" class="user-results-state" role="status">
         <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-        <span>Searching platform users…</span>
+        <span>{{ 'Searching platform users…' | adminTranslate }}</span>
       </div>
 
       <div *ngIf="!searching && searchResults.length === 0 && !searchQuery.trim() && !loadFailedMessage" class="user-results-state user-results-empty">
         <span class="user-state-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
         </span>
-        <strong>Search for a user</strong>
-        <span>Results will appear here. Select someone to view and manage their access.</span>
+        <strong>{{ 'Search for a user' | adminTranslate }}</strong>
+        <span>{{ 'Results will appear here. Select someone to view and manage their access.' | adminTranslate }}</span>
       </div>
 
       <div *ngIf="!searching && searchResults.length === 0 && searchQuery.trim() && !loadFailedMessage" class="user-results-state user-results-empty">
         <span class="user-state-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
         </span>
-        <strong>No users found</strong>
-        <span>Try another name or email address.</span>
+        <strong>{{ 'No users found' | adminTranslate }}</strong>
+        <span>{{ 'Try another name or email address.' | adminTranslate }}</span>
       </div>
 
       <div *ngIf="!searching && searchResults.length" class="user-result-list">
@@ -86,19 +86,19 @@
           <span class="user-result-avatar" [class.user-result-avatar-inactive]="!user.enabled" aria-hidden="true">{{ userInitials(user.displayName) }}</span>
           <span class="user-result-copy">
             <strong class="user-result-name">{{ user.displayName }}</strong>
-            <small>{{ user.email ?? 'No email address' }}</small>
+            <small>{{ user.email ?? ('No email address' | adminTranslate) }}</small>
             <span class="user-result-groups" *ngIf="user.groups?.length">
-              {{ user.groups!.length }} {{ user.groups!.length === 1 ? 'group' : 'groups' }}
+              {{ user.groups!.length }} {{ user.groups!.length === 1 ? (('group' | adminTranslate)) : (('groups' | adminTranslate)) }}
             </span>
           </span>
           <span class="user-result-status" [class.user-status-active]="user.enabled" [class.user-status-inactive]="!user.enabled">
-            <span aria-hidden="true"></span>{{ user.enabled ? 'Active' : 'Inactive' }}
+            <span aria-hidden="true"></span>{{ user.enabled ? (('Active' | adminTranslate)) : (('Inactive' | adminTranslate)) }}
           </span>
         </button>
       </div>
     </aside>
 
-    <section class="user-detail-panel" aria-label="Selected user access">
+    <section class="user-detail-panel" [attr.aria-label]="'Selected user access' | adminTranslate">
       <app-user-detail
         *ngIf="selectedUser"
         [user]="selectedUser"
@@ -113,9 +113,9 @@
         <span class="user-detail-empty-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM20 8v6M23 11h-6" /></svg>
         </span>
-        <span class="user-management-eyebrow">USER ACCESS</span>
-        <h2>Select a user</h2>
-        <p>Choose someone from the search results to review their merchant assignments and access roles.</p>
+        <span class="user-management-eyebrow">{{ 'USER ACCESS' | adminTranslate }}</span>
+        <h2>{{ 'Select a user' | adminTranslate }}</h2>
+        <p>{{ 'Choose someone from the search results to review their merchant assignments and access roles.' | adminTranslate }}</p>
       </div>
     </section>
   </section>

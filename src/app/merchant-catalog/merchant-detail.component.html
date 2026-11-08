@@ -1,12 +1,12 @@
 <div class="container-fluid px-4 pt-2 pb-4 merchant-detail-page">
   <div class="merchant-detail-breadcrumb mb-3">
-    <a routerLink="/merchants">Merchants</a>
+    <a routerLink="/merchants">{{ 'Merchants' | adminTranslate }}</a>
     <span aria-hidden="true">/</span>
-    <span>Merchant profile</span>
+    <span>{{ 'Merchant profile' | adminTranslate }}</span>
   </div>
 
   <div *ngIf="loading && !selectedMerchant" class="text-center py-5 text-muted">
-    Loading merchant…
+    {{ 'Loading merchant…' | adminTranslate }}
   </div>
 
   <ng-container *ngIf="selectedMerchant as merchant">
@@ -32,47 +32,47 @@
         </ng-template>
       </div>
       <div class="merchant-detail-identity">
-        <div class="merchant-detail-eyebrow">Merchant profile</div>
+        <div class="merchant-detail-eyebrow">{{ 'Merchant profile' | adminTranslate }}</div>
         <h1 id="merchant-detail-title">{{ merchant.merchantName }}</h1>
         <div class="merchant-detail-meta">
           <span class="merchant-detail-code"
-            ><span class="visually-hidden">Merchant code: </span
+            ><span class="visually-hidden">{{ 'Merchant code:' | adminTranslate }} </span
             >{{ merchant.merchantCode || "—" }}</span
           >
           <span>{{
             merchantLocation?.city ||
               merchantLocation?.country ||
-              "Location not set"
+              ('Location not set' | adminTranslate)
           }}</span>
-          <span>{{ merchantMobilityLabel(merchant.merchantMobility) }}</span>
+          <span>{{ (merchantMobilityLabel(merchant.merchantMobility) | adminTranslate) }}</span>
         </div>
         <div class="merchant-detail-badges">
           <span
             class="status-tag"
             [ngClass]="merchantStatusTone(merchant.merchantStatus)"
-            >{{ merchantStatusLabel(merchant.merchantStatus) }}</span
+            >{{ (merchantStatusLabel(merchant.merchantStatus) | adminTranslate) }}</span
           >
           <span
             class="merchant-detail-business-type"
             *ngIf="merchant.businessType"
           >
             {{
-              verticalDisplayName(merchant.businessType) ||
-                merchant.businessType
+              (verticalDisplayName(merchant.businessType) ||
+                merchant.businessType | adminTranslate)
             }}
           </span>
         </div>
       </div>
       <div class="merchant-detail-actions">
         <div class="merchant-detail-updated">
-          <span>Last updated</span>
+          <span>{{ 'Last updated' | adminTranslate }}</span>
           <strong>{{ merchant.lastUpdatedAt | displayDate }}</strong>
         </div>
         <div class="merchant-detail-action-buttons">
           <button
             class="btn btn-sm btn-primary"
             type="button"
-            aria-label="Edit merchant"
+            [attr.aria-label]="'Edit merchant' | adminTranslate"
             (click)="navigateToMerchantEdit()"
           >
             <svg
@@ -87,7 +87,7 @@
                 d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"
               />
             </svg>
-            Edit
+            {{ 'Edit' | adminTranslate }}
           </button>
           <button
             class="btn btn-sm btn-outline-secondary"
@@ -106,7 +106,7 @@
                 d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"
               />
             </svg>
-            Settlements
+            {{ 'Settlements' | adminTranslate }}
           </button>
           <button
             class="btn btn-sm btn-outline-secondary"
@@ -125,7 +125,7 @@
                 d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"
               />
             </svg>
-            Appointments
+            {{ 'Appointments' | adminTranslate }}
           </button>
         </div>
       </div>
@@ -133,7 +133,7 @@
 
     <section
       class="merchant-detail-overview mb-4"
-      aria-label="Merchant overview"
+      [attr.aria-label]="'Merchant overview' | adminTranslate"
     >
       <div class="merchant-detail-stat">
         <span
@@ -148,7 +148,7 @@
         </span>
         <div>
           <strong>{{ branches.length }}</strong
-          ><span>Branches</span>
+          ><span>{{ 'Branches' | adminTranslate }}</span>
         </div>
       </div>
       <div class="merchant-detail-stat">
@@ -162,7 +162,7 @@
         </span>
         <div>
           <strong>{{ categories.length }}</strong
-          ><span>Product categories</span>
+          ><span>{{ 'Product categories' | adminTranslate }}</span>
         </div>
       </div>
       <div class="merchant-detail-stat">
@@ -177,7 +177,7 @@
         <div>
           <strong>{{ products.length }}</strong
           ><span
-            >Products in {{ selectedBranch?.name || "selected branch" }}</span
+            >{{ 'Products in {0}' | adminTranslate: [(selectedBranch?.name || "selected branch")] }}</span
           >
         </div>
       </div>
@@ -194,12 +194,12 @@
         </span>
         <div>
           <strong>{{ merchantOfferings.length }}</strong
-          ><span>Services enabled</span>
+          ><span>{{ 'Services enabled' | adminTranslate }}</span>
         </div>
       </div>
     </section>
 
-    <nav class="merchant-detail-navigation mb-4" aria-label="Merchant sections">
+    <nav class="merchant-detail-navigation mb-4" [attr.aria-label]="'Merchant sections' | adminTranslate">
       <ul class="nav merchant-detail-tabs" role="tablist">
         <li class="nav-item">
           <button
@@ -216,7 +216,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4 5h16v14H4zM8 9h8M8 13h5" />
             </svg>
-            <span>Business profile</span>
+            <span>{{ 'Business profile' | adminTranslate }}</span>
           </button>
         </li>
         <li class="nav-item">
@@ -234,7 +234,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4 5h16M4 12h16M4 19h16M8 3v4M16 10v4M10 17v4" />
             </svg>
-            <span>Categories</span>
+            <span>{{ 'Categories' | adminTranslate }}</span>
             <span class="merchant-tab-count">{{ categories.length }}</span>
           </button>
         </li>
@@ -253,7 +253,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01" />
             </svg>
-            <span>Branches &amp; products</span>
+            <span>{{ 'Branches & products' | adminTranslate }}</span>
             <span class="merchant-tab-count">{{ branches.length }}</span>
           </button>
         </li>
@@ -273,7 +273,7 @@
               <rect x="3" y="5" width="18" height="14" rx="2" />
               <path d="M3 10h18M7 15h3" />
             </svg>
-            <span>Payments</span>
+            <span>{{ 'Payments' | adminTranslate }}</span>
           </button>
         </li>
         <li class="nav-item" *ngIf="merchant.merchantMobility === 'MOBILE'">
@@ -292,7 +292,7 @@
               <path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z" />
               <circle cx="12" cy="9" r="2.2" />
             </svg>
-            <span>Appearances</span>
+            <span>{{ 'Appearances' | adminTranslate }}</span>
           </button>
         </li>
       </ul>
@@ -318,9 +318,9 @@
                 </svg>
               </span>
               <div>
-                <h2 class="h6 mb-1">Business details</h2>
+                <h2 class="h6 mb-1">{{ 'Business details' | adminTranslate }}</h2>
                 <p class="small text-body-secondary mb-0">
-                  Registration and operating information
+                  {{ 'Registration and operating information' | adminTranslate }}
                 </p>
               </div>
             </div>
@@ -328,27 +328,25 @@
           <div class="card-body">
             <dl class="merchant-detail-facts mb-0">
               <div class="merchant-detail-fact">
-                <dt>Merchant code</dt>
+                <dt>{{ 'Merchant code' | adminTranslate }}</dt>
                 <dd>
                   <code>{{ merchant.merchantCode || "—" }}</code>
                 </dd>
               </div>
               <div class="merchant-detail-fact">
-                <dt>Merchant type</dt>
-                <dd>{{ merchantMobilityLabel(merchant.merchantMobility) }}</dd>
+                <dt>{{ 'Merchant type' | adminTranslate }}</dt>
+                <dd>{{ (merchantMobilityLabel(merchant.merchantMobility) | adminTranslate) }}</dd>
               </div>
               <div class="merchant-detail-fact">
-                <dt>Business type</dt>
+                <dt>{{ 'Business type' | adminTranslate }}</dt>
                 <dd>
                   {{
-                    merchant.businessType
-                      ? verticalDisplayName(merchant.businessType)
-                      : "—"
+                    merchant.businessType ? ((verticalDisplayName(merchant.businessType) | adminTranslate)) : ("—")
                   }}
                 </dd>
               </div>
               <div class="merchant-detail-fact">
-                <dt>Location</dt>
+                <dt>{{ 'Location' | adminTranslate }}</dt>
                 <dd>{{ merchantBusinessLocation }}</dd>
               </div>
               <div
@@ -358,18 +356,18 @@
                   merchantLocation?.addressLine2
                 "
               >
-                <dt>Address</dt>
+                <dt>{{ 'Address' | adminTranslate }}</dt>
                 <dd>{{ merchantBusinessAddress }}</dd>
               </div>
               <div
                 class="merchant-detail-fact"
                 *ngIf="merchant.defaultVatPercent != null"
               >
-                <dt>Default VAT rate</dt>
+                <dt>{{ 'Default VAT rate' | adminTranslate }}</dt>
                 <dd>{{ merchant.defaultVatPercent }}%</dd>
               </div>
               <div class="merchant-detail-fact merchant-detail-offerings">
-                <dt>Offerings</dt>
+                <dt>{{ 'Offerings' | adminTranslate }}</dt>
                 <dd>
                   <ng-container
                     *ngIf="merchantOfferings.length; else noOfferings"
@@ -377,7 +375,7 @@
                     <span
                       class="merchant-detail-offering"
                       *ngFor="let offering of merchantOfferings"
-                      >{{ serviceLabel(offering) }}</span
+                      >{{ (serviceLabel(offering) | adminTranslate) }}</span
                     >
                   </ng-container>
                   <ng-template #noOfferings
@@ -403,9 +401,9 @@
                 </svg>
               </span>
               <div>
-                <h2 class="h6 mb-1">Contact information</h2>
+                <h2 class="h6 mb-1">{{ 'Contact information' | adminTranslate }}</h2>
                 <p class="small text-body-secondary mb-0">
-                  Ways to reach this merchant
+                  {{ 'Ways to reach this merchant' | adminTranslate }}
                 </p>
               </div>
             </div>
@@ -413,21 +411,21 @@
           <div class="card-body">
             <dl class="merchant-detail-contact-list mb-0">
               <div>
-                <dt>Website</dt>
+                <dt>{{ 'Website' | adminTranslate }}</dt>
                 <dd>
                   {{ merchant.website || merchant.contactInfo?.website || "—" }}
                 </dd>
               </div>
               <div>
-                <dt>Email</dt>
+                <dt>{{ 'Email' | adminTranslate }}</dt>
                 <dd>{{ merchant.contactInfo?.email || "—" }}</dd>
               </div>
               <div>
-                <dt>Phone</dt>
+                <dt>{{ 'Phone' | adminTranslate }}</dt>
                 <dd>{{ merchant.contactInfo?.phoneNumber || "—" }}</dd>
               </div>
               <div *ngIf="merchant.contactInfo?.instagramHandle">
-                <dt>Instagram</dt>
+                <dt>{{ 'Instagram' | adminTranslate }}</dt>
                 <dd>{{ merchant.contactInfo?.instagramHandle }}</dd>
               </div>
               <div *ngIf="merchant.contactInfo?.xHandle">
@@ -467,26 +465,22 @@
           >
             <div class="card-header merchant-section-card-header">
               <div>
-                <h2 id="merchant-branches-title" class="h6 mb-1">Branches</h2>
+                <h2 id="merchant-branches-title" class="h6 mb-1">{{ 'Branches' | adminTranslate }}</h2>
                 <p class="small text-body-secondary mb-0">
                   {{
-                    selectedBranch
-                      ? "Selected: " + selectedBranch.name
-                      : "Choose a branch to view its products."
+                    selectedBranch ? (('Selected: {0}' | adminTranslate: [(selectedBranch.name)])) : (('Choose a branch to view its products.' | adminTranslate))
                   }}
                 </p>
               </div>
               <span class="merchant-section-count">{{
-                branchFilterActive
-                  ? branchVisibleCount + " / " + branches.length
-                  : branches.length
+                branchFilterActive ? (branchVisibleCount + " / " + branches.length) : (branches.length)
               }}</span>
             </div>
             <div class="card-body merchant-branches-body">
               <div class="table-filter-toolbar merchant-branch-filter mb-3">
                 <div class="table-filter-input-wrap">
                   <label class="table-filter-label" for="branch-filter"
-                    >Find a branch</label
+                    >{{ 'Find a branch' | adminTranslate }}</label
                   >
                   <input
                     id="branch-filter"
@@ -494,7 +488,7 @@
                     class="table-filter-input"
                     [(ngModel)]="branchTableState.filter.query"
                     (ngModelChange)="onBranchFilterChange()"
-                    [placeholder]="branchFilterHint"
+              [placeholder]="branchFilterHint | adminTranslate"
                   />
                 </div>
                 <button
@@ -503,20 +497,20 @@
                   (click)="clearBranchFilters()"
                   [disabled]="!branchFilterActive"
                 >
-                  Clear
+                  {{ 'Clear' | adminTranslate }}
                 </button>
               </div>
-              <div class="merchant-branch-sort" aria-label="Sort branches">
-                <span>Sort by</span>
+              <div class="merchant-branch-sort" [attr.aria-label]="'Sort branches' | adminTranslate">
+                <span>{{ 'Sort by' | adminTranslate }}</span>
                 <button
                   type="button"
                   [attr.aria-label]="
-                    sortButtonLabel('branch name', branchNameSortDirection)
+                    (sortButtonLabel('branch name', branchNameSortDirection) | adminTranslate)
                   "
                   [attr.aria-pressed]="branchTableState.sort.field === 'name'"
                   (click)="toggleBranchSort('name')"
                 >
-                  Name
+                  {{ 'Name' | adminTranslate }}
                   <i
                     class="sort-header-icon"
                     [ngClass]="sortIconClass(branchNameSortDirection)"
@@ -526,12 +520,12 @@
                 <button
                   type="button"
                   [attr.aria-label]="
-                    sortButtonLabel('branch status', branchStatusSortDirection)
+                    (sortButtonLabel('branch status', branchStatusSortDirection) | adminTranslate)
                   "
                   [attr.aria-pressed]="branchTableState.sort.field === 'status'"
                   (click)="toggleBranchSort('status')"
                 >
-                  Status
+                  {{ 'Status' | adminTranslate }}
                   <i
                     class="sort-header-icon"
                     [ngClass]="sortIconClass(branchStatusSortDirection)"
@@ -543,7 +537,7 @@
               <div
                 class="branch-selection-list"
                 role="list"
-                aria-label="Merchant branches"
+                [attr.aria-label]="'Merchant branches' | adminTranslate"
               >
                 <article
                   class="branch-selection-card"
@@ -559,7 +553,7 @@
                     [attr.aria-pressed]="
                       selectedBranch?.branchId === branch.branchId
                     "
-                    [attr.aria-label]="'Select branch ' + branch.name"
+                    [attr.aria-label]="('Select branch {0}' | adminTranslate: [(branch.name)])"
                     (click)="selectBranch(branch)"
                   >
                     <span class="branch-selection-main">
@@ -567,28 +561,28 @@
                         branch.name
                       }}</span>
                       <span class="branch-selection-location">{{
-                        branch.city || branch.country || "Location not set"
+                        branch.city || branch.country || ('Location not set' | adminTranslate)
                       }}</span>
                     </span>
                     <span class="branch-selection-meta">
-                      <code>{{ branch.branchCode || "No branch code" }}</code>
+                      <code>{{ branch.branchCode || ('No branch code' | adminTranslate) }}</code>
                       <span
                         class="status-tag"
                         [ngClass]="branchStatusTone(branch)"
-                        >{{ branchStatusLabel(branch) }}</span
+                        >{{ (branchStatusLabel(branch) | adminTranslate) }}</span
                       >
                     </span>
                   </button>
                   <div
                     class="branch-selection-actions"
-                    [attr.aria-label]="branch.name + ' actions'"
+                    [attr.aria-label]="('{0} actions' | adminTranslate: [(branch.name)])"
                   >
                     <button
                       *ngIf="branchWebCatalogUrl(branch)"
                       class="icon-action-btn"
                       type="button"
-                      aria-label="Show branch QR code"
-                      title="Show QR code"
+                      [attr.aria-label]="'Show branch QR code' | adminTranslate"
+                      [attr.title]="'Show QR code' | adminTranslate"
                       (click)="
                         qrCatalogUrl = branchWebCatalogUrl(branch);
                         branchQrDialog.showModal()
@@ -602,8 +596,8 @@
                       [href]="branchWebCatalogUrl(branch)"
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label="Open Web Catalog"
-                      title="Open Web Catalog"
+                      [attr.aria-label]="'Open Web Catalog' | adminTranslate"
+                      [attr.title]="'Open Web Catalog' | adminTranslate"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -620,8 +614,8 @@
                     <button
                       class="icon-action-btn"
                       type="button"
-                      aria-label="Tables and floor plans"
-                      title="Tables and floor plans"
+                      [attr.aria-label]="'Tables and floor plans' | adminTranslate"
+                      [attr.title]="'Tables and floor plans' | adminTranslate"
                       (click)="navigateToTables(branch)"
                     >
                       <svg
@@ -639,8 +633,8 @@
                     <button
                       class="icon-action-btn"
                       type="button"
-                      aria-label="Printed Catalog"
-                      title="Printed Catalog"
+                      [attr.aria-label]="'Printed Catalog' | adminTranslate"
+                      [attr.title]="'Printed Catalog' | adminTranslate"
                       (click)="navigateToPrintedCatalog(branch)"
                     >
                       <svg
@@ -658,8 +652,8 @@
                     <button
                       class="icon-action-btn"
                       type="button"
-                      aria-label="Edit branch"
-                      title="Edit branch"
+                      [attr.aria-label]="'Edit branch' | adminTranslate"
+                      [attr.title]="'Edit branch' | adminTranslate"
                       (click)="navigateToBranchEdit(branch)"
                     >
                       <svg
@@ -677,8 +671,8 @@
                     <button
                       class="icon-action-btn"
                       type="button"
-                      aria-label="Deactivate branch"
-                      title="Deactivate branch"
+                      [attr.aria-label]="'Deactivate branch' | adminTranslate"
+                      [attr.title]="'Deactivate branch' | adminTranslate"
                       (click)="removeBranch(branch)"
                     >
                       <svg
@@ -702,9 +696,9 @@
                   <span class="merchant-branch-empty-icon" aria-hidden="true"
                     >⌕</span
                   >
-                  <strong>{{ branchEmptyMessage }}</strong>
+                  <strong>{{ (branchEmptyMessage | adminTranslate) }}</strong>
                   <span *ngIf="branchFilterActive"
-                    >Try a different search or clear the filter.</span
+                    >{{ 'Try a different search or clear the filter.' | adminTranslate }}</span
                   >
                   <button
                     *ngIf="branchFilterActive"
@@ -712,7 +706,7 @@
                     type="button"
                     (click)="clearBranchFilters()"
                   >
-                    Clear filter
+                    {{ 'Clear filter' | adminTranslate }}
                   </button>
                 </div>
               </div>
@@ -727,7 +721,7 @@
                   branchTableState.pagination.rowsPerPageOptions
                 "
                 [showCurrentPageReport]="true"
-                currentPageReportTemplate="{first}-{last} of {totalRecords}"
+                [currentPageReportTemplate]="'{first}-{last} of {totalRecords}' | adminTranslate"
                 (onPageChange)="onBranchPageChange($event)"
               />
             </div>
@@ -746,23 +740,21 @@
               class="card-header d-flex justify-content-between align-items-center"
             >
               <div>
-                <h2 class="h6 mb-1">Product categories</h2>
+                <h2 class="h6 mb-1">{{ 'Product categories' | adminTranslate }}</h2>
                 <p class="small text-body-secondary mb-0">
-                  Organise products in this merchant’s catalog.
+                  {{ 'Organise products in this merchant’s catalog.' | adminTranslate }}
                 </p>
               </div>
               <div class="d-flex align-items-center gap-2">
                 <span class="merchant-section-count">{{
-                  categoryFilterActive
-                    ? categoryVisibleCount + " / " + categories.length
-                    : categories.length
+                  categoryFilterActive ? (categoryVisibleCount + " / " + categories.length) : (categories.length)
                 }}</span>
                 <button
                   class="btn btn-sm btn-primary"
                   type="button"
                   (click)="openCreateCategoryDialog()"
                 >
-                  Add category
+                  {{ 'Add category' | adminTranslate }}
                 </button>
               </div>
             </div>
@@ -770,7 +762,7 @@
               <div class="table-filter-toolbar mb-3">
                 <div class="table-filter-input-wrap">
                   <label class="table-filter-label" for="category-filter"
-                    >Category Filters</label
+                    >{{ 'Category Filters' | adminTranslate }}</label
                   >
                   <input
                     id="category-filter"
@@ -778,7 +770,7 @@
                     class="table-filter-input"
                     [(ngModel)]="categoryTableState.filter.query"
                     (ngModelChange)="onCategoryFilterChange()"
-                    [placeholder]="categoryFilterHint"
+              [placeholder]="categoryFilterHint | adminTranslate"
                   />
                 </div>
                 <button
@@ -787,7 +779,7 @@
                   (click)="clearCategoryFilters()"
                   [disabled]="!categoryFilterActive"
                 >
-                  Clear
+                  {{ 'Clear' | adminTranslate }}
                 </button>
               </div>
               <div class="table-responsive datatable-shell">
@@ -805,14 +797,14 @@
                           class="sort-header-button"
                           type="button"
                           [attr.aria-label]="
-                            sortButtonLabel(
+                            (sortButtonLabel(
                               'category name',
                               categoryNameSortDirection
-                            )
+                            ) | adminTranslate)
                           "
                           (click)="toggleCategorySort('name')"
                         >
-                          <span>Name</span
+                          <span>{{ 'Name' | adminTranslate }}</span
                           ><i
                             class="sort-header-icon"
                             [ngClass]="sortIconClass(categoryNameSortDirection)"
@@ -820,8 +812,8 @@
                           ></i>
                         </button>
                       </th>
-                      <th>Updated</th>
-                      <th class="text-end">Actions</th>
+                      <th>{{ 'Updated' | adminTranslate }}</th>
+                      <th class="text-end">{{ 'Actions' | adminTranslate }}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -832,8 +824,8 @@
                         <button
                           class="icon-action-btn me-1"
                           type="button"
-                          aria-label="Category translations"
-                          title="Translations"
+                          [attr.aria-label]="'Category translations' | adminTranslate"
+                          [attr.title]="'Translations' | adminTranslate"
                           *ngIf="supportedMenuLanguages.length"
                           (click)="openCategoryTranslations(category)"
                         >
@@ -847,7 +839,7 @@
                         <button
                           class="icon-action-btn me-1"
                           type="button"
-                          aria-label="Edit category"
+                          [attr.aria-label]="'Edit category' | adminTranslate"
                           (click)="openEditCategoryDialog(category)"
                         >
                           <svg viewBox="0 0 24 24" width="16" height="16">
@@ -860,7 +852,7 @@
                         <button
                           class="icon-action-btn"
                           type="button"
-                          aria-label="Delete category"
+                          [attr.aria-label]="'Delete category' | adminTranslate"
                           (click)="removeCategory(category)"
                         >
                           <svg viewBox="0 0 24 24" width="16" height="16">
@@ -874,7 +866,7 @@
                     </tr>
                     <tr *ngIf="!visibleCategoryRows.length">
                       <td colspan="3" class="text-center text-body-secondary">
-                        {{ categoryEmptyMessage }}
+                        {{ (categoryEmptyMessage | adminTranslate) }}
                       </td>
                     </tr>
                   </tbody>
@@ -890,7 +882,7 @@
                   categoryTableState.pagination.rowsPerPageOptions
                 "
                 [showCurrentPageReport]="true"
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords}"
+                [currentPageReportTemplate]="'Showing {first} to {last} of {totalRecords}' | adminTranslate"
                 (onPageChange)="onCategoryPageChange($event)"
               />
             </div>
@@ -904,15 +896,13 @@
               class="card-header d-flex justify-content-between align-items-center"
             >
               <div>
-                <h2 class="h6 mb-1">Products</h2>
+                <h2 class="h6 mb-1">{{ 'Products' | adminTranslate }}</h2>
                 <p class="small text-body-secondary mb-0">
-                  Items available in the selected branch.
+                  {{ 'Items available in the selected branch.' | adminTranslate }}
                 </p>
               </div>
               <span class="merchant-section-count">{{
-                productFilterActive
-                  ? productVisibleCount + " / " + products.length
-                  : products.length
+                productFilterActive ? (productVisibleCount + " / " + products.length) : (products.length)
               }}</span>
             </div>
             <div class="card-body">
@@ -926,9 +916,9 @@
                   </svg>
                 </span>
                 <span class="product-scope-text">
-                  <span class="table-card-label">Showing products for</span>
+                  <span class="table-card-label">{{ 'Showing products for' | adminTranslate }}</span>
                   <strong>{{
-                    selectedBranch?.name || "Select a branch"
+                    selectedBranch?.name || ('Select a branch' | adminTranslate)
                   }}</strong>
                 </span>
                 <span *ngIf="selectedBranch" class="product-scope-location">{{
@@ -940,7 +930,7 @@
                 *ngIf="catalogLanguages.length > 1"
               >
                 <label class="table-filter-label mb-0" for="catalog-language"
-                  >Catalog Language</label
+                  >{{ 'Catalog Language' | adminTranslate }}</label
                 >
                 <select
                   id="catalog-language"
@@ -949,24 +939,15 @@
                   (ngModelChange)="setCatalogLanguage($event)"
                 >
                   <option *ngFor="let code of catalogLanguages" [value]="code">
-                    {{ languageLabel(code)
-                    }}{{ code === catalogLanguages[0] ? " (original)" : "" }}
+                    {{ (languageLabel(code) | adminTranslate)
+                    }}{{ code === catalogLanguages[0] ? (('(original)' | adminTranslate)) : ("") }}
                   </option>
                 </select>
                 <span
                   class="badge text-bg-light border"
                   *ngFor="let c of translationCoverage"
                   [title]="
-                    languageLabel(c.language) +
-                    ': ' +
-                    c.productsTranslated +
-                    ' of ' +
-                    c.productsTotal +
-                    ' products and ' +
-                    c.categoriesTranslated +
-                    ' of ' +
-                    c.categoriesTotal +
-                    ' categories translated'
+                    ('{0}: {1} of {2} products and {3} of {4} categories translated' | adminTranslate: [((languageLabel(c.language) | adminTranslate)), (c.productsTranslated), (c.productsTotal), (c.categoriesTranslated), (c.categoriesTotal)])
                   "
                 >
                   {{ c.language.toUpperCase() }} {{ c.productsTranslated }}/{{
@@ -977,7 +958,7 @@
               <div class="table-card-toolbar mb-3">
                 <div class="table-filter-input-wrap">
                   <label class="table-filter-label" for="product-filter"
-                    >Find a product</label
+                    >{{ 'Find a product' | adminTranslate }}</label
                   >
                   <input
                     id="product-filter"
@@ -985,7 +966,7 @@
                     class="table-filter-input"
                     [(ngModel)]="productTableState.filter.query"
                     (ngModelChange)="onProductFilterChange()"
-                    [placeholder]="productFilterHint"
+              [placeholder]="productFilterHint | adminTranslate"
                   />
                 </div>
                 <div class="table-filter-action-wrap">
@@ -995,7 +976,7 @@
                     (click)="clearProductFilters()"
                     [disabled]="!productFilterActive"
                   >
-                    Clear
+                    {{ 'Clear' | adminTranslate }}
                   </button>
                 </div>
               </div>
@@ -1015,14 +996,14 @@
                           class="sort-header-button"
                           type="button"
                           [attr.aria-label]="
-                            sortButtonLabel(
+                            (sortButtonLabel(
                               'product name',
                               productNameSortDirection
-                            )
+                            ) | adminTranslate)
                           "
                           (click)="toggleProductSort('name')"
                         >
-                          <span>Product</span
+                          <span>{{ 'Product' | adminTranslate }}</span
                           ><i
                             class="sort-header-icon"
                             [ngClass]="sortIconClass(productNameSortDirection)"
@@ -1039,14 +1020,14 @@
                           class="sort-header-button"
                           type="button"
                           [attr.aria-label]="
-                            sortButtonLabel(
+                            (sortButtonLabel(
                               'product code',
                               productCodeSortDirection
-                            )
+                            ) | adminTranslate)
                           "
                           (click)="toggleProductSort('productCode')"
                         >
-                          <span>Code</span
+                          <span>{{ 'Code' | adminTranslate }}</span
                           ><i
                             class="sort-header-icon"
                             [ngClass]="sortIconClass(productCodeSortDirection)"
@@ -1063,14 +1044,14 @@
                           class="sort-header-button"
                           type="button"
                           [attr.aria-label]="
-                            sortButtonLabel(
+                            (sortButtonLabel(
                               'product category',
                               productCategorySortDirection
-                            )
+                            ) | adminTranslate)
                           "
                           (click)="toggleProductSort('categoryName')"
                         >
-                          <span>Category</span
+                          <span>{{ 'Category' | adminTranslate }}</span
                           ><i
                             class="sort-header-icon"
                             [ngClass]="
@@ -1089,14 +1070,14 @@
                           class="sort-header-button"
                           type="button"
                           [attr.aria-label]="
-                            sortButtonLabel(
+                            (sortButtonLabel(
                               'product status',
                               productStatusSortDirection
-                            )
+                            ) | adminTranslate)
                           "
                           (click)="toggleProductSort('status')"
                         >
-                          <span>Status</span
+                          <span>{{ 'Status' | adminTranslate }}</span
                           ><i
                             class="sort-header-icon"
                             [ngClass]="
@@ -1106,7 +1087,7 @@
                           ></i>
                         </button>
                       </th>
-                      <th class="text-end">Actions</th>
+                      <th class="text-end">{{ 'Actions' | adminTranslate }}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1136,12 +1117,12 @@
                           <span
                             class="status-tag status-tag-warning ms-1"
                             *ngIf="isFallbackProduct(product)"
-                            title="No translation in the Catalog Language yet"
-                            >Original</span
+                            [attr.title]="'No translation in the Catalog Language yet' | adminTranslate"
+                            >{{ 'Original' | adminTranslate }}</span
                           >
                         </div>
                         <div class="product-cell-subtitle">
-                          {{ product.description || "No description" }}
+                          {{ product.description || ('No description' | adminTranslate) }}
                         </div>
                       </td>
                       <td>{{ product.productCode ?? "—" }}</td>
@@ -1150,15 +1131,15 @@
                         <span
                           class="status-tag"
                           [ngClass]="productStatusTone(product)"
-                          >{{ productStatusLabel(product) }}</span
+                          >{{ (productStatusLabel(product) | adminTranslate) }}</span
                         >
                       </td>
                       <td class="text-end action-cell">
                         <button
                           class="icon-action-btn me-1"
                           type="button"
-                          aria-label="Edit product"
-                          title="Edit product"
+                          [attr.aria-label]="'Edit product' | adminTranslate"
+                          [attr.title]="'Edit product' | adminTranslate"
                           (click)="navigateToProductEdit(product)"
                         >
                           <svg
@@ -1176,8 +1157,8 @@
                         <button
                           class="icon-action-btn"
                           type="button"
-                          aria-label="Remove product"
-                          title="Remove product"
+                          [attr.aria-label]="'Remove product' | adminTranslate"
+                          [attr.title]="'Remove product' | adminTranslate"
                           (click)="removeProduct(product)"
                         >
                           <svg
@@ -1196,7 +1177,7 @@
                     </tr>
                     <tr *ngIf="!visibleProductRows.length">
                       <td colspan="6" class="text-center text-body-secondary">
-                        {{ productEmptyMessage }}
+                        {{ (productEmptyMessage | adminTranslate) }}
                       </td>
                     </tr>
                   </tbody>
@@ -1205,6 +1186,7 @@
               <p-paginator
                 *ngIf="productPaginatorVisible"
                 class="table-paginator"
+                appendTo="body"
                 [first]="productTableState.pagination.first"
                 [rows]="productTableState.pagination.rows"
                 [totalRecords]="productTableState.pagination.totalRecords"
@@ -1212,7 +1194,7 @@
                   productTableState.pagination.rowsPerPageOptions
                 "
                 [showCurrentPageReport]="true"
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords}"
+                [currentPageReportTemplate]="'Showing {first} to {last} of {totalRecords}' | adminTranslate"
                 (onPageChange)="onProductPageChange($event)"
               />
             </div>
@@ -1224,7 +1206,7 @@
             class="mt-4"
             aria-labelledby="branch-kitchen-title"
           >
-            <h2 id="branch-kitchen-title" class="h6 mb-3">Kitchen · {{ selectedBranch!.name }}</h2>
+            <h2 id="branch-kitchen-title" class="h6 mb-3">{{ 'Kitchen · {0}' | adminTranslate: [(selectedBranch!.name)] }}</h2>
             <app-branch-kitchen-screen [branchId]="selectedBranch!.branchId!" />
             <app-branch-kitchen-routing
               [merchantId]="selectedMerchant.merchantId"
@@ -1248,7 +1230,7 @@
         <div
           class="card-header d-flex justify-content-between align-items-center"
         >
-          <span>Payment Providers</span>
+          <span>{{ 'Payment Providers' | adminTranslate }}</span>
           <div
             *ngIf="providerAccountsLoading"
             class="spinner-border spinner-border-sm text-secondary"
@@ -1262,10 +1244,10 @@
           >
             <thead>
               <tr>
-                <th style="width: 12%">Provider</th>
-                <th style="width: 24%">Status</th>
-                <th style="width: 28%">Account</th>
-                <th>Capabilities</th>
+                <th style="width: 12%">{{ 'Provider' | adminTranslate }}</th>
+                <th style="width: 24%">{{ 'Status' | adminTranslate }}</th>
+                <th style="width: 28%">{{ 'Account' | adminTranslate }}</th>
+                <th>{{ 'Capabilities' | adminTranslate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -1288,7 +1270,7 @@
                       <span
                         class="status-tag me-2"
                         [ngClass]="providerStatus(code).tone"
-                        >{{ providerStatus(code).label }}</span
+                        >{{ (providerStatus(code).label | adminTranslate) }}</span
                       >
                       <ng-container
                         *ngIf="isPspAvailable(code); else unavailable"
@@ -1313,7 +1295,7 @@
                             class="spinner-border spinner-border-sm me-1"
                             role="status"
                           ></span>
-                          {{ ctx.pa?.enabled ? "Disable" : "Enable" }}
+                          {{ ctx.pa?.enabled ? (('Disable' | adminTranslate)) : (('Enable' | adminTranslate)) }}
                         </button>
                       </ng-container>
                       <ng-template #unavailable>
@@ -1321,11 +1303,9 @@
                           class="btn btn-sm btn-outline-secondary"
                           type="button"
                           disabled
-                          title="{{
-                            pspDisplayName(code)
-                          }} is not available yet"
+                            [attr.title]="'{0} is not available yet' | adminTranslate: [pspDisplayName(code)]"
                         >
-                          Enable
+                          {{ 'Enable' | adminTranslate }}
                         </button>
                       </ng-template>
                     </td>
@@ -1342,27 +1322,27 @@
                           <span
                             *ngSwitchCase="'connected'"
                             class="status-tag status-tag-success me-2"
-                            >Connected</span
+                            >{{ 'Connected' | adminTranslate }}</span
                           >
                           <span
                             *ngSwitchCase="'verifying'"
                             class="status-tag status-tag-warning me-2"
-                            >Verifying</span
+                            >{{ 'Verifying' | adminTranslate }}</span
                           >
                           <span
                             *ngSwitchCase="'not_connected'"
                             class="status-tag status-tag-neutral me-2"
-                            >Not connected</span
+                            >{{ 'Not connected' | adminTranslate }}</span
                           >
                           <span
                             *ngSwitchCase="'loading'"
                             class="status-tag status-tag-neutral me-2"
-                            >Loading…</span
+                            >{{ 'Loading…' | adminTranslate }}</span
                           >
                           <span
                             *ngSwitchCase="'error'"
                             class="status-tag status-tag-danger me-2"
-                            >Error
+                            >{{ 'Error' | adminTranslate }}
                             <button
                               class="btn btn-link btn-sm p-0 ms-1"
                               type="button"
@@ -1372,7 +1352,7 @@
                                 )
                               "
                             >
-                              Retry
+                              {{ 'Retry' | adminTranslate }}
                             </button>
                           </span>
                         </ng-container>
@@ -1401,11 +1381,11 @@
                           ></span>
                           <ng-container *ngIf="!paymentAccountActionLoading">
                             <ng-container [ngSwitch]="paymentAccountStatus">
-                              <span *ngSwitchCase="'connected'">Connected</span>
+                              <span *ngSwitchCase="'connected'">{{ 'Connected' | adminTranslate }}</span>
                               <span *ngSwitchCase="'verifying'"
-                                >Continue setup</span
+                                >{{ 'Continue setup' | adminTranslate }}</span
                               >
-                              <span *ngSwitchDefault>Connect Stripe</span>
+                              <span *ngSwitchDefault>{{ 'Connect Stripe' | adminTranslate }}</span>
                             </ng-container>
                           </ng-container>
                         </button>
@@ -1425,9 +1405,9 @@
                         "
                       >
                         <div class="d-flex align-items-center gap-2">
-                          <span class="small fw-medium">Tap to Pay</span>
+                          <span class="small fw-medium">{{ 'Tap to Pay' | adminTranslate }}</span>
                           <div class="form-check form-switch mb-0">
-                            <input
+                            <input dir="auto"
                               class="form-check-input"
                               type="checkbox"
                               [ngModel]="tapToPayEnabled"
@@ -1475,19 +1455,19 @@
         <div
           class="card-header d-flex justify-content-between align-items-center"
         >
-          <span>Appearances</span>
+          <span>{{ 'Appearances' | adminTranslate }}</span>
           <button
             class="btn btn-outline-secondary btn-sm"
             type="button"
             (click)="loadAppearanceOperational(); loadAppearanceHistory(0)"
           >
-            Refresh
+            {{ 'Refresh' | adminTranslate }}
           </button>
         </div>
         <div class="card-body">
-          <h6 class="text-body-secondary mb-2">Active &amp; Upcoming</h6>
+          <h6 class="text-body-secondary mb-2">{{ 'Active & Upcoming' | adminTranslate }}</h6>
           <div *ngIf="appearanceOperationalLoading" class="text-muted small">
-            Loading…
+            {{ 'Loading…' | adminTranslate }}
           </div>
 
           <div
@@ -1499,12 +1479,12 @@
             <table class="table table-sm align-middle mb-0">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Branch</th>
-                  <th>Status</th>
-                  <th>Start</th>
-                  <th>End</th>
-                  <th>Location</th>
+                  <th>{{ 'Name' | adminTranslate }}</th>
+                  <th>{{ 'Branch' | adminTranslate }}</th>
+                  <th>{{ 'Status' | adminTranslate }}</th>
+                  <th>{{ 'Start' | adminTranslate }}</th>
+                  <th>{{ 'End' | adminTranslate }}</th>
+                  <th>{{ 'Location' | adminTranslate }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1519,7 +1499,7 @@
                           ? 'status-tag-success'
                           : 'status-tag-warning'
                       "
-                      >{{ a.status }}</span
+                      >{{ (a.status | adminTranslate) }}</span
                     >
                   </td>
                   <td>{{ a.startTime | displayDate }}</td>
@@ -1543,7 +1523,7 @@
                 </tr>
                 <tr *ngIf="appearanceOperational.length === 0">
                   <td colspan="6" class="text-center text-body-secondary small">
-                    No active or upcoming appearances.
+                    {{ 'No active or upcoming appearances.' | adminTranslate }}
                   </td>
                 </tr>
               </tbody>
@@ -1552,20 +1532,20 @@
 
           <hr class="my-3" />
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="text-body-secondary mb-0">History</h6>
+            <h6 class="text-body-secondary mb-0">{{ 'History' | adminTranslate }}</h6>
             <span class="badge text-bg-light"
-              >{{ appearanceHistoryTotalElements }} records</span
+              >{{ '{0} records' | adminTranslate: [(appearanceHistoryTotalElements)] }}</span
             >
           </div>
           <div class="row g-2 align-items-end mb-3">
             <div class="col-md-3">
-              <label class="form-label" for="appearance-branch">Branch</label>
+              <label class="form-label" for="appearance-branch">{{ 'Branch' | adminTranslate }}</label>
               <select
                 id="appearance-branch"
                 class="form-select"
                 [(ngModel)]="appearanceHistoryBranchId"
               >
-                <option value="">All branches</option>
+                <option value="">{{ 'All branches' | adminTranslate }}</option>
                 <option
                   *ngFor="let branch of branches"
                   [value]="branch.branchId || branch.id"
@@ -1575,20 +1555,20 @@
               </select>
             </div>
             <div class="col-md-2">
-              <label class="form-label" for="appearance-status">Status</label>
+              <label class="form-label" for="appearance-status">{{ 'Status' | adminTranslate }}</label>
               <select
                 id="appearance-status"
                 class="form-select"
                 [(ngModel)]="appearanceHistoryStatus"
               >
-                <option value="">All statuses</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
+                <option value="">{{ 'All statuses' | adminTranslate }}</option>
+                <option value="COMPLETED">{{ 'Completed' | adminTranslate }}</option>
+                <option value="CANCELLED">{{ 'Cancelled' | adminTranslate }}</option>
               </select>
             </div>
             <div class="col-md-2">
-              <label class="form-label" for="appearance-from">From</label>
-              <input
+              <label class="form-label" for="appearance-from">{{ 'From' | adminTranslate }}</label>
+              <input dir="ltr"
                 id="appearance-from"
                 class="form-control"
                 type="date"
@@ -1596,8 +1576,8 @@
               />
             </div>
             <div class="col-md-2">
-              <label class="form-label" for="appearance-to">To</label>
-              <input
+              <label class="form-label" for="appearance-to">{{ 'To' | adminTranslate }}</label>
+              <input dir="ltr"
                 id="appearance-to"
                 class="form-control"
                 type="date"
@@ -1610,12 +1590,12 @@
                 type="button"
                 (click)="applyAppearanceHistoryFilters()"
               >
-                Apply filters
+                {{ 'Apply filters' | adminTranslate }}
               </button>
             </div>
           </div>
           <div *ngIf="appearanceHistoryLoading" class="text-muted small">
-            Loading history…
+            {{ 'Loading history…' | adminTranslate }}
           </div>
 
           <div
@@ -1625,13 +1605,13 @@
             <table class="table table-sm align-middle mb-0">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Branch</th>
-                  <th>Status</th>
-                  <th>Start</th>
-                  <th>End</th>
-                  <th>Cancelled</th>
-                  <th>Location</th>
+                  <th>{{ 'Name' | adminTranslate }}</th>
+                  <th>{{ 'Branch' | adminTranslate }}</th>
+                  <th>{{ 'Status' | adminTranslate }}</th>
+                  <th>{{ 'Start' | adminTranslate }}</th>
+                  <th>{{ 'End' | adminTranslate }}</th>
+                  <th>{{ 'Cancelled' | adminTranslate }}</th>
+                  <th>{{ 'Location' | adminTranslate }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1646,7 +1626,7 @@
                           ? 'status-tag-success'
                           : 'status-tag-neutral'
                       "
-                      >{{ appearance.status }}</span
+                      >{{ (appearance.status | adminTranslate) }}</span
                     >
                   </td>
                   <td>{{ appearance.startTime | displayDate }}</td>
@@ -1671,7 +1651,7 @@
                 </tr>
                 <tr *ngIf="appearanceHistory.length === 0">
                   <td colspan="7" class="text-center text-body-secondary small">
-                    No appearance history found.
+                    {{ 'No appearance history found.' | adminTranslate }}
                   </td>
                 </tr>
               </tbody>
@@ -1686,11 +1666,10 @@
               [disabled]="appearanceHistoryPage === 0"
               (click)="loadAppearanceHistory(appearanceHistoryPage - 1)"
             >
-              Previous
+              {{ 'Previous' | adminTranslate }}
             </button>
             <span class="text-muted small"
-              >Page {{ appearanceHistoryPage + 1 }} of
-              {{ appearanceHistoryTotalPages }}</span
+              >{{ 'Page {0} of {1}' | adminTranslate: [(appearanceHistoryPage + 1), (appearanceHistoryTotalPages)] }}</span
             >
             <button
               class="btn btn-outline-secondary btn-sm"
@@ -1699,7 +1678,7 @@
               "
               (click)="loadAppearanceHistory(appearanceHistoryPage + 1)"
             >
-              Next
+              {{ 'Next' | adminTranslate }}
             </button>
           </div>
         </div>
@@ -1719,9 +1698,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
       <h5 id="category-dialog-title" class="mb-0">
         {{
-          categoryDialogMode === "create"
-            ? "Add Product Category"
-            : "Edit Product Category"
+          categoryDialogMode === "create" ? (('Add Product Category' | adminTranslate)) : (('Edit Product Category' | adminTranslate))
         }}
       </h5>
       <button
@@ -1729,25 +1706,23 @@
         type="button"
         (click)="closeCategoryDialog()"
       >
-        Close
+        {{ 'Close' | adminTranslate }}
       </button>
     </div>
     <div class="card-body">
       <div class="alert alert-danger mb-3" *ngIf="categoryDialogError">
-        {{ categoryDialogError }}
+        {{ (categoryDialogError | adminTranslate) }}
       </div>
       <div class="row g-3">
         <div class="col-12">
-          <label class="form-label required">Name</label>
-          <input class="form-control" [(ngModel)]="categoryFormName" />
+          <label class="form-label required">{{ 'Name' | adminTranslate }}</label>
+          <input dir="auto" class="form-control" [(ngModel)]="categoryFormName" />
         </div>
       </div>
       <div class="dialog-actions mt-3">
         <button class="btn btn-primary" type="button" (click)="saveCategory()">
           {{
-            categoryDialogMode === "create"
-              ? "Create category"
-              : "Save category"
+            categoryDialogMode === "create" ? (('Create category' | adminTranslate)) : (('Save category' | adminTranslate))
           }}
         </button>
         <button
@@ -1755,7 +1730,7 @@
           type="button"
           (click)="closeCategoryDialog()"
         >
-          Cancel
+          {{ 'Cancel' | adminTranslate }}
         </button>
       </div>
     </div>
@@ -1767,8 +1742,8 @@
   class="branch-qr-dialog"
   aria-labelledby="branch-qr-title"
 >
-  <h2 id="branch-qr-title" class="h5">Branch QR code</h2>
-  <p>Scan to open this branch's web catalog.</p>
+  <h2 id="branch-qr-title" class="h5">{{ 'Branch QR code' | adminTranslate }}</h2>
+  <p>{{ 'Scan to open this branch\'s web catalog.' | adminTranslate }}</p>
   <app-branch-catalog-qr [url]="qrCatalogUrl" />
   <div class="d-flex justify-content-end gap-2 mt-3">
     <a
@@ -1776,7 +1751,7 @@
       [href]="qrCatalogUrl"
       target="_blank"
       rel="noopener noreferrer"
-      >Open catalog</a
+      >{{ 'Open catalog' | adminTranslate }}</a
     >
     <button
       class="btn btn-secondary"
@@ -1784,7 +1759,7 @@
       autofocus
       (click)="branchQrDialog.close()"
     >
-      Close
+      {{ 'Close' | adminTranslate }}
     </button>
   </div>
 </dialog>

@@ -151,7 +151,7 @@ th[aria-sort='descending'] .sort-header-icon {
 
 .product-thumb-col {
   width: 52px;
-  padding-right: 0.25rem !important;
+  padding-inline-end: 0.25rem !important;
 }
 
 .product-thumb {
@@ -366,7 +366,7 @@ th[aria-sort='descending'] .sort-header-icon {
 
 .status-switch .form-check-input {
   margin-top: 0;
-  margin-left: 0;
+  margin-inline-start: 0;
   float: none;
 }
 
@@ -698,8 +698,8 @@ th[aria-sort='descending'] .sort-header-icon {
 .merchant-filter-panel > summary::after {
   width: 0.5rem;
   height: 0.5rem;
-  margin-left: auto;
-  border-right: 1.5px solid var(--merchant-muted);
+  margin-inline-start: auto;
+  border-inline-end: 1.5px solid var(--merchant-muted);
   border-bottom: 1.5px solid var(--merchant-muted);
   content: '';
   transform: rotate(45deg) translateY(-2px);
@@ -815,7 +815,7 @@ th[aria-sort='descending'] .sort-header-icon {
   flex: 0 0 2.5rem;
   align-items: center;
   justify-content: center;
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 :host ::ng-deep .merchant-filter-group .p-multiselect:focus-visible {
@@ -946,6 +946,8 @@ th[aria-sort='descending'] .sort-header-icon {
 }
 
 .merchant-result-row {
+  position: relative;
+  cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
@@ -965,6 +967,14 @@ th[aria-sort='descending'] .sort-header-icon {
   outline: 3px solid rgb(103 82 217 / 45%);
   outline-offset: 3px;
   border-radius: 0.35rem;
+}
+
+/* Extend the native link/button hit area while preserving keyboard activation. */
+.merchant-result-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
 }
 
 .merchant-result-avatar {
@@ -1025,7 +1035,7 @@ th[aria-sort='descending'] .sort-header-icon {
 }
 
 .merchant-result-country {
-  margin-left: 0.35rem;
+  margin-inline-start: 0.35rem;
   color: var(--merchant-muted);
   font-size: 0.74rem;
 }
@@ -1417,13 +1427,13 @@ th[aria-sort='descending'] .sort-header-icon {
   }
 
   .merchant-editor-card .input-group > .form-control {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
   }
 
   .merchant-editor-card .input-group > .input-group-text {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
   }
 
   .merchant-editor-card .form-control:focus,
@@ -1912,7 +1922,8 @@ th[aria-sort='descending'] .sort-header-icon {
   display: inline-block;
   width: 0.25rem;
   height: 0.25rem;
-  margin: 0 0.65rem 0.1rem 0.2rem;
+  margin-block: 0 0.1rem;
+  margin-inline: 0.2rem 0.65rem;
   border-radius: 50%;
   background: #a4a9b5;
   content: '';
@@ -1941,7 +1952,7 @@ th[aria-sort='descending'] .sort-header-icon {
 .merchant-detail-updated {
   display: grid;
   gap: 0.15rem;
-  text-align: right;
+  text-align: end;
   color: var(--merchant-detail-muted);
   font-size: 0.75rem;
 }
@@ -2280,7 +2291,7 @@ th[aria-sort='descending'] .sort-header-icon {
   }
 
   .merchant-detail-updated {
-    text-align: left;
+    text-align: start;
   }
 
   .merchant-detail-overview {
@@ -2294,8 +2305,8 @@ th[aria-sort='descending'] .sort-header-icon {
 
 @media (max-width: 575.98px) {
   .merchant-detail-page {
-    padding-right: 1rem !important;
-    padding-left: 1rem !important;
+    padding-inline-end: 1rem !important;
+    padding-inline-start: 1rem !important;
   }
 
   .merchant-detail-hero {
@@ -2415,7 +2426,7 @@ th[aria-sort='descending'] .sort-header-icon {
 }
 
 .merchant-branch-sort > span {
-  margin-right: auto;
+  margin-inline-end: auto;
 }
 
 .merchant-branch-sort button {
@@ -2454,7 +2465,8 @@ th[aria-sort='descending'] .sort-header-icon {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.2rem 0.35rem 0.2rem 0.7rem;
+  padding-block: 0.2rem 0.2rem;
+  padding-inline: 0.7rem 0.35rem;
   border: 1px solid var(--merchant-detail-border, #e5e7eb);
   border-radius: 0.7rem;
   background: var(--merchant-detail-surface, #fff);
@@ -2482,7 +2494,7 @@ th[aria-sort='descending'] .sort-header-icon {
   border: 0;
   background: transparent;
   color: var(--cui-body-color, #1f2937);
-  text-align: left;
+  text-align: start;
 }
 
 .branch-selection-main {
@@ -2657,7 +2669,7 @@ th[aria-sort='descending'] .sort-header-icon {
 }
 
 .product-scope-location {
-  margin-left: auto;
+  margin-inline-start: auto;
   color: var(--merchant-detail-muted, #6b7280);
   font-size: 0.75rem;
 }

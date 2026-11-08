@@ -1,37 +1,37 @@
 <main class="container-fluid order-management-page">
   <header class="orders-hero">
     <div>
-      <p class="orders-eyebrow">OPERATIONS</p>
-      <h1>Orders</h1>
-      <p>Review branch orders, track payment status, and create orders for shoppers.</p>
+      <p class="orders-eyebrow">{{ 'OPERATIONS' | adminTranslate }}</p>
+      <h1>{{ 'Orders' | adminTranslate }}</h1>
+      <p>{{ 'Review branch orders, track payment status, and create orders for shoppers.' | adminTranslate }}</p>
     </div>
     <button *ngIf="canSearch" class="btn btn-primary orders-primary-action" type="button" (click)="openCreateDialog()">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-      New order
+      {{ 'New order' | adminTranslate }}
     </button>
   </header>
 
-  <div class="alert alert-danger orders-alert" *ngIf="errorMessage" role="alert">{{ errorMessage }}</div>
+  <div class="alert alert-danger orders-alert" *ngIf="errorMessage" role="alert">{{ (errorMessage | adminTranslate) }}</div>
 
   <section class="card orders-filter-card" aria-labelledby="orders-scope-title">
     <div class="orders-filter-heading">
       <div>
-        <h2 id="orders-scope-title">Order scope</h2>
-        <p>Choose a merchant and branch to see their orders.</p>
+        <h2 id="orders-scope-title">{{ 'Order scope' | adminTranslate }}</h2>
+        <p>{{ 'Choose a merchant and branch to see their orders.' | adminTranslate }}</p>
       </div>
       <span class="orders-scope-indicator" [class.orders-scope-indicator-active]="canSearch">
-        <span aria-hidden="true"></span>{{ canSearch ? 'Branch selected' : 'Select a branch' }}
+        <span aria-hidden="true"></span>{{ canSearch ? (('Branch selected' | adminTranslate)) : (('Select a branch' | adminTranslate)) }}
       </span>
     </div>
 
     <div class="orders-filter-fields">
       <div class="orders-filter-field orders-merchant-field">
-        <label for="order-merchant-search">Merchant <span aria-hidden="true">*</span></label>
+        <label for="order-merchant-search">{{ 'Merchant' | adminTranslate }} <span aria-hidden="true">*</span></label>
         <ng-container *ngIf="!selectedMerchantItem">
           <app-merchant-search
             inputId="order-merchant-search"
             variant="orders"
-            placeholder="Search by name, code, or ID"
+            [placeholder]="'Search by name, code, or ID' | adminTranslate"
             [query]="merchantQuery"
             [results]="merchantResults"
             [searching]="merchantSearchLoading"
@@ -40,19 +40,19 @@
             (search)="searchMerchantsForFilter()"
             (merchantSelected)="selectMerchantForFilter($event)"
           ></app-merchant-search>
-          <span *ngIf="merchantSearchError" class="orders-field-error" role="alert">{{ merchantSearchError }}</span>
+          <span *ngIf="merchantSearchError" class="orders-field-error" role="alert">{{ (merchantSearchError | adminTranslate) }}</span>
         </ng-container>
         <div *ngIf="selectedMerchantItem" class="orders-selected-merchant">
           <span class="orders-result-avatar" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M3 10h18M5 10v10h14V10M4 10l1.5-6h13L20 10M9 20v-6h6v6M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0" /></svg>
           </span>
           <span class="orders-result-copy"><strong>{{ selectedMerchantItem.merchantName }}</strong><small>{{ selectedMerchantItem.merchantCode }}</small></span>
-          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="clearMerchantFilter()">Change</button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="clearMerchantFilter()">{{ 'Change' | adminTranslate }}</button>
         </div>
       </div>
 
       <div class="orders-filter-field">
-        <label id="order-branch-label">Branch <span aria-hidden="true">*</span></label>
+        <label id="order-branch-label">{{ 'Branch' | adminTranslate }} <span aria-hidden="true">*</span></label>
         <div class="orders-branch-picker" #branchPicker>
           <button
             #branchTrigger
@@ -66,7 +66,7 @@
             [disabled]="!selectedMerchantItem || supportDataLoading || !branches.length"
             (click)="toggleBranchDropdown()"
             (keydown)="onBranchTriggerKeydown($event)">
-            <span id="order-branch-value" class="orders-branch-value">{{ selectedBranchId ? branchName(selectedBranchId) : (supportDataLoading ? 'Loading branches…' : (branches.length ? 'Select a branch' : 'Select a merchant first')) }}</span>
+            <span id="order-branch-value" class="orders-branch-value">{{ selectedBranchId ? (branchName(selectedBranchId)) : ((supportDataLoading ? ('Loading branches…' | adminTranslate) : (branches.length ? ('Select a branch' | adminTranslate) : ('Select a merchant first' | adminTranslate)))) }}</span>
             <svg class="orders-branch-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
           </button>
           <div
@@ -83,7 +83,7 @@
               [attr.aria-selected]="!selectedBranchId"
               (click)="selectBranchFilter('')"
               (keydown)="onBranchOptionKeydown($event, 0)">
-              <span>Select a branch</span>
+              <span>{{ 'Select a branch' | adminTranslate }}</span>
               <svg *ngIf="!selectedBranchId" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
             </button>
             <button
@@ -104,70 +104,70 @@
           </div>
         </div>
 
-        <span *ngIf="selectedMerchantItem && !supportDataLoading && !supportDataFailed && !branches.length" class="orders-field-hint">No branches are available for this merchant.</span>
+        <span *ngIf="selectedMerchantItem && !supportDataLoading && !supportDataFailed && !branches.length" class="orders-field-hint">{{ 'No branches are available for this merchant.' | adminTranslate }}</span>
       </div>
 
       <div class="orders-filter-actions">
         <button class="btn btn-primary" type="button" [disabled]="loading || !canSearch" (click)="loadOrders()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
-          {{ loading ? 'Loading…' : 'Refresh orders' }}
+          {{ loading ? (('Loading…' | adminTranslate)) : (('Refresh orders' | adminTranslate)) }}
         </button>
-        <button class="btn btn-outline-secondary" type="button" (click)="clearSearch()">Clear</button>
+        <button class="btn btn-outline-secondary" type="button" (click)="clearSearch()">{{ 'Clear' | adminTranslate }}</button>
       </div>
     </div>
     <div class="orders-current-scope" *ngIf="canSearch">
       <span class="orders-current-scope-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01" /></svg>
       </span>
-      <span>Viewing orders for <strong>{{ selectedMerchantItem?.merchantName }}</strong><span class="orders-scope-separator">/</span><strong>{{ branchName(selectedBranchId) }}</strong></span>
+      <span>{{ 'Viewing orders for' | adminTranslate }} <strong>{{ selectedMerchantItem?.merchantName }}</strong><span class="orders-scope-separator">/</span><strong>{{ branchName(selectedBranchId) }}</strong></span>
     </div>
   </section>
 
-  <section *ngIf="canSearch && ordersLoaded" class="orders-overview" aria-label="Order summary">
+  <section *ngIf="canSearch && ordersLoaded" class="orders-overview" [attr.aria-label]="'Order summary' | adminTranslate">
     <article class="orders-stat-card">
       <span class="orders-stat-icon orders-stat-icon-total" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M7 3h10l3 3v15H4V3h3ZM8 10h8M8 14h8M8 18h5" /></svg>
       </span>
-      <span><small>Total orders</small><strong>{{ orders.length }}</strong></span>
-      <span class="orders-stat-caption">In this branch</span>
+      <span><small>{{ 'Total orders' | adminTranslate }}</small><strong>{{ orders.length }}</strong></span>
+      <span class="orders-stat-caption">{{ 'In this branch' | adminTranslate }}</span>
     </article>
     <article class="orders-stat-card">
       <span class="orders-stat-icon orders-stat-icon-pending" aria-hidden="true">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
       </span>
-      <span><small>Pending</small><strong>{{ pendingOrderCount }}</strong></span>
-      <span class="orders-stat-caption">Awaiting payment</span>
+      <span><small>{{ 'Pending' | adminTranslate }}</small><strong>{{ pendingOrderCount }}</strong></span>
+      <span class="orders-stat-caption">{{ 'Awaiting payment' | adminTranslate }}</span>
     </article>
     <article class="orders-stat-card">
       <span class="orders-stat-icon orders-stat-icon-paid" aria-hidden="true">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16 9" /></svg>
       </span>
-      <span><small>Paid</small><strong>{{ paidOrderCount }}</strong></span>
-      <span class="orders-stat-caption">Successfully paid</span>
+      <span><small>{{ 'Paid' | adminTranslate }}</small><strong>{{ paidOrderCount }}</strong></span>
+      <span class="orders-stat-caption">{{ 'Successfully paid' | adminTranslate }}</span>
     </article>
     <article class="orders-stat-card">
       <span class="orders-stat-icon orders-stat-icon-invoice" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM14 3v5h5M8 12h8M8 16h8" /></svg>
       </span>
-      <span><small>Invoice orders</small><strong>{{ invoiceOrderCount }}</strong></span>
-      <span class="orders-stat-caption">Assigned to shoppers</span>
+      <span><small>{{ 'Invoice orders' | adminTranslate }}</small><strong>{{ invoiceOrderCount }}</strong></span>
+      <span class="orders-stat-caption">{{ 'Assigned to shoppers' | adminTranslate }}</span>
     </article>
   </section>
 
   <section *ngIf="canSearch" class="card orders-results-card" aria-labelledby="orders-results-title">
     <header class="orders-results-heading">
       <div>
-        <p class="orders-results-eyebrow">BRANCH ACTIVITY</p>
-        <h2 id="orders-results-title">Orders <span>{{ filteredOrders.length }}</span></h2>
+        <p class="orders-results-eyebrow">{{ 'BRANCH ACTIVITY' | adminTranslate }}</p>
+        <h2 id="orders-results-title">{{ 'Orders' | adminTranslate }} <span>{{ filteredOrders.length }}</span></h2>
         <p>{{ branchName(selectedBranchId) }} · {{ selectedMerchantItem?.merchantName }}</p>
       </div>
       <div class="orders-result-filters">
         <label class="orders-filter-search" for="order-query">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
-          <input id="order-query" type="search" [(ngModel)]="orderQuery" (ngModelChange)="onFilterChange()" placeholder="Find order or shopper" />
+          <input  id="order-query" type="search" [(ngModel)]="orderQuery" (ngModelChange)="onFilterChange()" [placeholder]="'Find order or shopper' | adminTranslate" />
         </label>
         <div class="orders-select-filter">
-          <label id="order-status-label" for="order-status-filter">Status</label>
+          <label id="order-status-label" for="order-status-filter">{{ 'Status' | adminTranslate }}</label>
           <div class="orders-result-picker" #statusFilterPicker>
             <button
               #statusFilterTrigger
@@ -180,30 +180,30 @@
               aria-controls="order-status-options"
               (click)="toggleFilterDropdown('status')"
               (keydown)="onFilterTriggerKeydown($event, 'status')">
-              <span id="order-status-value">{{ statusFilterLabel() }}</span>
+              <span id="order-status-value">{{ (statusFilterLabel() | adminTranslate) }}</span>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
             <div *ngIf="filterDropdownOpen === 'status'" id="order-status-options" class="orders-result-picker-options" role="listbox" aria-labelledby="order-status-label">
               <button #statusFilterOption type="button" class="orders-result-picker-option" role="option" [attr.aria-selected]="!statusFilter" (click)="selectStatusFilter('')" (keydown)="onFilterOptionKeydown($event, 0, 'status')">
-                <span>All statuses</span><svg *ngIf="!statusFilter" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+                <span>{{ 'All statuses' | adminTranslate }}</span><svg *ngIf="!statusFilter" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
               </button>
               <button #statusFilterOption type="button" class="orders-result-picker-option" role="option" [attr.aria-selected]="statusFilter === 'PENDING'" (click)="selectStatusFilter('PENDING')" (keydown)="onFilterOptionKeydown($event, 1, 'status')">
-                <span>Pending</span><svg *ngIf="statusFilter === 'PENDING'" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+                <span>{{ 'Pending' | adminTranslate }}</span><svg *ngIf="statusFilter === 'PENDING'" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
               </button>
               <button #statusFilterOption type="button" class="orders-result-picker-option" role="option" [attr.aria-selected]="statusFilter === 'PAID'" (click)="selectStatusFilter('PAID')" (keydown)="onFilterOptionKeydown($event, 2, 'status')">
-                <span>Paid</span><svg *ngIf="statusFilter === 'PAID'" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+                <span>{{ 'Paid' | adminTranslate }}</span><svg *ngIf="statusFilter === 'PAID'" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
               </button>
               <button #statusFilterOption type="button" class="orders-result-picker-option" role="option" [attr.aria-selected]="statusFilter === 'CANCELLED'" (click)="selectStatusFilter('CANCELLED')" (keydown)="onFilterOptionKeydown($event, 3, 'status')">
-                <span>Cancelled</span><svg *ngIf="statusFilter === 'CANCELLED'" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+                <span>{{ 'Cancelled' | adminTranslate }}</span><svg *ngIf="statusFilter === 'CANCELLED'" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
               </button>
               <button #statusFilterOption type="button" class="orders-result-picker-option" role="option" [attr.aria-selected]="statusFilter === 'EXPIRED'" (click)="selectStatusFilter('EXPIRED')" (keydown)="onFilterOptionKeydown($event, 4, 'status')">
-                <span>Expired</span><svg *ngIf="statusFilter === 'EXPIRED'" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+                <span>{{ 'Expired' | adminTranslate }}</span><svg *ngIf="statusFilter === 'EXPIRED'" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
               </button>
             </div>
           </div>
         </div>
         <div class="orders-select-filter">
-          <label id="order-type-label" for="order-type-filter">Type</label>
+          <label id="order-type-label" for="order-type-filter">{{ 'Type' | adminTranslate }}</label>
           <div class="orders-result-picker" #typeFilterPicker>
             <button
               #typeFilterTrigger
@@ -216,48 +216,48 @@
               aria-controls="order-type-options"
               (click)="toggleFilterDropdown('type')"
               (keydown)="onFilterTriggerKeydown($event, 'type')">
-              <span id="order-type-value">{{ typeFilterLabel() }}</span>
+              <span id="order-type-value">{{ (typeFilterLabel() | adminTranslate) }}</span>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
             <div *ngIf="filterDropdownOpen === 'type'" id="order-type-options" class="orders-result-picker-options" role="listbox" aria-labelledby="order-type-label">
               <button #typeFilterOption type="button" class="orders-result-picker-option" role="option" [attr.aria-selected]="!typeFilter" (click)="selectTypeFilter('')" (keydown)="onFilterOptionKeydown($event, 0, 'type')">
-                <span>All types</span><svg *ngIf="!typeFilter" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+                <span>{{ 'All types' | adminTranslate }}</span><svg *ngIf="!typeFilter" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
               </button>
               <button #typeFilterOption type="button" class="orders-result-picker-option" role="option" [attr.aria-selected]="typeFilter === 'invoice'" (click)="selectTypeFilter('invoice')" (keydown)="onFilterOptionKeydown($event, 1, 'type')">
-                <span>Invoice</span><svg *ngIf="typeFilter === 'invoice'" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+                <span>{{ 'Invoice' | adminTranslate }}</span><svg *ngIf="typeFilter === 'invoice'" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
               </button>
               <button #typeFilterOption type="button" class="orders-result-picker-option" role="option" [attr.aria-selected]="typeFilter === 'standard'" (click)="selectTypeFilter('standard')" (keydown)="onFilterOptionKeydown($event, 2, 'type')">
-                <span>Standard</span><svg *ngIf="typeFilter === 'standard'" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+                <span>{{ 'Standard' | adminTranslate }}</span><svg *ngIf="typeFilter === 'standard'" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
               </button>
             </div>
           </div>
         </div>
-        <button *ngIf="orderQuery || statusFilter || typeFilter" class="btn btn-sm btn-link orders-clear-filters" type="button" (click)="clearOrderFilters()">Clear filters</button>
+        <button *ngIf="orderQuery || statusFilter || typeFilter" class="btn btn-sm btn-link orders-clear-filters" type="button" (click)="clearOrderFilters()">{{ 'Clear filters' | adminTranslate }}</button>
       </div>
     </header>
 
     <div *ngIf="loading" class="orders-loading-state" role="status">
-      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Loading branch orders…
+      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> {{ 'Loading branch orders…' | adminTranslate }}
     </div>
 
     <div *ngIf="!loading && !orders.length && ordersLoaded" class="orders-empty-state">
       <span class="orders-empty-icon" aria-hidden="true">✓</span>
-      <h3>No orders yet</h3>
-      <p>There are no orders for this branch. Create the first order when you’re ready.</p>
-      <button class="btn btn-primary" type="button" (click)="openCreateDialog()">Create an order</button>
+      <h3>{{ 'No orders yet' | adminTranslate }}</h3>
+      <p>{{ 'There are no orders for this branch. Create the first order when you’re ready.' | adminTranslate }}</p>
+      <button class="btn btn-primary" type="button" (click)="openCreateDialog()">{{ 'Create an order' | adminTranslate }}</button>
     </div>
 
     <div *ngIf="!loading && orders.length && !filteredOrders.length" class="orders-empty-state">
       <span class="orders-empty-icon orders-empty-icon-filter" aria-hidden="true">⌕</span>
-      <h3>No matching orders</h3>
-      <p>Try another order ID, shopper, status, or type.</p>
-      <button class="btn btn-outline-secondary" type="button" (click)="clearOrderFilters()">Clear filters</button>
+      <h3>{{ 'No matching orders' | adminTranslate }}</h3>
+      <p>{{ 'Try another order ID, shopper, status, or type.' | adminTranslate }}</p>
+      <button class="btn btn-outline-secondary" type="button" (click)="clearOrderFilters()">{{ 'Clear filters' | adminTranslate }}</button>
     </div>
 
     <div *ngIf="!loading && filteredOrders.length" class="table-responsive orders-table-wrap">
       <table class="table align-middle mb-0 order-table">
         <thead>
-          <tr><th>Order</th><th>Type</th><th>Items</th><th>Total</th><th>Status</th><th>Due date</th><th>Created</th><th class="action-cell">Actions</th></tr>
+          <tr><th>{{ 'Order' | adminTranslate }}</th><th>{{ 'Type' | adminTranslate }}</th><th>{{ 'Items' | adminTranslate }}</th><th>{{ 'Total' | adminTranslate }}</th><th>{{ 'Status' | adminTranslate }}</th><th>{{ 'Due date' | adminTranslate }}</th><th>{{ 'Created' | adminTranslate }}</th><th class="action-cell">{{ 'Actions' | adminTranslate }}</th></tr>
         </thead>
         <tbody>
           <tr *ngFor="let order of filteredOrders" [class.order-row-cash]="isCash(order)">
@@ -268,17 +268,17 @@
             </td>
             <td data-label="Type">
               <span *ngIf="isInvoiceOrder(order)" class="invoice-badge">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM14 3v5h5M8 12h8M8 16h8" /></svg>Invoice
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM14 3v5h5M8 12h8M8 16h8" /></svg>{{ 'Invoice' | adminTranslate }}
               </span>
-              <span *ngIf="!isInvoiceOrder(order)" class="standard-badge">Standard</span>
+              <span *ngIf="!isInvoiceOrder(order)" class="standard-badge">{{ 'Standard' | adminTranslate }}</span>
             </td>
-            <td data-label="Items"><span class="orders-item-count">{{ order.items.length }} item{{ order.items.length === 1 ? '' : 's' }}</span></td>
+            <td data-label="Items"><span class="orders-item-count">{{ '{0} item{1}' | adminTranslate: [(order.items.length), (order.items.length === 1 ? ('') : ('s'))] }}</span></td>
             <td data-label="Total"><strong class="orders-total">{{ formatMinorAmount(order.totalAmountMinor, order.currency) }}</strong></td>
-            <td data-label="Status"><span class="status-tag" [ngClass]="orderStatusTone(order.status)"><span aria-hidden="true"></span>{{ orderStatusLabel(order.status) }}</span><span *ngIf="isCash(order)" class="status-tag status-tag-cash" data-testid="cash-badge">Cash</span></td>
+            <td data-label="Status"><span class="status-tag" [ngClass]="orderStatusTone(order.status)"><span aria-hidden="true"></span>{{ (orderStatusLabel(order.status) | adminTranslate) }}</span><span *ngIf="isCash(order)" class="status-tag status-tag-cash" data-testid="cash-badge">{{ 'Cash' | adminTranslate }}</span></td>
             <td data-label="Due date"><span *ngIf="order.dueDate">{{ order.dueDate | displayDate }}</span><span *ngIf="!order.dueDate" class="orders-no-value">—</span></td>
             <td data-label="Created">{{ order.createdAt | displayDate }}</td>
             <td data-label="Actions" class="action-cell">
-              <button class="icon-action-btn" type="button" aria-label="View order details" title="View details" (click)="openDetailDialog(order)">
+              <button class="icon-action-btn" type="button" [attr.aria-label]="'View order details' | adminTranslate" [attr.title]="'View details' | adminTranslate" (click)="openDetailDialog(order)">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
               </button>
             </td>
@@ -287,8 +287,8 @@
       </table>
     </div>
     <footer *ngIf="!loading && ordersLoaded" class="orders-table-footer">
-      <span>Showing <strong>{{ visibleOrderCount }}</strong> of <strong>{{ orders.length }}</strong> orders</span>
-      <span *ngIf="orderQuery || statusFilter || typeFilter">Filters are applied to this branch’s loaded orders.</span>
+      <span>{{ 'Showing' | adminTranslate }} <strong>{{ visibleOrderCount }}</strong> {{ 'of' | adminTranslate }} <strong>{{ orders.length }}</strong> {{ 'orders' | adminTranslate }}</span>
+      <span *ngIf="orderQuery || statusFilter || typeFilter">{{ 'Filters are applied to this branch’s loaded orders.' | adminTranslate }}</span>
     </footer>
   </section>
 
@@ -296,8 +296,8 @@
     <div class="orders-welcome-art" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M7 3h10l3 3v15H4V3h3ZM8 10h8M8 14h8M8 18h5" /></svg>
     </div>
-    <h2>Select a branch to view orders</h2>
-    <p>Choose a merchant and one of its branches above. The order list and payment overview will appear here.</p>
+    <h2>{{ 'Select a branch to view orders' | adminTranslate }}</h2>
+    <p>{{ 'Choose a merchant and one of its branches above. The order list and payment overview will appear here.' | adminTranslate }}</p>
   </section>
 
   <!-- Create Order Dialog -->
@@ -308,11 +308,11 @@
           <svg viewBox="0 0 24 24"><path d="M4 5h2l2.1 10.1a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 1.9-1.4L21 9H7M10 20h.01M18 20h.01" /></svg>
         </div>
         <div class="create-order-heading-copy">
-          <span class="create-order-eyebrow">ORDER MANAGEMENT</span>
-          <h2 id="create-order-title">Create a new order</h2>
+          <span class="create-order-eyebrow">{{ 'ORDER MANAGEMENT' | adminTranslate }}</span>
+          <h2 id="create-order-title">{{ 'Create a new order' | adminTranslate }}</h2>
           <p>{{ selectedMerchantItem?.merchantName }}<ng-container *ngIf="createBranchId"> · {{ branchName(createBranchId) }}</ng-container></p>
         </div>
-        <button class="icon-action-btn create-order-close" type="button" aria-label="Close dialog" (click)="closeDialog()">
+        <button class="icon-action-btn create-order-close" type="button" [attr.aria-label]="'Close dialog' | adminTranslate" (click)="closeDialog()">
           <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </header>
@@ -321,8 +321,8 @@
           <div class="create-order-section-heading">
             <span class="create-order-step">01</span>
             <div>
-              <h3>Payment method</h3>
-              <p>Choose how this order will be paid.</p>
+              <h3>{{ 'Payment method' | adminTranslate }}</h3>
+              <p>{{ 'Choose how this order will be paid.' | adminTranslate }}</p>
             </div>
           </div>
           <div class="create-order-setup-grid">
@@ -331,10 +331,10 @@
                 <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3ZM9 8h6M9 12h6M9 16h3" /></svg>
               </span>
               <span class="create-order-invoice-copy">
-                <strong>Pay by invoice</strong>
-                <small>Assign this order to a shopper</small>
+                <strong>{{ 'Pay by invoice' | adminTranslate }}</strong>
+                <small>{{ 'Assign this order to a shopper' | adminTranslate }}</small>
               </span>
-              <input
+              <input dir="auto"
                 class="form-check-input"
                 type="checkbox"
                 role="switch"
@@ -349,8 +349,8 @@
           <div class="create-order-section-heading">
             <span class="create-order-step">02</span>
             <div>
-              <h3>Invoice details</h3>
-              <p>Choose the shopper and set an optional due date.</p>
+              <h3>{{ 'Invoice details' | adminTranslate }}</h3>
+              <p>{{ 'Choose the shopper and set an optional due date.' | adminTranslate }}</p>
             </div>
           </div>
           <div class="create-order-invoice-content">
@@ -360,35 +360,35 @@
                 <strong>{{ selectedShopperName }}</strong>
                 <small>{{ selectedShopperId }}</small>
               </span>
-              <button class="btn btn-sm btn-outline-secondary" type="button" (click)="clearSelectedShopper()">Change shopper</button>
+              <button class="btn btn-sm btn-outline-secondary" type="button" (click)="clearSelectedShopper()">{{ 'Change shopper' | adminTranslate }}</button>
             </div>
 
             <ng-container *ngIf="!selectedShopperId">
               <div class="create-order-shopper-fields">
                 <div *ngIf="branchCustomers.length > 0">
-                  <label class="form-label" for="create-order-known-customer">Known customers</label>
+                  <label class="form-label" for="create-order-known-customer">{{ 'Known customers' | adminTranslate }}</label>
                   <select id="create-order-known-customer" class="form-select" (change)="selectBranchCustomer(branchCustomers[$any($event.target).selectedIndex - 1])" [disabled]="branchCustomersLoading">
-                    <option value="">Select a customer</option>
+                    <option value="">{{ 'Select a customer' | adminTranslate }}</option>
                     <option *ngFor="let c of branchCustomers" [value]="c.shopperAccountId">{{ c.name }}</option>
                   </select>
                 </div>
                 <div>
-                  <label class="form-label" for="create-order-shopper-email">Search shopper by email</label>
+                  <label class="form-label" for="create-order-shopper-email">{{ 'Search shopper by email' | adminTranslate }}</label>
                   <div class="input-group">
-                    <input
+                    <input dir="ltr"
                       id="create-order-shopper-email"
                       type="email"
                       class="form-control"
-                      placeholder="name@example.com"
+                      [placeholder]="'name@example.com' | adminTranslate"
                       [(ngModel)]="shopperSearchEmail"
                       (keyup.enter)="searchShopper()"
                     />
                     <button class="btn btn-outline-secondary" type="button" [disabled]="shopperSearching" (click)="searchShopper()">
                       <span *ngIf="shopperSearching" class="spinner-border spinner-border-sm" role="status"></span>
-                      <span *ngIf="!shopperSearching">Search</span>
+                      <span *ngIf="!shopperSearching">{{ 'Search' | adminTranslate }}</span>
                     </button>
                   </div>
-                  <div class="text-danger small mt-1" *ngIf="shopperSearchError">{{ shopperSearchError }}</div>
+                  <div class="text-danger small mt-1" *ngIf="shopperSearchError">{{ (shopperSearchError | adminTranslate) }}</div>
                 </div>
               </div>
 
@@ -399,14 +399,14 @@
                   <small>{{ shopperSearchResult.shopperAccountId }}</small>
                 </span>
                 <button class="btn btn-sm btn-primary" type="button" (click)="selectShopper(shopperSearchResult.shopperAccountId, shopperSearchResult.name)">
-                  Select shopper
+                  {{ 'Select shopper' | adminTranslate }}
                 </button>
               </div>
             </ng-container>
 
             <div class="create-order-due-date">
-              <label class="form-label" for="create-order-due-date">Due date <span>(optional)</span></label>
-              <input id="create-order-due-date" class="form-control" type="date" [(ngModel)]="createDueDate" />
+              <label class="form-label" for="create-order-due-date">{{ 'Due date' | adminTranslate }} <span>{{ '(optional)' | adminTranslate }}</span></label>
+              <input dir="ltr" id="create-order-due-date" class="form-control" type="date" [(ngModel)]="createDueDate" />
             </div>
           </div>
         </section>
@@ -414,15 +414,15 @@
         <section class="create-order-section create-order-items-section">
           <div class="create-order-items-heading">
             <div class="create-order-section-heading">
-              <span class="create-order-step">{{ createPayByInvoice ? '03' : '02' }}</span>
+              <span class="create-order-step">{{ createPayByInvoice ? ('03') : ('02') }}</span>
               <div>
-                <h3>Order items <span class="create-order-item-count">{{ createItems.length }}</span></h3>
-                <p>Add products and set the quantity for each item.</p>
+                <h3>{{ 'Order items' | adminTranslate }} <span class="create-order-item-count">{{ createItems.length }}</span></h3>
+                <p>{{ 'Add products and set the quantity for each item.' | adminTranslate }}</p>
               </div>
             </div>
             <button class="btn btn-outline-primary create-order-add-item" type="button" (click)="addItem()" [disabled]="!createBranchId || !products.length">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-              Add item
+              {{ 'Add item' | adminTranslate }}
             </button>
           </div>
 
@@ -430,54 +430,54 @@
             <span class="create-order-empty-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M7 3h10l3 3v15H4V3h3ZM8 10h8M8 14h8M8 18h5" /></svg>
             </span>
-            <strong>{{ productsLoading ? 'Loading branch products…' : (productsLoadFailed ? 'Products could not be loaded' : (createBranchId ? (products.length ? 'No items added yet' : 'No products available') : 'Choose a branch to get started')) }}</strong>
-            <span *ngIf="!productsLoading && productsLoadFailed" role="alert">Try selecting the branch again.</span>
-            <span *ngIf="!productsLoading && !productsLoadFailed">{{ createBranchId ? (products.length ? 'Add products to build this order.' : 'This branch has no products to order.') : 'Select the branch that will fulfill this order.' }}</span>
+            <strong>{{ productsLoading ? (('Loading branch products…' | adminTranslate)) : ((productsLoadFailed ? ('Products could not be loaded' | adminTranslate) : (createBranchId ? (products.length ? ('No items added yet' | adminTranslate) : ('No products available' | adminTranslate)) : ('Choose a branch to get started' | adminTranslate)))) }}</strong>
+            <span *ngIf="!productsLoading && productsLoadFailed" role="alert">{{ 'Try selecting the branch again.' | adminTranslate }}</span>
+            <span *ngIf="!productsLoading && !productsLoadFailed">{{ createBranchId ? ((products.length ? ('Add products to build this order.' | adminTranslate) : ('This branch has no products to order.' | adminTranslate))) : (('Select the branch that will fulfill this order.' | adminTranslate)) }}</span>
           </div>
 
           <div *ngIf="createItems.length > 0" class="create-order-item-list">
             <div class="create-order-item-labels" aria-hidden="true">
-              <span>Product</span><span>Quantity</span><span>Amount</span><span></span>
+              <span>{{ 'Product' | adminTranslate }}</span><span>{{ 'Quantity' | adminTranslate }}</span><span>{{ 'Amount' | adminTranslate }}</span><span></span>
             </div>
             <div *ngFor="let item of createItems; let i = index" class="create-order-item">
               <div class="create-order-item-product">
-                <label class="form-label" [for]="'item-product-' + i">Product</label>
+                <label class="form-label" [for]="'item-product-' + i">{{ 'Product' | adminTranslate }}</label>
                 <select [id]="'item-product-' + i" class="form-select" [(ngModel)]="item.productId" (ngModelChange)="onProductSelected(i)">
-                  <option value="">Select a product</option>
+                  <option value="">{{ 'Select a product' | adminTranslate }}</option>
                   <option *ngFor="let p of products" [value]="p.productId">{{ p.name }} ({{ formatCurrency(p.unitPrice, 'GBP') }})</option>
                 </select>
               </div>
               <div class="create-order-item-quantity">
-                <label class="form-label" [for]="'item-qty-' + i">Quantity</label>
-                <input [id]="'item-qty-' + i" class="form-control" type="number" min="1" [(ngModel)]="item.quantity" />
+                <label class="form-label" [for]="'item-qty-' + i">{{ 'Quantity' | adminTranslate }}</label>
+                <input dir="ltr" [id]="'item-qty-' + i" class="form-control" type="number" min="1" [(ngModel)]="item.quantity" />
               </div>
               <div class="create-order-item-amount">
-                <span class="create-order-mobile-label">Amount</span>
+                <span class="create-order-mobile-label">{{ 'Amount' | adminTranslate }}</span>
                 <strong>{{ formatCurrency(item.unitPrice * item.quantity, 'GBP') }}</strong>
               </div>
-              <button class="icon-action-btn icon-action-btn-danger create-order-remove-item" type="button" [attr.aria-label]="'Remove item ' + (i + 1)" (click)="removeItem(i)">
+              <button class="icon-action-btn icon-action-btn-danger create-order-remove-item" type="button" [attr.aria-label]="('Remove item {0}' | adminTranslate: [((i + 1))])" (click)="removeItem(i)">
                 <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
               </button>
             </div>
             <div class="create-order-total">
-              <span>Order total</span>
+              <span>{{ 'Order total' | adminTranslate }}</span>
               <strong>{{ formatCurrency(createOrderTotal, 'GBP') }}</strong>
             </div>
           </div>
         </section>
 
-        <div class="alert alert-danger create-order-error" *ngIf="dialogError" role="alert">{{ dialogError }}</div>
+        <div class="alert alert-danger create-order-error" *ngIf="dialogError" role="alert">{{ (dialogError | adminTranslate) }}</div>
       </div>
       <footer class="create-order-footer">
         <span class="create-order-footer-total" *ngIf="createItems.length">
-          <small>{{ createItems.length }} {{ createItems.length === 1 ? 'item' : 'items' }}</small>
+          <small>{{ createItems.length }} {{ createItems.length === 1 ? (('item' | adminTranslate)) : (('items' | adminTranslate)) }}</small>
           <strong>{{ formatCurrency(createOrderTotal, 'GBP') }}</strong>
         </span>
         <div class="create-order-footer-actions">
-          <button class="btn btn-outline-secondary" type="button" (click)="closeDialog()">Cancel</button>
+          <button class="btn btn-outline-secondary" type="button" (click)="closeDialog()">{{ 'Cancel' | adminTranslate }}</button>
           <button class="btn btn-primary" type="button" [disabled]="loading" (click)="createOrder()">
             <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
-            {{ createPayByInvoice ? 'Create invoice order' : 'Create order' }}
+            {{ createPayByInvoice ? (('Create invoice order' | adminTranslate)) : (('Create order' | adminTranslate)) }}
           </button>
         </div>
       </footer>
@@ -488,70 +488,70 @@
   <div class="product-dialog-backdrop" *ngIf="activeDialog === 'detail' && selectedOrder" (click)="closeDialog()">
     <div class="product-dialog card" (click)="$event.stopPropagation()">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Order Detail</span>
-        <button class="icon-action-btn" type="button" aria-label="Close dialog" (click)="closeDialog()">
+        <span>{{ 'Order Detail' | adminTranslate }}</span>
+        <button class="icon-action-btn" type="button" [attr.aria-label]="'Close dialog' | adminTranslate" (click)="closeDialog()">
           <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </div>
       <div class="card-body">
         <div class="detail-grid mb-3">
           <div>
-            <div class="order-meta-label">Order ID</div>
+            <div class="order-meta-label">{{ 'Order ID' | adminTranslate }}</div>
             <div class="small">{{ selectedOrder.orderId }}</div>
           </div>
           <div>
-            <div class="order-meta-label">Status</div>
+            <div class="order-meta-label">{{ 'Status' | adminTranslate }}</div>
             <div>
               <span class="status-tag" [ngClass]="orderStatusTone(selectedOrder.status)">
-                {{ orderStatusLabel(selectedOrder.status) }}
+                {{ (orderStatusLabel(selectedOrder.status) | adminTranslate) }}
               </span>
             </div>
           </div>
           <div>
-            <div class="order-meta-label">Type</div>
+            <div class="order-meta-label">{{ 'Type' | adminTranslate }}</div>
             <div>
               <span *ngIf="isInvoiceOrder(selectedOrder)" class="invoice-badge">
                 <svg viewBox="0 0 24 24" width="13" height="13" class="me-1"><path fill="currentColor" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-                Invoice
+                {{ 'Invoice' | adminTranslate }}
               </span>
-              <span *ngIf="!isInvoiceOrder(selectedOrder)">Standard</span>
+              <span *ngIf="!isInvoiceOrder(selectedOrder)">{{ 'Standard' | adminTranslate }}</span>
             </div>
           </div>
           <div>
-            <div class="order-meta-label">Total</div>
+            <div class="order-meta-label">{{ 'Total' | adminTranslate }}</div>
             <div class="fw-bold">{{ formatMinorAmount(selectedOrder.totalAmountMinor, selectedOrder.currency) }}</div>
           </div>
           <div>
-            <div class="order-meta-label">Created</div>
+            <div class="order-meta-label">{{ 'Created' | adminTranslate }}</div>
             <div>{{ selectedOrder.createdAt | displayDate }}</div>
           </div>
           <div *ngIf="selectedOrder.paidAt">
-            <div class="order-meta-label">Paid</div>
+            <div class="order-meta-label">{{ 'Paid' | adminTranslate }}</div>
             <div>{{ selectedOrder.paidAt | displayDate }}</div>
           </div>
           <div *ngIf="selectedOrder.targetShopperId">
-            <div class="order-meta-label">Target Shopper</div>
+            <div class="order-meta-label">{{ 'Target Shopper' | adminTranslate }}</div>
             <div>{{ selectedOrder.targetShopperName || selectedOrder.targetShopperId }}</div>
           </div>
           <div *ngIf="selectedOrder.dueDate">
-            <div class="order-meta-label">Due Date</div>
+            <div class="order-meta-label">{{ 'Due Date' | adminTranslate }}</div>
             <div>{{ selectedOrder.dueDate | displayDate }}</div>
           </div>
           <div *ngIf="selectedOrder.qrCode">
-            <div class="order-meta-label">QR Code</div>
+            <div class="order-meta-label">{{ 'QR Code' | adminTranslate }}</div>
             <div class="small text-break">{{ selectedOrder.qrCode }}</div>
           </div>
         </div>
 
-        <div class="detail-section-title">Items</div>
+        <div class="detail-section-title">{{ 'Items' | adminTranslate }}</div>
         <div class="table-responsive">
           <table class="table table-sm mb-0">
             <thead>
               <tr>
-                <th class="small text-muted">Product</th>
-                <th class="small text-muted">Qty</th>
-                <th class="small text-muted">Unit Price</th>
-                <th class="small text-muted text-end">Total</th>
+                <th class="small text-muted">{{ 'Product' | adminTranslate }}</th>
+                <th class="small text-muted">{{ 'Qty' | adminTranslate }}</th>
+                <th class="small text-muted">{{ 'Unit Price' | adminTranslate }}</th>
+                <th class="small text-muted text-end">{{ 'Total' | adminTranslate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -564,7 +564,7 @@
             </tbody>
             <tfoot>
               <tr>
-                <td colspan="3" class="text-end fw-bold">Total</td>
+                <td colspan="3" class="text-end fw-bold">{{ 'Total' | adminTranslate }}</td>
                 <td class="text-end fw-bold">{{ formatMinorAmount(selectedOrder.totalAmountMinor, selectedOrder.currency) }}</td>
               </tr>
             </tfoot>
@@ -572,7 +572,7 @@
         </div>
 
         <div class="d-flex gap-2 justify-content-end mt-3">
-          <button class="btn btn-light btn-sm" type="button" (click)="closeDialog()">Close</button>
+          <button class="btn btn-light btn-sm" type="button" (click)="closeDialog()">{{ 'Close' | adminTranslate }}</button>
         </div>
       </div>
     </div>

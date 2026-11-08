@@ -1,3 +1,4 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
@@ -12,7 +13,7 @@ import { UserDetailComponent } from './user-detail.component';
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, UserDetailComponent],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule, UserDetailComponent],
   templateUrl: './user-management.component.html',
   styleUrl: './user-management.component.css',
 })

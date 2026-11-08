@@ -1,3 +1,4 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -20,7 +21,7 @@ export interface TablePlacementChange {
 @Component({
   selector: 'app-floor-plan-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule],
   templateUrl: './floor-plan-editor.component.html',
   styleUrls: ['../merchant-catalog/merchant-catalog.component.css', './branch-tables.component.css']
 })

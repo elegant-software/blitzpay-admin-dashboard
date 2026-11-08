@@ -1,6 +1,23 @@
 @import 'leaflet/dist/leaflet.css';
 @import 'primeicons/primeicons.css';
 
+@font-face {
+  font-family: 'Cairo';
+  src: url('/fonts/cairo/Cairo.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 200 1000;
+  font-display: swap;
+}
+
+html:lang(ar) {
+  --cui-font-sans-serif: 'Cairo', Tahoma, Arial, sans-serif;
+}
+
+html:lang(ar) body {
+  font-family: 'Cairo', Tahoma, Arial, sans-serif;
+  line-height: 1.7;
+}
+
 :root {
   --app-sidebar-bg: #17233a;
   --app-sidebar-color: #f3f6fc;
@@ -37,6 +54,34 @@ body {
   font-family: var(--cui-font-sans-serif, system-ui, sans-serif);
   background: var(--cui-body-bg, #f8f9fa);
   color: var(--cui-body-color, #212631);
+}
+
+/* Arabic inherits Cairo in controls as well as page text. Protocol values stay LTR. */
+html:lang(ar) button, html:lang(ar) input, html:lang(ar) select, html:lang(ar) textarea {
+  font-family: inherit;
+  letter-spacing: normal;
+}
+
+input[type='email'], input[type='url'], input[type='tel'], input[type='number'],
+input[type='date'], input[type='time'], input[type='datetime-local'],
+code, pre, .branch-catalog-url, .table-qr-code code {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.product-cell-title, .product-cell-subtitle, .merchant-cell-name,
+.orders-result-copy, .user-detail-identity, .floor-area span {
+  unicode-bidi: plaintext;
+}
+
+html[dir='rtl'] .merchant-editor-back > span,
+html[dir='rtl'] .merchant-search-result-arrow {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+html[dir='rtl'] .chat-panel:not(.chat-panel-open) {
+  transform: translateX(-100%);
 }
 
 a {
@@ -149,9 +194,12 @@ a {
   position: absolute;
   top: 0.55rem;
   bottom: 0.55rem;
-  left: -0.75rem;
+  inset-inline-start: -0.75rem;
   width: 3px;
-  border-radius: 0 3px 3px 0;
+  border-start-start-radius: 0;
+  border-start-end-radius: 3px;
+  border-end-end-radius: 3px;
+  border-end-start-radius: 0;
   background: var(--app-sidebar-accent);
   content: '';
 }
@@ -159,7 +207,7 @@ a {
 .nav-icon {
   width: 1.5rem;
   min-width: 1.5rem;
-  margin-right: 0.8rem;
+  margin-inline-end: 0.8rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -176,12 +224,12 @@ a {
 }
 
 .nav-group-items .nav-link {
-  padding-left: 3rem;
+  padding-inline-start: 3rem;
   font-size: 0.9375rem;
 }
 
 .nav-group-toggle::after {
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .sidebar-footer {
@@ -219,13 +267,21 @@ a {
 .app-main {
   flex: 1;
   min-width: 0;
-  margin-left: var(--app-sidebar-width);
+  margin-inline-start: var(--app-sidebar-width);
   background: var(--cui-body-bg, #f8f9fa);
-  transition: margin-left 0.2s ease, background-color 0.2s ease;
+  transition: margin-inline-start 0.2s ease, background-color 0.2s ease;
 }
 
 .app-main.app-main-collapsed {
-  margin-left: var(--app-sidebar-width-collapsed);
+  margin-inline-start: var(--app-sidebar-width-collapsed);
+}
+
+html[dir='rtl'] .sidebar-fold-toggle svg {
+  transform: rotate(180deg);
+}
+
+html[dir='rtl'] .app-sidebar.sidebar-narrow .sidebar-fold-toggle svg {
+  transform: rotate(0);
 }
 
 .topbar-fixed {
@@ -306,7 +362,7 @@ a {
 .topbar-badge {
   position: absolute;
   top: 0.2rem;
-  right: 0.1rem;
+  inset-inline-end: 0.1rem;
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
@@ -341,7 +397,7 @@ a {
 
 .header-profile {
   position: relative;
-  margin-left: 0.25rem;
+  margin-inline-start: 0.25rem;
 }
 
 .profile-trigger {
@@ -356,7 +412,7 @@ a {
 .profile-menu {
   position: absolute;
   top: calc(100% + 0.75rem);
-  right: 0;
+  inset-inline-end: 0;
   min-width: 12rem;
   padding: 0.75rem 0;
   background: #fff;
@@ -384,8 +440,8 @@ a {
 
 .profile-menu-header,
 .profile-item {
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-inline-start: 1rem;
+  padding-inline-end: 1rem;
 }
 
 .profile-menu-header {
@@ -412,7 +468,7 @@ a {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  text-align: left;
+  text-align: start;
   padding-top: 0.45rem;
   padding-bottom: 0.45rem;
 }
@@ -476,8 +532,8 @@ a {
 
 .traffic-grid-line {
   position: absolute;
-  left: 1rem;
-  right: 1rem;
+  inset-inline-start: 1rem;
+  inset-inline-end: 1rem;
   height: 1px;
   background: rgba(79, 93, 115, 0.12);
 }
@@ -507,25 +563,25 @@ a {
 }
 
 .stat-border {
-  border-left: 4px solid;
+  border-inline-start: 4px solid;
   padding: 0.25rem 0.75rem;
   margin-bottom: 0.75rem;
 }
 
 .stat-border-info {
-  border-left-color: #39f;
+  border-inline-start-color: #39f;
 }
 
 .stat-border-danger {
-  border-left-color: #e55353;
+  border-inline-start-color: #e55353;
 }
 
 .stat-border-warning {
-  border-left-color: #f9b115;
+  border-inline-start-color: #f9b115;
 }
 
 .stat-border-success {
-  border-left-color: #2eb85c;
+  border-inline-start-color: #2eb85c;
 }
 
 .progress-group {
@@ -556,7 +612,7 @@ a {
 }
 
 .step-card {
-  border-left: 4px solid var(--cui-primary, #321fdb);
+  border-inline-start: 4px solid var(--cui-primary, #321fdb);
 }
 
 .onboarding-tabs {
@@ -603,7 +659,7 @@ a {
 .chat-panel {
   position: fixed;
   top: 0;
-  right: 0;
+  inset-inline-end: 0;
   width: min(100%, var(--app-chat-width));
   height: 100vh;
   background: #fff;
@@ -706,7 +762,7 @@ a {
 }
 
 .chat-bubble-user {
-  margin-left: auto;
+  margin-inline-start: auto;
   background: #321fdb;
   color: #fff;
 }
@@ -748,17 +804,17 @@ a {
 
 .app-sidebar.sidebar-narrow .nav-link {
   justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
+  padding-inline-start: 0;
+  padding-inline-end: 0;
 }
 
 .app-sidebar.sidebar-narrow .nav-icon {
-  margin-right: 0;
+  margin-inline-end: 0;
 }
 
 @media (max-width: 1100px) {
   .profile-menu {
-    right: -0.5rem;
+    inset-inline-end: -0.5rem;
   }
 }
 
@@ -779,6 +835,14 @@ a {
     width: min(100vw, var(--app-sidebar-width));
   }
 
+  html[dir='rtl'] .app-sidebar {
+    transform: translateX(100%);
+  }
+
+  html[dir='rtl'] .app-sidebar.sidebar-narrow {
+    transform: translateX(0);
+  }
+
   .app-sidebar.sidebar-narrow .sidebar-brand-wrap,
   .app-sidebar.sidebar-narrow .nav-title,
   .app-sidebar.sidebar-narrow .nav-link span:not(.nav-icon):not(.badge),
@@ -796,12 +860,12 @@ a {
 
   .app-sidebar.sidebar-narrow .nav-link {
     justify-content: flex-start;
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-inline-start: 1rem;
+    padding-inline-end: 1rem;
   }
 
   .app-sidebar.sidebar-narrow .nav-icon {
-    margin-right: 0.75rem;
+    margin-inline-end: 0.75rem;
   }
 
   .app-sidebar .sidebar-footer {
@@ -820,14 +884,14 @@ a {
 
   .app-main,
   .app-main.app-main-collapsed {
-    margin-left: 0;
+    margin-inline-start: 0;
   }
 
   .body .container-fluid,
   .topbar-fixed .container-fluid,
   .footer {
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
+    padding-inline-start: 1rem !important;
+    padding-inline-end: 1rem !important;
   }
 }
 
@@ -867,7 +931,7 @@ a {
 
   .app-layout:has(app-branch-tables) .app-main,
   .app-layout:has(app-printed-catalog) .app-main {
-    margin-left: 0 !important;
+    margin-inline-start: 0 !important;
     min-height: 0 !important;
   }
 

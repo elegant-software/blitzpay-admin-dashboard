@@ -1,3 +1,5 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
+import { AdminOptionsPipe } from '../i18n/admin-options.pipe';
 import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
@@ -20,7 +22,7 @@ import { environment } from '../../environments/environment';
 @Component({
   selector: 'app-merchant-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, DisplayDatePipe, MultiSelectModule, MerchantSearchComponent],
+  imports: [AdminOptionsPipe, AdminTranslatePipe, CommonModule, FormsModule, RouterLink, DisplayDatePipe, MultiSelectModule, MerchantSearchComponent],
   templateUrl: './merchant-catalog.component.html',
   styleUrl: './merchant-catalog.component.css'
 })

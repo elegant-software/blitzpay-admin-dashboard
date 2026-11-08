@@ -2,16 +2,16 @@
   <header class="user-detail-header">
     <span class="user-detail-avatar" aria-hidden="true">{{ user.displayName.trim().charAt(0).toLocaleUpperCase() }}</span>
     <div class="user-detail-identity">
-      <span class="user-management-eyebrow">PLATFORM USER</span>
+      <span class="user-management-eyebrow">{{ 'PLATFORM USER' | adminTranslate }}</span>
       <h2>{{ user.displayName }}</h2>
-      <p>{{ user.email ?? 'No email address' }}</p>
+      <p>{{ user.email ?? ('No email address' | adminTranslate) }}</p>
     </div>
     <span class="user-detail-status" [class.user-detail-status-active]="user.enabled" [class.user-detail-status-inactive]="!user.enabled">
-      <span aria-hidden="true"></span>{{ user.enabled ? 'Active' : 'Inactive' }}
+      <span aria-hidden="true"></span>{{ user.enabled ? (('Active' | adminTranslate)) : (('Inactive' | adminTranslate)) }}
     </span>
     <button class="btn btn-primary user-add-assignment" type="button" (click)="openDialog()">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-      Add assignment
+      {{ 'Add assignment' | adminTranslate }}
     </button>
   </header>
 
@@ -19,24 +19,24 @@
 
   <div class="user-assignment-heading">
     <div>
-      <h3>Merchant access</h3>
-      <p>Merchants and branches this user can access.</p>
+      <h3>{{ 'Merchant access' | adminTranslate }}</h3>
+      <p>{{ 'Merchants and branches this user can access.' | adminTranslate }}</p>
     </div>
-    <span class="user-assignment-count">{{ assignments.length }} {{ assignments.length === 1 ? 'assignment' : 'assignments' }}</span>
+    <span class="user-assignment-count">{{ assignments.length }} {{ assignments.length === 1 ? (('assignment' | adminTranslate)) : (('assignments' | adminTranslate)) }}</span>
   </div>
 
   <div *ngIf="loading" class="user-assignment-loading" role="status">
     <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-    <span>Loading assignments…</span>
+    <span>{{ 'Loading assignments…' | adminTranslate }}</span>
   </div>
 
   <div *ngIf="!loading && assignments.length === 0" class="user-assignment-empty">
     <span class="user-assignment-empty-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M3 10h18M5 10v10h14V10M4 10l1.5-6h13L20 10M9 20v-6h6v6" /></svg>
     </span>
-    <strong>No merchant access yet</strong>
-    <span>Add an assignment to grant this user access to a merchant or branch.</span>
-    <button class="btn btn-outline-primary" type="button" (click)="openDialog()">Add first assignment</button>
+    <strong>{{ 'No merchant access yet' | adminTranslate }}</strong>
+    <span>{{ 'Add an assignment to grant this user access to a merchant or branch.' | adminTranslate }}</span>
+    <button class="btn btn-outline-primary" type="button" (click)="openDialog()">{{ 'Add first assignment' | adminTranslate }}</button>
   </div>
 
   <div *ngIf="!loading && assignments.length" class="user-assignment-list">
@@ -45,17 +45,17 @@
         <svg viewBox="0 0 24 24"><path d="M3 10h18M5 10v10h14V10M4 10l1.5-6h13L20 10M9 20v-6h6v6" /></svg>
       </span>
       <div class="user-assignment-main">
-        <span class="user-assignment-label">MERCHANT</span>
+        <span class="user-assignment-label">{{ 'MERCHANT' | adminTranslate }}</span>
         <strong>{{ assignment.merchantName }}</strong>
         <span class="user-assignment-branch">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01" /></svg>
-          {{ assignment.branchName ?? 'All branches' }}
+          {{ assignment.branchName ?? ('All branches' | adminTranslate) }}
         </span>
       </div>
       <div class="user-assignment-role-wrap">
-        <span class="user-assignment-label">ACCESS ROLE</span>
+        <span class="user-assignment-label">{{ 'ACCESS ROLE' | adminTranslate }}</span>
         <span class="user-assignment-role" [class.user-role-manager]="assignment.role === 'MERCHANT_MANAGER'" [class.user-role-employee]="assignment.role === 'MERCHANT_EMPLOYEE'">
-          {{ roleLabel[assignment.role] }}
+          {{ (roleLabel[assignment.role] | adminTranslate) }}
         </span>
       </div>
       <button
@@ -63,10 +63,10 @@
         type="button"
         (click)="revoke(assignment)"
         [disabled]="revoking === assignment.id"
-        [attr.aria-label]="'Revoke access to ' + assignment.merchantName">
+        [attr.aria-label]="('Revoke access to {0}' | adminTranslate: [(assignment.merchantName)])">
         <span *ngIf="revoking === assignment.id" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
         <svg *ngIf="revoking !== assignment.id" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 14h12l1-14M9 7V4h6v3" /></svg>
-        <span>{{ revoking === assignment.id ? 'Revoking' : 'Revoke' }}</span>
+        <span>{{ revoking === assignment.id ? (('Revoking' | adminTranslate)) : (('Revoke' | adminTranslate)) }}</span>
       </button>
     </article>
   </div>
@@ -77,21 +77,21 @@
     <div class="modal-content user-assignment-modal-content">
       <div class="modal-header user-assignment-modal-header">
         <div>
-          <span class="user-management-eyebrow">ACCESS CONTROL</span>
-          <h2 class="modal-title" id="assignDialogTitle">Add merchant assignment</h2>
-          <p>Choose the merchant, branch, and role for this user.</p>
+          <span class="user-management-eyebrow">{{ 'ACCESS CONTROL' | adminTranslate }}</span>
+          <h2 class="modal-title" id="assignDialogTitle">{{ 'Add merchant assignment' | adminTranslate }}</h2>
+          <p>{{ 'Choose the merchant, branch, and role for this user.' | adminTranslate }}</p>
         </div>
-        <button type="button" class="btn-close" aria-label="Close" (click)="closeDialog()"></button>
+        <button type="button" class="btn-close" [attr.aria-label]="'Close' | adminTranslate" (click)="closeDialog()"></button>
       </div>
 
       <div class="modal-body user-assignment-modal-body">
 
         <section class="user-assignment-form-section">
-          <label class="form-label" for="assignment-merchant-search">Merchant</label>
+          <label class="form-label" for="assignment-merchant-search">{{ 'Merchant' | adminTranslate }}</label>
           <app-merchant-search
             inputId="assignment-merchant-search"
             variant="assignment"
-            placeholder="Search by merchant name or code"
+            [placeholder]="'Search by merchant name or code' | adminTranslate"
             locationMode="city-country"
             [query]="dialog.merchantQuery"
             [results]="dialog.merchantResults"
@@ -111,63 +111,63 @@
         </section>
 
         <section class="user-assignment-form-section" *ngIf="dialog.selectedMerchant">
-          <label class="form-label">Branch <span>(optional)</span></label>
+          <label class="form-label">{{ 'Branch' | adminTranslate }} <span>{{ '(optional)' | adminTranslate }}</span></label>
           <div *ngIf="dialog.loadingBranches" class="user-assignment-loading user-assignment-branch-loading" role="status">
-            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Loading branches…
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> {{ 'Loading branches…' | adminTranslate }}
           </div>
           <ng-container *ngIf="!dialog.loadingBranches">
             <input
               type="search"
               class="form-control user-assignment-branch-search"
-              placeholder="Filter branches by name or code"
+              [placeholder]="'Filter branches by name or code' | adminTranslate"
               [(ngModel)]="dialog.branchQuery"
               [disabled]="dialog.branches.length === 0"
-              aria-label="Filter branches"
+              [attr.aria-label]="'Filter branches' | adminTranslate"
             />
             <select
               class="form-select user-assignment-branch-select"
               [(ngModel)]="dialog.branchId"
               [disabled]="filteredBranches.length === 0"
-              aria-label="Select branch">
-              <option [ngValue]="null">All branches</option>
+              [attr.aria-label]="'Select branch' | adminTranslate">
+              <option [ngValue]="null">{{ 'All branches' | adminTranslate }}</option>
               <option *ngFor="let branch of filteredBranches" [ngValue]="branchIdentity(branch)">
                 {{ branch.name }} · {{ branch.branchCode || '—' }}
               </option>
             </select>
-            <p *ngIf="dialog.branches.length > 0 && filteredBranches.length === 0" class="user-assignment-hint">No branches match that name or code.</p>
-            <p *ngIf="dialog.branches.length === 0" class="user-assignment-hint">No active branches found for this merchant.</p>
+            <p *ngIf="dialog.branches.length > 0 && filteredBranches.length === 0" class="user-assignment-hint">{{ 'No branches match that name or code.' | adminTranslate }}</p>
+            <p *ngIf="dialog.branches.length === 0" class="user-assignment-hint">{{ 'No active branches found for this merchant.' | adminTranslate }}</p>
           </ng-container>
         </section>
 
         <div class="user-assignment-form-grid">
           <section class="user-assignment-form-section">
-            <label class="form-label" for="assignment-role">Role</label>
-            <select id="assignment-role" class="form-select" [ngModel]="dialog.role" (ngModelChange)="onRoleChanged($event)" aria-label="Select role">
-              <option value="MERCHANT_MANAGER">Merchant Manager</option>
-              <option value="MERCHANT_EMPLOYEE">Merchant Employee</option>
+            <label class="form-label" for="assignment-role">{{ 'Role' | adminTranslate }}</label>
+            <select id="assignment-role" class="form-select" [ngModel]="dialog.role" (ngModelChange)="onRoleChanged($event)" [attr.aria-label]="'Select role' | adminTranslate">
+              <option value="MERCHANT_MANAGER">{{ 'Merchant Manager' | adminTranslate }}</option>
+              <option value="MERCHANT_EMPLOYEE">{{ 'Merchant Employee' | adminTranslate }}</option>
             </select>
-            <p class="user-assignment-hint">{{ dialog.role === 'MERCHANT_MANAGER' ? 'Managers can oversee merchant operations and team access.' : 'Employees receive access to assigned branch operations.' }}</p>
+            <p class="user-assignment-hint">{{ dialog.role === 'MERCHANT_MANAGER' ? (('Managers can oversee merchant operations and team access.' | adminTranslate)) : (('Employees receive access to assigned branch operations.' | adminTranslate)) }}</p>
           </section>
 
           <section class="user-assignment-form-section">
-            <label class="form-label" for="assignment-employee">Employee ID <span>(optional)</span></label>
-            <input
+            <label class="form-label" for="assignment-employee">{{ 'Employee ID' | adminTranslate }} <span>{{ '(optional)' | adminTranslate }}</span></label>
+            <input dir="auto"
               id="assignment-employee"
               type="text"
               class="form-control"
-              placeholder="Enter employee ID"
+              [placeholder]="'Enter employee ID' | adminTranslate"
               [(ngModel)]="dialog.employeeId"
-              aria-label="Employee ID"
+              [attr.aria-label]="'Employee ID' | adminTranslate"
             />
           </section>
         </div>
       </div>
 
       <div class="modal-footer user-assignment-modal-footer">
-        <button type="button" class="btn btn-outline-secondary" (click)="closeDialog()">Cancel</button>
+        <button type="button" class="btn btn-outline-secondary" (click)="closeDialog()">{{ 'Cancel' | adminTranslate }}</button>
         <button type="button" class="btn btn-primary" (click)="saveAssignment()" [disabled]="dialog.saving || !dialog.selectedMerchant">
           <span *ngIf="dialog.saving" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-          Save assignment
+          {{ 'Save assignment' | adminTranslate }}
         </button>
       </div>
     </div>

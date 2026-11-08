@@ -1,40 +1,40 @@
 <main class="container-fluid dashboard-page">
   <header class="dashboard-heading">
     <div>
-      <p class="dashboard-eyebrow">OVERVIEW</p>
-      <h1>Platform dashboard</h1>
-      <p class="dashboard-intro">Track platform activity, revenue, and operational health.</p>
+      <p class="dashboard-eyebrow">{{ 'OVERVIEW' | adminTranslate }}</p>
+      <h1>{{ 'Platform dashboard' | adminTranslate }}</h1>
+      <p class="dashboard-intro">{{ 'Track platform activity, revenue, and operational health.' | adminTranslate }}</p>
     </div>
     <div class="dashboard-heading-mark" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M8 15l3-4 3 2 5-7" /></svg>
     </div>
   </header>
 
-  <section class="card dashboard-filter-panel mb-4" aria-labelledby="dashboard-filters-title" aria-label="Dashboard report filters">
+  <section class="card dashboard-filter-panel mb-4" aria-labelledby="dashboard-filters-title" [attr.aria-label]="'Dashboard report filters' | adminTranslate">
     <div class="card-body">
       <div class="dashboard-filter-heading">
         <div>
-          <h2 id="dashboard-filters-title">Report filters</h2>
-          <p>Choose a reporting period and optionally focus on one merchant.</p>
+          <h2 id="dashboard-filters-title">{{ 'Report filters' | adminTranslate }}</h2>
+          <p>{{ 'Choose a reporting period and optionally focus on one merchant.' | adminTranslate }}</p>
         </div>
-        <span class="dashboard-default-range">Last 30 days by default</span>
+        <span class="dashboard-default-range">{{ 'Last 30 days by default' | adminTranslate }}</span>
       </div>
       <div class="row g-3 align-items-end">
         <div class="col-md-3">
-          <label class="form-label fw-semibold" for="dashboard-from">From</label>
-          <input id="dashboard-from" class="form-control" type="date" [(ngModel)]="from" />
+          <label class="form-label fw-semibold" for="dashboard-from">{{ 'From' | adminTranslate }}</label>
+          <input dir="ltr" id="dashboard-from" class="form-control" type="date" [(ngModel)]="from" />
         </div>
         <div class="col-md-3">
-          <label class="form-label fw-semibold" for="dashboard-to">To</label>
-          <input id="dashboard-to" class="form-control" type="date" [(ngModel)]="to" />
+          <label class="form-label fw-semibold" for="dashboard-to">{{ 'To' | adminTranslate }}</label>
+          <input dir="ltr" id="dashboard-to" class="form-control" type="date" [(ngModel)]="to" />
         </div>
         <div class="col-md-4">
-          <label class="form-label fw-semibold" for="dashboard-merchant-search">Merchant <span class="text-muted fw-normal">(optional)</span></label>
+          <label class="form-label fw-semibold" for="dashboard-merchant-search">{{ 'Merchant' | adminTranslate }} <span class="text-muted fw-normal">{{ '(optional)' | adminTranslate }}</span></label>
           <ng-container *ngIf="!selectedMerchant">
             <app-merchant-search
               inputId="dashboard-merchant-search"
               variant="dashboard"
-              placeholder="Merchant name or code…"
+              [placeholder]="'Merchant name or code…' | adminTranslate"
               locationMode="city"
               [query]="merchantQuery"
               [results]="merchantResults"
@@ -44,7 +44,7 @@
               (merchantSelected)="selectMerchant($event)"
             ></app-merchant-search>
           </ng-container>
-          <div *ngIf="selectedMerchant" class="dashboard-selected-merchant" role="group" aria-label="Selected merchant">
+          <div *ngIf="selectedMerchant" class="dashboard-selected-merchant" role="group" [attr.aria-label]="'Selected merchant' | adminTranslate">
             <span class="dashboard-merchant-mark" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M3 10h18M5 10v10h14V10M4 10l1.5-6h13L20 10M9 20v-6h6v6" /></svg>
             </span>
@@ -55,17 +55,17 @@
             <button
               class="btn btn-sm btn-outline-secondary dashboard-change-merchant"
               type="button"
-              aria-label="Change selected merchant"
+              [attr.aria-label]="'Change selected merchant' | adminTranslate"
               (click)="clearMerchant()"
             >
-              Change
+              {{ 'Change' | adminTranslate }}
             </button>
           </div>
         </div>
         <div class="col-md-2 dashboard-load-column">
           <button class="btn btn-primary w-100 dashboard-load-button" type="button" (click)="load()" [disabled]="loading">
             <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-            {{ loading ? 'Loading…' : 'Load' }}
+            {{ loading ? (('Loading…' | adminTranslate)) : (('Load' | adminTranslate)) }}
           </button>
         </div>
       </div>
@@ -78,7 +78,7 @@
   <!-- Loading placeholder (no data yet) -->
   <div *ngIf="loading && !report" class="dashboard-loading text-center py-5 text-muted" role="status" aria-live="polite">
     <div class="spinner-border text-primary me-2" role="status" aria-hidden="true"></div>
-    Loading KPI data…
+    {{ 'Loading KPI data…' | adminTranslate }}
   </div>
 
   <!-- KPI sections -->
@@ -86,19 +86,19 @@
 
     <!-- Period label -->
     <p class="dashboard-period">
-      Period: <strong>{{ report.from }}</strong> – <strong>{{ report.to }}</strong>
-      <span *ngIf="isDrillDown" class="ms-2 badge bg-info text-dark">Merchant: {{ selectedMerchantName }}</span>
+      {{ 'Period:' | adminTranslate }} <strong>{{ report.from | displayDate }}</strong> – <strong>{{ report.to | displayDate }}</strong>
+      <span *ngIf="isDrillDown" class="ms-2 badge bg-info text-dark">{{ 'Merchant: {0}' | adminTranslate: [(selectedMerchantName)] }}</span>
     </p>
 
     <!-- Revenue -->
     <section class="card dashboard-section mb-4" aria-labelledby="dashboard-revenue-title">
-      <h2 id="dashboard-revenue-title" class="card-header fw-semibold">Revenue</h2>
+      <h2 id="dashboard-revenue-title" class="card-header fw-semibold">{{ 'Revenue' | adminTranslate }}</h2>
       <div class="card-body">
         <div class="row g-3">
           <div class="col-md-3 col-sm-6">
             <div class="card border-0 bg-light h-100">
               <div class="card-body">
-                <div class="text-muted small fw-semibold mb-1">Gross Revenue</div>
+                <div class="text-muted small fw-semibold mb-1">{{ 'Gross Revenue' | adminTranslate }}</div>
                 <div class="fs-3 fw-bold">{{ formatMinor(report.revenue.grossAmountMinor, report.revenue.currency) }}</div>
                 <div class="text-muted small">{{ report.revenue.currency }}</div>
               </div>
@@ -107,33 +107,33 @@
           <div class="col-md-3 col-sm-6">
             <div class="card border-0 bg-light h-100">
               <div class="card-body">
-                <div class="text-muted small fw-semibold mb-1">Processing Fees</div>
+                <div class="text-muted small fw-semibold mb-1">{{ 'Processing Fees' | adminTranslate }}</div>
                 <div class="fs-3 fw-bold text-warning">{{ formatMinor(report.revenue.processingFeeMinor, report.revenue.currency) }}</div>
-                <div class="text-muted small">Processor cost</div>
+                <div class="text-muted small">{{ 'Processor cost' | adminTranslate }}</div>
               </div>
             </div>
           </div>
           <div class="col-md-3 col-sm-6">
             <div class="card border-0 bg-light h-100">
               <div class="card-body">
-                <div class="text-muted small fw-semibold mb-1">Platform Fees</div>
+                <div class="text-muted small fw-semibold mb-1">{{ 'Platform Fees' | adminTranslate }}</div>
                 <div class="fs-3 fw-bold text-secondary">{{ formatMinor(report.revenue.platformFeeMinor, report.revenue.currency) }}</div>
-                <div class="text-muted small">ZackPay take rate</div>
+                <div class="text-muted small">{{ 'ZackPay take rate' | adminTranslate }}</div>
               </div>
             </div>
           </div>
           <div class="col-md-3 col-sm-6">
             <div class="card border-0 bg-light h-100">
               <div class="card-body">
-                <div class="text-muted small fw-semibold mb-1">Net Revenue</div>
+                <div class="text-muted small fw-semibold mb-1">{{ 'Net Revenue' | adminTranslate }}</div>
                 <div class="fs-3 fw-bold text-success">{{ formatMinor(report.revenue.netAmountMinor, report.revenue.currency) }}</div>
-                <div class="text-muted small">After all fees</div>
+                <div class="text-muted small">{{ 'After all fees' | adminTranslate }}</div>
               </div>
             </div>
           </div>
           <div class="col-12">
             <div class="d-flex align-items-center gap-2">
-              <span class="text-muted small fw-semibold">Settled Transactions:</span>
+              <span class="text-muted small fw-semibold">{{ 'Settled Transactions:' | adminTranslate }}</span>
               <span class="fs-5 fw-bold">{{ report.revenue.settledTransactionCount }}</span>
             </div>
           </div>
@@ -143,13 +143,13 @@
 
     <!-- Orders -->
     <section class="card dashboard-section mb-4" aria-labelledby="dashboard-orders-title">
-      <h2 id="dashboard-orders-title" class="card-header fw-semibold">Orders</h2>
+      <h2 id="dashboard-orders-title" class="card-header fw-semibold">{{ 'Orders' | adminTranslate }}</h2>
       <div class="card-body">
         <div class="row g-3">
           <div class="col-md-4 col-sm-6">
             <div class="card border-0 bg-light h-100">
               <div class="card-body">
-                <div class="text-muted small fw-semibold mb-1">Paid</div>
+                <div class="text-muted small fw-semibold mb-1">{{ 'Paid' | adminTranslate }}</div>
                 <div class="fs-3 fw-bold text-success">{{ report.orders.paidCount }}</div>
               </div>
             </div>
@@ -157,7 +157,7 @@
           <div class="col-md-4 col-sm-6">
             <div class="card border-0 bg-light h-100">
               <div class="card-body">
-                <div class="text-muted small fw-semibold mb-1">Pending</div>
+                <div class="text-muted small fw-semibold mb-1">{{ 'Pending' | adminTranslate }}</div>
                 <div class="fs-3 fw-bold text-warning">{{ report.orders.pendingCount }}</div>
               </div>
             </div>
@@ -165,7 +165,7 @@
           <div class="col-md-4 col-sm-6">
             <div class="card border-0 bg-light h-100">
               <div class="card-body">
-                <div class="text-muted small fw-semibold mb-1">Failed / Cancelled</div>
+                <div class="text-muted small fw-semibold mb-1">{{ 'Failed / Cancelled' | adminTranslate }}</div>
                 <div class="fs-3 fw-bold text-danger">{{ report.orders.failedOrCancelledCount }}</div>
               </div>
             </div>
@@ -175,13 +175,13 @@
           <div class="col-12" *ngIf="report.orders.byOrderType.length > 0">
             <div class="card border-0 bg-light">
               <div class="card-body py-3">
-                <div class="fw-semibold small text-muted mb-2">BY ORDER TYPE</div>
+                <div class="fw-semibold small text-muted mb-2">{{ 'BY ORDER TYPE' | adminTranslate }}</div>
                 <div class="d-flex flex-wrap gap-3">
                   <div
                     *ngFor="let ot of report.orders.byOrderType; trackBy: trackByOrderType"
                     class="d-flex align-items-center gap-2"
                   >
-                    <span class="badge bg-secondary">{{ ot.orderType }}</span>
+                    <span class="badge bg-secondary">{{ (ot.orderType | adminTranslate) }}</span>
                     <span class="fw-bold">{{ ot.count }}</span>
                   </div>
                 </div>
@@ -194,13 +194,13 @@
 
     <!-- Appointments -->
     <section class="card dashboard-section mb-4" aria-labelledby="dashboard-appointments-title">
-      <h2 id="dashboard-appointments-title" class="card-header fw-semibold">Appointments</h2>
+      <h2 id="dashboard-appointments-title" class="card-header fw-semibold">{{ 'Appointments' | adminTranslate }}</h2>
       <div class="card-body">
         <div class="row g-3">
           <div class="col-md-4 col-sm-6">
             <div class="card border-0 bg-light h-100">
               <div class="card-body">
-                <div class="text-muted small fw-semibold mb-1">Booked</div>
+                <div class="text-muted small fw-semibold mb-1">{{ 'Booked' | adminTranslate }}</div>
                 <div class="fs-3 fw-bold">{{ report.appointments.bookedCount }}</div>
               </div>
             </div>
@@ -208,7 +208,7 @@
           <div class="col-md-4 col-sm-6">
             <div class="card border-0 bg-light h-100">
               <div class="card-body">
-                <div class="text-muted small fw-semibold mb-1">Completed</div>
+                <div class="text-muted small fw-semibold mb-1">{{ 'Completed' | adminTranslate }}</div>
                 <div class="fs-3 fw-bold text-success">{{ report.appointments.completedCount }}</div>
               </div>
             </div>
@@ -216,7 +216,7 @@
           <div class="col-md-4 col-sm-6">
             <div class="card border-0 bg-light h-100">
               <div class="card-body">
-                <div class="text-muted small fw-semibold mb-1">Cancelled</div>
+                <div class="text-muted small fw-semibold mb-1">{{ 'Cancelled' | adminTranslate }}</div>
                 <div class="fs-3 fw-bold text-danger">{{ report.appointments.cancelledCount }}</div>
               </div>
             </div>
@@ -227,24 +227,24 @@
 
     <!-- Payment Method Frequency -->
     <section class="card dashboard-section mb-4" aria-labelledby="dashboard-payment-method-title">
-      <h2 id="dashboard-payment-method-title" class="card-header fw-semibold">Payment Method Frequency</h2>
+      <h2 id="dashboard-payment-method-title" class="card-header fw-semibold">{{ 'Payment Method Frequency' | adminTranslate }}</h2>
       <div class="card-body">
         <div *ngIf="report.paymentMethodFrequency.length === 0" class="text-muted text-center py-3">
-          No payment method data for this period.
+          {{ 'No payment method data for this period.' | adminTranslate }}
         </div>
         <div class="table-responsive" *ngIf="report.paymentMethodFrequency.length > 0">
           <table class="table table-sm mb-0">
             <thead class="table-light">
               <tr>
-                <th>Payment Method</th>
-                <th class="text-end">Transactions</th>
-                <th class="text-end">Share</th>
-                <th style="min-width:160px">Share Chart</th>
+                <th>{{ 'Payment Method' | adminTranslate }}</th>
+                <th class="text-end">{{ 'Transactions' | adminTranslate }}</th>
+                <th class="text-end">{{ 'Share' | adminTranslate }}</th>
+                <th style="min-width:160px">{{ 'Share Chart' | adminTranslate }}</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let m of report.paymentMethodFrequency; trackBy: trackByMethod">
-                <td><span class="badge bg-secondary">{{ m.paymentMethod }}</span></td>
+                <td><span class="badge bg-secondary">{{ (m.paymentMethod | adminTranslate) }}</span></td>
                 <td class="text-end fw-bold">{{ m.transactionCount }}</td>
                 <td class="text-end">{{ m.sharePercent | number:'1.1-1' }}%</td>
                 <td>
@@ -269,17 +269,17 @@
     <!-- Platform Counts (hidden in merchant drill-down mode) -->
     <ng-container *ngIf="!isDrillDown && report.merchantCounts && report.branchCounts">
       <section class="card dashboard-section mb-4" aria-labelledby="dashboard-platform-counts-title">
-        <h2 id="dashboard-platform-counts-title" class="card-header fw-semibold">Platform Counts</h2>
+        <h2 id="dashboard-platform-counts-title" class="card-header fw-semibold">{{ 'Platform Counts' | adminTranslate }}</h2>
         <div class="card-body">
           <div class="row g-3">
             <!-- Merchants -->
             <div class="col-12">
-              <div class="fw-semibold small text-muted mb-2">MERCHANTS</div>
+              <div class="fw-semibold small text-muted mb-2">{{ 'MERCHANTS' | adminTranslate }}</div>
             </div>
             <div class="col-md-4 col-sm-6">
               <div class="card border-0 bg-light h-100">
                 <div class="card-body">
-                  <div class="text-muted small fw-semibold mb-1">Total</div>
+                  <div class="text-muted small fw-semibold mb-1">{{ 'Total' | adminTranslate }}</div>
                   <div class="fs-3 fw-bold">{{ report.merchantCounts.totalCount }}</div>
                 </div>
               </div>
@@ -287,7 +287,7 @@
             <div class="col-md-4 col-sm-6">
               <div class="card border-0 bg-light h-100">
                 <div class="card-body">
-                  <div class="text-muted small fw-semibold mb-1">Active</div>
+                  <div class="text-muted small fw-semibold mb-1">{{ 'Active' | adminTranslate }}</div>
                   <div class="fs-3 fw-bold text-success">{{ report.merchantCounts.activeCount }}</div>
                 </div>
               </div>
@@ -295,7 +295,7 @@
             <div class="col-md-4 col-sm-6">
               <div class="card border-0 bg-light h-100">
                 <div class="card-body">
-                  <div class="text-muted small fw-semibold mb-1">New This Period</div>
+                  <div class="text-muted small fw-semibold mb-1">{{ 'New This Period' | adminTranslate }}</div>
                   <div class="fs-3 fw-bold text-info">{{ report.merchantCounts.newInPeriodCount }}</div>
                 </div>
               </div>
@@ -303,12 +303,12 @@
 
             <!-- Branches -->
             <div class="col-12 mt-2">
-              <div class="fw-semibold small text-muted mb-2">BRANCHES</div>
+              <div class="fw-semibold small text-muted mb-2">{{ 'BRANCHES' | adminTranslate }}</div>
             </div>
             <div class="col-md-4 col-sm-6">
               <div class="card border-0 bg-light h-100">
                 <div class="card-body">
-                  <div class="text-muted small fw-semibold mb-1">Total</div>
+                  <div class="text-muted small fw-semibold mb-1">{{ 'Total' | adminTranslate }}</div>
                   <div class="fs-3 fw-bold">{{ report.branchCounts.totalCount }}</div>
                 </div>
               </div>
@@ -316,7 +316,7 @@
             <div class="col-md-4 col-sm-6">
               <div class="card border-0 bg-light h-100">
                 <div class="card-body">
-                  <div class="text-muted small fw-semibold mb-1">Active</div>
+                  <div class="text-muted small fw-semibold mb-1">{{ 'Active' | adminTranslate }}</div>
                   <div class="fs-3 fw-bold text-success">{{ report.branchCounts.activeCount }}</div>
                 </div>
               </div>
@@ -324,7 +324,7 @@
             <div class="col-md-4 col-sm-6">
               <div class="card border-0 bg-light h-100">
                 <div class="card-body">
-                  <div class="text-muted small fw-semibold mb-1">New This Period</div>
+                  <div class="text-muted small fw-semibold mb-1">{{ 'New This Period' | adminTranslate }}</div>
                   <div class="fs-3 fw-bold text-info">{{ report.branchCounts.newInPeriodCount }}</div>
                 </div>
               </div>

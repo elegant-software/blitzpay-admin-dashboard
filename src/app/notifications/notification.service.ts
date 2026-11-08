@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from "@angular/common/http";
-import { Injectable, OnDestroy } from "@angular/core";
+import { Injectable, OnDestroy, inject } from "@angular/core";
+import { AdminLocaleService } from '../i18n/admin-locale.service';
 import { MessageService, ToastMessageOptions } from "primeng/api";
 
 type Severity = "success" | "info" | "warn" | "error";
@@ -7,6 +8,7 @@ type Severity = "success" | "info" | "warn" | "error";
 /** Feature handlers own API feedback; HTTP interceptors must not emit a second notification. */
 @Injectable({ providedIn: "root" })
 export class NotificationService extends MessageService implements OnDestroy {
+  private readonly locale = inject(AdminLocaleService);
   private readonly reportedErrors = new WeakSet<object>();
   private readonly active = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -44,7 +46,7 @@ export class NotificationService extends MessageService implements OnDestroy {
   }
 
   private notify(severity: Severity, message: string): void {
-    const detail = message.trim();
+    const detail = this.locale.text(message).trim();
     const key = `${severity}:${detail}`;
     if (!detail || this.active.has(key)) return;
 
@@ -56,12 +58,12 @@ export class NotificationService extends MessageService implements OnDestroy {
     );
     this.add({
       severity,
-      summary: {
+      summary: this.locale.text({
         success: "Success",
         info: "Information",
         warn: "Warning",
         error: "Error",
-      }[severity],
+      }[severity]),
       detail,
       life,
       closable: true,

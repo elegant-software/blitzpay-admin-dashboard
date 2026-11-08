@@ -1,6 +1,8 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, Input, OnChanges, OnDestroy } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, inject } from '@angular/core';
+import { AdminLocaleService } from '../i18n/admin-locale.service';
 import { FormsModule } from '@angular/forms';
 import { Subscription, defer, repeat, retry, switchMap, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -32,11 +34,12 @@ const TONE_LABELS: Record<TableTone, string> = {
 @Component({
   selector: 'app-live-floor',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe, TableQrCardComponent],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule, DisplayDatePipe, TableQrCardComponent],
   templateUrl: './live-floor.component.html',
   styleUrls: ['../merchant-catalog/merchant-catalog.component.css', './branch-tables.component.css']
 })
 export class LiveFloorComponent implements OnChanges, OnDestroy {
+  private readonly locale = inject(AdminLocaleService);
   @Input({ required: true }) merchantId = '';
   @Input({ required: true }) branchId = '';
 
@@ -139,8 +142,10 @@ export class LiveFloorComponent implements OnChanges, OnDestroy {
     const seats = (lives: TableLive[]) => lives.reduce((sum, live) => sum + (live.table.seats ?? 0), 0);
     const guests = occupied.reduce((sum, live) => sum + (live.guestCount ?? 0), 0);
     const capacity = floor.branchCapacity != null ? floor.branchCapacity : 'not set';
-    return `${occupied.length}/${floor.tables.length} tables occupied · ${guests} ${guests === 1 ? 'guest' : 'guests'}`
-      + ` · ${seats(occupied)}/${seats(floor.tables)} seats in occupied tables · Branch Capacity ${capacity}`;
+    return this.locale.text(guests === 1
+      ? '{0}/{1} tables occupied · {2} guest · {3}/{4} seats in occupied tables · Branch Capacity {5}'
+      : '{0}/{1} tables occupied · {2} guests · {3}/{4} seats in occupied tables · Branch Capacity {5}',
+      [occupied.length, floor.tables.length, guests, seats(occupied), seats(floor.tables), this.locale.text(String(capacity))]);
   }
 
   get overCapacity(): boolean {

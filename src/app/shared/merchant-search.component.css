@@ -40,7 +40,10 @@
   min-width: 0;
   min-height: 2.45rem;
   border-color: var(--merchant-search-border);
-  border-radius: 0.55rem 0 0 0.55rem;
+  border-start-start-radius: 0.55rem;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+  border-end-start-radius: 0.55rem;
   background-color: var(--merchant-search-surface);
   color: var(--merchant-search-text);
   font-size: 0.72rem;
@@ -59,7 +62,10 @@
   justify-content: center;
   gap: 0.35rem;
   border-color: var(--merchant-search-border);
-  border-radius: 0 0.55rem 0.55rem 0;
+  border-start-start-radius: 0;
+  border-start-end-radius: 0.55rem;
+  border-end-end-radius: 0.55rem;
+  border-end-start-radius: 0;
   font-size: 0.68rem;
   font-weight: 650;
   white-space: nowrap;
@@ -69,7 +75,7 @@
   position: absolute;
   z-index: 4;
   top: 50%;
-  left: 0.78rem;
+  inset-inline-start: 0.78rem;
   width: 1rem;
   height: 1rem;
   transform: translateY(-50%);
@@ -82,12 +88,12 @@
 
 .merchant-search--orders .form-control,
 .merchant-search--appointment .form-control {
-  padding-left: 2.35rem;
+  padding-inline-start: 2.35rem;
 }
 
 .merchant-search--catalog .form-control {
   min-height: 2.9rem;
-  padding-left: 2.7rem;
+  padding-inline-start: 2.7rem;
   border-radius: 0.7rem;
 }
 
@@ -97,7 +103,7 @@
 }
 
 .merchant-search--catalog .merchant-search-icon {
-  left: 0.9rem;
+  inset-inline-start: 0.9rem;
   width: 1.15rem;
   height: 1.15rem;
 }
@@ -115,8 +121,8 @@
   position: absolute;
   z-index: 30;
   top: calc(100% + 0.35rem);
-  right: 0;
-  left: 0;
+  inset-inline-end: 0;
+  inset-inline-start: 0;
   display: grid;
   max-height: 17rem;
   overflow: auto;
@@ -137,7 +143,7 @@
   border-bottom: 1px solid var(--merchant-search-border);
   background: var(--merchant-search-surface);
   color: var(--merchant-search-text);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   transition: background-color 0.12s ease;
 }

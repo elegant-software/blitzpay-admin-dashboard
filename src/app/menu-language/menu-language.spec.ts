@@ -1,5 +1,5 @@
 import { Merchant, MenuLanguage } from '../models/merchant-catalog.models';
-import { isRightToLeft, languageLabel, merchantMenuLanguages, offersInternationalMenu } from './menu-language';
+import { isRightToLeft, languageLabel, merchantMenuLanguages, offersInternationalMenu, displayProductLanguage } from './menu-language';
 
 describe('menu language helpers', () => {
   const catalogue: MenuLanguage[] = [
@@ -39,5 +39,18 @@ describe('menu language helpers', () => {
     expect(isRightToLeft('ar')).toBeTrue();
     expect(isRightToLeft('fa')).toBeTrue();
     expect(isRightToLeft('de')).toBeFalse();
+  });
+
+  it('uses the UI language only when the merchant supports it', () => {
+    const multilingual = merchant({ originalMenuLanguage: 'de', supportedMenuLanguages: ['en', 'ar'] });
+    expect(displayProductLanguage(multilingual, 'ar')).toBe('ar');
+    expect(displayProductLanguage(multilingual, 'en-GB')).toBe('en');
+    expect(displayProductLanguage(multilingual, 'fr')).toBe('de');
+  });
+
+  it('keeps single-language merchants in their original language', () => {
+    expect(displayProductLanguage(merchant({ originalMenuLanguage: 'de' }), 'ar')).toBe('de');
+    expect(displayProductLanguage(merchant(), 'ar')).toBeUndefined();
+    expect(displayProductLanguage(null, 'ar')).toBeUndefined();
   });
 });

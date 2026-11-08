@@ -2,6 +2,7 @@ import { HttpErrorResponse } from "@angular/common/http";
 import { fakeAsync, TestBed, tick } from "@angular/core/testing";
 import { ToastMessageOptions } from "primeng/api";
 import { apiErrorCode, apiErrorMessage, NotificationService } from "./notification.service";
+import { AdminLocaleService } from '../i18n/admin-locale.service';
 
 describe("NotificationService", () => {
   let notifications: NotificationService;
@@ -28,6 +29,14 @@ describe("NotificationService", () => {
     ]);
     expect(new Set(messages.map((message) => message.summary)).size).toBe(4);
     expect(messages[3].life!).toBeGreaterThan(messages[0].life!);
+    tick(12000);
+  }));
+
+  it('translates toast headings and messages without requiring an HTTP provider', fakeAsync(() => {
+    TestBed.inject(AdminLocaleService).use('ar');
+    notifications.success('Appointment created.');
+    expect(messages[0].summary).toBe('نجاح');
+    expect(messages[0].detail).toBe('تم إنشاء الموعد.');
     tick(12000);
   }));
 

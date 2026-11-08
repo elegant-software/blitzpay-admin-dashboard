@@ -1,3 +1,6 @@
+import { inject as injectAdminLocale } from '@angular/core';
+import { AdminLocaleService } from '../i18n/admin-locale.service';
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
@@ -22,11 +25,12 @@ import { environment } from '../../environments/environment';
 @Component({
   selector: 'app-product-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule, RouterModule],
   templateUrl: './product-edit.component.html',
   styleUrl: './merchant-catalog.component.css'
 })
 export class ProductEditComponent implements OnInit {
+  readonly adminLocale = injectAdminLocale(AdminLocaleService);
   private readonly notifications = inject(NotificationService);
   readonly selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   readonly apiVersion = 'v1';
@@ -223,7 +227,7 @@ export class ProductEditComponent implements OnInit {
 
   deleteTranslation(row: TranslationRow): void {
     if (row.saving || !row.exists) return;
-    if (!confirm(`Delete the ${this.languageLabel(row.language)} translation?`)) return;
+    if (!confirm(this.adminLocale.text(`Delete the ${this.languageLabel(row.language)} translation?`))) return;
     row.saving = true;
     row.error = '';
     this.merchantApi.deleteProductTranslation(this.selectedEnvironment, this.apiVersion, this.merchantId, this.productId, row.language).subscribe({

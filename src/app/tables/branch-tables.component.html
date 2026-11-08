@@ -1,27 +1,26 @@
 <div class="container-fluid px-4 pt-2 pb-4 tables-screen">
   <div class="d-flex align-items-center gap-2 mb-2">
-    <a class="btn btn-link btn-sm ps-0" [routerLink]="['/merchants', merchantId]">← Back to merchant</a>
+    <a class="btn btn-link btn-sm ps-0" [routerLink]="['/merchants', merchantId]">{{ '← Back to merchant' | adminTranslate }}</a>
   </div>
 
   <div class="d-flex flex-wrap align-items-baseline gap-2 mb-3">
-    <h1 class="h4 mb-0">Tables</h1>
+    <h1 class="h4 mb-0">{{ 'Tables' | adminTranslate }}</h1>
     <span class="text-body-secondary" *ngIf="branch">{{ merchantName }} · {{ branch.name }}</span>
   </div>
 
   <ul class="nav nav-tabs mb-3" role="tablist">
     <li class="nav-item" *ngFor="let option of views" role="presentation">
       <button class="nav-link" type="button" role="tab" [class.active]="view === option.key" [attr.aria-selected]="view === option.key"
-        [attr.data-test]="'view-' + option.key" (click)="selectView(option.key)">{{ option.label }}</button>
+        [attr.data-test]="'view-' + option.key" (click)="selectView(option.key)">{{ (option.label | adminTranslate) }}</button>
     </li>
   </ul>
 
-  <div class="alert alert-danger py-2" *ngIf="errorMessage" role="alert">{{ errorMessage }}</div>
+  <div class="alert alert-danger py-2" *ngIf="errorMessage" role="alert">{{ (errorMessage | adminTranslate) }}</div>
   <div class="alert alert-warning py-2" *ngIf="overCapacity && view !== 'live'" data-test="capacity-warning">
-    The active tables seat {{ seatedCapacity }} guests, more than the Branch Capacity of {{ branchCapacity }}.
-    This does not block ordering. Change the seats here or the capacity on the
-    <a [routerLink]="['/merchants', merchantId, 'branches', branchId, 'edit']">branch page</a>.
+    {{ 'The active tables seat {0} guests, more than the Branch Capacity of {1}. This does not block ordering. Change the seats here or the capacity on the' | adminTranslate: [(seatedCapacity), (branchCapacity)] }}
+    <a [routerLink]="['/merchants', merchantId, 'branches', branchId, 'edit']">{{ 'branch page' | adminTranslate }}</a>.
   </div>
-  <div *ngIf="loading" class="text-center py-5 text-muted">Loading…</div>
+  <div *ngIf="loading" class="text-center py-5 text-muted">{{ 'Loading…' | adminTranslate }}</div>
 
   <ng-container *ngIf="!loading && branch">
     <!-- ── Tables ─────────────────────────────────────────────────── -->
@@ -30,37 +29,37 @@
         <div class="col-lg-8">
           <section class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-              <span>{{ tables.length }} tables · {{ seatedCapacity }} seats<span *ngIf="branchCapacity != null"> · Branch Capacity {{ branchCapacity }}</span></span>
+              <span>{{ '{0} tables · {1} seats' | adminTranslate: [(tables.length), (seatedCapacity)] }}<span *ngIf="branchCapacity != null"> {{ '· Branch Capacity {0}' | adminTranslate: [(branchCapacity)] }}</span></span>
               <button class="btn btn-sm btn-outline-primary" type="button" [disabled]="!activeTables.length" (click)="printQrCodes()">
-                <i class="pi pi-print me-1" aria-hidden="true"></i>Print QR codes
+                <i class="pi pi-print me-1" aria-hidden="true"></i>{{ 'Print QR codes' | adminTranslate }}
               </button>
             </div>
             <div class="table-responsive">
               <table class="table table-hover align-middle mb-0">
                 <thead>
-                  <tr><th>Name</th><th>Seats</th><th>Table code</th><th>Floor plan</th><th>Status</th><th class="text-end">Actions</th></tr>
+                  <tr><th>{{ 'Name' | adminTranslate }}</th><th>{{ 'Seats' | adminTranslate }}</th><th>{{ 'Table code' | adminTranslate }}</th><th>{{ 'Floor plan' | adminTranslate }}</th><th>{{ 'Status' | adminTranslate }}</th><th class="text-end">{{ 'Actions' | adminTranslate }}</th></tr>
                 </thead>
                 <tbody>
                   <tr *ngFor="let table of sortedTables" [attr.data-test]="'table-row-' + table.code">
                     <td class="fw-semibold">{{ table.name }}</td>
                     <td [class.text-warning]="table.seats == null">{{ table.seats ?? '?' }}</td>
                     <td><code>{{ table.code }}</code></td>
-                    <td>{{ floorPlanName(table) }}</td>
-                    <td><span class="status-tag" [ngClass]="table.active ? 'status-tag-success' : 'status-tag-neutral'">{{ table.active ? 'Active' : 'Inactive' }}</span></td>
+                    <td>{{ (floorPlanName(table) | adminTranslate) }}</td>
+                    <td><span class="status-tag" [ngClass]="table.active ? 'status-tag-success' : 'status-tag-neutral'">{{ table.active ? (('Active' | adminTranslate)) : (('Inactive' | adminTranslate)) }}</span></td>
                     <td class="text-end text-nowrap">
-                      <button class="icon-action-btn" type="button" title="Show QR code" [attr.aria-label]="'Show QR code of table ' + table.name" (click)="showQr(table)">
+                      <button class="icon-action-btn" type="button" [attr.title]="'Show QR code' | adminTranslate" [attr.aria-label]="('Show QR code of table {0}' | adminTranslate: [(table.name)])" (click)="showQr(table)">
                         <i class="pi pi-qrcode" aria-hidden="true"></i>
                       </button>
-                      <button class="icon-action-btn" type="button" title="Edit" [attr.aria-label]="'Edit table ' + table.name" [disabled]="busy" (click)="openNameDialog({ kind: 'edit-table', table })">
+                      <button class="icon-action-btn" type="button" [attr.title]="'Edit' | adminTranslate" [attr.aria-label]="('Edit table {0}' | adminTranslate: [(table.name)])" [disabled]="busy" (click)="openNameDialog({ kind: 'edit-table', table })">
                         <i class="pi pi-pencil" aria-hidden="true"></i>
                       </button>
-                      <button class="btn btn-sm btn-link" type="button" [disabled]="busy" (click)="setActive(table, !table.active)">{{ table.active ? 'Deactivate' : 'Activate' }}</button>
-                      <button class="icon-action-btn" type="button" title="Delete" [attr.aria-label]="'Delete table ' + table.name" [disabled]="busy" (click)="deleteTable(table)">
+                      <button class="btn btn-sm btn-link" type="button" [disabled]="busy" (click)="setActive(table, !table.active)">{{ table.active ? (('Deactivate' | adminTranslate)) : (('Activate' | adminTranslate)) }}</button>
+                      <button class="icon-action-btn" type="button" [attr.title]="'Delete' | adminTranslate" [attr.aria-label]="('Delete table {0}' | adminTranslate: [(table.name)])" [disabled]="busy" (click)="deleteTable(table)">
                         <i class="pi pi-trash" aria-hidden="true"></i>
                       </button>
                     </td>
                   </tr>
-                  <tr *ngIf="!tables.length"><td colspan="6" class="text-center text-body-secondary py-4">No tables yet. Add them on the right.</td></tr>
+                  <tr *ngIf="!tables.length"><td colspan="6" class="text-center text-body-secondary py-4">{{ 'No tables yet. Add them on the right.' | adminTranslate }}</td></tr>
                 </tbody>
               </table>
             </div>
@@ -69,25 +68,25 @@
 
         <div class="col-lg-4">
           <section class="card mb-4">
-            <div class="card-header">Add tables</div>
+            <div class="card-header">{{ 'Add tables' | adminTranslate }}</div>
             <div class="card-body">
-              <label class="form-label" for="new-table-names">Table names</label>
-              <textarea id="new-table-names" class="form-control" rows="5" data-test="new-table-names" [(ngModel)]="newTableNames"
-                placeholder="1-10&#10;Terrace 1-4&#10;Bar"></textarea>
-              <p class="small text-body-secondary mt-1 mb-2">One name per line. A range like <code>1-10</code> adds ten tables.</p>
-              <label class="form-label" for="new-table-seats">Seats per table</label>
-              <input id="new-table-seats" class="form-control mb-3" type="number" min="1" max="50" step="1" data-test="new-table-seats"
-                [(ngModel)]="newTableSeats" placeholder="Optional" />
+              <label class="form-label" for="new-table-names">{{ 'Table names' | adminTranslate }}</label>
+              <textarea dir="auto" id="new-table-names" class="form-control" rows="5" data-test="new-table-names" [(ngModel)]="newTableNames"
+                [placeholder]="'1-10\nTerrace 1-4\nBar' | adminTranslate"></textarea>
+              <p class="small text-body-secondary mt-1 mb-2">{{ 'One name per line. A range like' | adminTranslate }} <code>1-10</code> {{ 'adds ten tables.' | adminTranslate }}</p>
+              <label class="form-label" for="new-table-seats">{{ 'Seats per table' | adminTranslate }}</label>
+              <input dir="ltr" id="new-table-seats" class="form-control mb-3" type="number" min="1" max="50" step="1" data-test="new-table-seats"
+                [(ngModel)]="newTableSeats" [placeholder]="'Optional' | adminTranslate" />
               <button class="btn btn-primary w-100" type="button" data-test="add-tables" [disabled]="busy || !namesToAdd.length" (click)="addTables()">
-                {{ namesToAdd.length === 1 ? 'Add 1 table' : 'Add ' + namesToAdd.length + ' tables' }}
+                {{ namesToAdd.length === 1 ? (('Add 1 table' | adminTranslate)) : (('Add {0} tables' | adminTranslate: [(namesToAdd.length)])) }}
               </button>
             </div>
           </section>
 
           <section class="card">
-            <div class="card-header">Branch Link</div>
+            <div class="card-header">{{ 'Branch Link' | adminTranslate }}</div>
             <div class="card-body">
-              <p class="small text-body-secondary">For a standee at the counter or entrance. Orders from it are collected at the counter.</p>
+              <p class="small text-body-secondary">{{ 'For a standee at the counter or entrance. Orders from it are collected at the counter.' | adminTranslate }}</p>
               <app-branch-catalog-qr [url]="branchLink" />
             </div>
           </section>
@@ -99,24 +98,24 @@
     <ng-container *ngIf="view === 'floor-plans'">
       <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
         <label class="d-flex align-items-center gap-2 mb-0" *ngIf="floorPlans.length">
-          <span class="form-label mb-0">Floor plan</span>
+          <span class="form-label mb-0">{{ 'Floor plan' | adminTranslate }}</span>
           <select class="form-select form-select-sm w-auto" data-test="floor-plan-select" [(ngModel)]="floorPlanId">
             <option *ngFor="let plan of floorPlans" [ngValue]="plan.id">{{ plan.name }}</option>
           </select>
         </label>
-        <button class="btn btn-sm btn-primary" type="button" [disabled]="busy" (click)="openNameDialog({ kind: 'create-floor-plan' })">New floor plan</button>
+        <button class="btn btn-sm btn-primary" type="button" [disabled]="busy" (click)="openNameDialog({ kind: 'create-floor-plan' })">{{ 'New floor plan' | adminTranslate }}</button>
         <ng-container *ngIf="floorPlan as plan">
-          <button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="busy" (click)="openNameDialog({ kind: 'rename-floor-plan', floorPlan: plan })">Rename</button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="busy" (click)="openNameDialog({ kind: 'rename-floor-plan', floorPlan: plan })">{{ 'Rename' | adminTranslate }}</button>
           <label class="btn btn-sm btn-outline-secondary mb-0" [class.disabled]="uploading">
-            {{ uploading ? 'Uploading…' : plan.imageUrl ? 'Replace picture' : 'Upload picture' }}
-            <input type="file" accept="image/*" hidden [disabled]="uploading" (change)="uploadImage($event)" />
+            {{ uploading ? (('Uploading…' | adminTranslate)) : (plan.imageUrl ? (('Replace picture' | adminTranslate)) : (('Upload picture' | adminTranslate))) }}
+            <input dir="auto" type="file" accept="image/*" hidden [disabled]="uploading" (change)="uploadImage($event)" />
           </label>
-          <button class="btn btn-sm btn-outline-danger" type="button" [disabled]="busy" (click)="deleteFloorPlan()">Delete</button>
+          <button class="btn btn-sm btn-outline-danger" type="button" [disabled]="busy" (click)="deleteFloorPlan()">{{ 'Delete' | adminTranslate }}</button>
         </ng-container>
       </div>
 
       <p *ngIf="!floorPlans.length" class="text-body-secondary">
-        A floor plan is a picture of a room or area, such as "Inside" or "Terrace". Create one, upload its picture and drag your tables onto it.
+        {{ 'A floor plan is a picture of a room or area, such as "Inside" or "Terrace". Create one, upload its picture and drag your tables onto it.' | adminTranslate }}
       </p>
 
       <app-floor-plan-editor
@@ -139,37 +138,37 @@
 <!-- Print sheet: only visible when printing. -->
 <section class="table-qr-print-sheet" *ngIf="branch" aria-hidden="true">
   <app-table-qr-card [url]="branchLink" [title]="branch.name" subtitle="Scan to order. Collect at the counter." />
-  <app-table-qr-card *ngFor="let table of activeTables" [url]="table.link" [title]="'Table ' + table.name" subtitle="Scan to order at this table" [code]="table.code" />
+  <app-table-qr-card *ngFor="let table of activeTables" [url]="table.link" [title]="('Table {0}' | adminTranslate: [(table.name)])" subtitle="Scan to order at this table" [code]="table.code" />
 </section>
 
 <dialog #nameDialogElement class="branch-qr-dialog" aria-labelledby="name-dialog-title" (close)="nameDialog = null">
   <form (ngSubmit)="saveName()">
-    <h2 id="name-dialog-title" class="h5">{{ nameDialogTitle }}</h2>
-    <label class="form-label" for="name-dialog-input">Name</label>
-    <input id="name-dialog-input" name="name" class="form-control" data-test="name-dialog-input" [(ngModel)]="nameValue" required autofocus />
+    <h2 id="name-dialog-title" class="h5">{{ (nameDialogTitle | adminTranslate) }}</h2>
+    <label class="form-label" for="name-dialog-input">{{ 'Name' | adminTranslate }}</label>
+    <input dir="auto" id="name-dialog-input" name="name" class="form-control" data-test="name-dialog-input" [(ngModel)]="nameValue" required autofocus />
     <ng-container *ngIf="nameDialog?.kind === 'edit-table'">
-      <label class="form-label mt-3" for="seats-dialog-input">Seats</label>
-      <input id="seats-dialog-input" name="seats" class="form-control" type="number" min="1" max="50" step="1" data-test="seats-dialog-input"
-        [(ngModel)]="seatsValue" placeholder="Not set" />
-      <p class="small text-body-secondary mt-1 mb-0">Renaming never changes the table's QR code or NFC tag.</p>
+      <label class="form-label mt-3" for="seats-dialog-input">{{ 'Seats' | adminTranslate }}</label>
+      <input dir="ltr" id="seats-dialog-input" name="seats" class="form-control" type="number" min="1" max="50" step="1" data-test="seats-dialog-input"
+        [(ngModel)]="seatsValue" [placeholder]="'Not set' | adminTranslate" />
+      <p class="small text-body-secondary mt-1 mb-0">{{ 'Renaming never changes the table\'s QR code or NFC tag.' | adminTranslate }}</p>
     </ng-container>
-    <div class="alert alert-danger py-1 px-2 small mt-3 mb-0" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="alert alert-danger py-1 px-2 small mt-3 mb-0" *ngIf="errorMessage">{{ (errorMessage | adminTranslate) }}</div>
     <div class="d-flex justify-content-end gap-2 mt-3">
-      <button class="btn btn-secondary" type="button" (click)="closeNameDialog()">Cancel</button>
-      <button class="btn btn-primary" type="submit" [disabled]="busy || !nameValue.trim()">Save</button>
+      <button class="btn btn-secondary" type="button" (click)="closeNameDialog()">{{ 'Cancel' | adminTranslate }}</button>
+      <button class="btn btn-primary" type="submit" [disabled]="busy || !nameValue.trim()">{{ 'Save' | adminTranslate }}</button>
     </div>
   </form>
 </dialog>
 
 <dialog #qrDialogElement class="branch-qr-dialog" aria-labelledby="table-qr-title" (close)="qrTable = null">
   <ng-container *ngIf="qrTable as table">
-    <h2 id="table-qr-title" class="h5">Table {{ table.name }}</h2>
-    <p class="small text-body-secondary">Scan to open the menu at this table. NFC tags carry the same link.</p>
+    <h2 id="table-qr-title" class="h5">{{ 'Table {0}' | adminTranslate: [(table.name)] }}</h2>
+    <p class="small text-body-secondary">{{ 'Scan to open the menu at this table. NFC tags carry the same link.' | adminTranslate }}</p>
     <app-branch-catalog-qr [url]="table.link" />
-    <p class="small mt-2 mb-0">Table code <code>{{ table.code }}</code></p>
+    <p class="small mt-2 mb-0">{{ 'Table code' | adminTranslate }} <code>{{ table.code }}</code></p>
     <div class="d-flex justify-content-end gap-2 mt-3">
-      <a class="btn btn-outline-primary" [href]="table.link" target="_blank" rel="noopener noreferrer">Open link</a>
-      <button class="btn btn-secondary" type="button" (click)="closeQr()">Close</button>
+      <a class="btn btn-outline-primary" [href]="table.link" target="_blank" rel="noopener noreferrer">{{ 'Open link' | adminTranslate }}</a>
+      <button class="btn btn-secondary" type="button" (click)="closeQr()">{{ 'Close' | adminTranslate }}</button>
     </div>
   </ng-container>
 </dialog>

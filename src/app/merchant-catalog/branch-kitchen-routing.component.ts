@@ -1,3 +1,4 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, OnDestroy, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -17,7 +18,7 @@ import { BranchPreparationComponent } from './branch-preparation.component';
 @Component({
   selector: 'app-branch-kitchen-routing',
   standalone: true,
-  imports: [CommonModule, FormsModule, BranchPreparationComponent],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule, BranchPreparationComponent],
   templateUrl: './branch-kitchen-routing.component.html',
   styleUrl: './merchant-catalog.component.css'
 })

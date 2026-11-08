@@ -1,3 +1,4 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { NotificationService } from "../notifications/notification.service";
 import { CommonModule } from "@angular/common";
 import {
@@ -41,7 +42,7 @@ interface AssignDialogState {
 @Component({
   selector: "app-user-detail",
   standalone: true,
-  imports: [CommonModule, FormsModule, MerchantSearchComponent],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule, MerchantSearchComponent],
   templateUrl: "./user-detail.component.html",
   styleUrl: "./user-detail.component.css",
 })

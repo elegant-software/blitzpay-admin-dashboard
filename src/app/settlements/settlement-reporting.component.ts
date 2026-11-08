@@ -1,3 +1,4 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
@@ -20,7 +21,7 @@ import {
 @Component({
   selector: 'app-settlement-reporting',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
   templateUrl: './settlement-reporting.component.html',
   styleUrl: './settlement-reporting.component.css',
 })

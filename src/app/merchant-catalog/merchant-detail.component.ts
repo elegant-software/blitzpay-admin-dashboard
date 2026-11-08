@@ -1,6 +1,9 @@
+import { inject as injectAdminLocale } from '@angular/core';
+import { AdminLocaleService } from '../i18n/admin-locale.service';
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { NotificationService } from "../notifications/notification.service";
 import { CommonModule } from "@angular/common";
-import { Component, OnDestroy, OnInit, inject } from "@angular/core";
+import { Component, OnDestroy, OnInit, effect, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import { Subscription, forkJoin, of } from "rxjs";
@@ -13,6 +16,7 @@ import {
   INTERNATIONAL_MENU,
   languageLabel,
   merchantMenuLanguages,
+  displayProductLanguage,
 } from "../menu-language/menu-language";
 import {
   AppearanceHistoryItem,
@@ -54,7 +58,7 @@ import { BranchKitchenScreenComponent } from "./branch-kitchen-screen.component"
 @Component({
   selector: "app-merchant-detail",
   standalone: true,
-  imports: [
+  imports: [AdminTranslatePipe,
     CommonModule,
     FormsModule,
     RouterModule,
@@ -70,6 +74,7 @@ import { BranchKitchenScreenComponent } from "./branch-kitchen-screen.component"
   styleUrl: "./merchant-catalog.component.css",
 })
 export class MerchantDetailComponent implements OnInit, OnDestroy {
+  readonly adminLocale = injectAdminLocale(AdminLocaleService);
   private readonly notifications = inject(NotificationService);
   selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   apiVersion = "v1";
@@ -155,6 +160,17 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   private readonly availablePspCodes = ["STRIPE"];
 
   private routeSub?: Subscription;
+  private productRequest?: Subscription;
+  private previousUiLanguage = this.adminLocale.code();
+  private readonly followUiLanguage = effect(() => {
+    const code = this.adminLocale.code();
+    if (code === this.previousUiLanguage) return;
+    this.previousUiLanguage = code;
+    if (!this.selectedMerchant || merchantMenuLanguages(this.selectedMerchant).length === 1) return;
+    const language = displayProductLanguage(this.selectedMerchant, code) ?? null;
+    this.catalogLanguage = language;
+    if (this.selectedBranch) this.loadProductsForSelectedBranch();
+  });
 
   constructor(
     private readonly merchantApi: MerchantApiService,
@@ -186,6 +202,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
+    this.productRequest?.unsubscribe();
   }
 
   get selectedEnvironment() {
@@ -650,7 +667,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
   removeBranch(branch: Branch): void {
     if (!this.selectedMerchant || !branch.branchId) return;
-    if (!confirm(`Deactivate branch "${branch.name}"?`)) return;
+    if (!confirm(this.adminLocale.text(`Deactivate branch "${branch.name}"?`))) return;
 
     this.loading = true;
     this.merchantApi
@@ -684,7 +701,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   removeProduct(product: Product): void {
     if (
       !this.selectedMerchant ||
-      !confirm(`Soft-remove product "${product.name}"?`)
+      !confirm(this.adminLocale.text(`Soft-remove product "${product.name}"?`))
     )
       return;
 
@@ -739,7 +756,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     if (
       !force &&
       this.categoryFormName !== (this.selectedCategory?.name ?? "") &&
-      !confirm("Close the category editor and discard unsaved changes?")
+      !confirm(this.adminLocale.text("Close the category editor and discard unsaved changes?"))
     )
       return;
     this.categoryDialogError = "";
@@ -802,7 +819,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   removeCategory(category: ProductCategory): void {
     if (
       !this.selectedMerchant ||
-      !confirm(`Delete category "${category.name}"?`)
+      !confirm(this.adminLocale.text(`Delete category "${category.name}"?`))
     )
       return;
 
@@ -1171,6 +1188,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   }
 
   private selectMerchant(merchant: Merchant): void {
+    this.productRequest?.unsubscribe();
     this.selectedMerchant = merchant;
 
     this.selectedBranch = null;
@@ -1185,7 +1203,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.providerAccountActionLoading.clear();
     this.resetAppearanceHistory();
     this.activeDetailTab = "info";
-    this.catalogLanguage = merchant.originalMenuLanguage ?? null;
+    this.catalogLanguage = displayProductLanguage(merchant, this.adminLocale.code()) ?? null;
     this.translatingCategory = null;
     this.translationCoverage = [];
     this.loadMenuLanguages();
@@ -1254,6 +1272,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   }
 
   private loadProductsForSelectedBranch(): void {
+    this.productRequest?.unsubscribe();
     if (!this.selectedMerchant || !this.selectedBranch?.branchId) {
       this.loading = false;
       this.products = [];
@@ -1263,7 +1282,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
     this.loading = true;
     this.resetProductTableStateForBranch(this.selectedBranch.branchId);
-    this.merchantApi
+    this.productRequest = this.merchantApi
       .getProducts(
         this.selectedEnvironment,
         this.apiVersion,

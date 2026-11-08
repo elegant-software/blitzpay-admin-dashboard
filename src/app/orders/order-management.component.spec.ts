@@ -8,6 +8,7 @@ import { NotificationService } from '../notifications/notification.service';
 import { Branch, MerchantSearchResultItem, OrderResponse } from '../models/merchant-catalog.models';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { OrderManagementComponent } from './order-management.component';
+import { AdminLocaleService } from '../i18n/admin-locale.service';
 
 describe('OrderManagementComponent', () => {
   let fixture: ComponentFixture<OrderManagementComponent>;
@@ -81,6 +82,32 @@ describe('OrderManagementComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
+
+  for (const supported of [true, false]) {
+    it(`handles dashboard language changes for a ${supported ? 'multilingual' : 'single-language'} merchant`, () => {
+      merchantApi.getMerchant.and.returnValue(of({ ...merchant, offerings: [], originalMenuLanguage: 'de', supportedMenuLanguages: supported ? ['en', 'ar'] : [] }));
+      merchantApi.getProducts.and.returnValue(of([]));
+      merchantApi.getBranchCustomers.and.returnValue(of([]));
+      component.merchantId = merchant.merchantId;
+      component.selectedBranchId = branch.branchId!;
+      component.openCreateDialog();
+      expect(merchantApi.getProducts.calls.mostRecent().args[5]).toBe(supported ? 'en' : 'de');
+      merchantApi.getProducts.calls.reset();
+      component.createItems = [{ productId: 'p1', productName: 'Coffee', unitPrice: 4, quantity: 3 }];
+      merchantApi.getProducts.and.returnValue(of([{ productId: 'p1', name: 'قهوة' } as any]));
+      TestBed.inject(AdminLocaleService).use('ar');
+      fixture.detectChanges();
+      if (supported) {
+        expect(merchantApi.getProducts.calls.mostRecent().args[5]).toBe('ar');
+        expect(component.createItems[0]).toEqual({ productId: 'p1', productName: 'قهوة', unitPrice: 4, quantity: 3 });
+        TestBed.inject(AdminLocaleService).use('fr');
+        fixture.detectChanges();
+        expect(merchantApi.getProducts.calls.mostRecent().args[5]).toBe('de');
+      } else {
+        expect(merchantApi.getProducts).not.toHaveBeenCalled();
+      }
+    });
+  }
 
   it('flags cash orders, unpaid or settled', () => {
     const order = { checkoutPaymentMethod: 'CASH' } as any;

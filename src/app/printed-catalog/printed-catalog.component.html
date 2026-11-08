@@ -1,29 +1,29 @@
 <div class="pc-root container-fluid px-4 pt-2 pb-4">
   <div class="pc-toolbar d-flex flex-wrap align-items-center gap-2 mb-3">
-    <a class="btn btn-link btn-sm ps-0" [routerLink]="['/merchants', merchantId]">← Back to merchant</a>
-    <select class="form-select form-select-sm w-auto ms-auto pc-language" aria-label="Catalog Language"
+    <a class="btn btn-link btn-sm ps-0" [routerLink]="['/merchants', merchantId]">{{ '← Back to merchant' | adminTranslate }}</a>
+    <select class="form-select form-select-sm w-auto ms-auto pc-language" [attr.aria-label]="'Catalog Language' | adminTranslate"
             *ngIf="catalogLanguages.length > 1" [ngModel]="catalogLanguage" (ngModelChange)="setCatalogLanguage($event)">
-      <option *ngFor="let code of catalogLanguages" [value]="code">{{ languageLabel(code) }}</option>
+      <option *ngFor="let code of catalogLanguages" [value]="code">{{ (languageLabel(code) | adminTranslate) }}</option>
     </select>
     <span class="small text-warning-emphasis" *ngIf="fallbackCount > 0">
-      {{ fallbackCount }} {{ fallbackCount === 1 ? 'item' : 'items' }} not translated – shown in the original language
+      {{ '{0} {1} not translated – shown in the original language' | adminTranslate: [(fallbackCount), (fallbackCount === 1 ? (('item' | adminTranslate)) : (('items' | adminTranslate)))] }}
     </span>
-    <div class="btn-group btn-group-sm" [class.ms-auto]="catalogLanguages.length <= 1" role="group" aria-label="Printed Catalog layout">
+    <div class="btn-group btn-group-sm" [class.ms-auto]="catalogLanguages.length <= 1" role="group" [attr.aria-label]="'Printed Catalog layout' | adminTranslate">
       <button type="button" class="btn" [class.btn-primary]="layout === 'full'" [class.btn-outline-primary]="layout !== 'full'"
-              (click)="setLayout('full')">Full Catalog</button>
+              (click)="setLayout('full')">{{ 'Full Catalog' | adminTranslate }}</button>
       <button type="button" class="btn" [class.btn-primary]="layout === 'showcase'" [class.btn-outline-primary]="layout !== 'showcase'"
-              (click)="setLayout('showcase')">Category Showcase</button>
+              (click)="setLayout('showcase')">{{ 'Category Showcase' | adminTranslate }}</button>
     </div>
     <button type="button" class="btn btn-sm btn-success pc-print" [disabled]="loading || isEmpty || !!loadFailed" (click)="print()">
-      Print
+      {{ 'Print' | adminTranslate }}
     </button>
   </div>
 
-  <div *ngIf="loading" class="text-center py-5 text-muted">Loading…</div>
+  <div *ngIf="loading" class="text-center py-5 text-muted">{{ 'Loading…' | adminTranslate }}</div>
 
   <ng-container *ngIf="!loading && !loadFailed && merchant && branch">
     <div class="alert alert-info" *ngIf="isEmpty">
-      Diese Filiale hat keine aktiven Produkte – es gibt nichts zu drucken.
+      {{ 'Diese Filiale hat keine aktiven Produkte – es gibt nichts zu drucken.' | adminTranslate }}
     </div>
 
     <ng-template #header>

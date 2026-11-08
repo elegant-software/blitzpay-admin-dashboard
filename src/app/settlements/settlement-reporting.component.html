@@ -1,9 +1,9 @@
 <main class="settlement-page">
   <header class="settlement-page-header">
     <div>
-      <div class="settlement-eyebrow">FINANCE</div>
-      <h1>Settlements</h1>
-      <p>Track payment activity, fees, and merchant payouts.</p>
+      <div class="settlement-eyebrow">{{ 'FINANCE' | adminTranslate }}</div>
+      <h1>{{ 'Settlements' | adminTranslate }}</h1>
+      <p>{{ 'Track payment activity, fees, and merchant payouts.' | adminTranslate }}</p>
     </div>
     <div class="settlement-header-mark" aria-hidden="true">
       <svg viewBox="0 0 24 24" width="22" height="22">
@@ -12,22 +12,22 @@
     </div>
   </header>
 
-  <section class="card settlement-panel settlement-filter-panel" aria-label="Settlement filters">
+  <section class="card settlement-panel settlement-filter-panel" [attr.aria-label]="'Settlement filters' | adminTranslate">
     <div class="settlement-panel-heading">
       <div>
-        <h2>Settlement report</h2>
-        <p>Choose a merchant and period to view its settlement activity.</p>
+        <h2>{{ 'Settlement report' | adminTranslate }}</h2>
+        <p>{{ 'Choose a merchant and period to view its settlement activity.' | adminTranslate }}</p>
       </div>
     </div>
     <div class="card-body settlement-filter-body">
       <div class="row g-3 align-items-end">
         <div class="col-lg-5">
-          <label class="form-label" for="settlement-merchant-search">Merchant</label>
+          <label class="form-label" for="settlement-merchant-search">{{ 'Merchant' | adminTranslate }}</label>
           <ng-container *ngIf="!selectedMerchant">
             <app-merchant-search
               inputId="settlement-merchant-search"
               variant="settlement"
-              placeholder="Search by merchant name or code"
+              [placeholder]="'Search by merchant name or code' | adminTranslate"
               locationMode="city"
               locationFallback="—"
               [query]="merchantQuery"
@@ -43,78 +43,78 @@
               <strong>{{ selectedMerchant.merchantName }}</strong>
               <small>{{ selectedMerchant.merchantCode }}</small>
             </span>
-            <button class="btn btn-sm btn-outline-secondary ms-auto" type="button" (click)="clearMerchant()">Change</button>
+            <button class="btn btn-sm btn-outline-secondary ms-auto" type="button" (click)="clearMerchant()">{{ 'Change' | adminTranslate }}</button>
           </div>
         </div>
         <div class="col-sm-6 col-lg-2">
-          <label class="form-label" for="settlement-from">From</label>
-          <input id="settlement-from" class="form-control" type="date" [(ngModel)]="from" />
+          <label class="form-label" for="settlement-from">{{ 'From' | adminTranslate }}</label>
+          <input dir="ltr" id="settlement-from" class="form-control" type="date" [(ngModel)]="from" />
         </div>
         <div class="col-sm-6 col-lg-2">
-          <label class="form-label" for="settlement-to">To</label>
-          <input id="settlement-to" class="form-control" type="date" [(ngModel)]="to" />
+          <label class="form-label" for="settlement-to">{{ 'To' | adminTranslate }}</label>
+          <input dir="ltr" id="settlement-to" class="form-control" type="date" [(ngModel)]="to" />
         </div>
         <div class="col-lg-3 settlement-load-action">
           <button class="btn btn-primary" type="button" (click)="load()" [disabled]="!selectedMerchant || loadingSummary || loadingList">
             <span *ngIf="loadingSummary || loadingList" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-            {{ loadingSummary || loadingList ? 'Loading report…' : 'Load report' }}
+            {{ loadingSummary || loadingList ? (('Loading report…' | adminTranslate)) : (('Load report' | adminTranslate)) }}
           </button>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="settlement-summary-section" *ngIf="summary || loadingSummary || loadFailedSummary" aria-label="Settlement summary">
+  <section class="settlement-summary-section" *ngIf="summary || loadingSummary || loadFailedSummary" [attr.aria-label]="'Settlement summary' | adminTranslate">
     <div class="settlement-section-heading">
       <div>
-        <h2>Overview</h2>
-        <p>Settlement totals for the selected period</p>
+        <h2>{{ 'Overview' | adminTranslate }}</h2>
+        <p>{{ 'Settlement totals for the selected period' | adminTranslate }}</p>
       </div>
     </div>
 
     <div class="settlement-feedback settlement-loading" *ngIf="loadingSummary">
       <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-      Loading summary…
+      {{ 'Loading summary…' | adminTranslate }}
     </div>
 
 
     <div class="settlement-summary-grid" *ngIf="summary && !loadingSummary">
       <article class="settlement-stat-card">
-        <div class="settlement-stat-label">Transactions</div>
+        <div class="settlement-stat-label">{{ 'Transactions' | adminTranslate }}</div>
         <div class="settlement-stat-value">{{ summary.transactionCount }}</div>
-        <div class="settlement-stat-caption">In selected period</div>
+        <div class="settlement-stat-caption">{{ 'In selected period' | adminTranslate }}</div>
       </article>
       <article class="settlement-stat-card">
-        <div class="settlement-stat-label">Gross revenue</div>
+        <div class="settlement-stat-label">{{ 'Gross revenue' | adminTranslate }}</div>
         <div class="settlement-stat-value">{{ formatMinor(summary.grossAmountMinor, summary.currency) }}</div>
-        <div class="settlement-stat-caption">{{ summary.currency }} collected</div>
+        <div class="settlement-stat-caption">{{ '{0} collected' | adminTranslate: [(summary.currency)] }}</div>
       </article>
       <article class="settlement-stat-card settlement-stat-fee">
-        <div class="settlement-stat-label">Processing fees</div>
+        <div class="settlement-stat-label">{{ 'Processing fees' | adminTranslate }}</div>
         <div class="settlement-stat-value">{{ formatMinor(summary.processingFeeMinor, summary.currency) }}</div>
-        <div class="settlement-stat-caption">Payment provider fees</div>
+        <div class="settlement-stat-caption">{{ 'Payment provider fees' | adminTranslate }}</div>
       </article>
       <article class="settlement-stat-card settlement-stat-fee">
-        <div class="settlement-stat-label">Platform fees</div>
+        <div class="settlement-stat-label">{{ 'Platform fees' | adminTranslate }}</div>
         <div class="settlement-stat-value">{{ formatMinor(summary.platformFeeMinor, summary.currency) }}</div>
-        <div class="settlement-stat-caption">Platform charges</div>
+        <div class="settlement-stat-caption">{{ 'Platform charges' | adminTranslate }}</div>
       </article>
       <article class="settlement-stat-card settlement-stat-net">
-        <div class="settlement-stat-label">Net to merchant</div>
+        <div class="settlement-stat-label">{{ 'Net to merchant' | adminTranslate }}</div>
         <div class="settlement-stat-value">{{ formatMinor(summary.netAmountMinor, summary.currency) }}</div>
-        <div class="settlement-stat-caption">After all fees</div>
+        <div class="settlement-stat-caption">{{ 'After all fees' | adminTranslate }}</div>
       </article>
     </div>
 
     <div class="settlement-method-panel" *ngIf="summary && !loadingSummary && summary.byPaymentMethod.length > 0">
       <div class="settlement-method-heading">
-        <h3>Payment methods</h3>
-        <span>{{ summary.byPaymentMethod.length }} method{{ summary.byPaymentMethod.length === 1 ? '' : 's' }}</span>
+        <h3>{{ 'Payment methods' | adminTranslate }}</h3>
+        <span>{{ '{0} method{1}' | adminTranslate: [(summary.byPaymentMethod.length), (summary.byPaymentMethod.length === 1 ? ('') : ('s'))] }}</span>
       </div>
       <div class="settlement-method-list">
         <div *ngFor="let method of summary.byPaymentMethod" class="settlement-method-item">
-          <span class="settlement-method-name">{{ method.paymentMethod }}</span>
-          <span class="settlement-method-count">{{ method.transactionCount }} transactions</span>
+          <span class="settlement-method-name">{{ (method.paymentMethod | adminTranslate) }}</span>
+          <span class="settlement-method-count">{{ '{0} transactions' | adminTranslate: [(method.transactionCount)] }}</span>
           <strong>{{ formatMinor(method.grossAmountMinor, summary.currency) }}</strong>
         </div>
       </div>
@@ -124,8 +124,8 @@
   <section class="card settlement-panel settlement-results-panel" *ngIf="page || loadingList || loadFailedList">
     <div class="settlement-results-heading">
       <div>
-        <h2>Settlement activity</h2>
-        <p *ngIf="page">{{ totalElements }} settlement{{ totalElements === 1 ? '' : 's' }} in this period</p>
+        <h2>{{ 'Settlement activity' | adminTranslate }}</h2>
+        <p *ngIf="page">{{ '{0} settlement{1} in this period' | adminTranslate: [(totalElements), (totalElements === 1 ? ('') : ('s'))] }}</p>
       </div>
       <button
         class="btn btn-outline-primary settlement-refresh-button"
@@ -135,7 +135,7 @@
       >
         <i *ngIf="!refreshing" class="pi pi-refresh me-2" aria-hidden="true"></i>
         <span *ngIf="refreshing" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-        {{ refreshing ? 'Refreshing…' : 'Refresh visible Stripe data' }}
+        {{ refreshing ? (('Refreshing…' | adminTranslate)) : (('Refresh visible Stripe data' | adminTranslate)) }}
       </button>
     </div>
 
@@ -147,7 +147,7 @@
 
     <div *ngIf="loadingList" class="settlement-feedback settlement-loading">
       <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-      Loading settlements…
+      {{ 'Loading settlements…' | adminTranslate }}
     </div>
 
     <ng-container *ngIf="page && !loadingList && !loadFailedList">
@@ -155,16 +155,16 @@
         <table class="table table-hover mb-0 settlement-table">
           <thead>
             <tr>
-              <th>Settled at</th>
-              <th>Funds available</th>
-              <th>Order</th>
-              <th>Provider</th>
-              <th>Method</th>
-              <th class="text-end">Gross</th>
-              <th class="text-end">Processing fee</th>
-              <th class="text-end">Platform fee</th>
-              <th class="text-end">Net</th>
-              <th>Provider details</th>
+              <th>{{ 'Settled at' | adminTranslate }}</th>
+              <th>{{ 'Funds available' | adminTranslate }}</th>
+              <th>{{ 'Order' | adminTranslate }}</th>
+              <th>{{ 'Provider' | adminTranslate }}</th>
+              <th>{{ 'Method' | adminTranslate }}</th>
+              <th class="text-end">{{ 'Gross' | adminTranslate }}</th>
+              <th class="text-end">{{ 'Processing fee' | adminTranslate }}</th>
+              <th class="text-end">{{ 'Platform fee' | adminTranslate }}</th>
+              <th class="text-end">{{ 'Net' | adminTranslate }}</th>
+              <th>{{ 'Provider details' | adminTranslate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -174,7 +174,7 @@
               <td class="settlement-order-id">{{ row.orderId }}</td>
               <td><span class="settlement-provider">{{ row.provider }}</span></td>
               <td>
-                <span>{{ row.paymentMethod }}</span>
+                <span>{{ (row.paymentMethod | adminTranslate) }}</span>
                 <small *ngIf="row.paymentMethodDetail" class="settlement-method-detail">{{ row.paymentMethodDetail }}</small>
               </td>
               <td class="text-end text-nowrap">{{ formatMinor(row.grossAmountMinor, row.currency) }}</td>
@@ -188,7 +188,7 @@
                   [href]="row.providerDashboardUrl"
                   target="_blank"
                   rel="noopener noreferrer"
-                >Open payment <span aria-hidden="true">↗</span></a>
+                >{{ 'Open payment' | adminTranslate }} <span aria-hidden="true">↗</span></a>
                 <span *ngIf="!row.providerDashboardUrl" class="settlement-empty-value">—</span>
                 <div *ngIf="row.providerPaymentReference" class="settlement-reference">
                   {{ row.providerPaymentReference }}
@@ -203,18 +203,18 @@
         <div class="settlement-empty-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="23" height="23"><path fill="currentColor" d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v13a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 18.5v-13ZM6.5 5a.5.5 0 0 0-.5.5V8h12V5.5a.5.5 0 0 0-.5-.5h-11ZM18 10H6v8.5a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5V10Zm-9 2h6v2H9v-2Z"/></svg>
         </div>
-        <h3>No settlements found</h3>
-        <p>There are no settlement transactions for this merchant and period.</p>
+        <h3>{{ 'No settlements found' | adminTranslate }}</h3>
+        <p>{{ 'There are no settlement transactions for this merchant and period.' | adminTranslate }}</p>
       </div>
 
       <div class="settlement-pagination" *ngIf="totalPages > 1">
-        <span>Page {{ currentPage + 1 }} of {{ totalPages }}</span>
+        <span>{{ 'Page {0} of {1}' | adminTranslate: [(currentPage + 1), (totalPages)] }}</span>
         <div class="btn-group">
           <button class="btn btn-outline-secondary" type="button" [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)">
-            &lsaquo; Previous
+            {{ '‹ Previous' | adminTranslate }}
           </button>
           <button class="btn btn-outline-secondary" type="button" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(currentPage + 1)">
-            Next &rsaquo;
+            {{ 'Next ›' | adminTranslate }}
           </button>
         </div>
       </div>

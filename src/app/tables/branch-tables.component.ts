@@ -1,3 +1,6 @@
+import { inject as injectAdminLocale } from '@angular/core';
+import { AdminLocaleService } from '../i18n/admin-locale.service';
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -33,11 +36,12 @@ const byName = (left: { name: string }, right: { name: string }) =>
 @Component({
   selector: 'app-branch-tables',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, BranchCatalogQrComponent, TableQrCardComponent, FloorPlanEditorComponent, LiveFloorComponent],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule, RouterModule, BranchCatalogQrComponent, TableQrCardComponent, FloorPlanEditorComponent, LiveFloorComponent],
   templateUrl: './branch-tables.component.html',
   styleUrls: ['../merchant-catalog/merchant-catalog.component.css', './branch-tables.component.css']
 })
 export class BranchTablesComponent implements OnInit {
+  readonly adminLocale = injectAdminLocale(AdminLocaleService);
   private readonly notifications = inject(NotificationService);
   private readonly merchantApi = inject(MerchantApiService);
   private readonly route = inject(ActivatedRoute);
@@ -145,13 +149,13 @@ export class BranchTablesComponent implements OnInit {
 
   setActive(table: BranchTable, active: boolean): void {
     if (this.busy) return;
-    if (!active && !confirm(`Deactivate table ${table.name}? Guests who open its link will order for collection at the counter.`)) return;
+    if (!active && !confirm(this.adminLocale.text(`Deactivate table ${table.name}? Guests who open its link will order for collection at the counter.`))) return;
     this.run(this.merchantApi.updateTable(this.env, this.apiVersion, this.merchantId, this.branchId, table.id, { active }),
       'Failed to update the table.', (updated) => this.replaceTable(updated));
   }
 
   deleteTable(table: BranchTable): void {
-    if (this.busy || !confirm(`Delete table ${table.name}? Its QR code and NFC tag stop working.`)) return;
+    if (this.busy || !confirm(this.adminLocale.text(`Delete table ${table.name}? Its QR code and NFC tag stop working.`))) return;
     this.run(this.merchantApi.deleteTable(this.env, this.apiVersion, this.merchantId, this.branchId, table.id), 'Failed to delete the table.', () => {
       this.tables = this.tables.filter((candidate) => candidate.id !== table.id);
       this.notifications.success(`Deleted table ${table.name}.`);
@@ -201,7 +205,7 @@ export class BranchTablesComponent implements OnInit {
   deleteFloorPlan(): void {
     const floorPlan = this.floorPlan;
     if (!floorPlan || this.busy) return;
-    if (!confirm(`Delete floor plan ${floorPlan.name}? Its tables are kept but no longer placed.`)) return;
+    if (!confirm(this.adminLocale.text(`Delete floor plan ${floorPlan.name}? Its tables are kept but no longer placed.`))) return;
     this.run(this.merchantApi.deleteFloorPlan(this.env, this.apiVersion, this.merchantId, this.branchId, floorPlan.id), 'Failed to delete the floor plan.', () => {
       this.floorPlans = this.floorPlans.filter((plan) => plan.id !== floorPlan.id);
       this.tables = this.tables.map((table) => table.placement?.floorPlanId === floorPlan.id ? { ...table, placement: null } : table);

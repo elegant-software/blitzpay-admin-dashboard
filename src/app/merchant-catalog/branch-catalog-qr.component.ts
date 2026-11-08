@@ -1,3 +1,4 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges } from '@angular/core';
 import * as QRCode from 'qrcode';
@@ -5,10 +6,10 @@ import * as QRCode from 'qrcode';
 @Component({
   selector: 'app-branch-catalog-qr',
   standalone: true,
-  imports: [CommonModule],
+  imports: [AdminTranslatePipe, CommonModule],
   template: `
     <div class="branch-catalog-qr" *ngIf="url">
-      <img *ngIf="imageUrl" [src]="imageUrl" alt="Branch Catalog QR code" />
+      <img *ngIf="imageUrl" [src]="imageUrl" [alt]="'Branch Catalog QR code' | adminTranslate" />
       <p class="branch-catalog-url">{{ url }}</p>
     </div>
   `,

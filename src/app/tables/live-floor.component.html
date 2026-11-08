@@ -1,31 +1,31 @@
 <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
   <label class="d-flex align-items-center gap-2 mb-0" *ngIf="floor?.floorPlans?.length">
-    <span class="form-label mb-0">Floor plan</span>
+    <span class="form-label mb-0">{{ 'Floor plan' | adminTranslate }}</span>
     <select class="form-select form-select-sm w-auto" [(ngModel)]="floorPlanId" data-test="live-floor-plan">
       <option *ngFor="let plan of floor?.floorPlans" [ngValue]="plan.id">{{ plan.name }}</option>
     </select>
   </label>
   <span class="small" *ngIf="floor" data-test="live-floor-summary">
-    <strong>{{ summary }}</strong>
-    <span class="text-body-secondary"> · updated {{ lastUpdated | displayDate }}</span>
+    <strong>{{ (summary | adminTranslate) }}</strong>
+    <span class="text-body-secondary"> {{ '· updated {0}' | adminTranslate: [(lastUpdated | displayDate)] }}</span>
   </span>
-  <span *ngIf="loading" class="spinner-border spinner-border-sm text-secondary" role="status" aria-label="Loading"></span>
-  <ul class="floor-legend ms-auto" aria-label="Legend">
-    <li><span class="floor-dot floor-dot-free"></span>Free</li>
-    <li><span class="floor-dot floor-dot-occupied"></span>Guest seated</li>
-    <li><span class="floor-dot floor-dot-unpaid">€</span>To pay</li>
+  <span *ngIf="loading" class="spinner-border spinner-border-sm text-secondary" role="status" [attr.aria-label]="'Loading' | adminTranslate"></span>
+  <ul class="floor-legend ms-auto" [attr.aria-label]="'Legend' | adminTranslate">
+    <li><span class="floor-dot floor-dot-free"></span>{{ 'Free' | adminTranslate }}</li>
+    <li><span class="floor-dot floor-dot-occupied"></span>{{ 'Guest seated' | adminTranslate }}</li>
+    <li><span class="floor-dot floor-dot-unpaid">€</span>{{ 'To pay' | adminTranslate }}</li>
   </ul>
 </div>
 
 <p class="alert alert-info py-2 small" data-test="read-only-note">
-  View only. Staff set guests, clear tables and take or confirm payments in the merchant app.
+  {{ 'View only. Staff set guests, clear tables and take or confirm payments in the merchant app.' | adminTranslate }}
 </p>
-<div *ngIf="error" class="alert alert-warning py-1 px-2 small">{{ error }}</div>
+<div *ngIf="error" class="alert alert-warning py-1 px-2 small">{{ (error | adminTranslate) }}</div>
 <div *ngIf="overCapacity" class="alert alert-warning py-1 px-2 small" data-test="capacity-warning">
-  The tables seat more guests than the Branch Capacity of {{ floor?.branchCapacity }}. This does not block ordering.
+  {{ 'The tables seat more guests than the Branch Capacity of {0}. This does not block ordering.' | adminTranslate: [(floor?.branchCapacity)] }}
 </div>
 
-<p *ngIf="floor && !floor.tables.length" class="text-body-secondary">This branch has no active tables.</p>
+<p *ngIf="floor && !floor.tables.length" class="text-body-secondary">{{ 'This branch has no active tables.' | adminTranslate }}</p>
 
 <div class="floor-layout" *ngIf="floor && floor.tables.length">
   <div>
@@ -37,7 +37,7 @@
       data-test="live-floor-canvas"
     >
       <!-- Drawn floors keep the picture invisible so the canvas keeps its shape and Placements still line up. -->
-      <img *ngIf="floorPlan.imageUrl" [src]="floorPlan.imageUrl" [alt]="'Picture of ' + floorPlan.name" draggable="false" />
+      <img *ngIf="floorPlan.imageUrl" [src]="floorPlan.imageUrl" [alt]="('Picture of {0}' | adminTranslate: [(floorPlan.name)])" draggable="false" />
       <div *ngFor="let area of floorPlan.areas" class="floor-area" [ngStyle]="areaStyle(area)"><span>{{ area.name }}</span></div>
       <button
         *ngFor="let live of placed"
@@ -46,7 +46,7 @@
         [ngClass]="'tone-' + tone(live)"
         [class.floor-pin-selected]="selectedTableId === live.table.id"
         [ngStyle]="pinPosition(live.table.placement!)"
-        [attr.aria-label]="pinLabel(live) + ': ' + toneLabel(tone(live))"
+        [attr.aria-label]="(pinLabel(live) + ': ' + toneLabel(tone(live)) | adminTranslate)"
         [attr.data-test]="'live-pin-' + live.table.code"
         (click)="select(live)"
       >
@@ -59,13 +59,13 @@
             <text x="49" y="14.5" text-anchor="middle" class="floor-badge-label">€</text>
           </g>
         </svg>
-        <span *ngIf="live.status === 'OCCUPIED' && live.occupiedSince" class="floor-table-time">{{ seatedFor(live.occupiedSince, now) }}</span>
+        <span *ngIf="live.status === 'OCCUPIED' && live.occupiedSince" class="floor-table-time">{{ (seatedFor(live.occupiedSince, now) | adminTranslate) }}</span>
       </button>
     </div>
-    <p *ngIf="!floorPlan" class="text-body-secondary small">No floor plans yet. Tables are listed below.</p>
+    <p *ngIf="!floorPlan" class="text-body-secondary small">{{ 'No floor plans yet. Tables are listed below.' | adminTranslate }}</p>
 
     <div *ngIf="unplaced.length" class="mt-3">
-      <h3 class="h6">Not on a floor plan</h3>
+      <h3 class="h6">{{ 'Not on a floor plan' | adminTranslate }}</h3>
       <div class="d-flex flex-wrap gap-2">
         <button
           *ngFor="let live of unplaced"
@@ -74,39 +74,39 @@
           [ngClass]="'tone-' + tone(live)"
           [class.floor-pin-selected]="selectedTableId === live.table.id"
           (click)="select(live)"
-        >{{ pinLabel(live) }}</button>
+        >{{ (pinLabel(live) | adminTranslate) }}</button>
       </div>
     </div>
   </div>
 
   <aside class="floor-side" aria-live="polite" data-test="table-detail">
     <ng-container *ngIf="selected as live; else pick">
-      <h3 class="h6 mb-1">Table {{ pinLabel(live) }}</h3>
+      <h3 class="h6 mb-1">{{ 'Table {0}' | adminTranslate: [((pinLabel(live) | adminTranslate))] }}</h3>
       <p class="small mb-2">
-        <span class="floor-dot" [ngClass]="'tone-' + tone(live)"></span>{{ toneLabel(tone(live)) }}
-        <span *ngIf="live.occupiedSince"> · since {{ live.occupiedSince | displayDate }}</span>
-        <span *ngIf="live.guestCount != null"> · {{ live.guestCount }} {{ live.guestCount === 1 ? 'guest' : 'guests' }}</span>
+        <span class="floor-dot" [ngClass]="'tone-' + tone(live)"></span>{{ (toneLabel(tone(live)) | adminTranslate) }}
+        <span *ngIf="live.occupiedSince"> {{ '· since {0}' | adminTranslate: [(live.occupiedSince | displayDate)] }}</span>
+        <span *ngIf="live.guestCount != null"> · {{ live.guestCount }} {{ live.guestCount === 1 ? (('guest' | adminTranslate)) : (('guests' | adminTranslate)) }}</span>
       </p>
       <p class="small mb-2" data-test="nfc-status">
-        <ng-container *ngIf="live.table.nfcTagWrittenAt; else noTag">NFC tag written {{ live.table.nfcTagWrittenAt | displayDate }}</ng-container>
-        <ng-template #noTag><span class="text-body-secondary">No NFC tag written yet</span></ng-template>
+        <ng-container *ngIf="live.table.nfcTagWrittenAt; else noTag">{{ 'NFC tag written {0}' | adminTranslate: [(live.table.nfcTagWrittenAt | displayDate)] }}</ng-container>
+        <ng-template #noTag><span class="text-body-secondary">{{ 'No NFC tag written yet' | adminTranslate }}</span></ng-template>
       </p>
-      <app-table-qr-card [url]="live.table.link" [title]="'Table ' + live.table.name" [code]="live.table.code" />
-      <p *ngIf="!live.orders.length" class="small text-body-secondary">No open orders.</p>
+      <app-table-qr-card [url]="live.table.link" [title]="('Table {0}' | adminTranslate: [(live.table.name)])" [code]="live.table.code" />
+      <p *ngIf="!live.orders.length" class="small text-body-secondary">{{ 'No open orders.' | adminTranslate }}</p>
       <ul class="floor-order-list">
         <li *ngFor="let order of live.orders" class="floor-order">
           <div class="d-flex justify-content-between">
-            <strong>{{ order.pickupNumber != null ? 'Pickup ' + order.pickupNumber : 'Order' }}</strong>
+            <strong>{{ order.pickupNumber != null ? (('Pickup {0}' | adminTranslate: [(order.pickupNumber)])) : (('Order' | adminTranslate)) }}</strong>
             <span>{{ amount(order) }}</span>
           </div>
           <div class="d-flex flex-wrap gap-1 mt-1">
-            <span class="status-tag" [ngClass]="isUnpaid(order) ? 'status-tag-warning' : 'status-tag-success'">{{ paymentLabel(order.paymentStatus) }}</span>
-            <span class="status-tag status-tag-neutral">{{ preparationLabel(order.preparationStatus) }}</span>
+            <span class="status-tag" [ngClass]="isUnpaid(order) ? 'status-tag-warning' : 'status-tag-success'">{{ (paymentLabel(order.paymentStatus) | adminTranslate) }}</span>
+            <span class="status-tag status-tag-neutral">{{ (preparationLabel(order.preparationStatus) | adminTranslate) }}</span>
           </div>
           <small class="text-body-secondary">{{ order.createdAt | displayDate }}</small>
         </li>
       </ul>
     </ng-container>
-    <ng-template #pick><p class="small text-body-secondary">Select a table to see its orders.</p></ng-template>
+    <ng-template #pick><p class="small text-body-secondary">{{ 'Select a table to see its orders.' | adminTranslate }}</p></ng-template>
   </aside>
 </div>

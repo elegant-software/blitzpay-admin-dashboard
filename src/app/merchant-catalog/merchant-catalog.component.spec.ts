@@ -6,6 +6,7 @@ import { MerchantDetailComponent } from './merchant-detail.component';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { Branch, Merchant, Product, ProductCategory, ProviderAccountResponse } from '../models/merchant-catalog.models';
+import { AdminLocaleService } from '../i18n/admin-locale.service';
 
 describe('MerchantDetailComponent product category management', () => {
   let component: MerchantDetailComponent;
@@ -96,6 +97,36 @@ describe('MerchantDetailComponent product category management', () => {
     component.selectedMerchant = merchant;
     component.categories = [beverages];
     component['syncCategoryTableState']();
+  });
+
+  it('reloads displayed products in supported UI languages and falls back to the original', () => {
+    merchantApi.getVerticals.and.returnValue(of([]));
+    merchantApi.getProducts.and.returnValue(of([]));
+    component.selectedMerchant = { ...merchant, originalMenuLanguage: 'de', supportedMenuLanguages: ['en', 'ar'] };
+    component.selectedBranch = { branchId: 'b1', branchCode: 'B1', merchantId: merchant.merchantId, name: 'Central', status: 'ACTIVE' };
+    component.catalogLanguage = 'de';
+    const locale = TestBed.inject(AdminLocaleService);
+    locale.use('ar'); fixture.detectChanges();
+    expect(merchantApi.getProducts.calls.mostRecent().args[5]).toBe('ar');
+    locale.use('en'); fixture.detectChanges();
+    expect(merchantApi.getProducts.calls.mostRecent().args[5]).toBe('en');
+    locale.use('fr'); fixture.detectChanges();
+    expect(merchantApi.getProducts.calls.mostRecent().args[5]).toBe('de');
+    merchantApi.getProducts.calls.reset();
+    locale.use('it'); fixture.detectChanges();
+    expect(merchantApi.getProducts).toHaveBeenCalledTimes(1);
+    expect(merchantApi.getProducts.calls.mostRecent().args[5]).toBe('de');
+  });
+
+  it('does not reload a single-language merchant when the UI language changes', () => {
+    merchantApi.getVerticals.and.returnValue(of([]));
+    component.selectedMerchant = { ...merchant, originalMenuLanguage: 'de', supportedMenuLanguages: [] };
+    component.selectedBranch = { branchId: 'b1', branchCode: 'B1', merchantId: merchant.merchantId, name: 'Central', status: 'ACTIVE' };
+    component.catalogLanguage = 'de';
+    fixture.detectChanges();
+    TestBed.inject(AdminLocaleService).use('ar'); fixture.detectChanges();
+    expect(component.catalogLanguage).toBe('de');
+    expect(merchantApi.getProducts).not.toHaveBeenCalled();
   });
 
   it('presents the merchant identity and key context in the detail header', () => {
