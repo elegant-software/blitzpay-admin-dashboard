@@ -88,10 +88,101 @@ button.floor-pin {
   padding: 0.2rem 0.65rem;
 }
 
-.tone-free { background: #6b7280; }
-.tone-paid { background: #15803d; }
-.tone-unpaid { background: #c2410c; }
-.tone-reserved { background: #7c3aed; }
+.floor-chip.tone-free, .floor-dot.tone-free { background: #888780; }
+.floor-chip.tone-paid, .floor-dot.tone-paid,
+.floor-chip.tone-unpaid, .floor-dot.tone-unpaid { background: #1d9e75; }
+.floor-chip.tone-reserved, .floor-dot.tone-reserved { background: #7f77dd; }
+
+/* Drawn floor: the Floor Areas traced over the picture replace it (the picture stays, invisible, to keep the shape). */
+.floor-canvas-drawn {
+  background-color: #fff;
+  background-image: radial-gradient(#d3d1c7 1px, transparent 1px);
+  background-size: 1.25rem 1.25rem;
+}
+
+.floor-canvas-drawn img {
+  visibility: hidden;
+}
+
+.floor-area {
+  border: 2px solid #b4b2a9;
+  border-radius: 0.4rem;
+  position: absolute;
+}
+
+.floor-area span {
+  color: #5f5e5a;
+  font-size: 0.75rem;
+  left: 0.4rem;
+  position: absolute;
+  top: 0.2rem;
+}
+
+/* Live Table: a table with a chair per seat; seated guests fill chairs. */
+.floor-table {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.floor-chair { fill: #fff; stroke: #b4b2a9; stroke-width: 1.5; }
+.floor-chair-seated { fill: #1d9e75; stroke: #1d9e75; }
+.floor-table-top { fill: #fff; stroke: #b4b2a9; stroke-width: 1.5; }
+.floor-table-label { fill: #444441; font-size: 12px; font-weight: 600; }
+.floor-badge { fill: #ef9f27; }
+.floor-badge-label { fill: #412402; font-size: 10px; font-weight: 700; }
+
+.tone-paid .floor-table-top,
+.tone-unpaid .floor-table-top { fill: #e1f5ee; stroke: #1d9e75; }
+.tone-paid .floor-table-label,
+.tone-unpaid .floor-table-label { fill: #04342c; }
+.tone-reserved .floor-table-top,
+.tone-reserved .floor-chair { stroke: #7f77dd; stroke-dasharray: 4 3; }
+
+.floor-table-time {
+  background: rgb(255 255 255 / 0.9);
+  border-radius: 0.3rem;
+  color: #5f5e5a;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  margin-top: -0.2rem;
+  padding: 0 0.3rem;
+}
+
+.floor-dot-free { background: #fff; border: 1.5px solid #b4b2a9; }
+.floor-dot-occupied { background: #1d9e75; }
+.floor-dot-unpaid {
+  background: #ef9f27;
+  color: #412402;
+  font-size: 0.55rem;
+  font-weight: 700;
+  height: 0.9rem;
+  line-height: 0.9rem;
+  text-align: center;
+  width: 0.9rem;
+}
+
+/* Floor Areas being traced in the editor: outlines over the picture. */
+.floor-area-draft {
+  background: rgb(37 99 235 / 0.08);
+  border-color: #2563eb;
+  border-style: dashed;
+}
+
+.floor-canvas-drawing {
+  cursor: crosshair;
+}
+
+.floor-canvas-drawing .floor-pin {
+  opacity: 0.5;
+  pointer-events: none;
+}
 
 .floor-legend {
   display: flex;
