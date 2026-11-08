@@ -28,6 +28,15 @@ describe('authInterceptor', () => {
 
   afterEach(() => controller.verify());
 
+  it('requires a bearer token for the admin UI language catalogue', async () => {
+    http.get('http://api.test/v1/merchants/menu-languages').subscribe();
+    await Promise.resolve();
+    await Promise.resolve();
+    const request = controller.expectOne('http://api.test/v1/merchants/menu-languages');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer token');
+    request.flush([]);
+  });
+
   async function forbidden(context?: HttpContext): Promise<void> {
     let failed = false;
     http.get('http://api.test/v1/x', { context }).subscribe({ error: () => failed = true });

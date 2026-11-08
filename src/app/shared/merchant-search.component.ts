@@ -1,3 +1,4 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -16,7 +17,7 @@ export type MerchantLocationMode = 'city' | 'city-country' | 'best-effort';
 @Component({
   selector: 'app-merchant-search',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule],
   template: `
     <div class="merchant-search" [ngClass]="'merchant-search--' + variant">
       <div class="merchant-search-control">
@@ -29,11 +30,11 @@ export type MerchantLocationMode = 'city' | 'city-country' | 'best-effort';
             [id]="inputId"
             [type]="variant === 'orders' || variant === 'appointment' || variant === 'assignment' ? 'search' : 'text'"
             class="form-control"
-            [placeholder]="placeholder"
+            [placeholder]="(placeholder | adminTranslate)"
             [ngModel]="query"
             (ngModelChange)="queryChange.emit($event)"
             (keyup.enter)="search.emit()"
-            [attr.aria-label]="ariaLabel"
+            [attr.aria-label]="(ariaLabel | adminTranslate)"
             [attr.aria-describedby]="describedBy"
             [attr.aria-controls]="results.length ? inputId + '-results' : null"
             [attr.aria-expanded]="results.length > 0"
@@ -54,7 +55,7 @@ export type MerchantLocationMode = 'city' | 'city-country' | 'best-effort';
               <circle cx="10.8" cy="10.8" r="6.8"></circle>
               <path d="m16 16 5 5"></path>
             </svg>
-            <span>{{ searching ? searchingLabel : searchLabel }}</span>
+            <span>{{ searching ? ((searchingLabel | adminTranslate)) : ((searchLabel | adminTranslate)) }}</span>
           </button>
         </div>
       </div>
@@ -64,7 +65,7 @@ export type MerchantLocationMode = 'city' | 'city-country' | 'best-effort';
         class="merchant-search-results"
         role="listbox"
         [id]="inputId + '-results'"
-        [attr.aria-label]="resultsLabel"
+        [attr.aria-label]="(resultsLabel | adminTranslate)"
       >
         <button
           *ngFor="let merchant of results"
@@ -83,14 +84,14 @@ export type MerchantLocationMode = 'city' | 'city-country' | 'best-effort';
             <small>
               {{ merchant.merchantCode }}
               <ng-container *ngIf="showLocation"> · </ng-container>
-              <ng-container *ngIf="showLocation && locationMode === 'city'">{{ merchant.city || locationFallback }}</ng-container>
-              <ng-container *ngIf="showLocation && locationMode === 'best-effort'">{{ merchant.city || merchant.country || locationFallback }}</ng-container>
+              <ng-container *ngIf="showLocation && locationMode === 'city'">{{ merchant.city || (locationFallback | adminTranslate) }}</ng-container>
+              <ng-container *ngIf="showLocation && locationMode === 'best-effort'">{{ merchant.city || merchant.country || (locationFallback | adminTranslate) }}</ng-container>
               <ng-container *ngIf="showLocation && locationMode === 'city-country'">
-                {{ merchant.city || locationFallback }}{{ merchant.country ? ', ' + merchant.country : '' }}
+                {{ merchant.city || (locationFallback | adminTranslate) }}{{ merchant.country ? (', ' + merchant.country) : ('') }}
               </ng-container>
             </small>
           </span>
-          <span *ngIf="showMerchantStatus" class="merchant-search-status">{{ merchant.merchantStatus }}</span>
+          <span *ngIf="showMerchantStatus" class="merchant-search-status">{{ (merchant.merchantStatus | adminTranslate) }}</span>
           <span *ngIf="variant === 'orders' || variant === 'appointment'" class="merchant-search-result-arrow" aria-hidden="true">›</span>
         </button>
       </div>

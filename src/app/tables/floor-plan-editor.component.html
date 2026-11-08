@@ -1,6 +1,6 @@
-<div class="btn-group btn-group-sm mb-2" role="group" aria-label="Edit">
-  <button type="button" class="btn" [ngClass]="mode === 'tables' ? 'btn-dark' : 'btn-outline-secondary'" (click)="mode = 'tables'">Tables</button>
-  <button type="button" class="btn" [ngClass]="mode === 'areas' ? 'btn-dark' : 'btn-outline-secondary'" (click)="mode = 'areas'" data-test="areas-mode">Areas</button>
+<div class="btn-group btn-group-sm mb-2" role="group" [attr.aria-label]="'Edit' | adminTranslate">
+  <button type="button" class="btn" [ngClass]="mode === 'tables' ? 'btn-dark' : 'btn-outline-secondary'" (click)="mode = 'tables'">{{ 'Tables' | adminTranslate }}</button>
+  <button type="button" class="btn" [ngClass]="mode === 'areas' ? 'btn-dark' : 'btn-outline-secondary'" (click)="mode = 'areas'" data-test="areas-mode">{{ 'Areas' | adminTranslate }}</button>
 </div>
 
 <div class="floor-layout">
@@ -19,8 +19,8 @@
     (pointerup)="areaEnd()"
     (pointercancel)="areaEnd()"
   >
-    <img *ngIf="floorPlan.imageUrl" [src]="floorPlan.imageUrl" [alt]="'Picture of ' + floorPlan.name" draggable="false" />
-    <p *ngIf="!floorPlan.imageUrl" class="floor-canvas-hint">Upload a picture of {{ floorPlan.name }} to place Tables on it. You can already place them here.</p>
+    <img *ngIf="floorPlan.imageUrl" [src]="floorPlan.imageUrl" [alt]="('Picture of {0}' | adminTranslate: [(floorPlan.name)])" draggable="false" />
+    <p *ngIf="!floorPlan.imageUrl" class="floor-canvas-hint">{{ 'Upload a picture of {0} to place Tables on it. You can already place them here.' | adminTranslate: [(floorPlan.name)] }}</p>
     <div *ngFor="let area of areas" class="floor-area" [class.floor-area-draft]="mode === 'areas'" [ngStyle]="areaStyle(area)"><span>{{ area.name }}</span></div>
     <div *ngIf="draft" class="floor-area floor-area-draft" [ngStyle]="areaStyle($any(draft))"></div>
     <span
@@ -28,35 +28,34 @@
       class="floor-pin"
       draggable="true"
       [ngStyle]="pinPosition(table.placement!)"
-      [title]="table.name + ' — drag to move'"
+      [title]="('{0} — drag to move' | adminTranslate: [(table.name)])"
       [attr.data-test]="'pin-' + table.code"
       (dragstart)="dragStart($event, table)"
       (dragend)="dragEnd()"
-    >{{ pinLabel(table) }}</span>
+    >{{ (pinLabel(table) | adminTranslate) }}</span>
   </div>
 
   <aside class="floor-side" *ngIf="mode === 'areas'" data-test="areas-panel">
-    <h3 class="h6">Areas</h3>
+    <h3 class="h6">{{ 'Areas' | adminTranslate }}</h3>
     <p class="small text-body-secondary">
-      Trace the rooms once: drag a rectangle over each part of the picture (bar, dining room, terrace) and name it.
-      The live floor then draws these areas with the tables instead of the picture.
+      {{ 'Trace the rooms once: drag a rectangle over each part of the picture (bar, dining room, terrace) and name it. The live floor then draws these areas with the tables instead of the picture.' | adminTranslate }}
     </p>
     <ul class="floor-table-list">
       <li *ngFor="let area of areas; let index = index" class="floor-table-item">
-        <input class="form-control form-control-sm" [(ngModel)]="area.name" [attr.aria-label]="'Name of area ' + (index + 1)" maxlength="100" />
-        <button class="btn btn-sm btn-link text-danger" type="button" (click)="removeArea(index)">Remove</button>
+        <input dir="auto" class="form-control form-control-sm" [(ngModel)]="area.name" [attr.aria-label]="('Name of area {0}' | adminTranslate: [((index + 1))])" maxlength="100" />
+        <button class="btn btn-sm btn-link text-danger" type="button" (click)="removeArea(index)">{{ 'Remove' | adminTranslate }}</button>
       </li>
-      <li *ngIf="!areas.length" class="small text-body-secondary">No areas yet. The live floor shows the picture.</li>
+      <li *ngIf="!areas.length" class="small text-body-secondary">{{ 'No areas yet. The live floor shows the picture.' | adminTranslate }}</li>
     </ul>
     <div class="d-flex gap-2 mt-3">
-      <button class="btn btn-sm btn-primary" type="button" [disabled]="busy || !areasChanged" (click)="submitAreas()" data-test="save-areas">Save areas</button>
-      <button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="busy || !areasChanged" (click)="resetAreas()">Undo changes</button>
+      <button class="btn btn-sm btn-primary" type="button" [disabled]="busy || !areasChanged" (click)="submitAreas()" data-test="save-areas">{{ 'Save areas' | adminTranslate }}</button>
+      <button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="busy || !areasChanged" (click)="resetAreas()">{{ 'Undo changes' | adminTranslate }}</button>
     </div>
   </aside>
 
   <aside class="floor-side" *ngIf="mode === 'tables'">
-    <h3 class="h6">Not on this plan</h3>
-    <p class="small text-body-secondary">Drag a table onto the picture.</p>
+    <h3 class="h6">{{ 'Not on this plan' | adminTranslate }}</h3>
+    <p class="small text-body-secondary">{{ 'Drag a table onto the picture.' | adminTranslate }}</p>
     <ul class="floor-table-list" data-test="off-plan">
       <li
         *ngFor="let table of offPlan"
@@ -66,19 +65,19 @@
         (dragend)="dragEnd()"
       >
         <span class="floor-table-grip" aria-hidden="true">⠿</span>
-        <span class="floor-table-name">{{ pinLabel(table) }}<small>{{ whereIs(table) }}</small></span>
-        <button class="btn btn-sm btn-link" type="button" [disabled]="busy" (click)="placeInMiddle(table)">Place</button>
+        <span class="floor-table-name">{{ (pinLabel(table) | adminTranslate) }}<small>{{ (whereIs(table) | adminTranslate) }}</small></span>
+        <button class="btn btn-sm btn-link" type="button" [disabled]="busy" (click)="placeInMiddle(table)">{{ 'Place' | adminTranslate }}</button>
       </li>
-      <li *ngIf="!offPlan.length" class="small text-body-secondary">Every active table is on this plan.</li>
+      <li *ngIf="!offPlan.length" class="small text-body-secondary">{{ 'Every active table is on this plan.' | adminTranslate }}</li>
     </ul>
 
-    <h3 class="h6 mt-3">On this plan</h3>
+    <h3 class="h6 mt-3">{{ 'On this plan' | adminTranslate }}</h3>
     <ul class="floor-table-list" data-test="on-plan">
       <li *ngFor="let table of placed" class="floor-table-item">
-        <span class="floor-table-name">{{ pinLabel(table) }}<small *ngIf="!table.active">Inactive</small></span>
-        <button class="btn btn-sm btn-link text-danger" type="button" [disabled]="busy" (click)="unplace.emit(table)">Remove</button>
+        <span class="floor-table-name">{{ (pinLabel(table) | adminTranslate) }}<small *ngIf="!table.active">{{ 'Inactive' | adminTranslate }}</small></span>
+        <button class="btn btn-sm btn-link text-danger" type="button" [disabled]="busy" (click)="unplace.emit(table)">{{ 'Remove' | adminTranslate }}</button>
       </li>
-      <li *ngIf="!placed.length" class="small text-body-secondary">No tables placed yet.</li>
+      <li *ngIf="!placed.length" class="small text-body-secondary">{{ 'No tables placed yet.' | adminTranslate }}</li>
     </ul>
   </aside>
 </div>

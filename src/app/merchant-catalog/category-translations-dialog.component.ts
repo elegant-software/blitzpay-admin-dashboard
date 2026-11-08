@@ -1,3 +1,6 @@
+import { inject as injectAdminLocale } from '@angular/core';
+import { AdminLocaleService } from '../i18n/admin-locale.service';
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
@@ -12,39 +15,39 @@ import { getEnvironmentByKey } from '../services/merchant-environment.service';
 @Component({
   selector: 'app-category-translations-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule],
   styleUrl: './merchant-catalog.component.css',
   template: `
     <div class="product-dialog-backdrop">
       <div class="product-dialog card" role="dialog" aria-modal="true" aria-labelledby="category-translations-title">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 id="category-translations-title" class="mb-0">Translations — {{ category.name }}</h5>
-          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="close()">Close</button>
+          <h5 id="category-translations-title" class="mb-0">{{ 'Translations — {0}' | adminTranslate: [(category.name)] }}</h5>
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="close()">{{ 'Close' | adminTranslate }}</button>
         </div>
         <div class="card-body">
-          <p class="form-text mt-0">Original name: <strong>{{ category.name }}</strong>. Edits made here are kept when the menu is re-translated.</p>
-          <div *ngIf="loading" class="text-muted">Loading…</div>
+          <p class="form-text mt-0">{{ 'Original name:' | adminTranslate }} <strong>{{ category.name }}</strong>{{ '. Edits made here are kept when the menu is re-translated.' | adminTranslate }}</p>
+          <div *ngIf="loading" class="text-muted">{{ 'Loading…' | adminTranslate }}</div>
           <div class="border rounded p-3 mb-3" *ngFor="let row of rows">
             <div class="d-flex align-items-center gap-2 mb-2">
-              <label class="form-label mb-0 fw-semibold" [for]="'cat-tr-' + row.language">{{ label(row.language) }}</label>
-              <span class="status-tag status-tag-neutral" *ngIf="!row.exists">Not translated</span>
-              <span class="status-tag status-tag-warning" *ngIf="row.stale">Needs re-translation</span>
-              <span class="status-tag status-tag-success" *ngIf="row.origin === 'MERCHANT'">Merchant</span>
-              <span class="status-tag status-tag-neutral" *ngIf="row.origin === 'MACHINE'">Machine</span>
+              <label class="form-label mb-0 fw-semibold" [for]="'cat-tr-' + row.language">{{ (label(row.language) | adminTranslate) }}</label>
+              <span class="status-tag status-tag-neutral" *ngIf="!row.exists">{{ 'Not translated' | adminTranslate }}</span>
+              <span class="status-tag status-tag-warning" *ngIf="row.stale">{{ 'Needs re-translation' | adminTranslate }}</span>
+              <span class="status-tag status-tag-success" *ngIf="row.origin === 'MERCHANT'">{{ 'Merchant' | adminTranslate }}</span>
+              <span class="status-tag status-tag-neutral" *ngIf="row.origin === 'MACHINE'">{{ 'Machine' | adminTranslate }}</span>
             </div>
             <input class="form-control form-control-sm" [id]="'cat-tr-' + row.language" maxlength="100" [(ngModel)]="row.name"
                    [dir]="direction(row.language)" />
-            <div class="alert alert-danger py-1 px-2 small mt-2 mb-0" *ngIf="row.error">{{ row.error }}</div>
+            <div class="alert alert-danger py-1 px-2 small mt-2 mb-0" *ngIf="row.error">{{ (row.error | adminTranslate) }}</div>
             <div class="d-flex gap-2 mt-2">
               <button class="btn btn-sm btn-outline-primary" type="button" [disabled]="row.saving" (click)="save(row)">
-                {{ row.saving ? 'Saving…' : 'Save' }}
+                {{ row.saving ? (('Saving…' | adminTranslate)) : (('Save' | adminTranslate)) }}
               </button>
-              <button class="btn btn-sm btn-outline-danger" type="button" *ngIf="row.exists" [disabled]="row.saving" (click)="delete(row)">Delete</button>
+              <button class="btn btn-sm btn-outline-danger" type="button" *ngIf="row.exists" [disabled]="row.saving" (click)="delete(row)">{{ 'Delete' | adminTranslate }}</button>
             </div>
           </div>
 
           <div class="dialog-actions">
-            <button class="btn btn-outline-secondary" type="button" (click)="close()">Done</button>
+            <button class="btn btn-outline-secondary" type="button" (click)="close()">{{ 'Done' | adminTranslate }}</button>
           </div>
         </div>
       </div>
@@ -52,6 +55,7 @@ import { getEnvironmentByKey } from '../services/merchant-environment.service';
   `
 })
 export class CategoryTranslationsDialogComponent implements OnInit {
+  readonly adminLocale = injectAdminLocale(AdminLocaleService);
   private readonly notifications = inject(NotificationService);
   @Input({ required: true }) merchantId = '';
   @Input({ required: true }) category!: ProductCategory;
@@ -86,7 +90,7 @@ export class CategoryTranslationsDialogComponent implements OnInit {
 
   label(code: string): string { return languageLabel(code, this.menuLanguages); }
 
-  direction(code: string): 'rtl' | 'ltr' { return isRightToLeft(code) ? 'rtl' : 'ltr'; }
+  direction(code: string): 'rtl' | 'ltr' { return isRightToLeft(code, this.menuLanguages) ? 'rtl' : 'ltr'; }
 
   save(row: TranslationRow): void {
     if (row.saving) return;
@@ -103,7 +107,7 @@ export class CategoryTranslationsDialogComponent implements OnInit {
 
   delete(row: TranslationRow): void {
     if (row.saving || !row.exists) return;
-    if (!confirm(`Delete the ${this.label(row.language)} translation?`)) return;
+    if (!confirm(this.adminLocale.text(`Delete the ${this.label(row.language)} translation?`))) return;
     row.saving = true;
     row.error = '';
     this.merchantApi.deleteCategoryTranslation(this.selectedEnvironment, this.apiVersion, this.merchantId, this.category.id, row.language).subscribe({

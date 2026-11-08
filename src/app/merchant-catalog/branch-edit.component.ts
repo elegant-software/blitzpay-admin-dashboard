@@ -1,3 +1,4 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
@@ -12,7 +13,7 @@ import { exceedsCapacity, seatedCapacity } from '../tables/floor-plan';
 @Component({
   selector: 'app-branch-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule, RouterModule],
   templateUrl: './branch-edit.component.html',
   styleUrl: './merchant-catalog.component.css'
 })

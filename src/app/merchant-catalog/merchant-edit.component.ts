@@ -1,3 +1,4 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
@@ -23,7 +24,7 @@ import { INTERNATIONAL_MENU, languageLabel } from '../menu-language/menu-languag
 @Component({
   selector: 'app-merchant-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule, RouterModule],
   templateUrl: './merchant-edit.component.html',
   styleUrl: './merchant-catalog.component.css'
 })

@@ -4,35 +4,35 @@
       <svg viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1ZM8 13h3v3H8z" /></svg>
     </div>
     <div class="appointment-hero-copy">
-      <span class="appointment-eyebrow">SCHEDULE &amp; SERVICE</span>
-      <h1>Appointments</h1>
-      <p>Manage bookings, customer details, and service schedules.</p>
+      <span class="appointment-eyebrow">{{ 'SCHEDULE & SERVICE' | adminTranslate }}</span>
+      <h1>{{ 'Appointments' | adminTranslate }}</h1>
+      <p>{{ 'Manage bookings, customer details, and service schedules.' | adminTranslate }}</p>
     </div>
     <button *ngIf="merchantId" class="btn btn-primary appointment-new-button" type="button" (click)="openCreateDialog()">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-      New appointment
+      {{ 'New appointment' | adminTranslate }}
     </button>
   </header>
 
-  <section class="appointment-filter-card" aria-label="Find appointments">
+  <section class="appointment-filter-card" [attr.aria-label]="'Find appointments' | adminTranslate">
     <div class="appointment-filter-heading">
       <div>
-        <h2>Find appointments</h2>
-        <p>Choose a merchant and date range to view its schedule.</p>
+        <h2>{{ 'Find appointments' | adminTranslate }}</h2>
+        <p>{{ 'Choose a merchant and date range to view its schedule.' | adminTranslate }}</p>
       </div>
-      <span class="appointment-filter-hint"><span aria-hidden="true"></span> Required fields marked *</span>
+      <span class="appointment-filter-hint"><span aria-hidden="true"></span> {{ 'Required fields marked *' | adminTranslate }}</span>
     </div>
 
-    <div class="alert alert-danger appointment-alert" *ngIf="errorMessage" role="alert">{{ errorMessage }}</div>
+    <div class="alert alert-danger appointment-alert" *ngIf="errorMessage" role="alert">{{ (errorMessage | adminTranslate) }}</div>
 
     <div class="appointment-filter-grid">
       <div class="appointment-filter-field appointment-merchant-field">
-        <label class="required" for="appt-merchant-search">Merchant</label>
+        <label class="required" for="appt-merchant-search">{{ 'Merchant' | adminTranslate }}</label>
         <ng-container *ngIf="!selectedMerchantItem">
           <app-merchant-search
             inputId="appt-merchant-search"
             variant="appointment"
-            placeholder="Search by name, code, or ID"
+            [placeholder]="'Search by name, code, or ID' | adminTranslate"
             [query]="merchantQuery"
             [results]="merchantResults"
             [searchDisabled]="!merchantQuery.trim()"
@@ -46,88 +46,88 @@
             <svg viewBox="0 0 24 24"><path d="M3 10h18M5 10v10h14V10M4 10l1.5-6h13L20 10M9 20v-6h6v6" /></svg>
           </span>
           <span class="appointment-selected-copy"><strong>{{ selectedMerchantItem.merchantName }}</strong><small>{{ selectedMerchantItem.merchantCode }}</small></span>
-          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="clearMerchantFilter()">Change</button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="clearMerchantFilter()">{{ 'Change' | adminTranslate }}</button>
         </div>
       </div>
 
       <div class="appointment-filter-field">
-        <label class="required" for="appt-from">From</label>
-        <input id="appt-from" class="form-control" type="date" [(ngModel)]="fromDate" />
+        <label class="required" for="appt-from">{{ 'From' | adminTranslate }}</label>
+        <input dir="ltr" id="appt-from" class="form-control" type="date" [(ngModel)]="fromDate" />
       </div>
       <div class="appointment-filter-field">
-        <label class="required" for="appt-to">To</label>
-        <input id="appt-to" class="form-control" type="date" [(ngModel)]="toDate" />
+        <label class="required" for="appt-to">{{ 'To' | adminTranslate }}</label>
+        <input dir="ltr" id="appt-to" class="form-control" type="date" [(ngModel)]="toDate" />
       </div>
       <div class="appointment-filter-field">
-        <label for="appt-employee-filter">Employee <span>(optional)</span></label>
+        <label for="appt-employee-filter">{{ 'Employee' | adminTranslate }} <span>{{ '(optional)' | adminTranslate }}</span></label>
         <input
           id="appt-employee-filter"
           class="form-control"
           type="text"
           [(ngModel)]="employeeIdFilter"
-          placeholder="Filter by employee ID"
+          [placeholder]="'Filter by employee ID' | adminTranslate"
         />
       </div>
       <div class="appointment-filter-actions">
         <button class="btn btn-primary" type="button" [disabled]="loading || !canSearch" (click)="loadAppointments()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm" role="status"></span>
-          {{ loading ? 'Loading…' : 'Show appointments' }}
+          {{ loading ? (('Loading…' | adminTranslate)) : (('Show appointments' | adminTranslate)) }}
         </button>
-        <button class="btn btn-outline-secondary" type="button" (click)="clearSearch()">Clear</button>
+        <button class="btn btn-outline-secondary" type="button" (click)="clearSearch()">{{ 'Clear' | adminTranslate }}</button>
       </div>
     </div>
   </section>
 
 <!-- Results -->
 <ng-container *ngIf="merchantId">
-  <section class="appointment-overview" aria-label="Appointment summary">
+  <section class="appointment-overview" [attr.aria-label]="'Appointment summary' | adminTranslate">
     <article class="appointment-stat-card appointment-stat-total">
       <span class="appointment-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1ZM8 13h3v3H8z" /></svg></span>
-      <span class="appointment-stat-copy"><small>In date range</small><strong>{{ appointments.length }}</strong></span>
+      <span class="appointment-stat-copy"><small>{{ 'In date range' | adminTranslate }}</small><strong>{{ appointments.length }}</strong></span>
     </article>
     <article class="appointment-stat-card appointment-stat-booked">
       <span class="appointment-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></span>
-      <span class="appointment-stat-copy"><small>Booked</small><strong>{{ bookedCount }}</strong></span>
+      <span class="appointment-stat-copy"><small>{{ 'Booked' | adminTranslate }}</small><strong>{{ bookedCount }}</strong></span>
     </article>
     <article class="appointment-stat-card appointment-stat-completed">
       <span class="appointment-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></svg></span>
-      <span class="appointment-stat-copy"><small>Completed</small><strong>{{ completedCount }}</strong></span>
+      <span class="appointment-stat-copy"><small>{{ 'Completed' | adminTranslate }}</small><strong>{{ completedCount }}</strong></span>
     </article>
     <article class="appointment-stat-card appointment-stat-cancelled">
       <span class="appointment-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></svg></span>
-      <span class="appointment-stat-copy"><small>Cancelled</small><strong>{{ cancelledCount }}</strong></span>
+      <span class="appointment-stat-copy"><small>{{ 'Cancelled' | adminTranslate }}</small><strong>{{ cancelledCount }}</strong></span>
     </article>
   </section>
 
   <section class="appointment-results-card" aria-labelledby="appointment-results-title">
     <header class="appointment-results-header">
       <div>
-        <span class="appointment-eyebrow">SCHEDULE OVERVIEW</span>
-        <h2 id="appointment-results-title">Appointments <span>{{ filteredAppointments.length }}</span></h2>
-        <p>{{ selectedMerchantItem?.merchantName || merchantId }}<span *ngIf="employeeIdFilter.trim()"> · Employee {{ employeeIdFilter }}</span></p>
+        <span class="appointment-eyebrow">{{ 'SCHEDULE OVERVIEW' | adminTranslate }}</span>
+        <h2 id="appointment-results-title">{{ 'Appointments' | adminTranslate }} <span>{{ filteredAppointments.length }}</span></h2>
+        <p>{{ selectedMerchantItem?.merchantName || merchantId }}<span *ngIf="employeeIdFilter.trim()"> {{ '· Employee {0}' | adminTranslate: [(employeeIdFilter)] }}</span></p>
       </div>
       <div class="appointment-status-filter">
-        <label for="appt-status-filter">Status</label>
+        <label for="appt-status-filter">{{ 'Status' | adminTranslate }}</label>
         <select id="appt-status-filter" class="form-select" [(ngModel)]="statusFilter" (ngModelChange)="onStatusFilterChange()">
-          <option value="">All statuses</option>
-          <option value="BOOKED">Booked</option>
-          <option value="COMPLETED">Completed</option>
-          <option value="CANCELLED">Cancelled</option>
+          <option value="">{{ 'All statuses' | adminTranslate }}</option>
+          <option value="BOOKED">{{ 'Booked' | adminTranslate }}</option>
+          <option value="COMPLETED">{{ 'Completed' | adminTranslate }}</option>
+          <option value="CANCELLED">{{ 'Cancelled' | adminTranslate }}</option>
         </select>
       </div>
     </header>
 
     <div class="appointment-results-body">
       <div class="appointment-loading" *ngIf="loading" role="status">
-        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Loading appointments…
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> {{ 'Loading appointments…' | adminTranslate }}
       </div>
 
       <div class="appointment-empty-state" *ngIf="!loading && filteredAppointments.length === 0">
         <span class="appointment-empty-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1Z" /></svg>
         </span>
-        <strong>No appointments found</strong>
-        <span>Try adjusting the date range or status filter.</span>
+        <strong>{{ 'No appointments found' | adminTranslate }}</strong>
+        <span>{{ 'Try adjusting the date range or status filter.' | adminTranslate }}</span>
       </div>
 
       <ng-container *ngIf="!loading && filteredAppointments.length > 0">
@@ -135,13 +135,13 @@
           <table class="table align-middle mb-0 appointment-table">
             <thead>
               <tr>
-                <th>Date &amp; Time</th>
-                <th>Contact</th>
-                <th>Product</th>
-                <th>Employee</th>
-                <th>Status</th>
-                <th>Contact Type</th>
-                <th class="action-cell">Actions</th>
+                <th>{{ 'Date & Time' | adminTranslate }}</th>
+                <th>{{ 'Contact' | adminTranslate }}</th>
+                <th>{{ 'Product' | adminTranslate }}</th>
+                <th>{{ 'Employee' | adminTranslate }}</th>
+                <th>{{ 'Status' | adminTranslate }}</th>
+                <th>{{ 'Contact Type' | adminTranslate }}</th>
+                <th class="action-cell">{{ 'Actions' | adminTranslate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -169,23 +169,23 @@
                 </td>
                 <td data-label="Employee">
                   <span class="appointment-employee" *ngIf="appt.employeeName">{{ appt.employeeName }}</span>
-                  <span *ngIf="!appt.employeeName" class="appointment-unassigned">Unassigned</span>
+                  <span *ngIf="!appt.employeeName" class="appointment-unassigned">{{ 'Unassigned' | adminTranslate }}</span>
                 </td>
                 <td data-label="Status">
                   <span class="status-tag" [ngClass]="appointmentStatusTone(appt.status)">
-                    {{ appointmentStatusLabel(appt.status) }}
+                    {{ (appointmentStatusLabel(appt.status) | adminTranslate) }}
                   </span>
                 </td>
                 <td data-label="Contact type">
-                  <span class="appointment-contact-type">{{ appt.contactType === 'SHOPPER_OWNED' ? 'Shopper' : 'Merchant' }}</span>
+                  <span class="appointment-contact-type">{{ appt.contactType === 'SHOPPER_OWNED' ? (('Shopper' | adminTranslate)) : (('Merchant' | adminTranslate)) }}</span>
                 </td>
                 <td class="action-cell" data-label="Actions">
                   <div class="appointment-row-actions">
                     <button
                       class="icon-action-btn"
                       type="button"
-                      title="View detail"
-                      aria-label="View appointment details"
+                      [attr.title]="'View detail' | adminTranslate"
+                      [attr.aria-label]="'View appointment details' | adminTranslate"
                       (click)="openDetailDialog(appt)"
                     >
                       <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
@@ -194,8 +194,8 @@
                       *ngIf="appt.status === 'BOOKED'"
                       class="icon-action-btn"
                       type="button"
-                      title="Mark complete"
-                      aria-label="Mark appointment complete"
+                      [attr.title]="'Mark complete' | adminTranslate"
+                      [attr.aria-label]="'Mark appointment complete' | adminTranslate"
                       (click)="completeAppointment(appt)"
                     >
                       <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
@@ -204,8 +204,8 @@
                       *ngIf="appt.status === 'BOOKED'"
                       class="icon-action-btn"
                       type="button"
-                      title="Reschedule"
-                      aria-label="Reschedule appointment"
+                      [attr.title]="'Reschedule' | adminTranslate"
+                      [attr.aria-label]="'Reschedule appointment' | adminTranslate"
                       (click)="openRescheduleDialog(appt)"
                     >
                       <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
@@ -213,8 +213,8 @@
                     <button
                       class="icon-action-btn"
                       type="button"
-                      title="Support override"
-                      aria-label="Apply support override"
+                      [attr.title]="'Support override' | adminTranslate"
+                      [attr.aria-label]="'Apply support override' | adminTranslate"
                       (click)="openOverrideDialog(appt)"
                     >
                       <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
@@ -223,8 +223,8 @@
                       *ngIf="appt.status === 'BOOKED'"
                       class="icon-action-btn icon-action-btn-danger"
                       type="button"
-                      title="Cancel appointment"
-                      aria-label="Cancel appointment"
+                      [attr.title]="'Cancel appointment' | adminTranslate"
+                      [attr.aria-label]="'Cancel appointment' | adminTranslate"
                       (click)="cancelAppointment(appt)"
                     >
                       <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
@@ -236,8 +236,8 @@
           </table>
         </div>
         <div class="appointment-table-footer">
-          <span>Showing {{ filteredAppointments.length }} of {{ appointments.length }} appointment{{ appointments.length === 1 ? '' : 's' }}</span>
-          <span *ngIf="statusFilter">Filtered by: {{ appointmentStatusLabel(statusFilter) }}</span>
+          <span>{{ 'Showing {0} of {1} appointment{2}' | adminTranslate: [(filteredAppointments.length), (appointments.length), (appointments.length === 1 ? ('') : ('s'))] }}</span>
+          <span *ngIf="statusFilter">{{ 'Filtered by: {0}' | adminTranslate: [((appointmentStatusLabel(statusFilter) | adminTranslate))] }}</span>
         </div>
       </ng-container>
     </div>
@@ -248,71 +248,71 @@
 <div class="product-dialog-backdrop" *ngIf="activeDialog === 'create'" (click)="closeDialog()">
   <div class="product-dialog card" (click)="$event.stopPropagation()">
     <div class="card-header d-flex justify-content-between align-items-center">
-      <span>New Appointment</span>
-      <button class="icon-action-btn" type="button" aria-label="Close dialog" (click)="closeDialog()">
+      <span>{{ 'New Appointment' | adminTranslate }}</span>
+      <button class="icon-action-btn" type="button" [attr.aria-label]="'Close dialog' | adminTranslate" (click)="closeDialog()">
         <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
     <div class="card-body">
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label required" for="create-branch">Branch</label>
+          <label class="form-label required" for="create-branch">{{ 'Branch' | adminTranslate }}</label>
           <select id="create-branch" class="form-select" [(ngModel)]="createForm.branchId">
-            <option value="">— select branch —</option>
+            <option value="">{{ '— select branch —' | adminTranslate }}</option>
             <option *ngFor="let b of branches" [value]="b.branchId ?? b.id">{{ b.name }}</option>
           </select>
-          <div class="form-text text-muted" *ngIf="branches.length === 0">No branches loaded. Enter a valid merchant ID and search first.</div>
+          <div class="form-text text-muted" *ngIf="branches.length === 0">{{ 'No branches loaded. Enter a valid merchant ID and search first.' | adminTranslate }}</div>
         </div>
         <div class="col-md-6">
-          <label class="form-label required" for="create-category">Product Category</label>
+          <label class="form-label required" for="create-category">{{ 'Product Category' | adminTranslate }}</label>
           <select id="create-category" class="form-select" [(ngModel)]="createForm.productCategoryId">
-            <option value="">— select category —</option>
+            <option value="">{{ '— select category —' | adminTranslate }}</option>
             <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
           </select>
         </div>
         <div class="col-md-6">
-          <label class="form-label required" for="create-product">Product (Service)</label>
-          <input
+          <label class="form-label required" for="create-product">{{ 'Product (Service)' | adminTranslate }}</label>
+          <input dir="auto"
             id="create-product"
             class="form-control"
             type="text"
             [(ngModel)]="createForm.productId"
-            placeholder="Product ID"
+            [placeholder]="'Product ID' | adminTranslate"
           />
         </div>
         <div class="col-md-6">
-          <label class="form-label required" for="create-start-time">Start Time</label>
-          <input id="create-start-time" class="form-control" type="datetime-local" [(ngModel)]="createForm.startTime" />
+          <label class="form-label required" for="create-start-time">{{ 'Start Time' | adminTranslate }}</label>
+          <input dir="ltr" id="create-start-time" class="form-control" type="datetime-local" [(ngModel)]="createForm.startTime" />
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="create-employee">Employee (optional)</label>
-          <input id="create-employee" class="form-control" type="text" [(ngModel)]="createForm.employeeId" placeholder="Employee ID" />
+          <label class="form-label" for="create-employee">{{ 'Employee (optional)' | adminTranslate }}</label>
+          <input dir="auto" id="create-employee" class="form-control" type="text" [(ngModel)]="createForm.employeeId" [placeholder]="'Employee ID' | adminTranslate" />
         </div>
         <div class="col-md-6">
-          <label class="form-label required" for="create-contact-name">Contact Name</label>
-          <input id="create-contact-name" class="form-control" type="text" [(ngModel)]="createForm.contactName" placeholder="Full name" />
+          <label class="form-label required" for="create-contact-name">{{ 'Contact Name' | adminTranslate }}</label>
+          <input dir="auto" id="create-contact-name" class="form-control" type="text" [(ngModel)]="createForm.contactName" [placeholder]="'Full name' | adminTranslate" />
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="create-contact-email">Contact Email</label>
-          <input id="create-contact-email" class="form-control" type="email" [(ngModel)]="createForm.contactEmail" placeholder="email@example.com" />
+          <label class="form-label" for="create-contact-email">{{ 'Contact Email' | adminTranslate }}</label>
+          <input dir="ltr" id="create-contact-email" class="form-control" type="email" [(ngModel)]="createForm.contactEmail" [placeholder]="'email@example.com' | adminTranslate" />
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="create-contact-phone">Contact Phone</label>
-          <input id="create-contact-phone" class="form-control" type="tel" [(ngModel)]="createForm.contactPhone" placeholder="+44 7700 900000" />
+          <label class="form-label" for="create-contact-phone">{{ 'Contact Phone' | adminTranslate }}</label>
+          <input dir="ltr" id="create-contact-phone" class="form-control" type="tel" [(ngModel)]="createForm.contactPhone" placeholder="+44 7700 900000" />
         </div>
         <div class="col-12">
-          <label class="form-label" for="create-note">Note</label>
-          <textarea id="create-note" class="form-control" rows="2" [(ngModel)]="createForm.note" placeholder="Optional note…"></textarea>
+          <label class="form-label" for="create-note">{{ 'Note' | adminTranslate }}</label>
+          <textarea dir="auto" id="create-note" class="form-control" rows="2" [(ngModel)]="createForm.note" [placeholder]="'Optional note…' | adminTranslate"></textarea>
         </div>
       </div>
 
-      <div class="alert alert-danger mt-3 mb-0" *ngIf="dialogError">{{ dialogError }}</div>
+      <div class="alert alert-danger mt-3 mb-0" *ngIf="dialogError">{{ (dialogError | adminTranslate) }}</div>
 
       <div class="d-flex gap-2 justify-content-end mt-3">
-        <button class="btn btn-light" type="button" (click)="closeDialog()">Cancel</button>
+        <button class="btn btn-light" type="button" (click)="closeDialog()">{{ 'Cancel' | adminTranslate }}</button>
         <button class="btn btn-primary" type="button" [disabled]="loading" (click)="createAppointment()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
-          Create Appointment
+          {{ 'Create Appointment' | adminTranslate }}
         </button>
       </div>
     </div>
@@ -323,65 +323,65 @@
 <div class="product-dialog-backdrop" *ngIf="activeDialog === 'detail' && selectedAppointment" (click)="closeDialog()">
   <div class="product-dialog card" (click)="$event.stopPropagation()">
     <div class="card-header d-flex justify-content-between align-items-center">
-      <span>Appointment Detail</span>
-      <button class="icon-action-btn" type="button" aria-label="Close dialog" (click)="closeDialog()">
+      <span>{{ 'Appointment Detail' | adminTranslate }}</span>
+      <button class="icon-action-btn" type="button" [attr.aria-label]="'Close dialog' | adminTranslate" (click)="closeDialog()">
         <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
     <div class="card-body">
       <div class="detail-grid mb-3">
         <div>
-          <div class="appt-meta-label">Service</div>
+          <div class="appt-meta-label">{{ 'Service' | adminTranslate }}</div>
           <div>{{ selectedAppointment.productName }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Status</div>
+          <div class="appt-meta-label">{{ 'Status' | adminTranslate }}</div>
           <div>
             <span class="status-tag" [ngClass]="appointmentStatusTone(selectedAppointment.status)">
-              {{ appointmentStatusLabel(selectedAppointment.status) }}
+              {{ (appointmentStatusLabel(selectedAppointment.status) | adminTranslate) }}
             </span>
           </div>
         </div>
         <div>
-          <div class="appt-meta-label">Start Time</div>
+          <div class="appt-meta-label">{{ 'Start Time' | adminTranslate }}</div>
           <div>{{ selectedAppointment.startTime | displayDate }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">End Time</div>
+          <div class="appt-meta-label">{{ 'End Time' | adminTranslate }}</div>
           <div>{{ selectedAppointment.endTime | displayDate }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Employee</div>
+          <div class="appt-meta-label">{{ 'Employee' | adminTranslate }}</div>
           <div>{{ selectedAppointment.employeeName || '—' }}</div>
         </div>
       </div>
 
-      <div class="detail-section-title">Contact Information</div>
+      <div class="detail-section-title">{{ 'Contact Information' | adminTranslate }}</div>
       <div class="detail-grid mb-3">
         <div>
-          <div class="appt-meta-label">Contact Type</div>
-          <div><span class="badge text-bg-light">{{ selectedAppointment.contactType }}</span></div>
+          <div class="appt-meta-label">{{ 'Contact Type' | adminTranslate }}</div>
+          <div><span class="badge text-bg-light">{{ (selectedAppointment.contactType | adminTranslate) }}</span></div>
         </div>
         <div>
-          <div class="appt-meta-label">Name</div>
+          <div class="appt-meta-label">{{ 'Name' | adminTranslate }}</div>
           <div>{{ selectedAppointment.contactName }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Email</div>
+          <div class="appt-meta-label">{{ 'Email' | adminTranslate }}</div>
           <div>{{ selectedAppointment.contactEmail || '—' }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Phone</div>
+          <div class="appt-meta-label">{{ 'Phone' | adminTranslate }}</div>
           <div>{{ selectedAppointment.contactPhone || '—' }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Note</div>
+          <div class="appt-meta-label">{{ 'Note' | adminTranslate }}</div>
           <div>{{ selectedAppointment.note || '—' }}</div>
         </div>
       </div>
 
       <div *ngIf="selectedAppointment.contactType === 'SHOPPER_OWNED'" class="dialog-note mb-3">
-        SHOPPER_OWNED contact details are read-only and cannot be edited.
+        {{ 'SHOPPER_OWNED contact details are read-only and cannot be edited.' | adminTranslate }}
       </div>
 
       <div class="d-flex gap-2 justify-content-end">
@@ -391,7 +391,7 @@
           type="button"
           (click)="openNoteEditDialog(selectedAppointment)"
         >
-          Edit Note / Contact
+          {{ 'Edit Note / Contact' | adminTranslate }}
         </button>
         <button
           *ngIf="selectedAppointment.status === 'BOOKED'"
@@ -399,7 +399,7 @@
           type="button"
           (click)="openOverrideDialog(selectedAppointment)"
         >
-          Support Override
+          {{ 'Support Override' | adminTranslate }}
         </button>
         <button
           *ngIf="selectedAppointment.status === 'BOOKED'"
@@ -407,9 +407,9 @@
           type="button"
           (click)="cancelAppointment(selectedAppointment); closeDialog()"
         >
-          Cancel
+          {{ 'Cancel' | adminTranslate }}
         </button>
-        <button class="btn btn-light btn-sm" type="button" (click)="closeDialog()">Close</button>
+        <button class="btn btn-light btn-sm" type="button" (click)="closeDialog()">{{ 'Close' | adminTranslate }}</button>
       </div>
     </div>
   </div>
@@ -419,57 +419,57 @@
 <div class="product-dialog-backdrop" *ngIf="activeDialog === 'reschedule' && selectedAppointment" (click)="closeDialog()">
   <div class="product-dialog card" (click)="$event.stopPropagation()">
     <div class="card-header d-flex justify-content-between align-items-center">
-      <span>Reschedule Appointment</span>
-      <button class="icon-action-btn" type="button" aria-label="Close dialog" (click)="closeDialog()">
+      <span>{{ 'Reschedule Appointment' | adminTranslate }}</span>
+      <button class="icon-action-btn" type="button" [attr.aria-label]="'Close dialog' | adminTranslate" (click)="closeDialog()">
         <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
     <div class="card-body">
       <div class="dialog-meta mb-3">
         <div>
-          <div class="appt-meta-label">Contact</div>
+          <div class="appt-meta-label">{{ 'Contact' | adminTranslate }}</div>
           <div>{{ selectedAppointment.contactName }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Current Start</div>
+          <div class="appt-meta-label">{{ 'Current Start' | adminTranslate }}</div>
           <div>{{ selectedAppointment.startTime | displayDate }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Product</div>
+          <div class="appt-meta-label">{{ 'Product' | adminTranslate }}</div>
           <div>{{ selectedAppointment.productName }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Employee</div>
+          <div class="appt-meta-label">{{ 'Employee' | adminTranslate }}</div>
           <div>{{ selectedAppointment.employeeName || '—' }}</div>
         </div>
       </div>
 
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label required" for="reschedule-product">New Product</label>
-          <input id="reschedule-product" class="form-control" type="text" [(ngModel)]="rescheduleForm.newProductId" placeholder="Product ID" />
+          <label class="form-label required" for="reschedule-product">{{ 'New Product' | adminTranslate }}</label>
+          <input dir="auto" id="reschedule-product" class="form-control" type="text" [(ngModel)]="rescheduleForm.newProductId" [placeholder]="'Product ID' | adminTranslate" />
         </div>
         <div class="col-md-6">
-          <label class="form-label required" for="reschedule-category">New Product Category</label>
-          <input id="reschedule-category" class="form-control" type="text" [(ngModel)]="rescheduleForm.newProductCategoryId" placeholder="Category ID" />
+          <label class="form-label required" for="reschedule-category">{{ 'New Product Category' | adminTranslate }}</label>
+          <input dir="auto" id="reschedule-category" class="form-control" type="text" [(ngModel)]="rescheduleForm.newProductCategoryId" [placeholder]="'Category ID' | adminTranslate" />
         </div>
         <div class="col-md-6">
-          <label class="form-label required" for="reschedule-start">New Start Time</label>
-          <input id="reschedule-start" class="form-control" type="datetime-local" [(ngModel)]="rescheduleForm.newStartTime" />
+          <label class="form-label required" for="reschedule-start">{{ 'New Start Time' | adminTranslate }}</label>
+          <input dir="ltr" id="reschedule-start" class="form-control" type="datetime-local" [(ngModel)]="rescheduleForm.newStartTime" />
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="reschedule-employee">New Employee (optional)</label>
-          <input id="reschedule-employee" class="form-control" type="text" [(ngModel)]="rescheduleForm.newEmployeeId" placeholder="Employee ID" />
+          <label class="form-label" for="reschedule-employee">{{ 'New Employee (optional)' | adminTranslate }}</label>
+          <input dir="auto" id="reschedule-employee" class="form-control" type="text" [(ngModel)]="rescheduleForm.newEmployeeId" [placeholder]="'Employee ID' | adminTranslate" />
         </div>
       </div>
 
-      <div class="alert alert-danger mt-3 mb-0" *ngIf="dialogError">{{ dialogError }}</div>
+      <div class="alert alert-danger mt-3 mb-0" *ngIf="dialogError">{{ (dialogError | adminTranslate) }}</div>
 
       <div class="d-flex gap-2 justify-content-end mt-3">
-        <button class="btn btn-light" type="button" (click)="closeDialog()">Cancel</button>
+        <button class="btn btn-light" type="button" (click)="closeDialog()">{{ 'Cancel' | adminTranslate }}</button>
         <button class="btn btn-primary" type="button" [disabled]="loading" (click)="rescheduleAppointment()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
-          Reschedule
+          {{ 'Reschedule' | adminTranslate }}
         </button>
       </div>
     </div>
@@ -480,61 +480,61 @@
 <div class="product-dialog-backdrop" *ngIf="activeDialog === 'editNote' && selectedAppointment" (click)="closeDialog()">
   <div class="product-dialog card" (click)="$event.stopPropagation()">
     <div class="card-header d-flex justify-content-between align-items-center">
-      <span>Edit Note / Contact</span>
-      <button class="icon-action-btn" type="button" aria-label="Close dialog" (click)="closeDialog()">
+      <span>{{ 'Edit Note / Contact' | adminTranslate }}</span>
+      <button class="icon-action-btn" type="button" [attr.aria-label]="'Close dialog' | adminTranslate" (click)="closeDialog()">
         <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
     <div class="card-body">
       <div class="dialog-meta mb-3">
         <div>
-          <div class="appt-meta-label">Contact</div>
+          <div class="appt-meta-label">{{ 'Contact' | adminTranslate }}</div>
           <div>{{ selectedAppointment.contactName }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Contact Type</div>
-          <div><span class="badge text-bg-light">{{ selectedAppointment.contactType }}</span></div>
+          <div class="appt-meta-label">{{ 'Contact Type' | adminTranslate }}</div>
+          <div><span class="badge text-bg-light">{{ (selectedAppointment.contactType | adminTranslate) }}</span></div>
         </div>
       </div>
 
       <div *ngIf="selectedAppointment.contactType === 'SHOPPER_OWNED'" class="dialog-note mb-3">
-        SHOPPER_OWNED contact details (name, email, phone) are read-only. Only the note field can be updated.
+        {{ 'SHOPPER_OWNED contact details (name, email, phone) are read-only. Only the note field can be updated.' | adminTranslate }}
       </div>
 
       <div class="row g-3">
         <div class="col-12">
-          <label class="form-label" for="note-edit-note">Note</label>
-          <textarea
+          <label class="form-label" for="note-edit-note">{{ 'Note' | adminTranslate }}</label>
+          <textarea dir="auto"
             id="note-edit-note"
             class="form-control"
             rows="3"
             [(ngModel)]="noteEditForm.note"
-            placeholder="Optional note for this appointment…"
+            [placeholder]="'Optional note for this appointment…' | adminTranslate"
           ></textarea>
         </div>
         <ng-container *ngIf="selectedAppointment.contactType === 'MERCHANT_CAPTURED'">
           <div class="col-md-6">
-            <label class="form-label required" for="note-edit-name">Contact Name</label>
-            <input id="note-edit-name" class="form-control" type="text" [(ngModel)]="noteEditForm.contactName" placeholder="Full name" />
+            <label class="form-label required" for="note-edit-name">{{ 'Contact Name' | adminTranslate }}</label>
+            <input dir="auto" id="note-edit-name" class="form-control" type="text" [(ngModel)]="noteEditForm.contactName" [placeholder]="'Full name' | adminTranslate" />
           </div>
           <div class="col-md-6">
-            <label class="form-label" for="note-edit-email">Contact Email</label>
-            <input id="note-edit-email" class="form-control" type="email" [(ngModel)]="noteEditForm.contactEmail" placeholder="email@example.com" />
+            <label class="form-label" for="note-edit-email">{{ 'Contact Email' | adminTranslate }}</label>
+            <input dir="ltr" id="note-edit-email" class="form-control" type="email" [(ngModel)]="noteEditForm.contactEmail" [placeholder]="'email@example.com' | adminTranslate" />
           </div>
           <div class="col-md-6">
-            <label class="form-label" for="note-edit-phone">Contact Phone</label>
-            <input id="note-edit-phone" class="form-control" type="tel" [(ngModel)]="noteEditForm.contactPhone" placeholder="+44 7700 900000" />
+            <label class="form-label" for="note-edit-phone">{{ 'Contact Phone' | adminTranslate }}</label>
+            <input dir="ltr" id="note-edit-phone" class="form-control" type="tel" [(ngModel)]="noteEditForm.contactPhone" placeholder="+44 7700 900000" />
           </div>
         </ng-container>
       </div>
 
-      <div class="alert alert-danger mt-3 mb-0" *ngIf="dialogError">{{ dialogError }}</div>
+      <div class="alert alert-danger mt-3 mb-0" *ngIf="dialogError">{{ (dialogError | adminTranslate) }}</div>
 
       <div class="d-flex gap-2 justify-content-end mt-3">
-        <button class="btn btn-light" type="button" (click)="closeDialog()">Cancel</button>
+        <button class="btn btn-light" type="button" (click)="closeDialog()">{{ 'Cancel' | adminTranslate }}</button>
         <button class="btn btn-primary" type="button" [disabled]="loading" (click)="saveNoteEdit()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
-          Save Changes
+          {{ 'Save Changes' | adminTranslate }}
         </button>
       </div>
     </div>
@@ -545,34 +545,34 @@
 <div class="product-dialog-backdrop" *ngIf="activeDialog === 'override' && selectedAppointment" (click)="closeDialog()">
   <div class="product-dialog card" (click)="$event.stopPropagation()">
     <div class="card-header d-flex justify-content-between align-items-center">
-      <span>Support Override</span>
-      <button class="icon-action-btn" type="button" aria-label="Close dialog" (click)="closeDialog()">
+      <span>{{ 'Support Override' | adminTranslate }}</span>
+      <button class="icon-action-btn" type="button" [attr.aria-label]="'Close dialog' | adminTranslate" (click)="closeDialog()">
         <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
     <div class="card-body">
       <div class="dialog-note mb-3">
-        <strong>Support use only.</strong> This override bypasses normal merchant constraints. A reason is required and will be recorded.
+        <strong>{{ 'Support use only.' | adminTranslate }}</strong> {{ 'This override bypasses normal merchant constraints. A reason is required and will be recorded.' | adminTranslate }}
       </div>
 
       <div class="dialog-meta mb-3">
         <div>
-          <div class="appt-meta-label">Contact</div>
+          <div class="appt-meta-label">{{ 'Contact' | adminTranslate }}</div>
           <div>{{ selectedAppointment.contactName }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Service</div>
+          <div class="appt-meta-label">{{ 'Service' | adminTranslate }}</div>
           <div>{{ selectedAppointment.productName }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Current Start</div>
+          <div class="appt-meta-label">{{ 'Current Start' | adminTranslate }}</div>
           <div>{{ selectedAppointment.startTime | displayDate }}</div>
         </div>
         <div>
-          <div class="appt-meta-label">Status</div>
+          <div class="appt-meta-label">{{ 'Status' | adminTranslate }}</div>
           <div>
             <span class="status-tag" [ngClass]="appointmentStatusTone(selectedAppointment.status)">
-              {{ appointmentStatusLabel(selectedAppointment.status) }}
+              {{ (appointmentStatusLabel(selectedAppointment.status) | adminTranslate) }}
             </span>
           </div>
         </div>
@@ -580,39 +580,39 @@
 
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label required" for="override-product">New Product</label>
-          <input id="override-product" class="form-control" type="text" [(ngModel)]="overrideForm.newProductId" placeholder="Product ID" />
+          <label class="form-label required" for="override-product">{{ 'New Product' | adminTranslate }}</label>
+          <input dir="auto" id="override-product" class="form-control" type="text" [(ngModel)]="overrideForm.newProductId" [placeholder]="'Product ID' | adminTranslate" />
         </div>
         <div class="col-md-6">
-          <label class="form-label required" for="override-category">New Product Category</label>
-          <input id="override-category" class="form-control" type="text" [(ngModel)]="overrideForm.newProductCategoryId" placeholder="Category ID" />
+          <label class="form-label required" for="override-category">{{ 'New Product Category' | adminTranslate }}</label>
+          <input dir="auto" id="override-category" class="form-control" type="text" [(ngModel)]="overrideForm.newProductCategoryId" [placeholder]="'Category ID' | adminTranslate" />
         </div>
         <div class="col-md-6">
-          <label class="form-label required" for="override-start">New Start Time</label>
-          <input id="override-start" class="form-control" type="datetime-local" [(ngModel)]="overrideForm.newStartTime" />
+          <label class="form-label required" for="override-start">{{ 'New Start Time' | adminTranslate }}</label>
+          <input dir="ltr" id="override-start" class="form-control" type="datetime-local" [(ngModel)]="overrideForm.newStartTime" />
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="override-employee">New Employee (optional)</label>
-          <input id="override-employee" class="form-control" type="text" [(ngModel)]="overrideForm.newEmployeeId" placeholder="Employee ID" />
+          <label class="form-label" for="override-employee">{{ 'New Employee (optional)' | adminTranslate }}</label>
+          <input dir="auto" id="override-employee" class="form-control" type="text" [(ngModel)]="overrideForm.newEmployeeId" [placeholder]="'Employee ID' | adminTranslate" />
         </div>
         <div class="col-12">
-          <label class="form-label required" for="override-reason">Override Reason</label>
-          <textarea
+          <label class="form-label required" for="override-reason">{{ 'Override Reason' | adminTranslate }}</label>
+          <textarea dir="auto"
             id="override-reason"
             class="form-control"
             rows="3"
             [(ngModel)]="overrideForm.reason"
-            placeholder="Describe the reason for this support override…"
+            [placeholder]="'Describe the reason for this support override…' | adminTranslate"
           ></textarea>
         </div>
       </div>
-      <div class="alert alert-danger mt-3 mb-0" *ngIf="dialogError">{{ dialogError }}</div>
+      <div class="alert alert-danger mt-3 mb-0" *ngIf="dialogError">{{ (dialogError | adminTranslate) }}</div>
 
       <div class="d-flex gap-2 justify-content-end mt-3">
-        <button class="btn btn-light" type="button" (click)="closeDialog()">Cancel</button>
+        <button class="btn btn-light" type="button" (click)="closeDialog()">{{ 'Cancel' | adminTranslate }}</button>
         <button class="btn btn-warning" type="button" [disabled]="loading" (click)="overrideAppointment()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
-          Apply Override
+          {{ 'Apply Override' | adminTranslate }}
         </button>
       </div>
     </div>

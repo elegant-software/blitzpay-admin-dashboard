@@ -338,7 +338,7 @@
   display: inline-block;
   width: 0.35rem;
   height: 0.35rem;
-  margin-right: 0.3rem;
+  margin-inline-end: 0.3rem;
   border-radius: 50%;
   background: #d34b5b;
   vertical-align: 0.08rem;

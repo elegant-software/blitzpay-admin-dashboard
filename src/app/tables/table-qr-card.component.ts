@@ -1,3 +1,4 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges } from '@angular/core';
 import * as QRCode from 'qrcode';
@@ -6,14 +7,14 @@ import * as QRCode from 'qrcode';
 @Component({
   selector: 'app-table-qr-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [AdminTranslatePipe, CommonModule],
   template: `
     <figure class="table-qr-card">
-      <img *ngIf="imageUrl" [src]="imageUrl" [alt]="'QR code for ' + title" />
+      <img *ngIf="imageUrl" [src]="imageUrl" [alt]="('QR code for {0}' | adminTranslate: [(title)])" />
       <figcaption>
         <strong>{{ title }}</strong>
         <span *ngIf="subtitle">{{ subtitle }}</span>
-        <span *ngIf="code" class="table-qr-code">Table code <code>{{ code }}</code></span>
+        <span *ngIf="code" class="table-qr-code">{{ 'Table code' | adminTranslate }} <code>{{ code }}</code></span>
       </figcaption>
     </figure>
   `

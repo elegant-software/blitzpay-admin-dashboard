@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { AdminLanguageService } from '../i18n/admin-language.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { MerchantApiService } from '../services/merchant-api.service';
@@ -10,47 +12,47 @@ import { apiErrorMessage } from '../notifications/notification.service';
 @Component({
   selector: 'app-stripe-connect-return',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [AdminTranslatePipe, CommonModule, RouterModule],
   template: `
     <div class="container py-5" style="max-width: 540px">
       <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <span>Payment Account — Stripe Connect</span>
+          <span>{{ 'Payment Account — Stripe Connect' | adminTranslate }}</span>
           <ng-container [ngSwitch]="status">
-            <span *ngSwitchCase="'connected'" class="status-tag status-tag-success">Connected</span>
-            <span *ngSwitchCase="'verifying'" class="status-tag status-tag-warning">Verifying</span>
-            <span *ngSwitchCase="'not_connected'" class="status-tag status-tag-neutral">Not Connected</span>
-            <span *ngSwitchCase="'error'" class="status-tag status-tag-danger">Error</span>
-            <span *ngSwitchCase="'loading'" class="status-tag status-tag-neutral">Loading…</span>
+            <span *ngSwitchCase="'connected'" class="status-tag status-tag-success">{{ 'Connected' | adminTranslate }}</span>
+            <span *ngSwitchCase="'verifying'" class="status-tag status-tag-warning">{{ 'Verifying' | adminTranslate }}</span>
+            <span *ngSwitchCase="'not_connected'" class="status-tag status-tag-neutral">{{ 'Not Connected' | adminTranslate }}</span>
+            <span *ngSwitchCase="'error'" class="status-tag status-tag-danger">{{ 'Error' | adminTranslate }}</span>
+            <span *ngSwitchCase="'loading'" class="status-tag status-tag-neutral">{{ 'Loading…' | adminTranslate }}</span>
           </ng-container>
         </div>
         <div class="card-body d-flex flex-column gap-3">
 
           <p class="mb-0" *ngIf="redirecting">
             <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-            Refreshing onboarding link…
+            {{ 'Refreshing onboarding link…' | adminTranslate }}
           </p>
 
           <ng-container *ngIf="!redirecting">
             <p class="mb-0 text-muted small" *ngIf="status === 'loading'">
               <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-              Loading payment account status…
+              {{ 'Loading payment account status…' | adminTranslate }}
             </p>
             <p class="mb-0 text-muted small" *ngIf="status === 'connected'">
-              The Stripe Express account is active and charges are enabled. You can close this tab and return to the admin dashboard.
+              {{ 'The Stripe Express account is active and charges are enabled. You can close this tab and return to the admin dashboard.' | adminTranslate }}
             </p>
             <p class="mb-0 text-muted small" *ngIf="status === 'verifying'">
-              Stripe account details have been submitted and are under review. No further action is needed right now.
+              {{ 'Stripe account details have been submitted and are under review. No further action is needed right now.' | adminTranslate }}
             </p>
             <p class="mb-0 text-muted small" *ngIf="status === 'not_connected'">
-              The Stripe onboarding was not completed. Return to the merchant catalog to try again.
+              {{ 'The Stripe onboarding was not completed. Return to the merchant catalog to try again.' | adminTranslate }}
             </p>
             <p class="mb-0 text-muted small text-danger" *ngIf="status === 'error'">
-              Could not load payment account status. Please return to the merchant catalog and try again.
+              {{ 'Could not load payment account status. Please return to the merchant catalog and try again.' | adminTranslate }}
             </p>
-            <div *ngIf="errorMessage" class="alert alert-danger py-1 px-2 mb-0 small">{{ errorMessage }}</div>
+            <div *ngIf="errorMessage" class="alert alert-danger py-1 px-2 mb-0 small">{{ (errorMessage | adminTranslate) }}</div>
             <div *ngIf="status !== 'loading'">
-              <a routerLink="/" class="btn btn-outline-secondary btn-sm">Back to Merchant Catalog</a>
+              <a routerLink="/" class="btn btn-outline-secondary btn-sm">{{ 'Back to Merchant Catalog' | adminTranslate }}</a>
             </div>
           </ng-container>
 
@@ -59,7 +61,8 @@ import { apiErrorMessage } from '../notifications/notification.service';
     </div>
   `
 })
-export class StripeConnectReturnComponent implements OnInit {
+export class StripeConnectReturnComponent implements OnInit, OnDestroy {
+  private readonly language = inject(AdminLanguageService);
   status: PaymentAccountStatus = 'loading';
   redirecting = false;
   errorMessage: string | null = null;
@@ -74,6 +77,7 @@ export class StripeConnectReturnComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.language.load();
     const params = this.route.snapshot.queryParamMap;
     this.merchantId = params.get('merchantId') ?? '';
     this.envKey = (params.get('env') ?? 'aws-staging') as EnvironmentKey;
@@ -92,6 +96,8 @@ export class StripeConnectReturnComponent implements OnInit {
       this.loadStatus();
     }
   }
+
+  ngOnDestroy(): void { this.language.leaveDashboard(); }
 
   private loadStatus(): void {
     const env = getEnvironmentByKey(this.envKey);

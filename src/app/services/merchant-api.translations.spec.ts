@@ -34,6 +34,22 @@ describe('MerchantApiService International Menu API', () => {
     expect(result).toEqual(catalogue);
   });
 
+  it('shares one catalogue request across dashboard and menu consumers and filters capabilities', () => {
+    const entries = [
+      { code: 'de', displayName: 'German', nativeName: 'Deutsch', direction: 'ltr', flagCode: 'DE', adminUiEnabled: true, menuEnabled: true },
+      { code: 'ar', displayName: 'Arabic', nativeName: 'العربية', direction: 'rtl', flagCode: 'SA', adminUiEnabled: true, menuEnabled: false }
+    ];
+    let menus: MenuLanguage[] = [];
+    service.getLanguages(env, 'v1').subscribe(languages => expect(languages.length).toBe(2));
+    service.getMenuLanguages(env, 'v1').subscribe(languages => menus = languages);
+    http.expectOne('http://localhost:8080/v1/merchants/menu-languages').flush(entries);
+    expect(menus.map(language => language.code)).toEqual(['de']);
+    service.getMenuLanguages(env, 'v1').subscribe();
+    http.expectNone('http://localhost:8080/v1/merchants/menu-languages');
+    service.getLanguages({ ...env, baseUrl: 'http://other.test' }, 'v1').subscribe();
+    http.expectOne('http://other.test/v1/merchants/menu-languages').flush([]);
+  });
+
   it('pins product list reads to an explicit catalog language', () => {
     service.getProducts(env, 'v1', 'm-1', 'b-1', true, 'en').subscribe();
 

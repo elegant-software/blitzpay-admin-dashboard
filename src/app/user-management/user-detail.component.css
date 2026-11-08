@@ -563,11 +563,11 @@
   }
 
   .user-detail-status {
-    margin-left: 3.5rem;
+    margin-inline-start: 3.5rem;
   }
 
   .user-add-assignment {
-    margin-left: auto;
+    margin-inline-start: auto;
   }
 
   .user-assignment-list {
@@ -600,7 +600,7 @@
   }
 
   .user-detail-status {
-    margin-left: 0;
+    margin-inline-start: 0;
   }
 
   .user-add-assignment {

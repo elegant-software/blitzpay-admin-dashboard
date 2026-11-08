@@ -1,3 +1,4 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
@@ -18,7 +19,7 @@ import { MerchantSearchComponent } from '../shared/merchant-search.component';
 @Component({
   selector: 'app-appointment-policy',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
   templateUrl: './appointment-policy.component.html',
   styleUrl: './appointment-policy.component.css'
 })

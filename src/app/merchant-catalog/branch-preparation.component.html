@@ -1,29 +1,29 @@
-<button type="button" class="btn btn-sm btn-outline-primary" (click)="open()">Manage stations</button>
+<button type="button" class="btn btn-sm btn-outline-primary" (click)="open()">{{ 'Manage stations' | adminTranslate }}</button>
 <div *ngIf="visible" class="product-dialog-backdrop">
   <section class="product-dialog card" role="dialog" aria-modal="true" aria-labelledby="preparation-title">
     <div class="card-header d-flex justify-content-between align-items-center">
-      <h2 id="preparation-title" class="h5 mb-0">Preparation stations</h2>
-      <button type="button" class="btn-close" aria-label="Close preparation stations" [disabled]="saving" (click)="close()"></button>
+      <h2 id="preparation-title" class="h5 mb-0">{{ 'Preparation stations' | adminTranslate }}</h2>
+      <button type="button" class="btn-close" [attr.aria-label]="'Close preparation stations' | adminTranslate" [disabled]="saving" (click)="close()"></button>
     </div>
     <div class="card-body">
-      <p *ngIf="loading" role="status">Loading preparation stations...</p>
+      <p *ngIf="loading" role="status">{{ 'Loading preparation stations...' | adminTranslate }}</p>
       <fieldset *ngIf="loaded" [disabled]="saving" class="border-0 p-0">
-        <legend class="visually-hidden">Stations</legend>
-        <p class="small text-body-secondary">Each kitchen display selects one station, e.g. Food Kitchen or Drinks Bar. Use a unique name for each preparation area.</p>
+        <legend class="visually-hidden">{{ 'Stations' | adminTranslate }}</legend>
+        <p class="small text-body-secondary">{{ 'Each kitchen display selects one station, e.g. Food Kitchen or Drinks Bar. Use a unique name for each preparation area.' | adminTranslate }}</p>
         <div *ngFor="let station of configuration.stations; let i = index" class="d-flex gap-2 mb-2">
-          <label class="visually-hidden" [for]="'station-' + i">Station name {{ i + 1 }}</label>
-          <input class="form-control" [id]="'station-' + i" [(ngModel)]="station.name" maxlength="100" required />
-          <button type="button" class="btn btn-outline-danger" (click)="removeStation(station.id)" [attr.aria-label]="'Remove station ' + (station.name || (i + 1))">Remove</button>
+          <label class="visually-hidden" [for]="'station-' + i">{{ 'Station name {0}' | adminTranslate: [(i + 1)] }}</label>
+          <input dir="auto" class="form-control" [id]="'station-' + i" [(ngModel)]="station.name" maxlength="100" required />
+          <button type="button" class="btn btn-outline-danger" (click)="removeStation(station.id)" [attr.aria-label]="('Remove station {0}' | adminTranslate: [((station.name || (i + 1)))])">{{ 'Remove' | adminTranslate }}</button>
         </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="addStation()" [disabled]="configuration.stations.length >= 50">Add station</button>
-        <p *ngIf="!valid" class="text-danger mt-2">Enter a unique name for every station.</p>
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="addStation()" [disabled]="configuration.stations.length >= 50">{{ 'Add station' | adminTranslate }}</button>
+        <p *ngIf="!valid" class="text-danger mt-2">{{ 'Enter a unique name for every station.' | adminTranslate }}</p>
       </fieldset>
     </div>
     <div class="card-footer">
-      <div *ngIf="error" class="alert alert-danger" role="alert">{{ error }}</div>
+      <div *ngIf="error" class="alert alert-danger" role="alert">{{ (error | adminTranslate) }}</div>
       <div class="d-flex gap-2 justify-content-end">
-      <button type="button" class="btn btn-outline-secondary" [disabled]="saving" (click)="close()">Cancel</button>
-      <button type="button" class="btn btn-primary" [disabled]="!loaded || saving || !valid" (click)="save()">{{ saving ? 'Saving...' : 'Save stations' }}</button>
+      <button type="button" class="btn btn-outline-secondary" [disabled]="saving" (click)="close()">{{ 'Cancel' | adminTranslate }}</button>
+      <button type="button" class="btn btn-primary" [disabled]="!loaded || saving || !valid" (click)="save()">{{ saving ? (('Saving...' | adminTranslate)) : (('Save stations' | adminTranslate)) }}</button>
       </div>
     </div>
   </section>

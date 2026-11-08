@@ -631,6 +631,15 @@ export interface MenuLanguage {
   code: string;
   displayName: string;
   nativeName: string;
+  direction?: 'ltr' | 'rtl';
+}
+
+/** Backend-owned definitions shared by menu settings and dashboard preferences. */
+export interface LanguageDefinition extends MenuLanguage {
+  flagCode: string | null;
+  direction: 'ltr' | 'rtl';
+  adminUiEnabled: boolean;
+  menuEnabled: boolean;
 }
 
 export type TranslationOrigin = 'MACHINE' | 'MERCHANT';

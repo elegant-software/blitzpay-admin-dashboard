@@ -1,3 +1,6 @@
+import { inject as injectAdminLocale } from '@angular/core';
+import { AdminLocaleService } from '../i18n/admin-locale.service';
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
@@ -33,11 +36,12 @@ type AppointmentDialog = 'create' | 'detail' | 'reschedule' | 'override' | 'edit
 @Component({
   selector: 'app-appointment-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
   templateUrl: './appointment-management.component.html',
   styleUrl: './appointment-management.component.css'
 })
 export class AppointmentManagementComponent implements OnInit {
+  readonly adminLocale = injectAdminLocale(AdminLocaleService);
   private readonly notifications = inject(NotificationService);
   selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   apiVersion = 'v1';
@@ -409,7 +413,7 @@ export class AppointmentManagementComponent implements OnInit {
   }
 
   cancelAppointment(appointment: AppointmentResponse): void {
-    if (!confirm(`Cancel appointment for ${appointment.contactName} on ${new Date(appointment.startTime).toLocaleString()}?`)) {
+    if (!confirm(this.adminLocale.text(`Cancel appointment for ${appointment.contactName} on ${new DisplayDatePipe().transform(appointment.startTime)}?`))) {
       return;
     }
 
@@ -429,7 +433,7 @@ export class AppointmentManagementComponent implements OnInit {
   }
 
   completeAppointment(appointment: AppointmentResponse): void {
-    if (!confirm(`Mark appointment for ${appointment.contactName} as complete?`)) {
+    if (!confirm(this.adminLocale.text(`Mark appointment for ${appointment.contactName} as complete?`))) {
       return;
     }
 

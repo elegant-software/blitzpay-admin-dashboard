@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { AdminLocaleService } from '../i18n/admin-locale.service';
 import {
   ActivatedRoute,
   Router,
@@ -98,7 +99,7 @@ describe("PrintedCatalogComponent", () => {
       of([
         { code: "de", displayName: "German", nativeName: "Deutsch" },
         { code: "en", displayName: "English", nativeName: "English" },
-        { code: "ar", displayName: "Arabic", nativeName: "العربية" },
+        { code: "ar", displayName: "Arabic", nativeName: "العربية", direction: 'rtl' },
       ]),
     );
     merchantApi.getBranch.and.returnValue(of(branch));
@@ -208,7 +209,7 @@ describe("PrintedCatalogComponent", () => {
 
   it("shows an empty state and disables printing when the branch has no active products", async () => {
     await setup("full", [product({ name: "Mocha", active: false })]);
-    expect(text()).toContain("keine aktiven Produkte");
+    expect(text()).toContain("This branch has no active products to print.");
     expect(
       (query("button.pc-print")[0] as HTMLButtonElement).disabled,
     ).toBeTrue();
@@ -257,18 +258,41 @@ describe("PrintedCatalogComponent", () => {
       product({ name: "Water", language: "en" }),
     ];
 
-    it("defaults to the Original Menu Language", async () => {
+    it("defaults to the supported dashboard language", async () => {
       await setup("full", products, international);
-      expect(component.catalogLanguage).toBe("de");
+      expect(component.catalogLanguage).toBe("en");
       expect(merchantApi.getProducts).toHaveBeenCalledWith(
         jasmine.anything(),
         "v1",
         "m-1",
         "b-1",
         false,
-        "de",
+        "en",
       );
-      expect(text()).toContain("Scannen & bestellen");
+      expect(text()).toContain("Scan & order");
+    });
+
+    it('follows UI language changes, with original-language fallback', async () => {
+      await setup('full', products, international, 'de');
+      spyOn(TestBed.inject(Router), 'navigate');
+      const locale = TestBed.inject(AdminLocaleService);
+      locale.use('ar');
+      fixture.detectChanges();
+      expect(component.catalogLanguage).toBe('ar');
+      expect(component.textDirection).toBe('rtl');
+      expect(merchantApi.getProducts.calls.mostRecent().args[5]).toBe('ar');
+      locale.use('fr');
+      fixture.detectChanges();
+      expect(merchantApi.getProducts.calls.mostRecent().args[5]).toBe('de');
+    });
+
+    it('keeps single-language products unchanged', async () => {
+      await setup('full', products, { ...merchant, originalMenuLanguage: 'de', supportedMenuLanguages: [] });
+      merchantApi.getProducts.calls.reset();
+      TestBed.inject(AdminLocaleService).use('ar');
+      fixture.detectChanges();
+      expect(component.catalogLanguage).toBe('de');
+      expect(merchantApi.getProducts).not.toHaveBeenCalled();
     });
 
     it("renders the chosen language with its printed labels", async () => {
@@ -340,7 +364,14 @@ describe("PrintedCatalogComponent", () => {
   it("waits for images before opening the browser print dialog", async () => {
     await setup("full");
     const printSpy = spyOn(window, "print");
-    await component.print();
+    const images = Array.from(query("img")) as HTMLImageElement[];
+    expect(images.length).toBeGreaterThan(0);
+    // Drive completion ourselves: the fixture URLs must not control unit-test timing.
+    images.forEach((image) => spyOnProperty(image, "complete", "get").and.returnValue(false));
+    const printing = component.print();
+    expect(printSpy).not.toHaveBeenCalled();
+    images.forEach((image, index) => image.dispatchEvent(new Event(index === 0 ? "error" : "load")));
+    await printing;
     expect(printSpy).toHaveBeenCalled();
   });
 });

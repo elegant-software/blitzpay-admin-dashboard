@@ -1,4 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AuthShellComponent } from './auth-shell.component';
@@ -12,16 +13,74 @@ describe('AuthShellComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [AuthShellComponent],
-      providers: [provideHttpClient(), provideRouter([])]
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])]
     }).compileComponents();
 
     fixture = TestBed.createComponent(AuthShellComponent);
     fixture.detectChanges();
+    TestBed.inject(HttpTestingController).expectOne(r => r.url.endsWith('/merchants/menu-languages')).flush([
+      { code: 'en', displayName: 'English', nativeName: 'English', flagCode: 'GB', direction: 'ltr', adminUiEnabled: true, menuEnabled: true },
+      { code: 'ar', displayName: 'Arabic', nativeName: 'العربية', flagCode: 'SA', direction: 'rtl', adminUiEnabled: true, menuEnabled: true }
+    ]);
+    fixture.detectChanges();
   });
 
   afterEach(() => {
+    TestBed.inject(HttpTestingController).verify();
+    localStorage.removeItem('blitzpay.admin-language');
     localStorage.removeItem('zackpay-admin-theme');
     document.documentElement.removeAttribute('data-coreui-theme');
+  });
+
+  it('offers the selector in the top header and translates navigation into Arabic', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector<HTMLButtonElement>('header app-language-selector button')!.click();
+    fixture.detectChanges();
+    element.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]')[1].click();
+    fixture.detectChanges();
+    expect(element.querySelector('.nav-label')?.textContent).toBe('لوحة التحكم');
+    expect(document.documentElement.dir).toBe('rtl');
+    expect(document.documentElement.lang).toBe('ar');
+    fixture.destroy();
+    expect(document.documentElement.dir).toBe('ltr');
+    expect(document.documentElement.lang).toBe('en');
+  });
+
+  it('keeps RTL navigation visible on the right across mobile and desktop widths', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const frame = document.createElement('iframe');
+    frame.style.width = '390px';
+    document.body.appendChild(frame);
+    try {
+      const doc = frame.contentDocument!;
+      doc.documentElement.dir = 'rtl';
+      doc.documentElement.lang = 'ar';
+      const style = doc.createElement('style');
+      style.textContent = Array.from(document.styleSheets)
+        .flatMap(sheet => Array.from(sheet.cssRules).map(rule => rule.cssText)).join('\n') +
+        '\n* { transition: none !important; }';
+      doc.head.appendChild(style);
+      doc.body.appendChild(element.querySelector('.app-layout')!.cloneNode(true));
+      const sidebar = doc.querySelector<HTMLElement>('#sidebar')!;
+      const main = doc.querySelector<HTMLElement>('.app-main')!;
+      // Fixed-position elements use the viewport, including the scrollbar gutter.
+      const width = () => frame.contentWindow!.innerWidth;
+      expect(sidebar.getBoundingClientRect().left).toBeGreaterThanOrEqual(width());
+      sidebar.classList.add('sidebar-narrow');
+      expect(sidebar.getBoundingClientRect().right).toBe(width());
+      expect(sidebar.getBoundingClientRect().left).toBeGreaterThanOrEqual(0);
+      expect(frame.contentWindow!.getComputedStyle(doc.body).fontFamily).toContain('Cairo');
+      frame.style.width = '1200px';
+      sidebar.classList.remove('sidebar-narrow');
+      expect(sidebar.getBoundingClientRect().right).toBe(width());
+      expect(frame.contentWindow!.getComputedStyle(main).marginRight).toBe('256px');
+      sidebar.classList.add('sidebar-narrow'); main.classList.add('app-main-collapsed');
+      expect(sidebar.getBoundingClientRect().width).toBe(64);
+      expect(frame.contentWindow!.getComputedStyle(main).marginRight).toBe('64px');
+      doc.documentElement.dir = 'ltr';
+      expect(sidebar.getBoundingClientRect().left).toBe(0);
+      expect(frame.contentWindow!.getComputedStyle(main).marginRight).toBe('0px');
+    } finally { frame.remove(); }
   });
 
   it('renders sidebar navigation links for all main sections', () => {

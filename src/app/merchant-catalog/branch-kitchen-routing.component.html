@@ -1,39 +1,38 @@
 <section class="card mb-4" aria-labelledby="kitchen-routing-title">
   <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
     <div>
-      <h2 id="kitchen-routing-title" class="h6 mb-1">Kitchen stations</h2>
+      <h2 id="kitchen-routing-title" class="h6 mb-1">{{ 'Kitchen stations' | adminTranslate }}</h2>
       <p class="small text-body-secondary mb-0">
-        Which kitchen display prepares each category. Products without a station go to Unassigned / General kitchen.
-        Changes apply to newly submitted items.
+        {{ 'Which kitchen display prepares each category. Products without a station go to Unassigned / General kitchen. Changes apply to newly submitted items.' | adminTranslate }}
       </p>
     </div>
     <app-branch-preparation [merchantId]="merchantId" [branchId]="branchId" (saved)="configuration = $event" />
   </div>
   <div class="card-body">
-    <p *ngIf="!configuration" class="text-body-secondary mb-0" role="status">Loading kitchen stations...</p>
+    <p *ngIf="!configuration" class="text-body-secondary mb-0" role="status">{{ 'Loading kitchen stations...' | adminTranslate }}</p>
     <ng-container *ngIf="configuration">
       <p *ngIf="!configuration.stations.length" class="text-body-secondary mb-0">
-        No stations yet. Use <strong>Manage stations</strong> to add e.g. Food Kitchen and Drinks Bar.
+        {{ 'No stations yet. Use' | adminTranslate }} <strong>{{ 'Manage stations' | adminTranslate }}</strong> {{ 'to add e.g. Food Kitchen and Drinks Bar.' | adminTranslate }}
       </p>
       <div *ngIf="configuration.stations.length && unassignedCount" class="alert alert-warning py-1 px-2" data-test="unassigned-warning">
-        {{ unassignedCount }} {{ unassignedCount === 1 ? 'category goes' : 'categories go' }} to Unassigned / General kitchen.
+        {{ '{0} {1} to Unassigned / General kitchen.' | adminTranslate: [(unassignedCount), (unassignedCount === 1 ? (('category goes' | adminTranslate)) : (('categories go' | adminTranslate)))] }}
       </div>
       <div class="table-responsive datatable-shell" *ngIf="configuration.stations.length">
         <table class="table table-sm align-middle mb-0 merchant-results-table">
-          <thead><tr><th>Category</th><th>Kitchen station</th></tr></thead>
+          <thead><tr><th>{{ 'Category' | adminTranslate }}</th><th>{{ 'Kitchen station' | adminTranslate }}</th></tr></thead>
           <tbody>
             <tr *ngFor="let category of categories">
               <td><label [for]="'category-station-' + category.id" class="mb-0">{{ category.name }}</label></td>
               <td>
                 <select class="form-select form-select-sm" [id]="'category-station-' + category.id" [disabled]="saving"
                         [ngModel]="stationFor(category.id)" (ngModelChange)="assign(category.id, $event)">
-                  <option value="">Unassigned</option>
+                  <option value="">{{ 'Unassigned' | adminTranslate }}</option>
                   <option *ngFor="let station of configuration.stations" [value]="station.id">{{ station.name }}</option>
                 </select>
               </td>
             </tr>
             <tr *ngIf="!categories.length">
-              <td colspan="2" class="text-center text-body-secondary">No categories yet.</td>
+              <td colspan="2" class="text-center text-body-secondary">{{ 'No categories yet.' | adminTranslate }}</td>
             </tr>
           </tbody>
         </table>

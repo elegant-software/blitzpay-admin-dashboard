@@ -2,26 +2,26 @@
 <div class="card appointment-panel policy-filter-panel mb-4">
   <div class="card-header appointment-panel-heading">
     <div>
-      <h1 class="appointment-panel-title">Appointment Policy</h1>
-      <p class="appointment-panel-description">Review booking rules or update them on behalf of a merchant.</p>
+      <h1 class="appointment-panel-title">{{ 'Appointment Policy' | adminTranslate }}</h1>
+      <p class="appointment-panel-description">{{ 'Review booking rules or update them on behalf of a merchant.' | adminTranslate }}</p>
     </div>
   </div>
   <div class="card-body appointment-filter-body">
     <div class="support-action-banner mb-3">
       <svg viewBox="0 0 24 24" width="18" height="18" class="me-2 flex-shrink-0"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-      <span><strong>Support action.</strong> Editing this policy changes booking behaviour on behalf of the merchant. Coordinate with the merchant before making changes.</span>
+      <span><strong>{{ 'Support action.' | adminTranslate }}</strong> {{ 'Editing this policy changes booking behaviour on behalf of the merchant. Coordinate with the merchant before making changes.' | adminTranslate }}</span>
     </div>
 
-    <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="alert alert-danger mb-3" *ngIf="errorMessage">{{ (errorMessage | adminTranslate) }}</div>
 
     <div class="row g-2 align-items-end">
       <div class="col-md-4">
-        <label class="form-label form-label-sm mb-1 required" for="ap-merchant-search">Merchant</label>
+        <label class="form-label form-label-sm mb-1 required" for="ap-merchant-search">{{ 'Merchant' | adminTranslate }}</label>
         <ng-container *ngIf="!selectedMerchantItem">
           <app-merchant-search
             inputId="ap-merchant-search"
             variant="compact"
-            placeholder="Merchant name or code…"
+            [placeholder]="'Merchant name or code…' | adminTranslate"
             [query]="merchantQuery"
             [results]="merchantResults"
             (queryChange)="merchantQuery = $event"
@@ -32,15 +32,15 @@
         <div *ngIf="selectedMerchantItem" class="d-flex align-items-center gap-2">
           <span class="badge bg-primary fw-normal px-2 py-1">{{ selectedMerchantItem.merchantName }}</span>
           <span class="text-muted small">{{ selectedMerchantItem.merchantCode }}</span>
-          <button class="btn btn-sm btn-link p-0 ms-auto text-secondary" type="button" (click)="clearMerchantFilter()">Change</button>
+          <button class="btn btn-sm btn-link p-0 ms-auto text-secondary" type="button" (click)="clearMerchantFilter()">{{ 'Change' | adminTranslate }}</button>
         </div>
       </div>
       <div class="col-md-4 d-flex gap-2 align-items-end">
         <button class="btn btn-primary" type="button" [disabled]="loading || !canLoad" (click)="loadPolicy()">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
-          Load Policy
+          {{ 'Load Policy' | adminTranslate }}
         </button>
-        <button class="btn btn-outline-secondary" type="button" (click)="clearSearch()">Clear</button>
+        <button class="btn btn-outline-secondary" type="button" (click)="clearSearch()">{{ 'Clear' | adminTranslate }}</button>
       </div>
     </div>
   </div>
@@ -50,43 +50,43 @@
 <ng-container *ngIf="merchantId">
   <div class="card appointment-panel policy-details-panel mb-4">
     <div class="card-header appointment-panel-heading d-flex justify-content-between align-items-center">
-      <span>Appointment Policy</span>
+      <span>{{ 'Appointment Policy' | adminTranslate }}</span>
       <div class="d-flex gap-2" *ngIf="policy && !editMode">
-        <button class="btn btn-sm btn-outline-primary policy-edit-button" type="button" (click)="startEdit()">Edit Policy</button>
+        <button class="btn btn-sm btn-outline-primary policy-edit-button" type="button" (click)="startEdit()">{{ 'Edit Policy' | adminTranslate }}</button>
       </div>
     </div>
     <div class="card-body policy-details-body">
       <div class="policy-loading" *ngIf="loading">
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-        Loading policy…
+        {{ 'Loading policy…' | adminTranslate }}
       </div>
 
       <!-- View mode -->
       <ng-container *ngIf="policy && !editMode">
         <div class="policy-grid">
           <div class="policy-field">
-            <div class="policy-label">Booking Interval</div>
-            <div class="policy-value">{{ policy.bookingIntervalMinutes }} min</div>
-            <div class="policy-hint">Minimum time slot between bookings.</div>
+            <div class="policy-label">{{ 'Booking Interval' | adminTranslate }}</div>
+            <div class="policy-value">{{ '{0} min' | adminTranslate: [(policy.bookingIntervalMinutes)] }}</div>
+            <div class="policy-hint">{{ 'Minimum time slot between bookings.' | adminTranslate }}</div>
           </div>
           <div class="policy-field">
-            <div class="policy-label">Lead Time</div>
-            <div class="policy-value">{{ policy.leadTimeMinutes }} min</div>
-            <div class="policy-hint">Minimum advance notice required to book.</div>
+            <div class="policy-label">{{ 'Lead Time' | adminTranslate }}</div>
+            <div class="policy-value">{{ '{0} min' | adminTranslate: [(policy.leadTimeMinutes)] }}</div>
+            <div class="policy-hint">{{ 'Minimum advance notice required to book.' | adminTranslate }}</div>
           </div>
           <div class="policy-field">
-            <div class="policy-label">Booking Horizon</div>
-            <div class="policy-value">{{ policy.bookingHorizonDays }} days</div>
-            <div class="policy-hint">How far in advance shoppers can book.</div>
+            <div class="policy-label">{{ 'Booking Horizon' | adminTranslate }}</div>
+            <div class="policy-value">{{ '{0} days' | adminTranslate: [(policy.bookingHorizonDays)] }}</div>
+            <div class="policy-hint">{{ 'How far in advance shoppers can book.' | adminTranslate }}</div>
           </div>
           <div class="policy-field">
-            <div class="policy-label">Reminder Lead Time</div>
-            <div class="policy-value">{{ policy.reminderLeadTimeMinutes }} min</div>
-            <div class="policy-hint">How many minutes before appointment to send a reminder.</div>
+            <div class="policy-label">{{ 'Reminder Lead Time' | adminTranslate }}</div>
+            <div class="policy-value">{{ '{0} min' | adminTranslate: [(policy.reminderLeadTimeMinutes)] }}</div>
+            <div class="policy-hint">{{ 'How many minutes before appointment to send a reminder.' | adminTranslate }}</div>
           </div>
         </div>
         <div class="policy-meta mt-3">
-          <span>Last updated</span>
+          <span>{{ 'Last updated' | adminTranslate }}</span>
           <strong>{{ policy.updatedAt | displayDate }}</strong>
         </div>
       </ng-container>
@@ -95,67 +95,67 @@
       <ng-container *ngIf="editMode">
         <div class="support-action-banner mb-3">
           <svg viewBox="0 0 24 24" width="16" height="16" class="me-2 flex-shrink-0"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-          <span>You are editing the appointment policy on behalf of a merchant. Changes take effect immediately.</span>
+          <span>{{ 'You are editing the appointment policy on behalf of a merchant. Changes take effect immediately.' | adminTranslate }}</span>
         </div>
 
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label required" for="ap-interval">Booking Interval (minutes)</label>
-            <input
+            <label class="form-label required" for="ap-interval">{{ 'Booking Interval (minutes)' | adminTranslate }}</label>
+            <input dir="ltr"
               id="ap-interval"
               class="form-control"
               type="number"
               min="1"
               [(ngModel)]="form.bookingIntervalMinutes"
-              placeholder="e.g. 30"
+              [placeholder]="'e.g. 30' | adminTranslate"
             />
-            <div class="form-text">Minimum time slot between bookings.</div>
+            <div class="form-text">{{ 'Minimum time slot between bookings.' | adminTranslate }}</div>
           </div>
           <div class="col-md-6">
-            <label class="form-label required" for="ap-lead-time">Lead Time (minutes)</label>
-            <input
+            <label class="form-label required" for="ap-lead-time">{{ 'Lead Time (minutes)' | adminTranslate }}</label>
+            <input dir="ltr"
               id="ap-lead-time"
               class="form-control"
               type="number"
               min="0"
               [(ngModel)]="form.leadTimeMinutes"
-              placeholder="e.g. 60"
+              [placeholder]="'e.g. 60' | adminTranslate"
             />
-            <div class="form-text">Minimum advance notice required to book.</div>
+            <div class="form-text">{{ 'Minimum advance notice required to book.' | adminTranslate }}</div>
           </div>
           <div class="col-md-6">
-            <label class="form-label required" for="ap-horizon">Booking Horizon (days)</label>
-            <input
+            <label class="form-label required" for="ap-horizon">{{ 'Booking Horizon (days)' | adminTranslate }}</label>
+            <input dir="ltr"
               id="ap-horizon"
               class="form-control"
               type="number"
               min="1"
               [(ngModel)]="form.bookingHorizonDays"
-              placeholder="e.g. 60"
+              [placeholder]="'e.g. 60' | adminTranslate"
             />
-            <div class="form-text">How far in advance shoppers can book.</div>
+            <div class="form-text">{{ 'How far in advance shoppers can book.' | adminTranslate }}</div>
           </div>
           <div class="col-md-6">
-            <label class="form-label required" for="ap-reminder">Reminder Lead Time (minutes)</label>
-            <input
+            <label class="form-label required" for="ap-reminder">{{ 'Reminder Lead Time (minutes)' | adminTranslate }}</label>
+            <input dir="ltr"
               id="ap-reminder"
               class="form-control"
               type="number"
               min="0"
               [(ngModel)]="form.reminderLeadTimeMinutes"
-              placeholder="e.g. 60"
+              [placeholder]="'e.g. 60' | adminTranslate"
             />
-            <div class="form-text">Minutes before appointment to send a reminder notification.</div>
+            <div class="form-text">{{ 'Minutes before appointment to send a reminder notification.' | adminTranslate }}</div>
           </div>
         </div>
 
-        <div class="alert alert-danger mt-3 mb-0" *ngIf="formError">{{ formError }}</div>
+        <div class="alert alert-danger mt-3 mb-0" *ngIf="formError">{{ (formError | adminTranslate) }}</div>
 
         <div class="d-flex gap-2 justify-content-end mt-3 policy-form-actions">
-          <button class="btn btn-light" type="button" (click)="cancelEdit()">Cancel</button>
+          <button class="btn btn-light" type="button" (click)="cancelEdit()">{{ 'Cancel' | adminTranslate }}</button>
           <button class="btn btn-warning" type="button" [disabled]="saving" (click)="savePolicy()">
             <span *ngIf="saving" class="spinner-border spinner-border-sm me-1" role="status"></span>
-            Save Policy
+            {{ 'Save Policy' | adminTranslate }}
           </button>
         </div>
       </ng-container>

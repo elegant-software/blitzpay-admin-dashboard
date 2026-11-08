@@ -1,3 +1,5 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
+import { DisplayDatePipe } from '../pipes/display-date.pipe';
 import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
@@ -18,7 +20,7 @@ import {
 @Component({
   selector: 'app-platform-kpi-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MerchantSearchComponent],
+  imports: [DisplayDatePipe, AdminTranslatePipe, CommonModule, FormsModule, MerchantSearchComponent],
   templateUrl: './platform-kpi-dashboard.component.html',
   styleUrl: './platform-kpi-dashboard.component.css',
 })

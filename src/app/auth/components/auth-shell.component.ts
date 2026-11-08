@@ -1,19 +1,23 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { Component, HostListener, Inject } from '@angular/core';
+import { Component, HostListener, Inject, inject, OnDestroy } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { AuthStateService } from '../services/auth-state.service';
+import { AdminLanguageService } from '../../i18n/admin-language.service';
+import { AdminTranslatePipe } from '../../i18n/admin-translate.pipe';
+import { LanguageSelectorComponent } from '../../i18n/language-selector.component';
 
 type ThemeMode = 'light' | 'dark';
 
 @Component({
   selector: 'app-auth-shell',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, AdminTranslatePipe, LanguageSelectorComponent],
   templateUrl: './auth-shell.component.html',
   styleUrl: './auth-shell.component.css'
 })
-export class AuthShellComponent {
+export class AuthShellComponent implements OnDestroy {
+  private readonly language = inject(AdminLanguageService);
   sidebarCollapsed = false;
   theme: ThemeMode;
   readonly session$;
@@ -57,6 +61,8 @@ export class AuthShellComponent {
       console.error('[auth] logout failed', error);
     }
   }
+
+  ngOnDestroy(): void { this.language.leaveDashboard(); }
 
   private applyTheme(): void {
     this.document.documentElement.setAttribute('data-coreui-theme', this.theme);

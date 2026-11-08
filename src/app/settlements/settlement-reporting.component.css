@@ -124,11 +124,17 @@
 }
 
 .settlement-filter-panel .input-group .form-control {
-  border-radius: 0.55rem 0 0 0.55rem;
+  border-start-start-radius: 0.55rem;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+  border-end-start-radius: 0.55rem;
 }
 
 .settlement-filter-panel .input-group .btn {
-  border-radius: 0 0.55rem 0.55rem 0;
+  border-start-start-radius: 0;
+  border-start-end-radius: 0.55rem;
+  border-end-end-radius: 0.55rem;
+  border-end-start-radius: 0;
 }
 
 .settlement-load-action {

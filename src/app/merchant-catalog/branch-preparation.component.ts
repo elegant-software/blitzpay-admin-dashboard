@@ -1,3 +1,6 @@
+import { inject as injectAdminLocale } from '@angular/core';
+import { AdminLocaleService } from '../i18n/admin-locale.service';
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, HostListener, Input, OnDestroy, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -12,11 +15,12 @@ import { apiErrorMessage } from '../notifications/notification.service';
 @Component({
   selector: 'app-branch-preparation',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule],
   templateUrl: './branch-preparation.component.html',
   styleUrl: './merchant-catalog.component.css'
 })
 export class BranchPreparationComponent implements OnDestroy {
+  readonly adminLocale = injectAdminLocale(AdminLocaleService);
   @Input({ required: true }) merchantId = '';
   @Input({ required: true }) branchId = '';
   configuration: PreparationConfiguration = { stations: [], categoryDefaults: {}, productOverrides: {} };
@@ -59,7 +63,7 @@ export class BranchPreparationComponent implements OnDestroy {
   }
 
   canLeave(): boolean {
-    return !this.saving && (!this.dirty || confirm('Discard unsaved station changes?'));
+    return !this.saving && (!this.dirty || confirm(this.adminLocale.text('Discard unsaved station changes?')));
   }
 
   close(): void {
@@ -81,7 +85,7 @@ export class BranchPreparationComponent implements OnDestroy {
 
   removeStation(id: string): void {
     if (this.saving) return;
-    if (!confirm('Remove this station and its category and product assignments?')) return;
+    if (!confirm(this.adminLocale.text('Remove this station and its category and product assignments?'))) return;
     this.configuration.stations = this.configuration.stations.filter(station => station.id !== id);
     for (const mappings of [this.configuration.categoryDefaults, this.configuration.productOverrides]) {
       for (const key of Object.keys(mappings)) if (mappings[key] === id) delete mappings[key];

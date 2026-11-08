@@ -1,3 +1,6 @@
+import { inject as injectAdminLocale } from '@angular/core';
+import { AdminLocaleService } from '../i18n/admin-locale.service';
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { CommonModule } from "@angular/common";
 import { HttpErrorResponse } from "@angular/common/http";
 import { Component, Input, OnChanges, OnDestroy, inject } from "@angular/core";
@@ -23,11 +26,12 @@ type CopyTarget = "password" | "settings";
 @Component({
   selector: "app-branch-kitchen-screen",
   standalone: true,
-  imports: [CommonModule],
+  imports: [AdminTranslatePipe, CommonModule],
   templateUrl: "./branch-kitchen-screen.component.html",
   styleUrl: "./merchant-catalog.component.css",
 })
 export class BranchKitchenScreenComponent implements OnChanges, OnDestroy {
+  readonly adminLocale = injectAdminLocale(AdminLocaleService);
   private readonly notifications = inject(NotificationService);
 
   @Input({ required: true }) branchId = "";
@@ -105,7 +109,7 @@ export class BranchKitchenScreenComponent implements OnChanges, OnDestroy {
 
     if (
       confirm(
-        "Disable the Kitchen Screen? All kitchen screens of this branch will be logged out.",
+        this.adminLocale.text("Disable the Kitchen Screen? All kitchen screens of this branch will be logged out."),
       )
     ) {
       this.disable();
@@ -116,7 +120,7 @@ export class BranchKitchenScreenComponent implements OnChanges, OnDestroy {
     if (this.busy) return;
 
     const confirmed = confirm(
-      "Reset the Kitchen Screen password? Kitchen screens that are already logged in keep working. New logins need the new password.",
+      this.adminLocale.text("Reset the Kitchen Screen password? Kitchen screens that are already logged in keep working. New logins need the new password."),
     );
 
     if (!confirmed) return;

@@ -1,6 +1,11 @@
+import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
 import { NotificationService } from '../notifications/notification.service';
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
+import { Component, DestroyRef, ElementRef, HostListener, OnInit, QueryList, ViewChild, ViewChildren, effect, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { of, Subscription, switchMap } from 'rxjs';
+import { AdminLocaleService } from '../i18n/admin-locale.service';
+import { displayProductLanguage, merchantMenuLanguages } from '../menu-language/menu-language';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -12,6 +17,7 @@ import {
   CreateOrderRequest,
   EnvironmentKey,
   MerchantSearchResultItem,
+  Merchant,
   OrderItemFormModel,
   OrderResponse,
   OrderStatus,
@@ -29,11 +35,26 @@ type OrderFilterDropdown = 'status' | 'type' | null;
 @Component({
   selector: 'app-order-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
+  imports: [AdminTranslatePipe, CommonModule, FormsModule, DisplayDatePipe, MerchantSearchComponent],
   templateUrl: './order-management.component.html',
   styleUrl: './order-management.component.css'
 })
 export class OrderManagementComponent implements OnInit {
+  private readonly locale = inject(AdminLocaleService);
+  private readonly destroyRef = inject(DestroyRef);
+  private productMerchant: Merchant | null = null;
+  private productLanguage?: string;
+  private productRequest?: Subscription;
+  private previousUiLanguage = this.locale.code();
+  private readonly followProductLanguage = effect(() => {
+    const code = this.locale.code();
+    if (code === this.previousUiLanguage) return;
+    this.previousUiLanguage = code;
+    if (this.activeDialog === 'create' && this.productMerchant && this.createBranchId &&
+        merchantMenuLanguages(this.productMerchant).length !== 1) {
+      this.loadProductsForBranch(this.createBranchId);
+    }
+  });
   private readonly notifications = inject(NotificationService);
   selectedEnvironmentKey: EnvironmentKey = environment.defaultEnvironmentKey;
   apiVersion = 'v1';
@@ -483,6 +504,7 @@ export class OrderManagementComponent implements OnInit {
       this.errorMessage = 'Load orders for a merchant first.';
       return;
     }
+    this.productMerchant = null;
     this.createBranchId = this.selectedBranchId;
     this.createPayByInvoice = false;
     this.createDueDate = '';
@@ -509,6 +531,7 @@ export class OrderManagementComponent implements OnInit {
   }
 
   closeDialog(force = false): void {
+    this.productRequest?.unsubscribe();
     this.activeDialog = null;
     this.selectedOrder = null;
     this.dialogError = '';
@@ -521,12 +544,26 @@ export class OrderManagementComponent implements OnInit {
 
   private loadProductsForBranch(branchId: string): void {
     if (!this.merchantId) return;
+    this.productRequest?.unsubscribe();
     this.products = [];
     this.productsLoading = true;
     this.productsLoadFailed = false;
-    this.merchantApi.getProducts(this.selectedEnvironment, this.apiVersion, this.merchantId, branchId, false).subscribe({
+    const merchant = this.productMerchant?.merchantId === this.merchantId
+      ? of(this.productMerchant)
+      : this.merchantApi.getMerchant(this.selectedEnvironment, this.apiVersion, this.merchantId);
+    this.productRequest = merchant.pipe(
+      switchMap(merchant => {
+        this.productMerchant = merchant;
+        this.productLanguage = displayProductLanguage(merchant, this.locale.code());
+        return this.merchantApi.getProducts(this.selectedEnvironment, this.apiVersion, this.merchantId, branchId, false, this.productLanguage);
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (products) => {
         this.products = products;
+        this.createItems = this.createItems.map(item => ({
+          ...item, productName: products.find(product => product.productId === item.productId)?.name ?? item.productName
+        }));
         this.productsLoading = false;
       },
       error: (error) => {

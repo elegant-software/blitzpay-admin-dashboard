@@ -148,7 +148,7 @@
   min-width: 0;
   flex: 1;
   gap: 0.55rem;
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .user-search-input {
@@ -280,7 +280,7 @@
   border-radius: 0.7rem;
   background: transparent;
   color: var(--user-text);
-  text-align: left;
+  text-align: start;
   transition: background-color 140ms ease, border-color 140ms ease;
 }
 
