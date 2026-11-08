@@ -23,6 +23,7 @@ export interface Merchant {
   merchantStatus: string;
   businessType?: string | null;
   merchantMobility?: string | null;
+  storefrontTheme?: string | null;
   operatingCountry?: string | null;
   website?: string | null;
   offerings: string[];
@@ -222,6 +223,7 @@ export interface UpdateMerchantRequest {
   merchantStatus?: string;
   businessType?: string;
   merchantMobility?: string;
+  storefrontTheme?: string;
   defaultVatPercent?: number | null;
   originalMenuLanguage?: string;
   supportedMenuLanguages?: string[];
@@ -262,6 +264,15 @@ export interface UpdateMerchantLogoRequest {
 
 export interface MerchantLogoUploadRequest {
   contentType: string;
+}
+
+/** A storefront look from `GET /v1/storefront/themes`; merchants can only be given PUBLISHED ones. */
+export interface StorefrontTheme {
+  code: string;
+  displayName: string;
+  style: 'STANDARD' | 'CLASSIC';
+  status: 'DRAFT' | 'PUBLISHED';
+  tokens: Record<string, Record<string, string>>;
 }
 
 export interface MerchantVerticalResponse {

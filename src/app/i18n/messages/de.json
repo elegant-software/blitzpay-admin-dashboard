@@ -1018,5 +1018,10 @@
   "Switch to light mode": "Hellen Modus aktivieren",
   "Internal operations dashboard": "Internes Verwaltungsdashboard",
   "ZackPay Admin Panel": "ZackPay Verwaltung",
-  "Language": "Sprache"
+  "Language": "Sprache",
+  "Storefront theme": "Storefront-Design",
+  "Preview a theme on this storefront": "Design in diesem Storefront ansehen",
+  "Open preview": "Vorschau öffnen",
+  "Add a branch first; the storefront shows a branch's menu.": "Lege zuerst eine Filiale an; der Storefront zeigt die Speisekarte einer Filiale.",
+  "draft": "Entwurf"
 }

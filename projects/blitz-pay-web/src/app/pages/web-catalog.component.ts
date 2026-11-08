@@ -11,20 +11,19 @@ import { StorefrontSessionService } from '../services/storefront-session.service
 import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from '../services/storefront-language.service';
 import { StorefrontTableService } from '../table/storefront-table.service';
 import { NotificationService } from '../notifications/notification.service';
+import { StorefrontBrandService } from '../services/storefront-brand.service';
+import { MerchantLogoComponent } from '../components/merchant-logo.component';
 
 @Component({
   selector: 'web-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, WebCartComponent],
+  imports: [CommonModule, FormsModule, RouterLink, WebCartComponent, MerchantLogoComponent],
   template: `
     <ng-container *ngIf="!loading; else catalogLoading">
     <section class="merchant-hero">
-      <div class="merchant-logo" [class.has-logo]="merchant?.logoUrl">
-        <img *ngIf="merchant?.logoUrl" [src]="merchant?.logoUrl" [alt]="merchant?.merchantName + ' logo'" />
-        <span *ngIf="!merchant?.logoUrl">{{ merchantInitial }}</span>
-      </div>
+      <web-merchant-logo [merchant]="merchant" />
       <div>
-        <p class="eyebrow">Shop online</p>
+        <p class="eyebrow">{{ brand.theme() ? 'Fresh from our kitchen' : 'Shop online' }}</p>
         <h1>{{ merchant?.merchantName || 'Merchant catalog' }}</h1>
         <p class="fulfillment-label" *ngIf="branch">Fulfilled by {{ branch.name }}<span *ngIf="branchAddress"> &middot; {{ branchAddress }}</span></p>
       </div>
@@ -50,8 +49,8 @@ import { NotificationService } from '../notifications/notification.service';
       <article class="surface products">
         <div class="catalog-toolbar">
           <div>
-            <h2>Products</h2>
-            <p class="muted">{{ products.length }} available</p>
+            <h2>{{ brand.theme() ? 'The menu' : 'Products' }}</h2>
+            <p class="muted">{{ products.length }} {{ brand.theme() ? 'things to look forward to' : 'available' }}</p>
           </div>
           <div class="search-products language-picker" *ngIf="languages.length">
             <span>Language</span>
@@ -171,6 +170,7 @@ import { NotificationService } from '../notifications/notification.service';
   `
 })
 export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy {
+  readonly brand = inject(StorefrontBrandService);
   private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
@@ -202,6 +202,7 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
   private availabilityRequest?: Subscription;
 
   ngOnInit(): void {
+    this.brand.useMerchant(this.merchantId);
     if (!this.tableCheckIn) {
       this.availabilityRequest = this.api.getTableAvailability(this.branchId).subscribe({
         next: (availability) => this.availability = availability,

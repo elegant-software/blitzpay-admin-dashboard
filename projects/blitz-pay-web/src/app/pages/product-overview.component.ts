@@ -9,14 +9,16 @@ import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
 import { StorefrontLanguageService } from '../services/storefront-language.service';
 import { NotificationService } from '../notifications/notification.service';
+import { StorefrontBrandService } from '../services/storefront-brand.service';
+import { MerchantLogoComponent } from '../components/merchant-logo.component';
 
 @Component({
   selector: 'product-overview',
   standalone: true,
-  imports: [CommonModule, RouterLink, WebCartComponent],
+  imports: [CommonModule, RouterLink, WebCartComponent, MerchantLogoComponent],
   template: `
     <section class="merchant-hero compact">
-      <div class="merchant-logo"><span>{{ (merchant?.merchantName || 'M').charAt(0) }}</span></div>
+      <web-merchant-logo [merchant]="merchant" />
       <div>
         <p class="eyebrow">Shop online</p>
         <h1>{{ merchant?.merchantName || 'Product' }}</h1>
@@ -60,6 +62,7 @@ import { NotificationService } from '../notifications/notification.service';
   `
 })
 export class ProductOverviewComponent implements OnInit {
+  private readonly brand = inject(StorefrontBrandService);
   private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
@@ -77,6 +80,7 @@ export class ProductOverviewComponent implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
+    this.brand.useMerchant(this.merchantId);
     this.cart.useScope(this.merchantId, this.branchId);
     forkJoin({
       merchant: this.api.getMerchant(this.merchantId),

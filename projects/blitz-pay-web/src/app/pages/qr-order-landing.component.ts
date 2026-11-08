@@ -7,6 +7,7 @@ import { StorefrontApiService } from '../services/storefront-api.service';
 import { GuestPaymentService } from '../services/guest-payment.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
 import { NotificationService } from '../notifications/notification.service';
+import { StorefrontBrandService } from '../services/storefront-brand.service';
 
 @Component({
   selector: 'web-qr-order-landing',
@@ -52,6 +53,7 @@ import { NotificationService } from '../notifications/notification.service';
   `
 })
 export class QrOrderLandingComponent implements OnInit {
+  private readonly brand = inject(StorefrontBrandService);
   private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
@@ -85,6 +87,7 @@ export class QrOrderLandingComponent implements OnInit {
       this.loading = false;
     })).subscribe({
       next: (order) => {
+        this.brand.useMerchant(order.merchantId);
         this.order = order;
         if (order.merchantId && this.unpaid) {
           this.api.getPaymentCapabilities(order.merchantId).subscribe({

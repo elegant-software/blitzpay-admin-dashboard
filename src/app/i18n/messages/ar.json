@@ -1018,5 +1018,10 @@
   "Switch to light mode": "التبديل إلى الوضع الفاتح",
   "Internal operations dashboard": "لوحة العمليات الداخلية",
   "ZackPay Admin Panel": "لوحة إدارة ZackPay",
-  "Language": "اللغة"
+  "Language": "اللغة",
+  "Storefront theme": "سمة المتجر",
+  "Preview a theme on this storefront": "معاينة سمة على هذا المتجر",
+  "Open preview": "فتح المعاينة",
+  "Add a branch first; the storefront shows a branch's menu.": "أضف فرعًا أولًا؛ يعرض المتجر قائمة الفرع.",
+  "draft": "مسودة"
 }

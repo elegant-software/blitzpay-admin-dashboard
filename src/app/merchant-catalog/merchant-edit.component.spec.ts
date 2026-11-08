@@ -24,7 +24,13 @@ describe('MerchantEditComponent shared create and edit form', () => {
 
   async function setup(loaded: Merchant = merchant(), creating = false) {
     merchantApi = jasmine.createSpyObj<MerchantApiService>('MerchantApiService',
-      ['getMerchant', 'createMerchant', 'getVerticals', 'getLocation', 'getMenuLanguages', 'updateMerchant', 'saveLocation']);
+      ['getMerchant', 'createMerchant', 'getVerticals', 'getLocation', 'getMenuLanguages', 'updateMerchant', 'saveLocation', 'getStorefrontThemes', 'getBranches']);
+    merchantApi.getStorefrontThemes.and.returnValue(of([
+      { code: 'DEFAULT', displayName: 'Standard', style: 'STANDARD', status: 'PUBLISHED', tokens: {} },
+      { code: 'HERITAGE', displayName: 'Heritage', style: 'CLASSIC', status: 'PUBLISHED', tokens: {} },
+      { code: 'OCEAN', displayName: 'Ocean', style: 'STANDARD', status: 'DRAFT', tokens: {} },
+    ]));
+    merchantApi.getBranches.and.returnValue(of([{ id: 'b-1', branchId: 'b-1' } as any]));
     merchantApi.getMerchant.and.returnValue(of(loaded));
     merchantApi.createMerchant.and.returnValue(of(loaded));
     merchantApi.getVerticals.and.returnValue(of([]));
@@ -95,6 +101,27 @@ describe('MerchantEditComponent shared create and edit form', () => {
 
     expect(merchantApi.createMerchant).not.toHaveBeenCalled();
     expect(component.errorMessage).toBe('Enter a trading name.');
+  });
+
+  it('loads and saves the storefront theme, defaulting to Standard', async () => {
+    await setup();
+    expect(component.form.storefrontTheme).toBe('DEFAULT');
+    component.form.storefrontTheme = 'HERITAGE';
+
+    component.save();
+
+    expect(savedPayload().storefrontTheme).toBe('HERITAGE');
+  });
+
+  it('only offers published themes but can preview drafts on the storefront', async () => {
+    await setup();
+    expect(component.selectableThemes.map((t) => t.code)).toEqual(['DEFAULT', 'HERITAGE']);
+
+    component.previewThemeCode = 'OCEAN';
+    fixture.detectChanges();
+
+    const link: HTMLAnchorElement = fixture.nativeElement.querySelector('[data-testid="theme-preview-link"]');
+    expect(link.getAttribute('href')).toBe(`${component.selectedEnvironment.storefrontUrl}/m/m-1/b/b-1?previewTheme=OCEAN`);
   });
 
   it('offers International Menu as an offering', async () => {
