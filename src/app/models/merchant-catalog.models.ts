@@ -23,6 +23,7 @@ export interface Merchant {
   merchantStatus: string;
   businessType?: string | null;
   merchantMobility?: string | null;
+  storefrontTheme?: string | null;
   operatingCountry?: string | null;
   website?: string | null;
   offerings: string[];
@@ -222,6 +223,7 @@ export interface UpdateMerchantRequest {
   merchantStatus?: string;
   businessType?: string;
   merchantMobility?: string;
+  storefrontTheme?: string;
   defaultVatPercent?: number | null;
   originalMenuLanguage?: string;
   supportedMenuLanguages?: string[];

@@ -47,6 +47,12 @@ export class MerchantEditComponent implements OnInit {
   errorMessage = '';
 
 
+  /** Named looks for the guest storefront; must match the backend StorefrontTheme enum. */
+  readonly storefrontThemeOptions = [
+    { code: 'DEFAULT', label: 'Standard' },
+    { code: 'HERITAGE', label: 'Heritage (cream, brown, gold)' }
+  ];
+
   form = {
     merchantName: '',
     website: '',
@@ -56,6 +62,7 @@ export class MerchantEditComponent implements OnInit {
     instagramHandle: '',
     businessType: '',
     merchantMobility: '',
+    storefrontTheme: 'DEFAULT',
     offerings: [] as string[],
     defaultVatPercent: '',
     originalMenuLanguage: '',
@@ -148,6 +155,7 @@ export class MerchantEditComponent implements OnInit {
       instagramHandle: merchant.contactInfo?.instagramHandle ?? '',
       businessType: merchant.businessType ?? '',
       merchantMobility: merchant.merchantMobility ?? '',
+      storefrontTheme: merchant.storefrontTheme ?? 'DEFAULT',
       offerings: [...(merchant.offerings ?? [])],
       defaultVatPercent: merchant.defaultVatPercent != null ? merchant.defaultVatPercent.toString() : '',
       originalMenuLanguage: merchant.originalMenuLanguage ?? '',
@@ -248,6 +256,7 @@ export class MerchantEditComponent implements OnInit {
       offerings: this.form.offerings,
       businessType: this.form.businessType || undefined,
       merchantMobility: this.form.merchantMobility || undefined,
+      storefrontTheme: this.form.storefrontTheme,
       defaultVatPercent: this.form.defaultVatPercent !== '' ? parseFloat(this.form.defaultVatPercent) : undefined,
       originalMenuLanguage: this.form.originalMenuLanguage || undefined,
       supportedMenuLanguages: this.form.originalMenuLanguage ? this.form.supportedMenuLanguages : undefined,

@@ -83,6 +83,12 @@
                 </select>
               </div>
               <div class="col-md-4">
+                <label class="form-label" for="merchant-storefront-theme">Storefront theme</label>
+                <select id="merchant-storefront-theme" class="form-select" [(ngModel)]="form.storefrontTheme">
+                  <option *ngFor="let option of storefrontThemeOptions" [value]="option.code">{{ option.label }}</option>
+                </select>
+              </div>
+              <div class="col-md-4">
                 <label class="form-label" for="merchant-vat">Default VAT</label>
                 <div class="input-group">
                   <input id="merchant-vat" class="form-control" [(ngModel)]="form.defaultVatPercent" type="number" min="0" max="100" step="0.01" placeholder="e.g. 20" />

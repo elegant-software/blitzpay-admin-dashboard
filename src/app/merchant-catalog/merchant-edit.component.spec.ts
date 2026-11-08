@@ -97,6 +97,16 @@ describe('MerchantEditComponent shared create and edit form', () => {
     expect(component.errorMessage).toBe('Enter a trading name.');
   });
 
+  it('loads and saves the storefront theme, defaulting to Standard', async () => {
+    await setup();
+    expect(component.form.storefrontTheme).toBe('DEFAULT');
+    component.form.storefrontTheme = 'HERITAGE';
+
+    component.save();
+
+    expect(savedPayload().storefrontTheme).toBe('HERITAGE');
+  });
+
   it('offers International Menu as an offering', async () => {
     await setup();
     expect(component.serviceOptions.map((o) => o.code)).toContain('INTERNATIONAL_MENU');
