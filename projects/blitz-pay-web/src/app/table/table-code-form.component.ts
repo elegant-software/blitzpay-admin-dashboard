@@ -1,3 +1,4 @@
+import { StorefrontTranslatePipe } from '../i18n/storefront-translate.pipe';
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -8,10 +9,10 @@ import { TABLE_CODE_LENGTH, parseTableCode } from './table-code';
 @Component({
   selector: 'web-table-code-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [StorefrontTranslatePipe, CommonModule, FormsModule],
   template: `
     <form class="table-code-form" (ngSubmit)="open()" novalidate>
-      <label for="table-code-input">Enter table code</label>
+      <label for="table-code-input">{{ 'Enter table code' | storefrontTranslate }}</label>
       <div class="table-code-row">
         <input
           id="table-code-input"
@@ -23,14 +24,14 @@ import { TABLE_CODE_LENGTH, parseTableCode } from './table-code';
           autocapitalize="characters"
           spellcheck="false"
           [attr.maxlength]="TABLE_CODE_LENGTH + 4"
-          placeholder="e.g. AB3K7Q"
+          [attr.placeholder]="'e.g. AB3K7Q' | storefrontTranslate"
           [attr.aria-invalid]="!!error"
           aria-describedby="table-code-hint"
         />
-        <button type="submit" data-testid="table-code-submit">Go to table</button>
+        <button type="submit" data-testid="table-code-submit">{{ 'Go to table' | storefrontTranslate }}</button>
       </div>
-      <small id="table-code-hint" class="muted" *ngIf="!error">The {{ TABLE_CODE_LENGTH }}-character code printed under the QR code on your table.</small>
-      <small class="table-code-error" role="alert" *ngIf="error">{{ error }}</small>
+      <small id="table-code-hint" class="muted" *ngIf="!error">{{ 'The {0}-character code printed under the QR code on your table.' | storefrontTranslate: [TABLE_CODE_LENGTH] }}</small>
+      <small class="table-code-error" role="alert" *ngIf="error">{{ error | storefrontTranslate: [TABLE_CODE_LENGTH] }}</small>
     </form>
   `
 })
@@ -43,7 +44,7 @@ export class TableCodeFormComponent {
   open(): void {
     const code = parseTableCode(this.value);
     if (!code) {
-      this.error = `A table code has ${TABLE_CODE_LENGTH} letters and numbers, like AB3K7Q.`;
+      this.error = 'A table code has {0} letters and numbers, like AB3K7Q.';
       return;
     }
     void this.router.navigate(['/t', code]);

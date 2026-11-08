@@ -2,6 +2,7 @@ import { HttpErrorResponse } from "@angular/common/http";
 import { Injectable, NgZone, OnDestroy, inject } from "@angular/core";
 import { MessageService, ToastMessageOptions } from "primeng/api";
 import { LocationUnavailableError } from '../table/storefront-location.service';
+import { StorefrontUiService } from '../services/storefront-ui.service';
 
 type Severity = "success" | "info" | "warn" | "error";
 
@@ -9,6 +10,7 @@ type Severity = "success" | "info" | "warn" | "error";
 @Injectable({ providedIn: "root" })
 export class NotificationService extends MessageService implements OnDestroy {
   private readonly zone = inject(NgZone);
+  private readonly ui = inject(StorefrontUiService);
   private readonly reportedErrors = new WeakSet<object>();
   private readonly active = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -48,7 +50,7 @@ export class NotificationService extends MessageService implements OnDestroy {
   }
 
   private notify(severity: Severity, message: string): void {
-    const detail = message.trim();
+    const detail = this.ui.text(message.trim());
     const key = `${severity}:${detail}`;
     if (!detail || this.active.has(key)) return;
 
@@ -60,12 +62,12 @@ export class NotificationService extends MessageService implements OnDestroy {
     );
     this.add({
       severity,
-      summary: {
+      summary: this.ui.text({
         success: "Success",
         info: "Information",
         warn: "Warning",
         error: "Error",
-      }[severity],
+      }[severity]),
       detail,
       life,
       closable: true,

@@ -1,3 +1,4 @@
+import { StorefrontTranslatePipe } from '../i18n/storefront-translate.pipe';
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, Input, OnDestroy, ViewChild, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -8,21 +9,21 @@ import { StorefrontLanguageService } from '../services/storefront-language.servi
 @Component({
   selector: 'web-cart',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [StorefrontTranslatePipe, CommonModule, RouterLink],
   template: `
     <button #cartTrigger class="mobile-cart-summary" type="button" (click)="openCart()" [attr.aria-expanded]="expanded" aria-haspopup="dialog" aria-controls="mobile-cart-dialog">
-      <span><bdi dir="ltr">{{ cart.itemCount }}</bdi> {{ cart.itemCount === 1 ? 'item' : 'items' }} &middot; <bdi dir="ltr">{{ cart.subtotal | currency: currency }}</bdi></span>
-      <strong>View cart</strong>
+      <span><bdi dir="ltr">{{ cart.itemCount }}</bdi> {{ cart.itemCount === 1 ? ('item' | storefrontTranslate) : ('items' | storefrontTranslate) }} &middot; <bdi dir="ltr">{{ cart.subtotal | currency: currency }}</bdi></span>
+      <strong>{{ 'View cart' | storefrontTranslate }}</strong>
     </button>
     <article class="surface cart">
-      <p class="surface-label">Web Cart</p>
-      <h2>{{ cart.itemCount === 0 ? 'Your cart is empty' : cart.itemCount + (cart.itemCount === 1 ? ' item' : ' items') }}</h2>
+      <p class="surface-label">{{ 'Web Cart' | storefrontTranslate }}</p>
+      <h2>{{ (cart.itemCount === 0 ? 'Your cart is empty' : cart.itemCount === 1 ? '{0} item' : '{0} items') | storefrontTranslate: [cart.itemCount] }}</h2>
       <ng-container *ngTemplateOutlet="cartContents; context: { mobile: false }" />
     </article>
     <dialog #cartDialog id="mobile-cart-dialog" class="mobile-cart-dialog" aria-labelledby="mobile-cart-title" (cancel)="$event.preventDefault(); closeCart()" (close)="finishClose()">
       <header class="mobile-cart-header">
-        <h2 id="mobile-cart-title">Your cart &middot; {{ cart.itemCount }} {{ cart.itemCount === 1 ? 'item' : 'items' }}</h2>
-        <button type="button" class="cart-close" aria-label="Close cart" autofocus (click)="closeCart()">&times;</button>
+        <h2 id="mobile-cart-title">{{ 'Your cart · {0} {1}' | storefrontTranslate: [cart.itemCount, (cart.itemCount === 1 ? 'item' : 'items') | storefrontTranslate] }}</h2>
+        <button type="button" class="cart-close" [attr.aria-label]="'Close cart' | storefrontTranslate" autofocus (click)="closeCart()">&times;</button>
       </header>
       <ng-container *ngIf="expanded">
         <ng-container *ngTemplateOutlet="cartContents; context: { mobile: true }" />
@@ -30,27 +31,27 @@ import { StorefrontLanguageService } from '../services/storefront-language.servi
     </dialog>
     <ng-template #cartContents let-mobile="mobile">
       <div class="cart-empty" *ngIf="cart.itemCount === 0">
-        <h3 *ngIf="mobile">Your cart is empty</h3>
-        <p class="muted">Add products to continue as a guest.</p>
-        <button *ngIf="mobile" class="add-button continue-shopping" type="button" (click)="closeCart()">Continue shopping</button>
+        <h3 *ngIf="mobile">{{ 'Your cart is empty' | storefrontTranslate }}</h3>
+        <p class="muted">{{ 'Add products to continue as a guest.' | storefrontTranslate }}</p>
+        <button *ngIf="mobile" class="add-button continue-shopping" type="button" (click)="closeCart()">{{ 'Continue shopping' | storefrontTranslate }}</button>
       </div>
       <div class="cart-lines" *ngIf="cart.itemCount > 0">
         <div class="cart-line" *ngFor="let line of cart.lines" [attr.dir]="catalogLanguage.direction">
           <img class="cart-thumbnail" *ngIf="mobile && line.product.imageUrl" [src]="line.product.imageUrl" alt="" />
           <div class="cart-line-copy">
             <strong [attr.lang]="line.product.language" dir="auto">{{ line.product.name }}</strong>
-            <p><bdi dir="ltr">{{ line.product.unitPrice | currency: currency }}</bdi> each</p>
+            <p><bdi dir="ltr">{{ line.product.unitPrice | currency: currency }}</bdi> {{ 'each' | storefrontTranslate }}</p>
           </div>
           <div class="quantity">
-            <button type="button" (click)="cart.decrease(line.product.productId)" [attr.aria-label]="'Remove one ' + line.product.name">-</button>
+            <button type="button" (click)="cart.decrease(line.product.productId)" [attr.aria-label]="'Remove one {0}' | storefrontTranslate: [line.product.name]">-</button>
             <span aria-live="polite" aria-atomic="true">{{ line.quantity }}</span>
-            <button type="button" (click)="cart.add(line.product)" [attr.aria-label]="'Add one ' + line.product.name">+</button>
+            <button type="button" (click)="cart.add(line.product)" [attr.aria-label]="'Add one {0}' | storefrontTranslate: [line.product.name]">+</button>
           </div>
         </div>
       </div>
       <footer class="cart-footer" *ngIf="cart.itemCount > 0">
         <div class="cart-total">
-          <span>Subtotal</span>
+          <span>{{ 'Subtotal' | storefrontTranslate }}</span>
           <strong><bdi dir="ltr">{{ cart.subtotal | currency: currency }}</bdi></strong>
         </div>
         <a
@@ -58,7 +59,7 @@ import { StorefrontLanguageService } from '../services/storefront-language.servi
           data-testid="checkout"
           [routerLink]="['/m', merchantId, 'b', branchId, 'checkout']"
           (click)="mobile && closeCart()"
-        >Continue to checkout</a>
+        >{{ 'Continue to checkout' | storefrontTranslate }}</a>
       </footer>
     </ng-template>
   `

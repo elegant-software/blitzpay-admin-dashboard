@@ -1,3 +1,5 @@
+import { StorefrontTranslatePipe } from '../i18n/storefront-translate.pipe';
+import { AppDownloadComponent } from '../components/app-download.component';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -18,28 +20,28 @@ const PREPARATION_LABELS: Record<StorefrontPreparationStatus, string> = {
 @Component({
   selector: 'web-order-confirmation',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [StorefrontTranslatePipe, CommonModule, RouterLink, AppDownloadComponent],
   template: `
     <article class="surface confirmation">
       <span *ngIf="paid" class="confirmation-mark" aria-hidden="true">&#10003;</span>
-      <p class="eyebrow">Guest Checkout</p>
-      <h1>{{ paid ? 'Payment confirmed' : cash ? 'Order placed' : 'Checking your payment' }}</h1>
-      <p *ngIf="paid">Your payment{{ reference ? ' for order ' + reference : '' }} has been received.</p>
-      <p *ngIf="!paid && payment === 'cash'" data-testid="cash-note">Please pay staff in cash. Your order shows as paid once they confirm they received it.</p>
-      <p *ngIf="!paid && payment === 'terminal'" data-testid="terminal-note">Staff will bring the card terminal to you. Your order shows as paid once they confirm the payment.</p>
-      <p *ngIf="!paid && !cash">We're waiting for live payment confirmation. You can check again or return to checkout.</p>
-      <p *ngIf="tableName" class="fulfillment-label">Your table: {{ tableName }}</p>
+      <p class="eyebrow">{{ 'Guest Checkout' | storefrontTranslate }}</p>
+      <h1>{{ paid ? ('Payment confirmed' | storefrontTranslate) : cash ? ('Order placed' | storefrontTranslate) : ('Checking your payment' | storefrontTranslate) }}</h1>
+      <p *ngIf="paid">{{ (reference ? 'Your payment for order {0} has been received.' : 'Your payment has been received.') | storefrontTranslate: [reference] }}</p>
+      <p *ngIf="!paid && payment === 'cash'" data-testid="cash-note">{{ 'Please pay staff in cash. Your order shows as paid once they confirm they received it.' | storefrontTranslate }}</p>
+      <p *ngIf="!paid && payment === 'terminal'" data-testid="terminal-note">{{ 'Staff will bring the card terminal to you. Your order shows as paid once they confirm the payment.' | storefrontTranslate }}</p>
+      <p *ngIf="!paid && !cash">{{ 'We\\'re waiting for live payment confirmation. You can check again or return to checkout.' | storefrontTranslate }}</p>
+      <p *ngIf="tableName" class="fulfillment-label">{{ 'Your table: {0}' | storefrontTranslate: [tableName] }}</p>
       <section *ngIf="pickupNumber != null || preparationStatus" class="pickup" aria-live="polite">
         <ng-container *ngIf="pickupNumber != null">
-          <p class="eyebrow">Pickup Number</p>
+          <p class="eyebrow">{{ 'Pickup Number' | storefrontTranslate }}</p>
           <strong class="pickup-number">{{ pickupNumber }}</strong>
         </ng-container>
-        <span *ngIf="preparationStatus" class="preparation-status" [class.ready]="preparationStatus === 'READY'">{{ preparationLabel }}</span>
+        <span *ngIf="preparationStatus" class="preparation-status" [class.ready]="preparationStatus === 'READY'">{{ (preparationLabel | storefrontTranslate) }}</span>
       </section>
-      <p *ngIf="errorMessage" class="storefront-alert" role="alert">{{ errorMessage }}</p>
-      <button *ngIf="!paid" class="checkout-button" type="button" [disabled]="loading" (click)="refresh()">{{ loading ? 'Checking...' : 'Check payment status' }}</button>
-      <a class="back-link" *ngIf="!paid && !cash && checkoutLink" [routerLink]="checkoutLink">Back to checkout</a>
-      <p class="muted">Install BlitzPay to keep payment ready for your next visit.</p>
+      <p *ngIf="errorMessage" class="storefront-alert" role="alert">{{ (errorMessage | storefrontTranslate) }}</p>
+      <button *ngIf="!paid" class="checkout-button" type="button" [disabled]="loading" (click)="refresh()">{{ loading ? ('Checking...' | storefrontTranslate) : ('Check payment status' | storefrontTranslate) }}</button>
+      <a class="back-link" *ngIf="!paid && !cash && checkoutLink" [routerLink]="checkoutLink">{{ 'Back to checkout' | storefrontTranslate }}</a>
+      <web-app-download *ngIf="paid" />
     </article>
   `
 })

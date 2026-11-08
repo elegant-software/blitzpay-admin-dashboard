@@ -33,7 +33,7 @@
 .header-note { font-size: .75rem; color: var(--storefront-muted); }
 .guest-label { display: inline-flex; align-items: center; gap: .4rem; color: var(--storefront-positive); background: var(--storefront-mint); border: 1px solid var(--storefront-stroke); border-radius: 999px; padding: .55rem .8rem; font-size: .72rem; font-weight: 600; white-space: nowrap; }
 .guest-label svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.storefront-content { margin: 0 auto; max-width: 76rem; padding: 2.25rem max(1.25rem, env(safe-area-inset-right, 0px)) calc(3rem + var(--storefront-download-height, 0px) + env(safe-area-inset-bottom, 0px)) max(1.25rem, env(safe-area-inset-left, 0px)); }
+.storefront-content { margin: 0 auto; max-width: 76rem; padding: 2.25rem max(1.25rem, env(safe-area-inset-right, 0px)) calc(3rem + env(safe-area-inset-bottom, 0px)) max(1.25rem, env(safe-area-inset-left, 0px)); }
 .pwa-install-notice { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 2rem; padding: 1rem 1.2rem; background: var(--storefront-surface); border: 1px solid var(--storefront-stroke); border-radius: .9rem; }
 .pwa-install-copy h2 { color: var(--storefront-ink); font-size: .95rem; margin: 0 0 .25rem; }
 .pwa-install-copy p { color: var(--storefront-muted); font-size: .78rem; line-height: 1.5; margin: 0; }
@@ -46,21 +46,9 @@
 .pwa-install-dismiss { color: var(--storefront-ink); background: transparent; border: 1px solid var(--storefront-stroke); }
 .pwa-install-actions button:focus-visible { outline: 3px solid var(--storefront-action); outline-offset: 2px; }
 
-.theme-toggle { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border: 1px solid var(--storefront-stroke); border-radius: 50%; background: var(--storefront-bg); color: var(--storefront-ink); cursor: pointer; margin-left: auto; }
+.header-actions { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; margin-inline-start: auto; }
+.theme-toggle { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border: 1px solid var(--storefront-stroke); border-radius: 50%; background: var(--storefront-bg); color: var(--storefront-ink); cursor: pointer; }
 .theme-toggle svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.download-shell { position: fixed; z-index: 6; inset: auto 0 0; margin: 0; padding: .85rem max(1.25rem, env(safe-area-inset-right, 0px)) calc(.85rem + env(safe-area-inset-bottom, 0px)) max(1.25rem, env(safe-area-inset-left, 0px)); border-top: 1px solid var(--storefront-stroke); background: var(--storefront-surface); color: var(--storefront-ink); box-shadow: 0 -6px 24px rgb(0 0 0 / 8%); max-height: 40dvh; overflow-y: auto; }
-.download-shell[hidden], .store-links[hidden] { display: none; }
-.download-invitation { display: flex; align-items: center; justify-content: space-between; gap: 1rem; max-width: 73.5rem; margin: auto; }
-.download-invitation strong { font-size: .9rem; }
-.download-invitation p { font-size: .8rem; color: var(--storefront-muted); margin: .3rem 0 0; }
-.download-toggle { flex-shrink: 0; min-height: 44px; background: var(--storefront-action); color: #fff; border-radius: .7rem; padding: .65rem 1rem; font-weight: 650; cursor: pointer; }
-.store-links { display: flex; flex-wrap: wrap; gap: .6rem; max-width: 73.5rem; margin: .8rem auto 0; }
-.store-links a { display: inline-flex; align-items: center; min-height: 50px; gap: .65rem; background: var(--storefront-bg); border: 1px solid var(--storefront-stroke); border-radius: .7rem; color: var(--storefront-ink); padding: .6rem .85rem; text-decoration: none; white-space: nowrap; }
-.store-links a:hover { background: var(--storefront-mint); }
-.store-icon { width: 26px; height: 29px; flex: 0 0 26px; }
-.store-links a > span { display: grid; gap: .1rem; }
-.store-links small { font-size: .55rem; line-height: 1.1; }
-.store-links strong { font-size: 1.05rem; line-height: 1.15; letter-spacing: -.025em; }
 .offline-notice { max-width: 34rem; margin: 1rem auto; }
 @media (max-width: 850px) { .header-note { display: none; } }
 @media (max-width: 600px) {
@@ -82,3 +70,5 @@
 }
 .legal-footer { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem 1.5rem; margin-top: 2.5rem; font-size: .75rem; }
 .legal-footer a { color: var(--storefront-muted); min-height: 44px; display: inline-flex; align-items: center; }
+
+@media(max-width:600px){.guest-label{display:none}.brand-wordmark>span{display:none}.header-inner{gap:.5rem}}

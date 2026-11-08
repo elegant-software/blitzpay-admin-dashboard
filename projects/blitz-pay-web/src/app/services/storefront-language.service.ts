@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, effect, inject, signal } from '@angular/core';
+import { StorefrontUiService } from './storefront-ui.service';
 import { StorefrontMerchant } from '../models/storefront.models';
 
 const INTERNATIONAL_MENU = 'INTERNATIONAL_MENU';
@@ -6,9 +7,16 @@ const INTERNATIONAL_MENU = 'INTERNATIONAL_MENU';
 /** The shopper's explicitly chosen catalog language, kept for the browsing session. */
 @Injectable({ providedIn: 'root' })
 export class StorefrontLanguageService {
+  private readonly ui = inject(StorefrontUiService);
+  readonly changes = signal(0);
+  private merchant: StorefrontMerchant | null = null;
   private readonly storageKey = 'blitzpay.storefront-language';
   private chosen: string | null = this.read();
   private resolved: string | null = null;
+  private readonly followUiPreference = effect(() => {
+    const code = this.ui.code();
+    if (this.ui.ready() && code !== this.chosen) this.choose(code);
+  });
 
   get language(): string | null {
     return this.resolved ?? this.chosen;
@@ -16,18 +24,23 @@ export class StorefrontLanguageService {
 
   /** Resolve the merchant default before requesting menu text; only explicit choices are persisted. */
   resolve(merchant: StorefrontMerchant): string | null {
+    this.merchant = merchant;
     const original = merchant.originalMenuLanguage ?? merchant.originalLanguage ?? null;
-    this.resolved = this.chosen ?? original;
+    const offered = catalogLanguages(merchant);
+    this.resolved = this.chosen && offered.includes(this.chosen) ? this.chosen : original;
     return this.language;
   }
 
   get direction(): 'rtl' | 'ltr' {
-    return ['ar', 'fa', 'he', 'ur'].includes(this.language?.split('-')[0].toLowerCase() ?? '') ? 'rtl' : 'ltr';
+    return this.ui.direction;
   }
 
   choose(language: string): void {
     this.chosen = language;
     this.resolved = language;
+    if (this.merchant) this.resolve(this.merchant);
+    this.ui.select(language);
+    this.changes.update(value => value + 1);
     try {
       sessionStorage.setItem(this.storageKey, language);
     } catch {
