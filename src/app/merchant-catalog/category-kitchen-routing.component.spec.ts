@@ -45,4 +45,14 @@ describe('Category kitchen routing', () => {
     http.expectOne(r => r.url.endsWith('/branches/b-2/preparation-configuration')).flush(config);
     http.verify();
   });
+
+  it('offers only active branches and opens on the active one', async () => {
+    const inactive = { ...branch('b-old', 'Hannover'), active: false } as Branch;
+    const { fixture, http, el } = await setup([inactive, branch('b-1', 'Bremen')]);
+    http.expectOne(r => r.url.endsWith('/branches/b-1/preparation-configuration')).flush(config);
+    fixture.detectChanges();
+    expect(el.querySelector('#kitchen-routing-branch')).toBeNull();
+    expect(el.querySelector('#kitchen-routing-title')!.textContent).toContain('Bremen');
+    http.verify();
+  });
 });

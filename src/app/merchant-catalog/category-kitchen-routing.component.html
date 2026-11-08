@@ -1,7 +1,7 @@
 <section class="card mb-4 merchant-category-card" aria-labelledby="kitchen-routing-title">
   <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
     <div>
-      <h2 id="kitchen-routing-title" class="h6 mb-1">Kitchen stations</h2>
+      <h2 id="kitchen-routing-title" class="h6 mb-1">Kitchen stations<span *ngIf="branchName"> · {{ branchName }}</span></h2>
       <p class="small text-body-secondary mb-0">
         Which kitchen display prepares each category. Products without a station go to Unassigned / General kitchen.
         Changes apply to newly submitted items.
@@ -19,7 +19,7 @@
     </div>
   </div>
   <div class="card-body">
-    <p *ngIf="!branchId" class="text-body-secondary mb-0">Add a branch to set up kitchen stations.</p>
+    <p *ngIf="!branchId" class="text-body-secondary mb-0">Add or activate a branch to set up kitchen stations.</p>
     <p *ngIf="branchId && !configuration" class="text-body-secondary mb-0" role="status">Loading kitchen stations...</p>
     <ng-container *ngIf="configuration">
       <p *ngIf="!configuration.stations.length" class="text-body-secondary">

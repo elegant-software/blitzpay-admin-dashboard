@@ -13,6 +13,8 @@ import { BranchPreparationComponent } from './branch-preparation.component';
  * Kitchen station per Product Category, shown on the merchant Categories tab.
  * Categories belong to the Merchant but routing is stored per Branch (one screen shows one station),
  * so a Branch picker selects which Branch's routing is edited. Each change is saved immediately.
+ * Only active Branches are offered: inactive ones take no orders, and defaulting to one hid the
+ * active Branch's missing routing.
  */
 @Component({
   selector: 'app-category-kitchen-routing',
@@ -36,7 +38,11 @@ export class CategoryKitchenRoutingComponent implements OnChanges, OnDestroy {
   private request?: Subscription;
 
   get branchOptions(): { id: string; name: string }[] {
-    return this.branches.flatMap(b => (b.branchId ?? b.id) ? [{ id: (b.branchId ?? b.id)!, name: b.name }] : []);
+    return this.branches.flatMap(b => (b.branchId ?? b.id) && b.active !== false ? [{ id: (b.branchId ?? b.id)!, name: b.name }] : []);
+  }
+
+  get branchName(): string {
+    return this.branchOptions.find(o => o.id === this.branchId)?.name ?? '';
   }
 
   get unassignedCount(): number {
