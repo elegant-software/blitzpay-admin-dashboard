@@ -36,6 +36,10 @@
       <button class="pwa-install-dismiss" type="button" data-testid="pwa-install-dismiss" (click)="pwa.dismissInstallPrompt()">Not now</button>
     </div>
   </aside>
+  <footer class="legal-footer" data-testid="legal-footer">
+    <a [href]="environment.imprintUrl" target="_blank" rel="noopener noreferrer">Impressum</a>
+    <a [href]="environment.privacyUrl" target="_blank" rel="noopener noreferrer">Datenschutz / Privacy</a>
+  </footer>
 </main>
 <aside #downloadShell class="install-prompt download-shell" data-testid="app-install-prompt" aria-label="Get the BlitzPay app" [hidden]="!scrolled">
   <div class="download-invitation">
