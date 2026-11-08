@@ -20,7 +20,7 @@ import { StorefrontTableService } from '../table/storefront-table.service';
 import { StorefrontLocationService } from '../table/storefront-location.service';
 import { NotificationService } from '../notifications/notification.service';
 
-/** Online methods are paid now; CASH (only at a Table) is paid to staff, and the Order stays unpaid until they confirm it. */
+/** Online methods are paid now; CASH is paid to staff (at the Table or the counter), and the Order stays unpaid until they confirm it. */
 type GuestCheckoutChoice = StorefrontPaymentMethod | 'CASH';
 
 @Component({
@@ -67,11 +67,10 @@ type GuestCheckoutChoice = StorefrontPaymentMethod | 'CASH';
           <input type="radio" name="payment" [(ngModel)]="selectedPaymentMethod" value="PAY_BY_BANK" [disabled]="!!cardForm" />
           <span><strong>Pay by Bank</strong><small>Secure hosted payment powered by Stripe</small></span>
         </label>
-        <label class="payment-choice" *ngIf="cashAvailable">
+        <label class="payment-choice">
           <input type="radio" name="payment" [(ngModel)]="selectedPaymentMethod" value="CASH" data-testid="pay-cash" [disabled]="!!cardForm || !!orderId" />
-          <span><strong>Cash</strong><small>Pay staff at your table. Your order is unpaid until they confirm the cash.</small></span>
+          <span><strong>Cash</strong><small>Pay staff at your table or the counter. Your order is unpaid until they confirm the cash.</small></span>
         </label>
-        <p class="muted" *ngIf="!cardAvailable && !payByBankAvailable && !cashAvailable">No online payment method is available for this merchant.</p>
         <label class="payment-choice guest-count" *ngIf="askGuestCount">
           <span><strong>How many people?</strong><small>At your table, including you.</small></span>
           <input type="number" name="guestCount" min="1" max="50" step="1" data-testid="guest-count" [(ngModel)]="guestCount" />
@@ -155,7 +154,7 @@ export class GuestCheckoutComponent implements OnInit {
         this.cart.updateCatalogText(products, this.merchantId, this.branchId);
         this.capabilities = capabilities;
         this.cartNeedsReview = this.cart.reconcile(products, false);
-        this.selectedPaymentMethod = this.cardAvailable ? 'CARD' : this.payByBankAvailable ? 'PAY_BY_BANK' : this.cashAvailable ? 'CASH' : undefined;
+        this.selectedPaymentMethod = this.cardAvailable ? 'CARD' : this.payByBankAvailable ? 'PAY_BY_BANK' : 'CASH';
       },
       error: (error: unknown) => this.errorMessage = this.toMessage(error, 'Unable to load guest checkout.')
     });
@@ -167,11 +166,6 @@ export class GuestCheckoutComponent implements OnInit {
 
   get payByBankAvailable(): boolean {
     return !!this.capabilities?.enabledPaymentFlows.includes('PAY_BY_BANK');
-  }
-
-  /** Cash is offered only at a Table, where staff can collect it. Guests never get Deferred Payment. */
-  get cashAvailable(): boolean {
-    return !!this.tableCode;
   }
 
   get confirmLabel(): string {

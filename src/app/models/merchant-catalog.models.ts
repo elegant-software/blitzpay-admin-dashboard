@@ -589,6 +589,9 @@ export interface OrderResponse {
   currency: string;
   createdAt: string;
   paidAt?: string | null;
+  /** CASH: the shopper pays staff; the order stays PENDING until staff settle it. */
+  checkoutPaymentMethod?: 'BANK_ACCOUNT' | 'CARD' | 'PAY_BY_BANK' | 'TERMINAL' | 'PAYPAL' | 'CASH' | null;
+  paymentSource?: 'APP_PAYMENT' | 'MANUAL_SETTLEMENT' | null;
 }
 
 export interface CreateOrderItemRequest {
