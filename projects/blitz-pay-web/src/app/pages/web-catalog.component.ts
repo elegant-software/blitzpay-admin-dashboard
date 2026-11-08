@@ -21,9 +21,9 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
   template: `
     <ng-container *ngIf="!loading; else catalogLoading">
     <section class="merchant-hero">
-      <web-merchant-logo [merchant]="merchant" [merchantId]="merchantId" />
+      <web-merchant-logo [merchant]="merchant" />
       <div>
-        <p class="eyebrow">{{ brand.isBonaMe() ? 'Fresh from our kitchen' : 'Shop online' }}</p>
+        <p class="eyebrow">{{ brand.theme() ? 'Fresh from our kitchen' : 'Shop online' }}</p>
         <h1>{{ merchant?.merchantName || 'Merchant catalog' }}</h1>
         <p class="fulfillment-label" *ngIf="branch">Fulfilled by {{ branch.name }}<span *ngIf="branchAddress"> &middot; {{ branchAddress }}</span></p>
       </div>
@@ -49,8 +49,8 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
       <article class="surface products">
         <div class="catalog-toolbar">
           <div>
-            <h2>{{ brand.isBonaMe() ? 'The menu' : 'Products' }}</h2>
-            <p class="muted">{{ products.length }} {{ brand.isBonaMe() ? 'things to look forward to' : 'available' }}</p>
+            <h2>{{ brand.theme() ? 'The menu' : 'Products' }}</h2>
+            <p class="muted">{{ products.length }} {{ brand.theme() ? 'things to look forward to' : 'available' }}</p>
           </div>
           <div class="search-products language-picker" *ngIf="languages.length">
             <span>Language</span>

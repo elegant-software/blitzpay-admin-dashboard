@@ -16,7 +16,8 @@ import { StorefrontBrandService } from './services/storefront-brand.service';
 })
 export class AppComponent implements AfterViewInit, OnDestroy {
   readonly brand = inject(StorefrontBrandService);
-  logoFailed = false;
+  /** Header logo URL that failed to load; keyed by URL so the next merchant logo is still tried. */
+  failedLogo: string | null | undefined = null;
   readonly pwa = inject(StorefrontPwaService);
   readonly theme = inject(StorefrontThemeService);
   readonly environment = environment;

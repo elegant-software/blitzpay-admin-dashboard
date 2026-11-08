@@ -18,7 +18,7 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
   imports: [CommonModule, RouterLink, WebCartComponent, MerchantLogoComponent],
   template: `
     <section class="merchant-hero compact">
-      <web-merchant-logo [merchant]="merchant" [merchantId]="merchantId" />
+      <web-merchant-logo [merchant]="merchant" />
       <div>
         <p class="eyebrow">Shop online</p>
         <h1>{{ merchant?.merchantName || 'Product' }}</h1>

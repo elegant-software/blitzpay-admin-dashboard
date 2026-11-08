@@ -4,6 +4,8 @@ export interface StorefrontMerchant {
   applicationId: string;
   merchantName: string;
   logoUrl?: string | null;
+  /** Named look chosen in the admin dashboard; maps to a `data-storefront-theme` CSS preset. */
+  storefrontTheme?: 'DEFAULT' | 'HERITAGE' | null;
   offerings?: string[];
   originalMenuLanguage?: string | null;
   originalLanguage?: string | null;

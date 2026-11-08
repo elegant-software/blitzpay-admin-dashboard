@@ -31,7 +31,7 @@ type GuestCheckoutChoice = StorefrontPaymentMethod | 'CASH';
   imports: [CommonModule, FormsModule, RouterLink, MerchantLogoComponent],
   template: `
     <section class="merchant-hero compact">
-      <web-merchant-logo [merchant]="merchant" [merchantId]="merchantId" />
+      <web-merchant-logo [merchant]="merchant" />
       <div>
         <p class="eyebrow">Guest checkout</p>
         <h1>Checkout securely</h1>

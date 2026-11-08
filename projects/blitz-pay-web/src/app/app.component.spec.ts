@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 import { environment } from '../environments/environment';
 import { AppComponent } from './app.component';
 import { NotificationService } from './notifications/notification.service';
@@ -8,7 +9,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 describe('Web Storefront shell', () => {
   it('mounts the global toast host and shows action feedback', async () => {
     await TestBed.configureTestingModule({
-      imports: [AppComponent], providers: [provideRouter([]), provideNoopAnimations()]
+      imports: [AppComponent], providers: [provideRouter([]), provideHttpClient(), provideNoopAnimations()]
     }).compileComponents();
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
@@ -29,7 +30,7 @@ describe('Web Storefront shell', () => {
   it('reveals store choices after scrolling and pressing Download, and can collapse them', async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
-      providers: [provideRouter([])]
+      providers: [provideRouter([]), provideHttpClient()]
     }).compileComponents();
 
     const fixture = TestBed.createComponent(AppComponent);
@@ -60,7 +61,7 @@ describe('Web Storefront shell', () => {
   });
 
   it('exposes an accessible header theme toggle', async () => {
-    await TestBed.configureTestingModule({ imports: [AppComponent], providers: [provideRouter([])] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [AppComponent], providers: [provideRouter([]), provideHttpClient()] }).compileComponents();
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const button = fixture.nativeElement.querySelector('[data-testid="theme-toggle"]') as HTMLButtonElement;
@@ -74,7 +75,7 @@ describe('Web Storefront shell', () => {
   it('shows a separate, dismissible PWA install notice only when the browser signals installability', async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
-      providers: [provideRouter([])]
+      providers: [provideRouter([]), provideHttpClient()]
     }).compileComponents();
 
     const fixture = TestBed.createComponent(AppComponent);

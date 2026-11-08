@@ -2,45 +2,74 @@ import { TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { Subject, of, throwError } from 'rxjs';
+import { StorefrontMerchant } from '../models/storefront.models';
+import { StorefrontApiService } from './storefront-api.service';
 import { StorefrontBrandService } from './storefront-brand.service';
 
 @Component({ standalone: true, template: '' })
 class BrandRouteStub {}
 
-describe('Storefront merchant branding', () => {
-  beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([
-    { path: '', component: BrandRouteStub },
-    { path: 'm/:merchantId/b/:branchId', component: BrandRouteStub },
-    { path: 'order/:orderId', component: BrandRouteStub }
-  ])] }));
+const merchants: Record<string, StorefrontMerchant> = {
+  cafe: { applicationId: 'cafe', merchantName: 'Cafe', storefrontTheme: 'HERITAGE' },
+  plain: { applicationId: 'plain', merchantName: 'Plain', storefrontTheme: 'DEFAULT' }
+};
 
-  it('brands the entry page and the approved merchant without changing another merchant', () => {
-    const brand = TestBed.inject(StorefrontBrandService);
-    expect(brand.isBonaMe()).toBeTrue();
-    brand.useMerchant('8ff7bcf5-e52c-4c25-877e-a32cfc81ea46');
-    expect(document.documentElement.dataset['storefrontBrand']).toBe('bona-me');
-    brand.useMerchant('another-merchant');
-    expect(brand.isBonaMe()).toBeFalse();
-    expect(document.documentElement.dataset['storefrontBrand']).toBeUndefined();
-    brand.useHome();
-    expect(brand.isBonaMe()).toBeTrue();
+describe('Storefront merchant theme', () => {
+  let api: jasmine.SpyObj<StorefrontApiService>;
+  const attr = () => document.documentElement.getAttribute('data-storefront-theme');
+
+  beforeEach(() => {
+    api = jasmine.createSpyObj<StorefrontApiService>('StorefrontApiService', ['getMerchant']);
+    api.getMerchant.and.callFake(id => merchants[id] ? of(merchants[id]) : throwError(() => new Error('404')));
+    TestBed.configureTestingModule({ providers: [
+      { provide: StorefrontApiService, useValue: api },
+      provideRouter([
+        { path: '', component: BrandRouteStub },
+        { path: 'm/:merchantId/b/:branchId', component: BrandRouteStub },
+        { path: 'order/:orderId', component: BrandRouteStub }
+      ])
+    ] });
   });
 
-  it('does not assume an unresolved order belongs to bona-me', () => {
+  it('applies the theme the merchant chose and resets for others', () => {
+    const brand = TestBed.inject(StorefrontBrandService);
+    brand.useMerchant('cafe');
+    TestBed.flushEffects();
+    expect(brand.theme()).toBe('heritage');
+    expect(attr()).toBe('heritage');
+    brand.useMerchant('plain');
+    TestBed.flushEffects();
+    expect(brand.theme()).toBeNull();
+    expect(attr()).toBeNull();
+  });
+
+  it('stays neutral when the merchant is unknown or fails to load', () => {
     const brand = TestBed.inject(StorefrontBrandService);
     brand.useMerchant(null);
-    expect(brand.isBonaMe()).toBeFalse();
+    expect(brand.theme()).toBeNull();
+    brand.useMerchant('missing');
+    expect(brand.theme()).toBeNull();
   });
 
-  it('clears merchant branding when navigating to another merchant or an unresolved order', async () => {
+  it('ignores a slow response for a merchant the guest already left', () => {
+    const slow = new Subject<StorefrontMerchant>();
+    api.getMerchant.and.returnValue(slow);
     const brand = TestBed.inject(StorefrontBrandService);
-    const harness = await RouterTestingHarness.create('/m/8ff7bcf5-e52c-4c25-877e-a32cfc81ea46/b/bremen');
-    expect(brand.isBonaMe()).toBeTrue();
-    await harness.navigateByUrl('/m/another-merchant/b/another-branch');
-    expect(brand.isBonaMe()).toBeFalse();
+    brand.useMerchant('cafe');
+    brand.useMerchant(null);
+    slow.next(merchants['cafe']);
+    expect(brand.theme()).toBeNull();
+  });
+
+  it('follows navigation: merchant menu themed, entry page and unresolved order neutral', async () => {
+    const brand = TestBed.inject(StorefrontBrandService);
+    const harness = await RouterTestingHarness.create('/m/cafe/b/bremen');
+    expect(brand.theme()).toBe('heritage');
     await harness.navigateByUrl('/');
-    expect(brand.isBonaMe()).toBeTrue();
+    expect(brand.theme()).toBeNull();
+    await harness.navigateByUrl('/m/cafe/b/bremen');
     await harness.navigateByUrl('/order/unresolved');
-    expect(brand.isBonaMe()).toBeFalse();
+    expect(brand.theme()).toBeNull();
   });
 });
