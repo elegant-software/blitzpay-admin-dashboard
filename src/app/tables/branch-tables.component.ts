@@ -223,6 +223,7 @@ export class BranchTablesComponent implements OnInit {
     this.run(this.merchantApi.updateFloorAreas(this.env, this.apiVersion, this.merchantId, this.branchId, this.floorPlanId, areas),
       'Failed to save the areas.', (updated) => {
         this.floorPlans = this.floorPlans.map((plan) => plan.id === updated.id ? updated : plan);
+        this.notifications.success(updated.areas?.length ? 'Areas saved.' : 'Areas removed. The live floor shows the picture again.');
       });
   }
 

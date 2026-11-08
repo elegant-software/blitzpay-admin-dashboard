@@ -43,6 +43,7 @@ describe("BranchTablesComponent", () => {
       "deleteTable",
       "updateTable",
       "placeTable",
+      "updateFloorAreas",
     ]);
     api.getMerchant.and.returnValue(
       of({ merchantId: "m-1", merchantName: "Café Blitz" } as Merchant),
@@ -112,6 +113,18 @@ describe("BranchTablesComponent", () => {
       fixture.nativeElement.querySelector('[data-test="capacity-warning"]')
         ?.textContent,
     ).toContain("seat 8 guests");
+  });
+
+  it("confirms saved Floor Areas, since the greyed-out Save button alone looks like nothing happened", () => {
+    const fixture = create([], null, "floor-plans");
+    const success = spyOn(TestBed.inject(NotificationService), "success");
+    const areas = [{ name: "Bar", x: 0, y: 0, width: 0.5, height: 0.5 }];
+    api.updateFloorAreas.and.returnValue(of({ id: `${uuid}-plan`, name: "Terrace", imageUrl: null, areas }));
+
+    fixture.componentInstance.saveAreas(areas);
+
+    expect(success).toHaveBeenCalledOnceWith("Areas saved.");
+    expect(fixture.componentInstance.floorPlan?.areas).toEqual(areas);
   });
 
   it("explains that a Table with orders must be deactivated instead of deleted", () => {
