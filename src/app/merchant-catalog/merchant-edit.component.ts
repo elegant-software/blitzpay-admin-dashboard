@@ -6,11 +6,13 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import {
+  Branch,
   CreateMerchantRequest,
   EnvironmentKey,
   MenuLanguage,
   Merchant,
   MerchantVerticalResponse,
+  StorefrontTheme,
   UpdateMerchantRequest,
   MerchantLocation,
   UpdateMerchantLocationRequest,
@@ -47,11 +49,23 @@ export class MerchantEditComponent implements OnInit {
   errorMessage = '';
 
 
-  /** Named looks for the guest storefront; must match the backend StorefrontTheme enum. */
-  readonly storefrontThemeOptions = [
-    { code: 'DEFAULT', label: 'Standard' },
-    { code: 'HERITAGE', label: 'Heritage (cream, brown, gold)' }
-  ];
+  /** All storefront themes, drafts included; maintained in the backend `storefront_themes` table. */
+  storefrontThemes: StorefrontTheme[] = [];
+  /** Theme shown by the storefront preview link; may be a draft. */
+  previewThemeCode = '';
+  /** First branch of the merchant: the storefront needs a branch to show the menu. */
+  previewBranchId = '';
+
+  /** Merchants can only be given published themes; keep the current one listed even if it is not. */
+  get selectableThemes(): StorefrontTheme[] {
+    return this.storefrontThemes.filter((t) => t.status === 'PUBLISHED' || t.code === this.form.storefrontTheme);
+  }
+
+  get themePreviewUrl(): string {
+    if (!this.merchantId || !this.previewBranchId || !this.previewThemeCode) return '';
+    return `${this.selectedEnvironment.storefrontUrl}/m/${encodeURIComponent(this.merchantId)}/b/${encodeURIComponent(this.previewBranchId)}`
+      + `?previewTheme=${encodeURIComponent(this.previewThemeCode)}`;
+  }
 
   form = {
     merchantName: '',
@@ -116,9 +130,11 @@ export class MerchantEditComponent implements OnInit {
     forkJoin({
       verticals: this.merchantApi.getVerticals(this.selectedEnvironment, this.apiVersion),
       menuLanguages: this.merchantApi.getMenuLanguages(this.selectedEnvironment, this.apiVersion).pipe(catchError(() => of([] as MenuLanguage[]))),
+      themes: this.merchantApi.getStorefrontThemes(this.selectedEnvironment, this.apiVersion).pipe(catchError(() => of([] as StorefrontTheme[]))),
     }).subscribe({
-      next: ({ verticals, menuLanguages }) => {
+      next: ({ verticals, menuLanguages, themes }) => {
         this.verticals = verticals;
+        this.storefrontThemes = themes;
         this.menuLanguages = menuLanguages;
         if (this.isCreateMode) {
           this.loading = false;
@@ -134,11 +150,14 @@ export class MerchantEditComponent implements OnInit {
     forkJoin({
       merchant: this.merchantApi.getMerchant(this.selectedEnvironment, this.apiVersion, this.merchantId),
       location: this.merchantApi.getLocation(this.selectedEnvironment, this.apiVersion, this.merchantId).pipe(catchError(() => of(null))),
+      branches: this.merchantApi.getBranches(this.selectedEnvironment, this.apiVersion, this.merchantId).pipe(catchError(() => of([] as Branch[]))),
     }).subscribe({
-      next: ({ merchant, location }) => {
+      next: ({ merchant, location, branches }) => {
         this.merchant = merchant;
+        this.previewBranchId = branches[0]?.branchId ?? branches[0]?.id ?? '';
         this.location = location;
         this.populateForm(merchant, location);
+        this.previewThemeCode = this.form.storefrontTheme;
         this.loading = false;
       },
       error: (error) => { this.loading = false; this.notifications.apiError(error, 'Failed to load merchant.'); }

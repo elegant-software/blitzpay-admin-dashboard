@@ -84,9 +84,19 @@
               </div>
               <div class="col-md-4">
                 <label class="form-label" for="merchant-storefront-theme">Storefront theme</label>
-                <select id="merchant-storefront-theme" class="form-select" [(ngModel)]="form.storefrontTheme">
-                  <option *ngFor="let option of storefrontThemeOptions" [value]="option.code">{{ option.label }}</option>
+                <select id="merchant-storefront-theme" class="form-select" [(ngModel)]="form.storefrontTheme" (ngModelChange)="previewThemeCode = $event">
+                  <option *ngFor="let theme of selectableThemes" [value]="theme.code">{{ theme.displayName }}{{ theme.status === 'DRAFT' ? ' (draft)' : '' }}</option>
                 </select>
+              </div>
+              <div class="col-md-8" *ngIf="!isCreateMode">
+                <label class="form-label" for="merchant-theme-preview">Preview a theme on this storefront</label>
+                <div class="input-group">
+                  <select id="merchant-theme-preview" class="form-select" [(ngModel)]="previewThemeCode">
+                    <option *ngFor="let theme of storefrontThemes" [value]="theme.code">{{ theme.displayName }}{{ theme.status === 'DRAFT' ? ' (draft)' : '' }}</option>
+                  </select>
+                  <a class="btn btn-outline-secondary" data-testid="theme-preview-link" [attr.href]="themePreviewUrl || null" [class.disabled]="!themePreviewUrl" target="_blank" rel="noopener">Open preview</a>
+                </div>
+                <div class="form-text" *ngIf="!previewBranchId">Add a branch first; the storefront shows a branch's menu.</div>
               </div>
               <div class="col-md-4">
                 <label class="form-label" for="merchant-vat">Default VAT</label>

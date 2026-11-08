@@ -33,6 +33,7 @@ import {
   MerchantSearchRequest,
   MerchantSearchResponse,
   MerchantVerticalResponse,
+  StorefrontTheme,
   OrderResponse,
   Product,
   PreparationConfiguration,
@@ -360,6 +361,11 @@ export class MerchantApiService {
 
   getTranslationCoverage(environment: BackendEnvironment, apiVersion: string, merchantId: string): Observable<TranslationCoverage[]> {
     return this.http.get<TranslationCoverage[]>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/translation-coverage`);
+  }
+
+  /** All themes including drafts, so a draft can be previewed before merchants can pick it. */
+  getStorefrontThemes(environment: BackendEnvironment, apiVersion: string): Observable<StorefrontTheme[]> {
+    return this.http.get<StorefrontTheme[]>(`${this.base(environment, apiVersion)}/storefront/themes`, { params: { includeDrafts: true } });
   }
 
   getVerticals(environment: BackendEnvironment, apiVersion: string): Observable<MerchantVerticalResponse[]> {

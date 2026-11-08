@@ -15,13 +15,18 @@ import {
   StorefrontPaymentMethod,
   StorefrontProduct,
   StorefrontTableAvailability,
-  StorefrontTableResolution
+  StorefrontTableResolution,
+  StorefrontThemeLook
 } from '../models/storefront.models';
 
 @Injectable({ providedIn: 'root' })
 export class StorefrontApiService {
   private readonly catalogLanguage = inject(StorefrontLanguageService);
   constructor(private readonly http: HttpClient) {}
+
+  getStorefrontTheme(code: string): Observable<StorefrontThemeLook> {
+    return this.http.get<StorefrontThemeLook>(`${this.baseUrl}/storefront/themes/${encodeURIComponent(code)}`);
+  }
 
   getMerchant(merchantId: string): Observable<StorefrontMerchant> {
     return this.http.get<StorefrontMerchant>(`${this.baseUrl}/merchants/${encodeURIComponent(merchantId)}`);

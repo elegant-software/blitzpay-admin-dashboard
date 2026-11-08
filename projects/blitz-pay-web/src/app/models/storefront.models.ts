@@ -4,12 +4,19 @@ export interface StorefrontMerchant {
   applicationId: string;
   merchantName: string;
   logoUrl?: string | null;
-  /** Named look chosen in the admin dashboard; maps to a `data-storefront-theme` CSS preset. */
-  storefrontTheme?: 'DEFAULT' | 'HERITAGE' | null;
+  /** Code of the storefront theme chosen in the admin dashboard; `DEFAULT` is the neutral look. */
+  storefrontTheme?: string | null;
   offerings?: string[];
   originalMenuLanguage?: string | null;
   originalLanguage?: string | null;
   supportedMenuLanguages?: string[];
+}
+
+/** A theme from `GET /v1/storefront/themes/{code}`: colours per light/dark mode plus a layout built into styles.css. */
+export interface StorefrontThemeLook {
+  code: string;
+  style: 'STANDARD' | 'CLASSIC';
+  tokens: Partial<Record<'light' | 'dark', Record<string, string>>>;
 }
 
 export interface StorefrontBranch {

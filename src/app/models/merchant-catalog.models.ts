@@ -266,6 +266,15 @@ export interface MerchantLogoUploadRequest {
   contentType: string;
 }
 
+/** A storefront look from `GET /v1/storefront/themes`; merchants can only be given PUBLISHED ones. */
+export interface StorefrontTheme {
+  code: string;
+  displayName: string;
+  style: 'STANDARD' | 'CLASSIC';
+  status: 'DRAFT' | 'PUBLISHED';
+  tokens: Record<string, Record<string, string>>;
+}
+
 export interface MerchantVerticalResponse {
   code: string;
   displayName: string;

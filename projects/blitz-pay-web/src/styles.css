@@ -993,89 +993,63 @@ button:disabled {
   color: var(--storefront-ink);
 }
 
-/* heritage: cream, brown and gold preset, chosen per merchant (storefrontTheme). The neutral palette above stays the default. */
-:root[data-storefront-theme="heritage"] {
-  --storefront-ink: #29231b;
-  --storefront-muted: #756754;
-  --storefront-primary: #926b1d;
-  --storefront-mint: #f0e6d2;
-  --storefront-stroke: #e4d8c3;
-  --storefront-bg: #fff9ef;
-  --storefront-warm: #f7efdf;
-  --storefront-surface: #fffdf8;
-  --storefront-action: #634a23;
-  --storefront-action-hover: #49351a;
-  --storefront-positive: #634a23;
-  --storefront-glow: #f0e3c9;
+/* classic: layout for themes with style CLASSIC (serif headings, square corners, roomier cards).
+   Colours come from the theme's tokens (storefront_themes table), applied by StorefrontBrandService. */
+:root[data-storefront-style="classic"] {
   font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
 }
 
-:root[data-storefront-theme="heritage"][data-theme="dark"] {
-  --storefront-ink: #f7edde;
-  --storefront-muted: #c4b399;
-  --storefront-primary: #dbb771;
-  --storefront-mint: #3b2e1e;
-  --storefront-stroke: #564633;
-  --storefront-bg: #211b15;
-  --storefront-warm: #30261c;
-  --storefront-surface: #2b231b;
-  --storefront-action: #785627;
-  --storefront-action-hover: #8b642c;
-  --storefront-positive: #e7c68b;
-  --storefront-glow: #392b1d;
-}
-
-:root[data-storefront-theme="heritage"] body { background: var(--storefront-bg); }
-:root[data-storefront-theme="heritage"] h1,
-:root[data-storefront-theme="heritage"] .catalog-toolbar h2,
-:root[data-storefront-theme="heritage"] .cart h2,
-:root[data-storefront-theme="heritage"] .payment-panel h2 {
+:root[data-storefront-style="classic"] body { background: var(--storefront-bg); }
+:root[data-storefront-style="classic"] h1,
+:root[data-storefront-style="classic"] .catalog-toolbar h2,
+:root[data-storefront-style="classic"] .cart h2,
+:root[data-storefront-style="classic"] .payment-panel h2 {
   font-family: Georgia, "Times New Roman", serif;
   font-weight: 400;
   letter-spacing: -.035em;
 }
-:root[data-storefront-theme="heritage"] .merchant-hero {
+:root[data-storefront-style="classic"] .merchant-hero {
   border-bottom: 1px solid var(--storefront-stroke);
   padding-block: 1rem 2rem;
   gap: 1.75rem;
 }
-:root[data-storefront-theme="heritage"] .merchant-logo.has-logo {
+:root[data-storefront-style="classic"] .merchant-logo.has-logo {
   flex: 0 0 9rem;
   width: 9rem;
   height: 4.5rem;
   padding: .45rem;
-  background: #fff9ef;
+  background: #fff;
   border-radius: .3rem;
 }
-:root[data-storefront-theme="heritage"] .merchant-logo span { font: 1.8rem Georgia, serif; color: #634a23; }
-:root[data-storefront-theme="heritage"] .merchant-hero h1 { font-size: clamp(2.4rem, 5vw, 3.5rem); }
-:root[data-storefront-theme="heritage"] .eyebrow { font-size: .68rem; letter-spacing: .2em; }
-:root[data-storefront-theme="heritage"] .surface { border-radius: .45rem; padding: 1.6rem; }
-:root[data-storefront-theme="heritage"] .product-grid { gap: 1.25rem; }
-:root[data-storefront-theme="heritage"] .product-card { border-radius: .35rem; padding: .75rem; gap: 1rem; }
-:root[data-storefront-theme="heritage"] .product-image { border-radius: .2rem; height: 11rem; background: var(--storefront-warm); }
-:root[data-storefront-theme="heritage"] .product-copy { padding-inline: .25rem; }
-:root[data-storefront-theme="heritage"] .product-copy h3 { font-size: 1.1rem; line-height: 1.35; margin-block: .4rem; }
-:root[data-storefront-theme="heritage"] .product-copy p { line-height: 1.65; }
-:root[data-storefront-theme="heritage"] .product-copy strong { color: var(--storefront-primary); }
-:root[data-storefront-theme="heritage"] .product-card.is-selected { background: var(--storefront-warm); }
-:root[data-storefront-theme="heritage"] .add-button,
-:root[data-storefront-theme="heritage"] .checkout-button,
-:root[data-storefront-theme="heritage"] .checkout-link { border-radius: .3rem; letter-spacing: .03em; }
-:root[data-storefront-theme="heritage"] :is(.add-button, .checkout-button, .checkout-link):hover:not(:disabled) { background: var(--storefront-action-hover); }
-:root[data-storefront-theme="heritage"] .category-chips { gap: .6rem; padding-bottom: .5rem; }
-:root[data-storefront-theme="heritage"] .category-chips button { border-radius: .25rem; padding: .6rem 1rem; font-weight: 600; }
-:root[data-storefront-theme="heritage"] .fulfillment-label { display: block; width: fit-content; border-radius: .2rem; font-weight: 400; line-height: 1.5; }
-:root[data-storefront-theme="heritage"] .table-note { border-left: 3px solid var(--storefront-primary); border-radius: .2rem; padding: 1rem 1.25rem; }
-:root[data-storefront-theme="heritage"] .cart { border-top: 3px solid var(--storefront-primary); }
-:root[data-storefront-theme="heritage"] .cart h2 { font-size: 1.65rem; }
-:root[data-storefront-theme="heritage"] .overview-image { height: auto; min-height: 15rem; }
+:root[data-storefront-style="classic"] .merchant-logo span { font: 1.8rem Georgia, serif; color: var(--storefront-action); }
+:root[data-storefront-style="classic"] .merchant-hero h1 { font-size: clamp(2.4rem, 5vw, 3.5rem); }
+:root[data-storefront-style="classic"] .eyebrow { font-size: .68rem; letter-spacing: .2em; }
+:root[data-storefront-style="classic"] .surface { border-radius: .45rem; padding: 1.6rem; }
+:root[data-storefront-style="classic"] .product-grid { gap: 1.25rem; }
+:root[data-storefront-style="classic"] .product-card { border-radius: .35rem; padding: .75rem; gap: 1rem; }
+:root[data-storefront-style="classic"] .product-image { border-radius: .2rem; height: 11rem; background: var(--storefront-warm); }
+:root[data-storefront-style="classic"] .product-copy { padding-inline: .25rem; }
+:root[data-storefront-style="classic"] .product-copy h3 { font-size: 1.1rem; line-height: 1.35; margin-block: .4rem; }
+:root[data-storefront-style="classic"] .product-copy p { line-height: 1.65; }
+:root[data-storefront-style="classic"] .product-copy strong { color: var(--storefront-primary); }
+:root[data-storefront-style="classic"] .product-card.is-selected { background: var(--storefront-warm); }
+:root[data-storefront-style="classic"] .add-button,
+:root[data-storefront-style="classic"] .checkout-button,
+:root[data-storefront-style="classic"] .checkout-link { border-radius: .3rem; letter-spacing: .03em; }
+:root[data-storefront-style="classic"] :is(.add-button, .checkout-button, .checkout-link):hover:not(:disabled) { background: var(--storefront-action-hover); }
+:root[data-storefront-style="classic"] .category-chips { gap: .6rem; padding-bottom: .5rem; }
+:root[data-storefront-style="classic"] .category-chips button { border-radius: .25rem; padding: .6rem 1rem; font-weight: 600; }
+:root[data-storefront-style="classic"] .fulfillment-label { display: block; width: fit-content; border-radius: .2rem; font-weight: 400; line-height: 1.5; }
+:root[data-storefront-style="classic"] .table-note { border-left: 3px solid var(--storefront-primary); border-radius: .2rem; padding: 1rem 1.25rem; }
+:root[data-storefront-style="classic"] .cart { border-top: 3px solid var(--storefront-primary); }
+:root[data-storefront-style="classic"] .cart h2 { font-size: 1.65rem; }
+:root[data-storefront-style="classic"] .overview-image { height: auto; min-height: 15rem; }
 @media (max-width: 600px) {
-  :root[data-storefront-theme="heritage"] .merchant-hero { gap: 1rem; padding-bottom: 1.4rem; }
-  :root[data-storefront-theme="heritage"] .merchant-logo.has-logo { flex-basis: 6.5rem; width: 6.5rem; height: 3.8rem; }
-  :root[data-storefront-theme="heritage"] .merchant-hero h1 { font-size: 2.1rem; }
-  :root[data-storefront-theme="heritage"] .surface { padding: 1rem; }
-  :root[data-storefront-theme="heritage"] .product-grid { gap: .8rem; }
-  :root[data-storefront-theme="heritage"] .category-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .75rem; scroll-snap-type: x proximity; }
-  :root[data-storefront-theme="heritage"] .category-chips button { flex: 0 0 auto; white-space: nowrap; scroll-snap-align: start; }
+  :root[data-storefront-style="classic"] .merchant-hero { gap: 1rem; padding-bottom: 1.4rem; }
+  :root[data-storefront-style="classic"] .merchant-logo.has-logo { flex-basis: 6.5rem; width: 6.5rem; height: 3.8rem; }
+  :root[data-storefront-style="classic"] .merchant-hero h1 { font-size: 2.1rem; }
+  :root[data-storefront-style="classic"] .surface { padding: 1rem; }
+  :root[data-storefront-style="classic"] .product-grid { gap: .8rem; }
+  :root[data-storefront-style="classic"] .category-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .75rem; scroll-snap-type: x proximity; }
+  :root[data-storefront-style="classic"] .category-chips button { flex: 0 0 auto; white-space: nowrap; scroll-snap-align: start; }
 }
