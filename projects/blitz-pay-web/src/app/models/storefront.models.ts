@@ -53,8 +53,8 @@ export interface StorefrontCustomerLocation {
   capturedAt: string;
 }
 
-/** CASH: the guest pays staff; the Order stays unpaid until staff confirm it. Online methods are chosen later, when paying. */
-export type StorefrontCheckoutPaymentMethod = 'CASH';
+/** CASH / TERMINAL: the guest pays staff (cash or card terminal); the Order stays unpaid until staff confirm it. Online methods are chosen later, when paying. */
+export type StorefrontCheckoutPaymentMethod = 'CASH' | 'TERMINAL';
 
 /** Guest order: the server prices it from the catalog and sets the HttpOnly guest_token session cookie. */
 export interface CreateStorefrontOrderRequest {

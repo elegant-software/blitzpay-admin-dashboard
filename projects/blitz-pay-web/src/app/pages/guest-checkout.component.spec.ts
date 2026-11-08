@@ -178,6 +178,30 @@ describe('GuestCheckoutComponent at a Table', () => {
     expect(navigate).toHaveBeenCalledWith(['/order', 'order-200', 'confirmation'], { queryParams: { payment: 'cash' } });
   });
 
+  it('places a Card terminal order without an online payment and empties the cart', async () => {
+    const harness = await open();
+    const terminal = harness.routeNativeElement!.querySelector<HTMLInputElement>('[data-testid="pay-terminal"]')!;
+    terminal.click();
+    harness.detectChanges();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+
+    harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-testid="confirm-payment"]')!.click();
+    await harness.fixture.whenStable();
+
+    expect(api.createOrder).toHaveBeenCalledWith({
+      branchId: 'branch-12',
+      items: [{ productId: 'p1', quantity: 1 }],
+      tableCode: 'AB3K7Q',
+      customerLocation: here,
+      checkoutPaymentMethod: 'TERMINAL',
+      guestCount: 2
+    });
+    expect(api.startGuestPayment).not.toHaveBeenCalled();
+    expect(TestBed.inject(StorefrontSessionService).itemCount).toBe(0);
+    expect(navigate).toHaveBeenCalledWith(['/order', 'order-200', 'confirmation'], { queryParams: { payment: 'terminal' } });
+  });
+
   it('asks "How many people?" (default 2) at a free Table and sends the answer once', async () => {
     const harness = await open();
     const input = harness.routeNativeElement!.querySelector<HTMLInputElement>('[data-testid="guest-count"]')!;

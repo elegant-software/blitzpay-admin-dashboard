@@ -25,7 +25,8 @@ const PREPARATION_LABELS: Record<StorefrontPreparationStatus, string> = {
       <p class="eyebrow">Guest Checkout</p>
       <h1>{{ paid ? 'Payment confirmed' : cash ? 'Order placed' : 'Checking your payment' }}</h1>
       <p *ngIf="paid">Your payment{{ reference ? ' for order ' + reference : '' }} has been received.</p>
-      <p *ngIf="!paid && cash" data-testid="cash-note">Please pay staff in cash. Your order shows as paid once they confirm they received it.</p>
+      <p *ngIf="!paid && payment === 'cash'" data-testid="cash-note">Please pay staff in cash. Your order shows as paid once they confirm they received it.</p>
+      <p *ngIf="!paid && payment === 'terminal'" data-testid="terminal-note">Staff will bring the card terminal to you. Your order shows as paid once they confirm the payment.</p>
       <p *ngIf="!paid && !cash">We're waiting for live payment confirmation. You can check again or return to checkout.</p>
       <p *ngIf="tableName" class="fulfillment-label">Your table: {{ tableName }}</p>
       <section *ngIf="pickupNumber != null || preparationStatus" class="pickup" aria-live="polite">
@@ -58,8 +59,9 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
   preparationStatus: StorefrontPreparationStatus | null = null;
 
   readonly orderId = this.route.snapshot.paramMap.get('orderId') ?? '';
-  /** The guest chose Cash Payment: the order is placed and waits for staff to confirm the cash. */
-  readonly cash = this.route.snapshot.queryParamMap?.get('payment') === 'cash';
+  /** The guest pays staff (cash or card terminal): the order is placed and waits for staff to confirm the payment. */
+  readonly payment = this.route.snapshot.queryParamMap?.get('payment');
+  readonly cash = this.payment === 'cash' || this.payment === 'terminal';
   tableName: string | null = null;
 
   get preparationLabel(): string {

@@ -9,6 +9,7 @@ import {
   StorefrontCustomerLocation,
   StorefrontMerchant,
   StorefrontPaymentCapabilities,
+  StorefrontCheckoutPaymentMethod,
   StorefrontPaymentMethod,
   StorefrontProduct
 } from '../models/storefront.models';
@@ -22,8 +23,8 @@ import { NotificationService } from '../notifications/notification.service';
 import { StorefrontBrandService } from '../services/storefront-brand.service';
 import { MerchantLogoComponent } from '../components/merchant-logo.component';
 
-/** Online methods are paid now; CASH (only at a Table) is paid to staff, and the Order stays unpaid until they confirm it. */
-type GuestCheckoutChoice = StorefrontPaymentMethod | 'CASH';
+/** Online methods are paid now; CASH / TERMINAL (only at a Table) are paid to staff, and the Order stays unpaid until they confirm it. */
+type GuestCheckoutChoice = StorefrontPaymentMethod | StorefrontCheckoutPaymentMethod;
 
 @Component({
   selector: 'guest-checkout',
@@ -72,6 +73,10 @@ type GuestCheckoutChoice = StorefrontPaymentMethod | 'CASH';
         <label class="payment-choice" *ngIf="cashAvailable">
           <input type="radio" name="payment" [(ngModel)]="selectedPaymentMethod" value="CASH" data-testid="pay-cash" [disabled]="!!cardForm || !!orderId" />
           <span><strong>Cash</strong><small>Pay staff at your table. Your order is unpaid until they confirm the cash.</small></span>
+        </label>
+        <label class="payment-choice" *ngIf="cashAvailable">
+          <input type="radio" name="payment" [(ngModel)]="selectedPaymentMethod" value="TERMINAL" data-testid="pay-terminal" [disabled]="!!cardForm || !!orderId" />
+          <span><strong>Card terminal</strong><small>Staff bring the card terminal to your table. Your order is unpaid until they confirm the payment.</small></span>
         </label>
         <p class="muted" *ngIf="!cardAvailable && !payByBankAvailable && !cashAvailable">No online payment method is available for this merchant.</p>
         <label class="payment-choice guest-count" *ngIf="askGuestCount">
@@ -179,7 +184,7 @@ export class GuestCheckoutComponent implements OnInit {
   }
 
   get confirmLabel(): string {
-    if (this.selectedPaymentMethod === 'CASH') return this.checkingOut ? 'Placing order...' : 'Place order';
+    if (this.paysStaff) return this.checkingOut ? 'Placing order...' : 'Place order';
     return this.checkingOut ? 'Opening payment...' : 'Confirm and pay';
   }
 
@@ -193,7 +198,7 @@ export class GuestCheckoutComponent implements OnInit {
     if (!method || this.cart.itemCount === 0 || this.cartNeedsReview || this.checkingOut || this.branch?.active === false) return;
     this.checkingOut = true;
     this.errorMessage = '';
-    if (method === 'CASH') return this.placeCashOrder();
+    if (method === 'CASH' || method === 'TERMINAL') return this.placeStaffOrder(method);
     this.guestOrderId().pipe(
       switchMap((orderId) => this.payment.startGuest(orderId, method)),
       finalize(() => this.checkingOut = false)
@@ -231,12 +236,16 @@ export class GuestCheckoutComponent implements OnInit {
     return count >= 1 && count <= 50 ? count : 2;
   }
 
-  private placeCashOrder(): void {
-    this.guestOrderId(true).pipe(finalize(() => this.checkingOut = false)).subscribe({
+  private get paysStaff(): boolean {
+    return this.selectedPaymentMethod === 'CASH' || this.selectedPaymentMethod === 'TERMINAL';
+  }
+
+  private placeStaffOrder(method: StorefrontCheckoutPaymentMethod): void {
+    this.guestOrderId(method).pipe(finalize(() => this.checkingOut = false)).subscribe({
       next: (orderId) => {
-        this.notifications.success('Your order was placed. Please pay staff in cash.');
+        this.notifications.success(method === 'CASH' ? 'Your order was placed. Please pay staff in cash.' : 'Your order was placed. Staff will bring the card terminal.');
         this.cart.clearLines();
-        void this.router.navigate(['/order', orderId, 'confirmation'], { queryParams: { payment: 'cash' } });
+        void this.router.navigate(['/order', orderId, 'confirmation'], { queryParams: { payment: method.toLowerCase() } });
       },
       error: (error: unknown) => this.errorMessage = this.toMessage(error, 'Unable to place your order.')
     });
@@ -247,7 +256,7 @@ export class GuestCheckoutComponent implements OnInit {
     return this.tableCode ? from(this.location.current()) : of(null);
   }
 
-  private guestOrderId(cash = false): Observable<string> {
+  private guestOrderId(staffMethod?: StorefrontCheckoutPaymentMethod): Observable<string> {
     if (this.orderId) return of(this.orderId);
     return this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.language).pipe(
       switchMap((products) => {
@@ -262,7 +271,7 @@ export class GuestCheckoutComponent implements OnInit {
         branchId: this.branchId,
         items: this.cart.lines.map((line) => ({ productId: line.product.productId, quantity: line.quantity })),
         ...(this.tableCode && customerLocation ? { tableCode: this.tableCode, customerLocation } : {}),
-        ...(cash ? { checkoutPaymentMethod: 'CASH' as const } : {}),
+        ...(staffMethod ? { checkoutPaymentMethod: staffMethod } : {}),
         ...(this.askGuestCount && customerLocation ? { guestCount: this.validGuestCount } : {})
       })),
       map((order) => {
