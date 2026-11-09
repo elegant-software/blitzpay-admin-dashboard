@@ -47,6 +47,8 @@
 .pwa-install-actions button:focus-visible { outline: 3px solid var(--storefront-action); outline-offset: 2px; }
 
 .theme-toggle { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border: 1px solid var(--storefront-stroke); border-radius: 50%; background: var(--storefront-bg); color: var(--storefront-ink); cursor: pointer; margin-left: auto; }
+web-language-selector { margin-left: auto; }
+web-language-selector + .theme-toggle { margin-left: 0; }
 .theme-toggle svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .download-shell { position: fixed; z-index: 6; inset: auto 0 0; margin: 0; padding: .85rem max(1.25rem, env(safe-area-inset-right, 0px)) calc(.85rem + env(safe-area-inset-bottom, 0px)) max(1.25rem, env(safe-area-inset-left, 0px)); border-top: 1px solid var(--storefront-stroke); background: var(--storefront-surface); color: var(--storefront-ink); box-shadow: 0 -6px 24px rgb(0 0 0 / 8%); max-height: 40dvh; overflow-y: auto; }
 .download-shell[hidden], .store-links[hidden] { display: none; }

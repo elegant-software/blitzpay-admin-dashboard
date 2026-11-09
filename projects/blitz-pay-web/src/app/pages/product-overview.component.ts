@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { finalize, forkJoin, map, switchMap } from 'rxjs';
+import { EMPTY, catchError, finalize, forkJoin, map, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { WebCartComponent } from '../components/web-cart.component';
 import { StorefrontBranch, StorefrontMerchant, StorefrontProduct } from '../models/storefront.models';
@@ -68,6 +69,7 @@ export class ProductOverviewComponent implements OnInit {
   private readonly api = inject(StorefrontApiService);
   private readonly cart = inject(StorefrontSessionService);
   readonly catalogLanguage = inject(StorefrontLanguageService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly productId = this.route.snapshot.paramMap.get('productId') ?? '';
@@ -82,6 +84,13 @@ export class ProductOverviewComponent implements OnInit {
   ngOnInit(): void {
     this.brand.useMerchant(this.merchantId);
     this.cart.useScope(this.merchantId, this.branchId);
+    this.catalogLanguage.changes.pipe(
+      switchMap(language => this.api.getProduct(this.merchantId, this.branchId, this.productId, language).pipe(catchError((error: unknown) => {
+        this.errorMessage = this.notifications.apiError(error, 'Unable to load this product.');
+        return EMPTY;
+      }))),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(product => this.product = product);
     forkJoin({
       merchant: this.api.getMerchant(this.merchantId),
       branch: this.api.getBranch(this.merchantId, this.branchId)

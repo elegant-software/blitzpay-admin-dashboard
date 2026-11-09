@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewChecked, Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription, finalize, forkJoin, map, switchMap } from 'rxjs';
@@ -8,7 +8,7 @@ import { WebCartComponent } from '../components/web-cart.component';
 import { StorefrontBranch, StorefrontMerchant, StorefrontProduct, StorefrontTableAvailability } from '../models/storefront.models';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
-import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from '../services/storefront-language.service';
+import { StorefrontLanguageService, nativeLanguageName } from '../services/storefront-language.service';
 import { StorefrontTableService } from '../table/storefront-table.service';
 import { NotificationService } from '../notifications/notification.service';
 import { StorefrontBrandService } from '../services/storefront-brand.service';
@@ -51,53 +51,6 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
           <div>
             <h2>{{ brand.theme() ? 'The menu' : 'Products' }}</h2>
             <p class="muted">{{ products.length }} {{ brand.theme() ? 'things to look forward to' : 'available' }}</p>
-          </div>
-          <div class="search-products language-picker" *ngIf="languages.length">
-            <span>Language</span>
-            <div class="language-control">
-              <button
-                #languageTrigger
-                class="language-trigger"
-                type="button"
-                data-testid="catalog-language"
-                aria-haspopup="listbox"
-                aria-controls="catalog-language-options"
-                [attr.aria-expanded]="languageMenuOpen"
-                (click)="toggleLanguageMenu()"
-                (keydown)="onLanguageTriggerKeydown($event)"
-              >
-                <span [attr.lang]="activeLanguage" dir="auto">{{ languageName(activeLanguage || 'en') }}</span>
-                <svg class="language-chevron" [class.is-open]="languageMenuOpen" viewBox="0 0 20 20" aria-hidden="true">
-                  <path d="m5 7.5 5 5 5-5" />
-                </svg>
-              </button>
-              <div
-                *ngIf="languageMenuOpen"
-                class="language-options"
-                id="catalog-language-options"
-                role="listbox"
-                aria-label="Catalog language"
-              >
-                <button
-                  #languageOption
-                  *ngFor="let code of languages; let index = index"
-                  type="button"
-                  role="option"
-                  class="language-option"
-                  [attr.data-language]="code"
-                  [attr.lang]="code"
-                  [attr.aria-selected]="activeLanguage === code"
-                  [attr.tabindex]="focusedLanguageIndex === index ? 0 : -1"
-                  (click)="selectLanguage(code)"
-                  (keydown)="onLanguageOptionKeydown($event, index)"
-                >
-                  <span dir="auto">{{ languageName(code) }}</span>
-                  <svg *ngIf="activeLanguage === code" viewBox="0 0 20 20" aria-hidden="true">
-                    <path d="m4 10 4 4 8-8" />
-                  </svg>
-                </button>
-              </div>
-            </div>
           </div>
           <label class="search-products">
             <span>Search products</span>
@@ -169,22 +122,17 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
     </ng-template>
   `
 })
-export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy {
+export class WebCatalogComponent implements OnInit, OnDestroy {
   readonly brand = inject(StorefrontBrandService);
   private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
-  private readonly host = inject(ElementRef<HTMLElement>);
   readonly cart = inject(StorefrontSessionService);
   readonly catalogLanguage = inject(StorefrontLanguageService);
-  @ViewChild('languageTrigger') private languageTrigger?: ElementRef<HTMLButtonElement>;
-  @ViewChildren('languageOption', { read: ElementRef }) private languageOptionElements!: QueryList<ElementRef<HTMLButtonElement>>;
   private catalogRequest?: Subscription;
-  private pendingLanguageFocus: number | null = null;
+  private languageChanges?: Subscription;
   readonly skeletonCards = [0, 1, 2, 3];
   productsLoading = false;
-  languageMenuOpen = false;
-  focusedLanguageIndex = 0;
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly currency = environment.currency;
@@ -203,6 +151,7 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
 
   ngOnInit(): void {
     this.brand.useMerchant(this.merchantId);
+    this.languageChanges = this.catalogLanguage.changes.subscribe(language => this.loadLanguage(language));
     if (!this.tableCheckIn) {
       this.availabilityRequest = this.api.getTableAvailability(this.branchId).subscribe({
         next: (availability) => this.availability = availability,
@@ -238,10 +187,6 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
     });
   }
 
-  get languages(): string[] {
-    return catalogLanguages(this.merchant);
-  }
-
   /** The requested language stays selected even when individual products fall back. */
   get activeLanguage(): string | null {
     return this.catalogLanguage.language ?? this.merchant?.originalMenuLanguage ?? this.merchant?.originalLanguage ?? null;
@@ -252,8 +197,12 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
   }
 
   chooseLanguage(language: string): void {
-    this.catalogRequest?.unsubscribe();
     this.catalogLanguage.choose(language);
+  }
+
+  /** Reloads menu text when the shopper picks a language in the header. */
+  private loadLanguage(language: string): void {
+    this.catalogRequest?.unsubscribe();
     // Category names are translated too, so a category picked in another language no longer matches.
     this.chooseCategory('');
     this.query = '';
@@ -273,61 +222,8 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
 
   ngOnDestroy(): void {
     this.catalogRequest?.unsubscribe();
+    this.languageChanges?.unsubscribe();
     this.availabilityRequest?.unsubscribe();
-  }
-
-  ngAfterViewChecked(): void {
-    if (this.pendingLanguageFocus === null) return;
-    this.languageOptionElements.get(this.pendingLanguageFocus)?.nativeElement.focus();
-    this.pendingLanguageFocus = null;
-  }
-
-  @HostListener('document:click', ['$event'])
-  closeLanguageMenuOnOutsideClick(event: MouseEvent): void {
-    if (this.languageMenuOpen && !this.host.nativeElement.contains(event.target as Node)) {
-      this.closeLanguageMenu(false);
-    }
-  }
-
-  toggleLanguageMenu(): void {
-    if (this.languageMenuOpen) {
-      this.closeLanguageMenu(false);
-      return;
-    }
-    this.openLanguageMenu(this.languages.indexOf(this.activeLanguage ?? ''));
-  }
-
-  onLanguageTriggerKeydown(event: KeyboardEvent): void {
-    if (!['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) return;
-    event.preventDefault();
-    const selectedIndex = this.languages.indexOf(this.activeLanguage ?? '');
-    const index = event.key === 'ArrowUp' ? this.languages.length - 1 : Math.max(selectedIndex, 0);
-    this.openLanguageMenu(index);
-  }
-
-  onLanguageOptionKeydown(event: KeyboardEvent, index: number): void {
-    let nextIndex: number | null = null;
-    if (event.key === 'ArrowDown') nextIndex = (index + 1) % this.languages.length;
-    else if (event.key === 'ArrowUp') nextIndex = (index - 1 + this.languages.length) % this.languages.length;
-    else if (event.key === 'Home') nextIndex = 0;
-    else if (event.key === 'End') nextIndex = this.languages.length - 1;
-    else if (event.key === 'Escape') {
-      event.preventDefault();
-      this.closeLanguageMenu(true);
-    } else if (event.key === 'Tab') {
-      this.closeLanguageMenu(false);
-    }
-
-    if (nextIndex !== null) {
-      event.preventDefault();
-      this.focusedLanguageIndex = nextIndex;
-      this.pendingLanguageFocus = nextIndex;
-    }
-  }
-
-  selectLanguage(language: string): void {
-    this.closeLanguageMenu(true);
-    this.chooseLanguage(language);
   }
 
   get merchantInitial(): string {
@@ -380,15 +276,4 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
     return this.notifications.apiError(error, fallback);
   }
 
-  private openLanguageMenu(index: number): void {
-    this.focusedLanguageIndex = index < 0 ? 0 : index;
-    this.languageMenuOpen = true;
-    this.pendingLanguageFocus = this.focusedLanguageIndex;
-  }
-
-  private closeLanguageMenu(restoreFocus: boolean): void {
-    this.languageMenuOpen = false;
-    this.pendingLanguageFocus = null;
-    if (restoreFocus) this.languageTrigger?.nativeElement.focus();
-  }
 }

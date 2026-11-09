@@ -173,6 +173,11 @@
               {
                 "glob": "**/*",
                 "input": "projects/blitz-pay-web/public"
+              },
+              {
+                "glob": "**/*",
+                "input": "public/flags",
+                "output": "flags"
               }
             ],
             "styles": [
@@ -234,6 +239,11 @@
               {
                 "glob": "**/*",
                 "input": "projects/blitz-pay-web/public"
+              },
+              {
+                "glob": "**/*",
+                "input": "public/flags",
+                "output": "flags"
               }
             ],
             "styles": [

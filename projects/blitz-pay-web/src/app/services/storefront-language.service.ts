@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
 import { StorefrontMerchant } from '../models/storefront.models';
 
 const INTERNATIONAL_MENU = 'INTERNATIONAL_MENU';
@@ -9,6 +10,8 @@ export class StorefrontLanguageService {
   private readonly storageKey = 'blitzpay.storefront-language';
   private chosen: string | null = this.read();
   private resolved: string | null = null;
+  /** Emits each explicit choice so the open page reloads its menu text. */
+  readonly changes = new Subject<string>();
 
   get language(): string | null {
     return this.resolved ?? this.chosen;
@@ -33,6 +36,7 @@ export class StorefrontLanguageService {
     } catch {
       // Storage may be unavailable (private mode); the choice still applies to this page.
     }
+    this.changes.next(language);
   }
 
   private read(): string | null {
@@ -49,6 +53,17 @@ export function catalogLanguages(merchant: StorefrontMerchant | null | undefined
   const original = merchant?.originalMenuLanguage ?? merchant?.originalLanguage;
   if (!original || !merchant?.offerings?.includes(INTERNATIONAL_MENU)) return [];
   return [...new Set([original, ...(merchant.supportedMenuLanguages ?? [])])];
+}
+
+/** Country whose flag stands for a menu language; codes not listed share their country code (de, fr, it…). */
+const FLAG_COUNTRY: Record<string, string> = {
+  en: 'gb', ar: 'sa', bn: 'bd', bs: 'ba', ca: 'es-ct', cs: 'cz', da: 'dk', el: 'gr', et: 'ee', fa: 'ir', he: 'il',
+  hi: 'in', ja: 'jp', ko: 'kr', ku: 'iq', ms: 'my', sl: 'si', sq: 'al', sr: 'rs', sv: 'se', uk: 'ua', ur: 'pk', vi: 'vn', zh: 'cn'
+};
+
+export function flagUrl(language: string): string {
+  const code = language.split('-')[0].toLowerCase();
+  return `/flags/${FLAG_COUNTRY[code] ?? code}.svg`;
 }
 
 /** A language's name in that language, e.g. "Deutsch" for `de`. */

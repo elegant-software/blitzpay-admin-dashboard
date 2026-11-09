@@ -7,6 +7,7 @@ import { StorefrontApiService } from '../services/storefront-api.service';
 import { WebCatalogComponent } from './web-catalog.component';
 import { StorefrontSessionService } from '../services/storefront-session.service';
 import { NotificationService } from '../notifications/notification.service';
+import { StorefrontLanguageService } from '../services/storefront-language.service';
 
 describe('WebCatalogComponent', () => {
   const api = jasmine.createSpyObj<StorefrontApiService>('StorefrontApiService', [
@@ -111,14 +112,6 @@ describe('WebCatalogComponent', () => {
     expect(checkoutLink?.getAttribute('href')).toContain('/m/merchant-44/b/branch-12/checkout');
   });
 
-  it('hides the language switcher when the merchant has no International Menu', async () => {
-    const harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/m/merchant-44/b/branch-12');
-    harness.detectChanges();
-
-    expect(harness.routeNativeElement?.querySelector('[data-testid="catalog-language"]')).toBeNull();
-  });
-
   it('shows My Restaurant native language labels and preserves backend fallback text and language', async () => {
     api.getMerchant.and.returnValue(of({
       applicationId: 'merchant-44', merchantName: 'My Restaurant',
@@ -129,14 +122,9 @@ describe('WebCatalogComponent', () => {
     const component = await harness.navigateByUrl('/m/merchant-44/b/branch-12', WebCatalogComponent);
     harness.detectChanges();
     expect(api.getActiveProducts.calls.first().args).toEqual(['merchant-44', 'branch-12', 'de']);
-    const languageTrigger = harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-testid="catalog-language"]')!;
-    expect(languageTrigger.textContent?.trim()).toBe('Deutsch');
-    languageTrigger.click();
-    harness.detectChanges();
-    expect(Array.from(harness.routeNativeElement!.querySelectorAll('[role="option"]')).map(option => option.textContent?.trim())).toEqual(['Deutsch', 'العربية', 'English', 'Türkçe']);
     const fallback = { productId: 'p1', branchId: 'branch-12', name: 'Kaffee', description: 'Frisch geröstet', categoryName: 'Getränke', unitPrice: 3.5, active: true, language: 'de' };
     api.getActiveProducts.and.returnValue(of([fallback]));
-    harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-language="ar"]')!.click();
+    component.chooseLanguage('ar');
     harness.detectChanges();
     await harness.fixture.whenStable();
     harness.detectChanges();
@@ -148,33 +136,6 @@ describe('WebCatalogComponent', () => {
     expect(harness.routeNativeElement!.textContent).toContain('Getränke');
     expect(harness.routeNativeElement!.querySelector('.product-copy')?.getAttribute('lang')).toBe('de');
     expect(harness.routeNativeElement!.querySelector('.product-copy bdi')?.getAttribute('dir')).toBe('ltr');
-    expect(harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-testid="catalog-language"]')!.textContent).toContain('العربية');
-  });
-
-  it('opens the language popover with the keyboard and supports arrow navigation and Escape', async () => {
-    api.getMerchant.and.returnValue(of({
-      applicationId: 'merchant-44', merchantName: 'My Restaurant',
-      offerings: ['INTERNATIONAL_MENU'], originalMenuLanguage: 'de', supportedMenuLanguages: ['en', 'ar']
-    }));
-    const harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/m/merchant-44/b/branch-12');
-    harness.detectChanges();
-
-    const trigger = harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-testid="catalog-language"]')!;
-    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-    harness.detectChanges();
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    expect(document.activeElement?.textContent?.trim()).toContain('Deutsch');
-
-    (document.activeElement as HTMLButtonElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-    harness.detectChanges();
-    expect(document.activeElement?.textContent?.trim()).toContain('English');
-
-    (document.activeElement as HTMLButtonElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    harness.detectChanges();
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    expect(document.activeElement).toBe(trigger);
-    expect(sessionStorage.getItem('blitzpay.storefront-language')).toBeNull();
   });
 
   it('mirrors Arabic product items while keeping the surrounding toolbar and page LTR', async () => {
@@ -221,7 +182,6 @@ describe('WebCatalogComponent', () => {
     await harness.navigateByUrl('/m/merchant-44/b/branch-12');
     harness.detectChanges();
     expect(api.getActiveProducts).toHaveBeenCalledWith('merchant-44', 'branch-12', 'de');
-    expect(harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-testid="catalog-language"]')!.textContent).toContain('Deutsch');
     expect(sessionStorage.getItem('blitzpay.storefront-language')).toBeNull();
   });
 
@@ -233,7 +193,7 @@ describe('WebCatalogComponent', () => {
     expect(api.getActiveProducts).toHaveBeenCalledWith('merchant-44', 'branch-12', 'tr');
   });
 
-  it('keeps cart and selector visible during skeleton loading and ignores an obsolete response', async () => {
+  it('keeps the cart visible during skeleton loading and ignores an obsolete response', async () => {
     api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'My Restaurant', originalMenuLanguage: 'de', supportedMenuLanguages: ['ar', 'en'], offerings: ['INTERNATIONAL_MENU'] }));
     const harness = await RouterTestingHarness.create();
     const component = await harness.navigateByUrl('/m/merchant-44/b/branch-12', WebCatalogComponent);
@@ -245,7 +205,6 @@ describe('WebCatalogComponent', () => {
     component.chooseLanguage('ar');
     harness.detectChanges();
     expect(harness.routeNativeElement!.querySelector('[data-testid="catalog-skeleton"]')).not.toBeNull();
-    expect(harness.routeNativeElement!.querySelector('[data-testid="catalog-language"]')).not.toBeNull();
     expect(harness.routeNativeElement!.querySelector('web-cart')).not.toBeNull();
     component.chooseLanguage('en');
     english.next([{ productId: 'p1', branchId: 'branch-12', name: 'Fresh coffee', unitPrice: 3.5, active: true, language: 'en' }]);
@@ -276,7 +235,7 @@ describe('WebCatalogComponent', () => {
     expect(harness.routeNativeElement!.querySelector('[data-testid="catalog-skeleton"]')).toBeNull();
   });
 
-  it('lets the shopper switch the catalog language and reloads products in it', async () => {
+  it('reloads products when the header selector picks another language', async () => {
     api.getMerchant.and.returnValue(of({
       applicationId: 'merchant-44', merchantName: 'Brew House',
       offerings: ['INTERNATIONAL_MENU'], originalMenuLanguage: 'de', supportedMenuLanguages: ['en']
@@ -285,13 +244,9 @@ describe('WebCatalogComponent', () => {
     await harness.navigateByUrl('/m/merchant-44/b/branch-12');
     harness.detectChanges();
 
-    const languageTrigger = harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-testid="catalog-language"]')!;
-    languageTrigger.click();
-    harness.detectChanges();
-    expect(Array.from(harness.routeNativeElement!.querySelectorAll('[role="option"]')).map(option => option.textContent?.trim())).toEqual(['Deutsch', 'English']);
 
     api.getActiveProducts.and.returnValue(of([{ productId: 'p1', branchId: 'branch-12', name: 'Coffee EN', unitPrice: 3.5, active: true }]));
-    harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-language="en"]')!.click();
+    TestBed.inject(StorefrontLanguageService).choose('en');
     harness.detectChanges();
 
     expect(api.getActiveProducts).toHaveBeenCalledWith('merchant-44', 'branch-12', 'en');

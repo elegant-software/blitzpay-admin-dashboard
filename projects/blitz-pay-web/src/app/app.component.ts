@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, ViewChild, computed, inject } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { StorefrontPwaService } from './services/storefront-pwa.service';
 import { RouterOutlet } from '@angular/router';
@@ -6,16 +6,19 @@ import { StorefrontThemeService } from './services/storefront-theme.service';
 import { environment } from '../environments/environment';
 import { NotificationComponent } from './notifications/notification.component';
 import { StorefrontBrandService } from './services/storefront-brand.service';
+import { LanguageSelectorComponent } from './components/language-selector.component';
+import { catalogLanguages } from './services/storefront-language.service';
 
 @Component({
   selector: 'web-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, NotificationComponent],
+  imports: [RouterOutlet, CommonModule, NotificationComponent, LanguageSelectorComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
 export class AppComponent implements AfterViewInit, OnDestroy {
   readonly brand = inject(StorefrontBrandService);
+  readonly languages = computed(() => catalogLanguages(this.brand.merchant()));
   /** Header logo URL that failed to load; keyed by URL so the next merchant logo is still tried. */
   failedLogo: string | null | undefined = null;
   readonly pwa = inject(StorefrontPwaService);
