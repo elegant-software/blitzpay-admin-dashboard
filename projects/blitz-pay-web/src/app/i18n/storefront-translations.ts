@@ -8,6 +8,9 @@ Card terminal	Kartenterminal	جهاز الدفع بالبطاقة
 Staff bring the card terminal to your table. Your order is unpaid until they confirm the payment.	Das Personal bringt das Kartenterminal an deinen Tisch. Die Bestellung gilt erst nach Zahlungsbestätigung als bezahlt.	سيحضر الموظف جهاز الدفع إلى طاولتك. يبقى الطلب غير مدفوع حتى تأكيد الدفع.
 Staff will bring the card terminal to you. Your order shows as paid once they confirm the payment.	Das Personal bringt dir das Kartenterminal. Nach der Bestätigung wird die Bestellung als bezahlt angezeigt.	سيحضر الموظف جهاز الدفع إليك. سيظهر الطلب مدفوعاً بعد تأكيد الدفع.
 Your order was placed. Staff will bring the card terminal to you.	Deine Bestellung wurde aufgegeben. Das Personal bringt dir das Kartenterminal.	تم إرسال طلبك. سيحضر الموظف جهاز الدفع إليك.
+Email me the invoice	Rechnung per E-Mail senden	أرسل لي الفاتورة بالبريد الإلكتروني
+Optional. We use this address only to send the invoice of this order once, then delete it.	Optional. Wir nutzen diese Adresse nur, um die Rechnung zu dieser Bestellung einmal zu senden, und löschen sie danach.	اختياري. نستخدم هذا العنوان فقط لإرسال فاتورة هذا الطلب مرة واحدة، ثم نحذفه.
+Invoice email	E-Mail für die Rechnung	البريد الإلكتروني للفاتورة
 Change language	Sprache ändern	تغيير اللغة
 Quantity for {0}	Menge für {0}	كمية {0}
 Remove {0} from cart	{0} aus dem Warenkorb entfernen	إزالة {0} من السلة

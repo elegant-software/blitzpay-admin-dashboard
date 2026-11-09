@@ -78,6 +78,35 @@ describe('GuestCheckoutComponent', () => {
     expect(api.startGuestPayment).toHaveBeenCalledWith('order-200', 'PAY_BY_BANK');
   });
 
+  it('sends the invoice email only with consent and blocks an invalid address', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/m/merchant-44/b/branch-12/checkout');
+    harness.detectChanges();
+    const root = harness.routeNativeElement!;
+    const confirm = root.querySelector<HTMLButtonElement>('[data-testid="confirm-payment"]')!;
+
+    expect(root.querySelector('[data-testid="invoice-email"]')).toBeNull();
+    const consent = root.querySelector<HTMLInputElement>('[data-testid="invoice-email-consent"]')!;
+    consent.click();
+    harness.detectChanges();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+    expect(confirm.disabled).toBeTrue();
+
+    const email = root.querySelector<HTMLInputElement>('[data-testid="invoice-email"]')!;
+    email.value = ' guest@example.com ';
+    email.dispatchEvent(new Event('input'));
+    harness.detectChanges();
+    confirm.click();
+
+    expect(api.createOrder).toHaveBeenCalledWith({
+      branchId: 'branch-12',
+      items: [{ productId: 'p1', quantity: 1 }],
+      buyerEmail: 'guest@example.com',
+      invoiceEmailConsent: true
+    });
+  });
+
   it('defaults to card when the merchant accepts cards and sends only the method', async () => {
     api.getPaymentCapabilities.and.returnValue(of({ enabledPaymentFlows: ['CARD', 'PAY_BY_BANK'] }));
     const harness = await RouterTestingHarness.create();
