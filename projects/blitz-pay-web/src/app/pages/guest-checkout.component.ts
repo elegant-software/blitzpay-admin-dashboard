@@ -1,8 +1,9 @@
+import { StorefrontTranslatePipe } from '../i18n/storefront-translate.pipe';
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, effect, inject, DestroyRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { finalize, forkJoin, from, map, Observable, of, switchMap, throwError } from 'rxjs';
+import { finalize, forkJoin, from, map, Observable, of, Subscription, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   StorefrontBranch,
@@ -16,6 +17,7 @@ import {
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
 import { StorefrontLanguageService } from '../services/storefront-language.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardPaymentForm, GuestPaymentService } from '../services/guest-payment.service';
 import { StorefrontTableService } from '../table/storefront-table.service';
 import { StorefrontLocationService } from '../table/storefront-location.service';
@@ -29,78 +31,83 @@ type GuestCheckoutChoice = StorefrontPaymentMethod | StorefrontCheckoutPaymentMe
 @Component({
   selector: 'guest-checkout',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, MerchantLogoComponent],
+  imports: [StorefrontTranslatePipe, CommonModule, FormsModule, RouterLink, MerchantLogoComponent],
   template: `
     <section class="merchant-hero compact">
       <web-merchant-logo [merchant]="merchant" />
       <div>
-        <p class="eyebrow">Guest checkout</p>
-        <h1>Checkout securely</h1>
-        <p class="fulfillment-label" *ngIf="branch">{{ merchant?.merchantName }} &middot; Fulfilled by {{ branch.name }}</p>
-        <p class="fulfillment-label" *ngIf="tableName" data-testid="checkout-table">Your table: {{ tableName }}</p>
+        <p class="eyebrow">{{ 'Guest checkout' | storefrontTranslate }}</p>
+        <h1>{{ 'Checkout securely' | storefrontTranslate }}</h1>
+        <p class="fulfillment-label" *ngIf="branch">{{ '{0} · Fulfilled by {1}' | storefrontTranslate: [merchant?.merchantName, branch.name] }}</p>
+        <p class="fulfillment-label" *ngIf="tableName" data-testid="checkout-table">{{ 'Your table: {0}' | storefrontTranslate: [tableName] }}</p>
       </div>
     </section>
-    <p class="storefront-alert" *ngIf="errorMessage && (loading || !branch || branch.active === false)" role="alert">{{ errorMessage }}</p>
+    <p class="storefront-alert" *ngIf="errorMessage && (loading || !branch || branch.active === false)" role="alert">{{ (errorMessage | storefrontTranslate) }}</p>
     <section class="unavailable surface" *ngIf="!loading && branch?.active === false">
-      <p class="eyebrow">Unavailable Branch Notice</p>
-      <h2>This location is not accepting online orders.</h2>
+      <p class="eyebrow">{{ 'Unavailable Branch Notice' | storefrontTranslate }}</p>
+      <h2>{{ 'This location is not accepting online orders.' | storefrontTranslate }}</h2>
     </section>
     <section class="checkout-layout" *ngIf="!loading && branch?.active !== false">
       <article class="surface checkout-summary">
-        <h2>Your order</h2>
-        <p class="muted" *ngIf="cart.itemCount === 0">Your cart is empty.</p>
+        <h2>{{ 'Your order' | storefrontTranslate }}</h2>
+        <p class="muted" *ngIf="cart.itemCount === 0">{{ 'Your cart is empty.' | storefrontTranslate }}</p>
           <div class="cart-line" *ngFor="let line of cart.lines" [attr.dir]="catalogLanguage.direction">
           <span><bdi dir="ltr">{{ line.quantity }}</bdi> &times; <bdi [attr.lang]="line.product.language">{{ line.product.name }}</bdi></span>
           <strong><bdi dir="ltr">{{ line.product.unitPrice * line.quantity | currency: currency }}</bdi></strong>
         </div>
         <div class="cart-total" *ngIf="cart.itemCount > 0">
-          <span>Subtotal</span>
+          <span>{{ 'Subtotal' | storefrontTranslate }}</span>
           <strong><bdi dir="ltr">{{ cart.subtotal | currency: currency }}</bdi></strong>
         </div>
-        <a class="back-link" [routerLink]="['/m', merchantId, 'b', branchId]">Review cart</a>
+        <a class="back-link" [routerLink]="['/m', merchantId, 'b', branchId]">{{ 'Review cart' | storefrontTranslate }}</a>
       </article>
       <article class="surface payment-panel">
-        <p class="surface-label">Payment</p>
-        <h2>Choose how to pay</h2>
+        <p class="surface-label">{{ 'Payment' | storefrontTranslate }}</p>
+        <h2>{{ 'Choose how to pay' | storefrontTranslate }}</h2>
         <label class="payment-choice" *ngIf="cardAvailable">
           <input type="radio" name="payment" [(ngModel)]="selectedPaymentMethod" value="CARD" [disabled]="!!cardForm" />
-          <span><strong>Card</strong><small>Card details go straight to Stripe, never to BlitzPay</small></span>
+          <span><strong>{{ 'Card' | storefrontTranslate }}</strong><small>{{ 'Card details go straight to Stripe, never to BlitzPay' | storefrontTranslate }}</small></span>
         </label>
         <label class="payment-choice" *ngIf="payByBankAvailable">
           <input type="radio" name="payment" [(ngModel)]="selectedPaymentMethod" value="PAY_BY_BANK" [disabled]="!!cardForm" />
-          <span><strong>Pay by Bank</strong><small>Secure hosted payment powered by Stripe</small></span>
+          <span><strong>{{ 'Pay by Bank' | storefrontTranslate }}</strong><small>{{ 'Secure hosted payment powered by Stripe' | storefrontTranslate }}</small></span>
         </label>
         <label class="payment-choice">
           <input type="radio" name="payment" [(ngModel)]="selectedPaymentMethod" value="CASH" data-testid="pay-cash" [disabled]="!!cardForm || !!orderId" />
-          <span><strong>Cash</strong><small>Pay staff at your table or the counter. Your order is unpaid until they confirm the cash.</small></span>
+          <span><strong>{{ 'Cash' | storefrontTranslate }}</strong><small>{{ 'Pay staff at your table or the counter. Your order is unpaid until they confirm the cash.' | storefrontTranslate }}</small></span>
         </label>
         <label class="payment-choice" *ngIf="terminalAvailable">
           <input type="radio" name="payment" [(ngModel)]="selectedPaymentMethod" value="TERMINAL" data-testid="pay-terminal" [disabled]="!!cardForm || !!orderId" />
-          <span><strong>Card terminal</strong><small>Staff bring the card terminal to your table. Your order is unpaid until they confirm the payment.</small></span>
+          <span><strong>{{ 'Card terminal' | storefrontTranslate }}</strong><small>{{ 'Staff bring the card terminal to your table. Your order is unpaid until they confirm the payment.' | storefrontTranslate }}</small></span>
         </label>
         <label class="payment-choice guest-count" *ngIf="askGuestCount">
-          <span><strong>How many people?</strong><small>At your table, including you.</small></span>
+          <span><strong>{{ 'How many people?' | storefrontTranslate }}</strong><small>{{ 'At your table, including you.' | storefrontTranslate }}</small></span>
           <input type="number" name="guestCount" min="1" max="50" step="1" data-testid="guest-count" [(ngModel)]="guestCount" />
         </label>
-        <p class="muted small" *ngIf="tableCode">To order at your table we check your location once when you place the order.</p>
+        <label class="payment-choice">
+          <input type="checkbox" name="invoiceEmailConsent" data-testid="invoice-email-consent" [(ngModel)]="invoiceEmailConsent" [disabled]="!!orderId" />
+          <span><strong>{{ 'Email me the invoice' | storefrontTranslate }}</strong><small>{{ 'Optional. We use this address only to send the invoice of this order once, then delete it.' | storefrontTranslate }}</small></span>
+        </label>
+        <input *ngIf="invoiceEmailConsent" type="email" name="buyerEmail" autocomplete="email" placeholder="you@example.com" [attr.aria-label]="'Invoice email' | storefrontTranslate"
+          data-testid="invoice-email" [(ngModel)]="buyerEmail" [disabled]="!!orderId" />
+        <p class="muted small" *ngIf="tableCode">{{ 'To order at your table we check your location once when you place the order.' | storefrontTranslate }}</p>
         <div #cardHost class="card-element" data-testid="card-element" [hidden]="!cardForm"></div>
         <div class="storefront-alert" *ngIf="cartNeedsReview">
-          Product availability or pricing has changed. Review and accept the updated cart before paying.
-          <button class="review-button" type="button" (click)="acceptCartUpdates()">Accept updates</button>
+          {{ 'Product availability or pricing has changed. Review and accept the updated cart before paying.' | storefrontTranslate }}<button class="review-button" type="button" (click)="acceptCartUpdates()">{{ 'Accept updates' | storefrontTranslate }}</button>
         </div>
         <div class="storefront-alert" *ngIf="errorMessage" role="alert" aria-live="assertive">
-          <p>{{ errorMessage }}</p>
+          <p>{{ (errorMessage | storefrontTranslate) }}</p>
         </div>
         <button
           class="checkout-button"
           type="button"
           data-testid="confirm-payment"
-          [disabled]="cart.itemCount === 0 || !selectedPaymentMethod || cartNeedsReview || checkingOut"
+          [disabled]="cart.itemCount === 0 || !selectedPaymentMethod || cartNeedsReview || checkingOut || invoiceEmailInvalid"
           (click)="confirmPayment()"
           *ngIf="!cardForm"
-        >{{ confirmLabel }}</button>
+        >{{ confirmLabel | storefrontTranslate }}</button>
         <button class="checkout-button" type="button" data-testid="pay-card" *ngIf="cardForm" [disabled]="checkingOut" (click)="payByCard()">
-          {{ checkingOut ? 'Processing...' : 'Pay now' }}
+          {{ checkingOut ? ('Processing...' | storefrontTranslate) : ('Pay now' | storefrontTranslate) }}
         </button>
       </article>
     </section>
@@ -116,6 +123,21 @@ export class GuestCheckoutComponent implements OnInit {
   private readonly location = inject(StorefrontLocationService);
   readonly cart = inject(StorefrontSessionService);
   readonly catalogLanguage = inject(StorefrontLanguageService);
+  private readonly destroyRef = inject(DestroyRef);
+  private previousLanguageRevision = this.catalogLanguage.changes();
+  private languageRequest?: Subscription;
+  private readonly followHeaderLanguage = effect(() => {
+    const revision = this.catalogLanguage.changes();
+    if (revision === this.previousLanguageRevision || !this.merchant) return;
+    this.previousLanguageRevision = revision;
+    // This read changes display text only: preserve reviewed prices and any payment already in progress.
+    this.languageRequest?.unsubscribe();
+    this.languageRequest = this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.resolve(this.merchant))
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: products => this.cart.updateCatalogText(products, this.merchantId, this.branchId),
+        error: error => this.notifications.apiError(error, 'Unable to load this branch catalog.')
+      });
+  });
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly currency = environment.currency;
@@ -124,6 +146,9 @@ export class GuestCheckoutComponent implements OnInit {
   /** Asked once, only when the Table was free when the guest checked in. */
   readonly askGuestCount = !!this.tableCheckIn?.tableCode && !this.tableCheckIn.occupied;
   guestCount = 2;
+  /** Unticked by default; the email is sent only when ticked (backend reference/guest-invoice-email-privacy.md). */
+  invoiceEmailConsent = false;
+  buyerEmail = '';
   /** Set when the guest checked in at an active Table of this Branch; the order is then a Walk-In at that Table. */
   readonly tableCode = this.tableCheckIn?.tableCode ?? null;
   readonly tableName = this.tableCode ? this.tableCheckIn?.tableName ?? null : null;
@@ -182,6 +207,11 @@ export class GuestCheckoutComponent implements OnInit {
     return !!this.tableCode;
   }
 
+  /** Ticked but no plausible address: block the order rather than silently drop the invoice. */
+  get invoiceEmailInvalid(): boolean {
+    return this.invoiceEmailConsent && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.buyerEmail.trim());
+  }
+
   get confirmLabel(): string {
     if (this.paysStaff) return this.checkingOut ? 'Placing order...' : 'Place order';
     return this.checkingOut ? 'Opening payment...' : 'Confirm and pay';
@@ -194,7 +224,7 @@ export class GuestCheckoutComponent implements OnInit {
 
   confirmPayment(): void {
     const method = this.selectedPaymentMethod;
-    if (!method || this.cart.itemCount === 0 || this.cartNeedsReview || this.checkingOut || this.branch?.active === false) return;
+    if (!method || this.cart.itemCount === 0 || this.cartNeedsReview || this.checkingOut || this.invoiceEmailInvalid || this.branch?.active === false) return;
     this.checkingOut = true;
     this.errorMessage = '';
     if (method === 'CASH' || method === 'TERMINAL') return this.placeStaffOrder(method);
@@ -271,7 +301,8 @@ export class GuestCheckoutComponent implements OnInit {
         items: this.cart.lines.map((line) => ({ productId: line.product.productId, quantity: line.quantity })),
         ...(this.tableCode && customerLocation ? { tableCode: this.tableCode, customerLocation } : {}),
         ...(staffMethod ? { checkoutPaymentMethod: staffMethod } : {}),
-        ...(this.askGuestCount && customerLocation ? { guestCount: this.validGuestCount } : {})
+        ...(this.askGuestCount && customerLocation ? { guestCount: this.validGuestCount } : {}),
+        ...(this.invoiceEmailConsent ? { buyerEmail: this.buyerEmail.trim(), invoiceEmailConsent: true } : {})
       })),
       map((order) => {
         if (this.tableCode) this.tables.markOccupied();

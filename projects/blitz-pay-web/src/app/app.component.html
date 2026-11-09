@@ -1,64 +1,49 @@
 <app-notifications />
 <header class="storefront-header">
   <div class="header-inner">
-    <a class="brand merchant-brand" href="/" [attr.aria-label]="merchant.merchantName + ' home'" *ngIf="brand.theme() && brand.merchant() as merchant; else platformBrand">
+    <a class="brand merchant-brand" href="/" [attr.aria-label]="'{0} home' | storefrontTranslate: [merchant.merchantName]" *ngIf="brand.theme() && brand.merchant() as merchant; else platformBrand">
       <img *ngIf="merchant.logoUrl && failedLogo !== merchant.logoUrl; else logoFallback" class="merchant-wordmark" [src]="merchant.logoUrl" [alt]="merchant.merchantName" (error)="failedLogo = merchant.logoUrl" />
       <ng-template #logoFallback><span class="merchant-wordmark-fallback">{{ merchant.merchantName }}</span></ng-template>
     </a>
-    <ng-template #platformBrand><a class="brand" href="/" aria-label="BlitzPay home">
+    <ng-template #platformBrand><a class="brand" href="/" [attr.aria-label]="'BlitzPay home' | storefrontTranslate">
       <span class="brand-mark"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m18 5-11 13h8l-1 9 12-15h-9z"/></svg></span>
-      <span class="brand-wordmark">BlitzPay<span>Order. Pay. Enjoy.</span></span>
+      <span class="brand-wordmark">BlitzPay<span>{{ 'Order. Pay. Enjoy.' | storefrontTranslate }}</span></span>
     </a></ng-template>
-    <span class="header-note">{{ brand.theme() ? 'Fresh from our kitchen. Made for your table.' : 'More time for the good moments.' }}</span>
-    <web-language-selector *ngIf="languages().length" [languages]="languages()" />
-    <button class="theme-toggle" type="button" data-testid="theme-toggle" [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'" [attr.title]="theme.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'" (click)="theme.toggle()">
+    <span class="header-note">{{ (brand.theme() ? 'Fresh from our kitchen. Made for your table.' : 'More time for the good moments.') | storefrontTranslate }}</span>
+    <div class="header-actions">
+    <web-language-switcher />
+    <button class="theme-toggle" type="button" data-testid="theme-toggle" [attr.aria-label]="theme.theme() === 'dark' ? ('Switch to light theme' | storefrontTranslate) : ('Switch to dark theme' | storefrontTranslate)" [attr.title]="theme.theme() === 'dark' ? ('Switch to light theme' | storefrontTranslate) : ('Switch to dark theme' | storefrontTranslate)" (click)="theme.toggle()">
       <svg *ngIf="theme.theme() === 'light'" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 13.2A8.5 8.5 0 0 1 10.8 3.5a8.5 8.5 0 1 0 9.7 9.7Z"/></svg>
       <svg *ngIf="theme.theme() === 'dark'" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg>
     </button>
-    <span class="guest-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5c0 4.6 3.1 7.9 7.5 10 4.4-2.1 7.5-5.4 7.5-10V6Z"/><path d="m8.5 12 2.2 2.2 4.8-4.8"/></svg>Here as a guest</span>
+    </div>
+    <span class="guest-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5c0 4.6 3.1 7.9 7.5 10 4.4-2.1 7.5-5.4 7.5-10V6Z"/><path d="m8.5 12 2.2 2.2 4.8-4.8"/></svg>{{ 'Here as a guest' | storefrontTranslate }}</span>
   </div>
 </header>
 
 <main class="storefront-content">
   <p *ngIf="pwa.reconnected() && !pwa.offline()" class="storefront-alert" role="status">
-    You're back online. Refresh to load live availability and payment status.
-    <button type="button" class="review-button" (click)="reconnect()">Refresh live data</button>
+    {{ 'You\'re back online. Refresh to load live availability and payment status.' | storefrontTranslate }}<button type="button" class="review-button" (click)="reconnect()">{{ 'Refresh live data' | storefrontTranslate }}</button>
   </p>
   <section *ngIf="pwa.offline()" class="surface offline-notice" role="status" aria-live="polite">
-    <h1>You're offline</h1>
-    <p>Reconnect to see the live catalog and continue payment. Your cart stays on this device.</p>
-    <button class="checkout-button" type="button" (click)="reconnect()">Try again</button>
+    <h1>{{ 'You\'re offline' | storefrontTranslate }}</h1>
+    <p>{{ 'Reconnect to see the live catalog and continue payment. Your cart stays on this device.' | storefrontTranslate }}</p>
+    <button class="checkout-button" type="button" (click)="reconnect()">{{ 'Try again' | storefrontTranslate }}</button>
   </section>
   <div [hidden]="pwa.offline()" [attr.inert]="pwa.offline() ? '' : null"><router-outlet /></div>
-  <aside *ngIf="pwa.installPromptAvailable()" class="pwa-install-notice" data-testid="pwa-install-notice" aria-label="Install this storefront" aria-live="polite">
+  <aside *ngIf="pwa.installPromptAvailable()" class="pwa-install-notice" data-testid="pwa-install-notice" [attr.aria-label]="'Install this storefront' | storefrontTranslate" aria-live="polite">
     <div class="pwa-install-copy">
-      <h2>Install this storefront</h2>
-      <p>Add this web app to your device for quicker access to the menu and checkout.</p>
-      <p *ngIf="pwa.installPromptError()" class="pwa-install-error" role="alert">The install prompt could not be opened. Try your browser's Install or Add to Home Screen menu.</p>
+      <h2>{{ 'Install this storefront' | storefrontTranslate }}</h2>
+      <p>{{ 'Add this web app to your device for quicker access to the menu and checkout.' | storefrontTranslate }}</p>
+      <p *ngIf="pwa.installPromptError()" class="pwa-install-error" role="alert">{{ 'The install prompt could not be opened. Try your browser\'s Install or Add to Home Screen menu.' | storefrontTranslate }}</p>
     </div>
     <div class="pwa-install-actions">
-      <button class="pwa-install-button" type="button" data-testid="pwa-install-button" [disabled]="pwa.installPromptError()" (click)="pwa.installStorefront()">Install storefront</button>
-      <button class="pwa-install-dismiss" type="button" data-testid="pwa-install-dismiss" (click)="pwa.dismissInstallPrompt()">Not now</button>
+      <button class="pwa-install-button" type="button" data-testid="pwa-install-button" [disabled]="pwa.installPromptError()" (click)="pwa.installStorefront()">{{ 'Install storefront' | storefrontTranslate }}</button>
+      <button class="pwa-install-dismiss" type="button" data-testid="pwa-install-dismiss" (click)="pwa.dismissInstallPrompt()">{{ 'Not now' | storefrontTranslate }}</button>
     </div>
   </aside>
   <footer class="legal-footer" data-testid="legal-footer">
-    <a [href]="environment.imprintUrl" target="_blank" rel="noopener noreferrer">Impressum</a>
-    <a [href]="environment.privacyUrl" target="_blank" rel="noopener noreferrer">Datenschutz / Privacy</a>
+    <a [href]="environment.imprintUrl" target="_blank" rel="noopener noreferrer">{{ 'Impressum' | storefrontTranslate }}</a>
+    <a [href]="environment.privacyUrl" target="_blank" rel="noopener noreferrer">{{ 'Datenschutz / Privacy' | storefrontTranslate }}</a>
   </footer>
 </main>
-<aside #downloadShell class="install-prompt download-shell" data-testid="app-install-prompt" aria-label="Get the BlitzPay app" [hidden]="!scrolled">
-  <div class="download-invitation">
-    <div><strong>Good moments. Better with the app.</strong><p>Download BlitzPay for an even better experience.</p></div>
-    <button class="download-toggle" type="button" aria-controls="app-download-links" [attr.aria-expanded]="downloadsExpanded" (click)="downloadsExpanded = !downloadsExpanded">{{ downloadsExpanded ? 'Close' : 'Download' }}</button>
-  </div>
-      <div class="store-links" id="app-download-links" [hidden]="!downloadsExpanded">
-        <a [href]="environment.appStoreUrl" target="_blank" rel="noopener noreferrer" aria-label="Get the BlitzPay app on the App Store (opens in a new tab)">
-          <svg class="store-icon apple-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.05 12.54c.03 3.19 2.8 4.25 2.83 4.26-.02.08-.44 1.52-1.46 3.01-.88 1.29-1.8 2.57-3.24 2.6-1.41.03-1.87-.84-3.48-.84-1.6 0-2.11.82-3.44.87-1.39.05-2.45-1.4-3.34-2.68-1.82-2.63-3.21-7.44-1.34-10.69.93-1.61 2.59-2.63 4.39-2.66 1.37-.03 2.67.93 3.49.93.81 0 2.34-1.15 3.95-.98.67.03 2.57.27 3.79 2.06-.1.06-2.26 1.32-2.23 4.12ZM14.4 4.61c.74-.9 1.24-2.15 1.1-3.4-1.07.04-2.37.71-3.14 1.61-.69.8-1.3 2.08-1.14 3.3 1.19.09 2.41-.61 3.18-1.51Z"/></svg>
-          <span><small>Download on the</small><strong>App Store</strong></span>
-        </a>
-        <a [href]="environment.googlePlayUrl" target="_blank" rel="noopener noreferrer" aria-label="Get the BlitzPay app on Google Play (opens in a new tab)">
-          <svg class="store-icon" viewBox="0 0 28 30" aria-hidden="true"><path fill="#48c6ed" d="M2 1 16 15 2 29Z"/><path fill="#64d38b" d="m2 1 18 10-4 4Z"/><path fill="#ffcf53" d="m16 15 4-4 7 4-7 4Z"/><path fill="#f27883" d="m2 29 14-14 4 4Z"/></svg>
-          <span><small>GET IT ON</small><strong>Google Play</strong></span>
-        </a>
-      </div>
-</aside>

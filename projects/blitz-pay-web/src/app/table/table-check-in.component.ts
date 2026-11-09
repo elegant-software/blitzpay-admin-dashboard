@@ -1,3 +1,4 @@
+import { StorefrontTranslatePipe } from '../i18n/storefront-translate.pipe';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
@@ -18,17 +19,17 @@ type CheckInState = 'loading' | 'not-found' | 'error';
 @Component({
   selector: 'web-table-check-in',
   standalone: true,
-  imports: [CommonModule, TableCodeFormComponent],
+  imports: [StorefrontTranslatePipe, CommonModule, TableCodeFormComponent],
   template: `
     <section class="surface catalog-loading" *ngIf="state === 'loading'" role="status" aria-live="polite" aria-busy="true">
-      <p class="eyebrow">Your table</p><h1>Finding your table</h1><p>Opening the menu for this table...</p>
+      <p class="eyebrow">{{ 'Your table' | storefrontTranslate }}</p><h1>{{ 'Finding your table' | storefrontTranslate }}</h1><p>{{ 'Opening the menu for this table...' | storefrontTranslate }}</p>
     </section>
     <section class="surface table-check-in" *ngIf="state !== 'loading'">
-      <p class="eyebrow">Your table</p>
-      <h1>{{ state === 'not-found' ? 'We could not find this table' : 'We could not open this table' }}</h1>
-      <p class="muted" *ngIf="state === 'not-found'">Check the code on your table and enter it below, or ask a member of staff.</p>
-      <p class="storefront-alert" role="alert" *ngIf="state === 'error'">Something went wrong. Check your connection and try again.</p>
-      <button *ngIf="state === 'error'" class="checkout-button" type="button" (click)="resolve()">Try again</button>
+      <p class="eyebrow">{{ 'Your table' | storefrontTranslate }}</p>
+      <h1>{{ state === 'not-found' ? ('We could not find this table' | storefrontTranslate) : ('We could not open this table' | storefrontTranslate) }}</h1>
+      <p class="muted" *ngIf="state === 'not-found'">{{ 'Check the code on your table and enter it below, or ask a member of staff.' | storefrontTranslate }}</p>
+      <p class="storefront-alert" role="alert" *ngIf="state === 'error'">{{ 'Something went wrong. Check your connection and try again.' | storefrontTranslate }}</p>
+      <button *ngIf="state === 'error'" class="checkout-button" type="button" (click)="resolve()">{{ 'Try again' | storefrontTranslate }}</button>
       <web-table-code-form />
     </section>
   `

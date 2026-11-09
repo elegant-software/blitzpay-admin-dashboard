@@ -39,6 +39,17 @@ describe('Payment return', () => {
     const fixture = create();
     expect(fixture.nativeElement.textContent).not.toContain('Payment confirmed');
     expect(fixture.nativeElement.textContent).toContain('Checking your payment');
+    expect(fixture.nativeElement.querySelector('web-app-download')).toBeNull();
+  });
+
+  it('shows non-sticky store links only after the backend confirms payment', () => {
+    const fixture = create();
+    expect(fixture.nativeElement.querySelector('[data-testid="app-install-prompt"]')).toBeNull();
+    events.next({ orderId: 'o1', status: 'PAID' }); fixture.detectChanges();
+    const invitation = fixture.nativeElement.querySelector('[data-testid="app-install-prompt"]') as HTMLElement;
+    expect(invitation.querySelectorAll('a').length).toBe(2);
+    expect(getComputedStyle(invitation).position).not.toBe('fixed');
+    expect(fixture.nativeElement.querySelector('h1').textContent).toContain('Payment confirmed');
   });
 
   it('shows the Pickup Number and Preparation Status and updates them live', () => {

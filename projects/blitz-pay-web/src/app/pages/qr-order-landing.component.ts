@@ -1,3 +1,4 @@
+import { StorefrontTranslatePipe } from '../i18n/storefront-translate.pipe';
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -12,21 +13,21 @@ import { StorefrontBrandService } from '../services/storefront-brand.service';
 @Component({
   selector: 'web-qr-order-landing',
   standalone: true,
-  imports: [CommonModule],
+  imports: [StorefrontTranslatePipe, CommonModule],
   template: `
     <section class="page-hero centered">
-      <p class="eyebrow">QR Order Landing</p>
-      <h1>{{ order?.reference ? 'Order ' + order?.reference : 'Your order' }}</h1>
-      <p class="lede">Review your order and complete payment without creating an account.</p>
+      <p class="eyebrow">{{ 'QR Order Landing' | storefrontTranslate }}</p>
+      <h1>{{ (order?.reference ? 'Order {0}' : 'Your order') | storefrontTranslate: [order?.reference] }}</h1>
+      <p class="lede">{{ 'Review your order and complete payment without creating an account.' | storefrontTranslate }}</p>
     </section>
 
     <article class="surface order-surface">
-      <p class="muted" *ngIf="loading">Loading order...</p>
-      <p class="storefront-alert" *ngIf="errorMessage" role="alert">{{ errorMessage }}</p>
+      <p class="muted" *ngIf="loading">{{ 'Loading order...' | storefrontTranslate }}</p>
+      <p class="storefront-alert" *ngIf="errorMessage" role="alert">{{ (errorMessage | storefrontTranslate) }}</p>
       <ng-container *ngIf="order">
         <div class="order-row">
-          <strong>Status</strong>
-          <span class="status-pill">{{ statusLabel }}</span>
+          <strong>{{ 'Status' | storefrontTranslate }}</strong>
+          <span class="status-pill">{{ statusLabel | storefrontTranslate }}</span>
         </div>
         <div class="order-items" *ngIf="order.items?.length">
           <div class="order-item" *ngFor="let item of order.items">
@@ -37,16 +38,16 @@ import { StorefrontBrandService } from '../services/storefront-brand.service';
           </div>
         </div>
         <div class="order-total" *ngIf="order.totalAmountMinor != null">
-          <span>Total</span>
+          <span>{{ 'Total' | storefrontTranslate }}</span>
           <strong>{{ order.totalAmountMinor / 100 | currency: order.currency || 'EUR' }}</strong>
         </div>
         <div class="payment-actions">
-          <p>Pay as guest</p>
-          <span class="muted">Your order is connected to the live BlitzPay checkout record.</span>
+          <p>{{ 'Pay as guest' | storefrontTranslate }}</p>
+          <span class="muted">{{ 'Your order is connected to the live BlitzPay checkout record.' | storefrontTranslate }}</span>
           <button *ngIf="canPay" type="button" data-testid="pay-order" [disabled]="paying" (click)="pay()">
-            {{ paying ? 'Opening payment...' : 'Pay by Bank as guest' }}
+            {{ paying ? ('Opening payment...' | storefrontTranslate) : ('Pay by Bank as guest' | storefrontTranslate) }}
           </button>
-          <p *ngIf="!canPay && !loading && unpaid" class="muted">Guest payment is not currently available for this order.</p>
+          <p *ngIf="!canPay && !loading && unpaid" class="muted">{{ 'Guest payment is not currently available for this order.' | storefrontTranslate }}</p>
         </div>
       </ng-container>
     </article>

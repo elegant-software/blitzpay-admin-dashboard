@@ -9,6 +9,7 @@ import { LocationUnavailableError, StorefrontLocationService } from '../table/st
 import { StorefrontTableService } from '../table/storefront-table.service';
 import { GuestCheckoutComponent } from './guest-checkout.component';
 import { NotificationService } from '../notifications/notification.service';
+import { StorefrontLanguageService } from '../services/storefront-language.service';
 
 describe('GuestCheckoutComponent', () => {
   const api = jasmine.createSpyObj<StorefrontApiService>('StorefrontApiService', [
@@ -39,6 +40,25 @@ describe('GuestCheckoutComponent', () => {
     cart.add({ productId: 'p1', branchId: 'branch-12', name: 'Coffee', unitPrice: 3.5, active: true });
   });
 
+  it('changes checkout text without altering reviewed prices, quantities or payment state', async () => {
+    api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'Restaurant',
+      offerings: ['INTERNATIONAL_MENU'], originalMenuLanguage: 'de', supportedMenuLanguages: ['ar'] }));
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/m/merchant-44/b/branch-12/checkout', GuestCheckoutComponent);
+    component.selectedPaymentMethod = 'CASH';
+    component.checkingOut = true;
+    api.getActiveProducts.and.returnValue(of([{ productId: 'p1', branchId: 'branch-12', name: 'قهوة', unitPrice: 99, active: true }]));
+    TestBed.inject(StorefrontLanguageService).choose('ar'); harness.detectChanges();
+    const cart = TestBed.inject(StorefrontSessionService);
+    expect(api.getActiveProducts.calls.mostRecent().args[2]).toBe('ar');
+    expect(cart.lines[0].product.name).toBe('قهوة');
+    expect(cart.lines[0].product.unitPrice).toBe(3.5);
+    expect(cart.lines[0].quantity).toBe(1);
+    expect(component.checkingOut).toBeTrue();
+    expect(component.selectedPaymentMethod).toBe('CASH');
+    expect(api.createOrder).not.toHaveBeenCalled();
+  });
+
   it('loads checkout without creating an order until payment is confirmed', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/m/merchant-44/b/branch-12/checkout');
@@ -56,6 +76,35 @@ describe('GuestCheckoutComponent', () => {
       items: [{ productId: 'p1', quantity: 1 }]
     });
     expect(api.startGuestPayment).toHaveBeenCalledWith('order-200', 'PAY_BY_BANK');
+  });
+
+  it('sends the invoice email only with consent and blocks an invalid address', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/m/merchant-44/b/branch-12/checkout');
+    harness.detectChanges();
+    const root = harness.routeNativeElement!;
+    const confirm = root.querySelector<HTMLButtonElement>('[data-testid="confirm-payment"]')!;
+
+    expect(root.querySelector('[data-testid="invoice-email"]')).toBeNull();
+    const consent = root.querySelector<HTMLInputElement>('[data-testid="invoice-email-consent"]')!;
+    consent.click();
+    harness.detectChanges();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+    expect(confirm.disabled).toBeTrue();
+
+    const email = root.querySelector<HTMLInputElement>('[data-testid="invoice-email"]')!;
+    email.value = ' guest@example.com ';
+    email.dispatchEvent(new Event('input'));
+    harness.detectChanges();
+    confirm.click();
+
+    expect(api.createOrder).toHaveBeenCalledWith({
+      branchId: 'branch-12',
+      items: [{ productId: 'p1', quantity: 1 }],
+      buyerEmail: 'guest@example.com',
+      invoiceEmailConsent: true
+    });
   });
 
   it('defaults to card when the merchant accepts cards and sends only the method', async () => {

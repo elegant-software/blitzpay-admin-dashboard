@@ -1,3 +1,4 @@
+import { StorefrontUiService } from './services/storefront-ui.service';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
@@ -9,6 +10,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 describe('Web Storefront shell', () => {
   it('links the legal notice and privacy policy on every page', async () => {
     await TestBed.configureTestingModule({ imports: [AppComponent], providers: [provideRouter([]), provideHttpClient()] }).compileComponents();
+    spyOn(TestBed.inject(StorefrontUiService), 'load').and.stub();
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const hrefs = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="legal-footer"] a') as NodeListOf<HTMLAnchorElement>)
@@ -20,6 +22,7 @@ describe('Web Storefront shell', () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent], providers: [provideRouter([]), provideHttpClient(), provideNoopAnimations()]
     }).compileComponents();
+    spyOn(TestBed.inject(StorefrontUiService), 'load').and.stub();
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     TestBed.inject(NotificationService).success('Your order was placed. Please pay staff in cash.');
@@ -36,41 +39,20 @@ describe('Web Storefront shell', () => {
     window.dispatchEvent(event);
   };
 
-  it('reveals store choices after scrolling and pressing Download, and can collapse them', async () => {
-    await TestBed.configureTestingModule({
-      imports: [AppComponent],
-      providers: [provideRouter([]), provideHttpClient()]
-    }).compileComponents();
-
+  it('keeps the header language control available without a sticky download promotion', async () => {
+    await TestBed.configureTestingModule({ imports: [AppComponent], providers: [provideRouter([]), provideHttpClient()] }).compileComponents();
+    spyOn(TestBed.inject(StorefrontUiService), 'load').and.stub();
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
-
-    const prompt: HTMLElement | null = fixture.nativeElement.querySelector('[data-testid="app-install-prompt"]');
-    expect(prompt?.hidden).toBeTrue();
-    spyOnProperty(window, 'scrollY', 'get').and.returnValue(240);
     window.dispatchEvent(new Event('scroll'));
     fixture.detectChanges();
-    expect(prompt?.hidden).toBeFalse();
-    const download = prompt!.querySelector<HTMLButtonElement>('[aria-controls="app-download-links"]')!;
-    expect(download.getAttribute('aria-expanded')).toBe('false');
-    const links = prompt!.querySelector<HTMLElement>('#app-download-links')!;
-    expect(links.hidden).toBeTrue();
-    download.click();
-    fixture.detectChanges();
-    expect(download.getAttribute('aria-expanded')).toBe('true');
-    expect(links.hidden).toBeFalse();
-    const storeLinks = Array.from(links.querySelectorAll<HTMLAnchorElement>('a'));
-    expect(storeLinks.map((link) => link.href)).toEqual([
-      environment.appStoreUrl,
-      environment.googlePlayUrl
-    ]);
-    download.click();
-    fixture.detectChanges();
-    expect(links.hidden).toBeTrue();
+    expect(fixture.nativeElement.querySelector('[data-testid="app-install-prompt"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('header web-language-switcher')).not.toBeNull();
+    expect(document.documentElement.style.getPropertyValue('--storefront-download-height')).toBe('');
   });
-
   it('exposes an accessible header theme toggle', async () => {
     await TestBed.configureTestingModule({ imports: [AppComponent], providers: [provideRouter([]), provideHttpClient()] }).compileComponents();
+    spyOn(TestBed.inject(StorefrontUiService), 'load').and.stub();
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const button = fixture.nativeElement.querySelector('[data-testid="theme-toggle"]') as HTMLButtonElement;
@@ -87,6 +69,7 @@ describe('Web Storefront shell', () => {
       providers: [provideRouter([]), provideHttpClient()]
     }).compileComponents();
 
+    spyOn(TestBed.inject(StorefrontUiService), 'load').and.stub();
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
 
@@ -98,7 +81,7 @@ describe('Web Storefront shell', () => {
 
     const notice: HTMLElement = fixture.nativeElement.querySelector('[data-testid="pwa-install-notice"]');
     expect(notice.textContent).toContain('Install this storefront');
-    expect(notice.compareDocumentPosition(fixture.nativeElement.querySelector('[data-testid="app-install-prompt"]')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="app-install-prompt"]')).toBeNull();
 
     const installButton = notice.querySelector<HTMLButtonElement>('[data-testid="pwa-install-button"]');
     installButton?.click();

@@ -22,11 +22,11 @@ describe('StorefrontLanguageService', () => {
     expect(service.resolve({ applicationId: 'm2', merchantName: 'Other', originalLanguage: 'tr' })).toBe('tr');
   });
 
-  it('uses an explicit choice ahead of a merchant default without changing page direction', () => {
+  it('keeps a single-language merchant original while the UI preference changes', () => {
     const service = TestBed.inject(StorefrontLanguageService);
     service.choose('ar');
-    expect(service.resolve({ applicationId: 'm', merchantName: 'Restaurant', originalMenuLanguage: 'de' })).toBe('ar');
-    expect(service.direction).toBe('rtl');
+    expect(service.resolve({ applicationId: 'm', merchantName: 'Restaurant', originalMenuLanguage: 'de' })).toBe('de');
+    expect(service.direction).toBe('ltr');
     service.choose('de');
     expect(service.direction).toBe('ltr');
   });
