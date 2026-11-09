@@ -84,6 +84,12 @@ type GuestCheckoutChoice = StorefrontPaymentMethod | StorefrontCheckoutPaymentMe
           <span><strong>{{ 'How many people?' | storefrontTranslate }}</strong><small>{{ 'At your table, including you.' | storefrontTranslate }}</small></span>
           <input type="number" name="guestCount" min="1" max="50" step="1" data-testid="guest-count" [(ngModel)]="guestCount" />
         </label>
+        <label class="payment-choice">
+          <input type="checkbox" name="invoiceEmailConsent" data-testid="invoice-email-consent" [(ngModel)]="invoiceEmailConsent" [disabled]="!!orderId" />
+          <span><strong>{{ 'Email me the invoice' | storefrontTranslate }}</strong><small>{{ 'Optional. We use this address only to send the invoice of this order once, then delete it.' | storefrontTranslate }}</small></span>
+        </label>
+        <input *ngIf="invoiceEmailConsent" type="email" name="buyerEmail" autocomplete="email" placeholder="you@example.com" [attr.aria-label]="'Invoice email' | storefrontTranslate"
+          data-testid="invoice-email" [(ngModel)]="buyerEmail" [disabled]="!!orderId" />
         <p class="muted small" *ngIf="tableCode">{{ 'To order at your table we check your location once when you place the order.' | storefrontTranslate }}</p>
         <div #cardHost class="card-element" data-testid="card-element" [hidden]="!cardForm"></div>
         <div class="storefront-alert" *ngIf="cartNeedsReview">
@@ -96,7 +102,7 @@ type GuestCheckoutChoice = StorefrontPaymentMethod | StorefrontCheckoutPaymentMe
           class="checkout-button"
           type="button"
           data-testid="confirm-payment"
-          [disabled]="cart.itemCount === 0 || !selectedPaymentMethod || cartNeedsReview || checkingOut"
+          [disabled]="cart.itemCount === 0 || !selectedPaymentMethod || cartNeedsReview || checkingOut || invoiceEmailInvalid"
           (click)="confirmPayment()"
           *ngIf="!cardForm"
         >{{ confirmLabel | storefrontTranslate }}</button>
@@ -140,6 +146,9 @@ export class GuestCheckoutComponent implements OnInit {
   /** Asked once, only when the Table was free when the guest checked in. */
   readonly askGuestCount = !!this.tableCheckIn?.tableCode && !this.tableCheckIn.occupied;
   guestCount = 2;
+  /** Unticked by default; the email is sent only when ticked (backend reference/guest-invoice-email-privacy.md). */
+  invoiceEmailConsent = false;
+  buyerEmail = '';
   /** Set when the guest checked in at an active Table of this Branch; the order is then a Walk-In at that Table. */
   readonly tableCode = this.tableCheckIn?.tableCode ?? null;
   readonly tableName = this.tableCode ? this.tableCheckIn?.tableName ?? null : null;
@@ -198,6 +207,11 @@ export class GuestCheckoutComponent implements OnInit {
     return !!this.tableCode;
   }
 
+  /** Ticked but no plausible address: block the order rather than silently drop the invoice. */
+  get invoiceEmailInvalid(): boolean {
+    return this.invoiceEmailConsent && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.buyerEmail.trim());
+  }
+
   get confirmLabel(): string {
     if (this.paysStaff) return this.checkingOut ? 'Placing order...' : 'Place order';
     return this.checkingOut ? 'Opening payment...' : 'Confirm and pay';
@@ -210,7 +224,7 @@ export class GuestCheckoutComponent implements OnInit {
 
   confirmPayment(): void {
     const method = this.selectedPaymentMethod;
-    if (!method || this.cart.itemCount === 0 || this.cartNeedsReview || this.checkingOut || this.branch?.active === false) return;
+    if (!method || this.cart.itemCount === 0 || this.cartNeedsReview || this.checkingOut || this.invoiceEmailInvalid || this.branch?.active === false) return;
     this.checkingOut = true;
     this.errorMessage = '';
     if (method === 'CASH' || method === 'TERMINAL') return this.placeStaffOrder(method);
@@ -287,7 +301,8 @@ export class GuestCheckoutComponent implements OnInit {
         items: this.cart.lines.map((line) => ({ productId: line.product.productId, quantity: line.quantity })),
         ...(this.tableCode && customerLocation ? { tableCode: this.tableCode, customerLocation } : {}),
         ...(staffMethod ? { checkoutPaymentMethod: staffMethod } : {}),
-        ...(this.askGuestCount && customerLocation ? { guestCount: this.validGuestCount } : {})
+        ...(this.askGuestCount && customerLocation ? { guestCount: this.validGuestCount } : {}),
+        ...(this.invoiceEmailConsent ? { buyerEmail: this.buyerEmail.trim(), invoiceEmailConsent: true } : {})
       })),
       map((order) => {
         if (this.tableCode) this.tables.markOccupied();

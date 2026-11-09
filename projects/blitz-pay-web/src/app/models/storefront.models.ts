@@ -74,6 +74,9 @@ export interface CreateStorefrontOrderRequest {
   checkoutPaymentMethod?: StorefrontCheckoutPaymentMethod;
   /** Guest Count (1–50), asked when the Table was free; the backend ignores it once the Table has one. */
   guestCount?: number;
+  /** Sent only with [invoiceEmailConsent] = true (DSGVO Art. 6(1)(a)); used once to email this order's invoice. */
+  buyerEmail?: string;
+  invoiceEmailConsent?: boolean;
 }
 
 /** Shopper-facing view of a Branch's Table Status: counts only, never orders. */
