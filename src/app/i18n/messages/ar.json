@@ -1023,5 +1023,9 @@
   "Preview a theme on this storefront": "معاينة سمة على هذا المتجر",
   "Open preview": "فتح المعاينة",
   "Add a branch first; the storefront shows a branch's menu.": "أضف فرعًا أولًا؛ يعرض المتجر قائمة الفرع.",
-  "draft": "مسودة"
+  "draft": "مسودة",
+  "All products": "كل المنتجات",
+  "Uncategorized": "بدون فئة",
+  "Filter products by category": "تصفية المنتجات حسب الفئة",
+  "Loading products": "جارٍ تحميل المنتجات"
 }
