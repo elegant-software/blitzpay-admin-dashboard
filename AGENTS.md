@@ -58,6 +58,13 @@ Canonical conventions are in `docs/reference/`. Always consult these before gene
 - **Dates**: All ISO 8601 / `Date` values shown in the UI must use `DisplayDatePipe` (`src/app/pipes/display-date.pipe.ts`). Format: `d MMM y, HH:mm` (e.g. `24 Apr 2026, 21:55`). Null/undefined renders as `—`.
 - **Relative time strings** (e.g. "10 sec ago", "Just now") are already user-friendly — do not pipe them through `DisplayDatePipe`.
 
+## PR Descriptions
+
+- Keep descriptions short and readable for a non-technical manager.
+- Use two short lines: `Problem: ...` / `Fix: ...` for bugs, or `Feat: ...` / `Add: ...` for features.
+- Explain the customer-visible behavior in plain language; omit implementation details and file lists.
+- Add testing or deployment notes only when essential for review. Keep conventional PR titles.
+
 ## Web Storefront & Releases
 
 This repo holds two Angular apps: the admin dashboard (`src/`) and the public Web Storefront (`projects/blitz-pay-web/`, served at `storefront.zackpay.de`). One GitHub Release `vX.Y.Z` deploys both. See [`CLAUDE.md`](CLAUDE.md#web-storefront) for commands, images, manifests, and single-app redeploys.

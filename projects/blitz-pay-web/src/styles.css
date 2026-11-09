@@ -1079,3 +1079,8 @@ input[type='email'],input[type='url'],input[name='tableCode'],.pickup-number { d
 html[dir=rtl] .back-link svg { transform:scaleX(-1); }
 
 :root[lang='ar'][data-storefront-style] :is(h1, h2, h3) { font-family: Cairo, 'Segoe UI', sans-serif; letter-spacing: normal; }
+
+web-catalog .category-chips { position: sticky; top: calc(var(--storefront-header-height, 5rem) + env(safe-area-inset-top, 0px) + 1px); z-index: 3; background: var(--storefront-surface); }
+web-catalog .product-card { content-visibility: auto; contain-intrinsic-size: auto 420px; }
+.catalog-pagination { display: grid; justify-items: center; gap: 1rem; padding-block: 1.5rem; }
+.catalog-pagination .pill-button { min-height: 44px; padding: .75rem 1.25rem; }

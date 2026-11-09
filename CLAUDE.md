@@ -50,6 +50,13 @@ The public storefront is a second Angular app in this repo: `projects/blitz-pay-
 
 Use port 4201 for the storefront locally — the admin's `local` environment `storefrontUrl` points there.
 
+Catalog browsing uses the backend #224 paginated APIs: `/catalog/categories` for branch counts and
+`/catalog/products` for 24-item pages with opaque cursors. These reads must remain anonymous; inactive
+products and thumbnail backfill stay protected. Lists prefer `thumbnailUrl`, while Product Overview
+keeps `imageUrl`. Cache entries include merchant, branch, language, category and cursor. Catalog-wide
+text search loads complete metadata only on demand; guest checkout keeps its existing full-catalog
+revalidation. Backend PR #225 and its anonymous-read follow-up are required before deployment.
+
 ### Releases & Deploys
 - Both apps share one release. Publishing a GitHub Release `vX.Y.Z` triggers `.github/workflows/cd-release.yml`, which verifies CI passed for the tagged commit, builds both images with that tag, and deploys both to `blitzpay-staging`.
 - Pushing to `main` only runs CI; it does not deploy.
