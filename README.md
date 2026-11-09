@@ -132,3 +132,41 @@ If you still see ENOENT, verify the repository was fully copied/cloned and that 
 - APIs are expected at `http://localhost:8080/{version}` (local) or `https://api-blitzpay-staging.zackpay.de/{version}` (staging).
 - Product create/update requests are sent as multipart form data.
 - Branch secret fields are entered for creation but are cleared from UI form state after save.
+
+
+### Table QR app opening (storefront #91)
+
+Keep the backend Table Link unchanged in the admin QR: the same HTTPS
+/t/<code> URL opens the installed shopper app through verified App/Universal
+Links and otherwise opens the existing storefront table/branch catalog.
+The browser catalog also offers a user-initiated Open shopper app link retaining
+the table code. There are no automatic custom-scheme redirects or installation
+detection timers; guests can continue ordering in the browser.
+
+Before activation, align backend STOREFRONT_URL and mobile
+the selected mobile storefront origin with the actual HTTPS address
+(EXPO_PUBLIC_LOCAL_STOREFRONT_URL or EXPO_PUBLIC_SERVER_STOREFRONT_URL;
+EXPO_PUBLIC_STOREFRONT_URL is the legacy fallback). Rebuild the
+shopper native app when its claimed domain changes. Configure the existing
+blitzpay-shopper-links ConfigMap using real SHOPPER_ANDROID_PACKAGE,
+SHOPPER_ANDROID_SHA256, and SHOPPER_IOS_APP_ID values; see
+k8s/storefront/shopper-links.configmap.example.yaml. Use the signing identity of
+the installed build. Do not authorize a generic debug certificate on a production
+domain. Deploying this configuration requires separate authorization.
+
+The container already generates /.well-known/assetlinks.json and
+/.well-known/apple-app-site-association at startup. Without identities, valid
+empty files are intentional; malformed identities fail startup. Verification
+files must return HTTP 200 JSON without authentication, redirects, SPA fallback
+or service-worker interception. Local Angular ng serve does not run the nginx
+container startup generator. A plain HTTP localhost/LAN URL cannot verify native
+links. A controlled HTTPS development origin must also route its storefront API
+to the intended local backend if testing local data.
+
+Run npm run test:shopper-links to exercise the real association generator in an
+isolated temporary directory (POSIX sh, or Git Bash on Windows; BASH_BIN can
+override the shell path). Run npm run test:storefront -- --watch=false
+--browsers=ChromeHeadless for browser regressions. Verify installed-app cold/warm
+and signed-out/in scans, then browser fallback on a separate app-absent device;
+do not uninstall a tester's app to perform that check. The shopper app's
+post-login table resume is implemented in mobile #62.

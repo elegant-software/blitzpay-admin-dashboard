@@ -1,3 +1,4 @@
+import { OpenShopperAppComponent } from '../table/open-shopper-app.component';
 import { StorefrontTranslatePipe } from '../i18n/storefront-translate.pipe';
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, effect, inject } from '@angular/core';
@@ -18,7 +19,7 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
 @Component({
   selector: 'web-catalog',
   standalone: true,
-  imports: [StorefrontTranslatePipe, CommonModule, FormsModule, RouterLink, WebCartComponent, MerchantLogoComponent],
+  imports: [StorefrontTranslatePipe, CommonModule, FormsModule, RouterLink, WebCartComponent, MerchantLogoComponent, OpenShopperAppComponent],
   template: `
     <ng-container *ngIf="!loading; else catalogLoading">
     <section class="merchant-hero">
@@ -34,6 +35,7 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
     <p class="table-note" *ngIf="tableCheckIn?.tableCode" data-testid="table-note">
       <strong>{{ 'Your table: {0}' | storefrontTranslate: [tableCheckIn?.tableName] }}</strong><span>{{ 'Your order is brought to your table.' | storefrontTranslate }}</span>
     </p>
+    <web-open-shopper-app [code]="tableCheckIn?.tableCode" />
     <p class="table-availability muted" *ngIf="!tableCheckIn && availability && availability.total > 0" data-testid="table-availability">
       {{ '{0} of {1} tables free' | storefrontTranslate: [availability.free, availability.total] }}<span *ngIf="availability.freeSeats != null"> {{ '· {0} free seats' | storefrontTranslate: [availability.freeSeats] }}</span>
     </p>

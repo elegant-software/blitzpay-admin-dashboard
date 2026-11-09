@@ -1,5 +1,7 @@
 /** English source, German and Arabic; tab-separated to keep the initial guest bundle small. */
-const rows = `{0} home	{0} Startseite	الصفحة الرئيسية لـ {0}
+const rows = `Open shopper app	Shopper-App öffnen	افتح تطبيق المتسوق
+Or continue ordering here in your browser.	Oder bestelle hier im Browser weiter.	أو تابع الطلب هنا في متصفحك.
+{0} home	{0} Startseite	الصفحة الرئيسية لـ {0}
 Fresh from our kitchen. Made for your table.	Frisch aus unserer Küche. Für deinen Tisch zubereitet.	طازج من مطبخنا. لطاولتك.
 Fresh from our kitchen	Frisch aus unserer Küche	طازج من مطبخنا
 The menu	Die Speisekarte	القائمة

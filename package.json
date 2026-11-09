@@ -9,7 +9,8 @@
     "build:storefront": "ng build blitz-pay-web",
     "test": "ng test blitzpay-admin-dashboard",
     "test:storefront": "ng test blitz-pay-web",
-    "test:contract": "ng run blitzpay-admin-dashboard:contract-test --browsers=ChromeHeadlessNoSandbox --watch=false"
+    "test:contract": "ng run blitzpay-admin-dashboard:contract-test --browsers=ChromeHeadlessNoSandbox --watch=false",
+    "test:shopper-links": "node --test scripts/test-shopper-associations.cjs"
   },
   "dependencies": {
     "@angular/animations": "^20.0.0",

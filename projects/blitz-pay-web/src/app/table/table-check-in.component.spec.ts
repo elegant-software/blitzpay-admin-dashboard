@@ -50,6 +50,9 @@ describe('Table Link check-in (/t/:code)', () => {
       .toEqual({ merchantId: 'merchant-44', branchId: 'branch-12', tableCode: 'AB3K7Q', tableName: 'Terrace 3', occupied: false });
     expect(harness.routeNativeElement?.textContent).toContain('Your table: Terrace 3');
     expect(harness.routeNativeElement?.textContent).not.toContain('table-uuid');
+    const appLink = harness.routeNativeElement?.querySelector<HTMLAnchorElement>('[data-testid="shopper-app-link"]');
+    expect(appLink?.getAttribute('href')).toBe('blitzpay://t/AB3K7Q');
+    expect(harness.routeNativeElement?.textContent).toContain('continue ordering here');
   });
 
   it('opens a deactivated Table as the Branch storefront for counter pickup', async () => {
