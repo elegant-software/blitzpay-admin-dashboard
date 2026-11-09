@@ -1023,5 +1023,9 @@
   "Preview a theme on this storefront": "Design in diesem Storefront ansehen",
   "Open preview": "Vorschau öffnen",
   "Add a branch first; the storefront shows a branch's menu.": "Lege zuerst eine Filiale an; der Storefront zeigt die Speisekarte einer Filiale.",
-  "draft": "Entwurf"
+  "draft": "Entwurf",
+  "All products": "Alle Produkte",
+  "Uncategorized": "Ohne Kategorie",
+  "Filter products by category": "Produkte nach Kategorie filtern",
+  "Loading products": "Produkte werden geladen"
 }
