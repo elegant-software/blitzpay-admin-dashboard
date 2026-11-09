@@ -88,5 +88,5 @@ h1 span { color: var(--storefront-primary); }
   .journey-steps { grid-template-columns: minmax(0, 1fr); gap: .65rem; }
   .journey-steps li { flex-direction: row; padding: 1.15rem; }
   .journey-steps h3 { margin-top: .35rem; }
-  .qr-help { text-align: left; justify-content: start; }
+  .qr-help { text-align: start; justify-content: start; }
 }

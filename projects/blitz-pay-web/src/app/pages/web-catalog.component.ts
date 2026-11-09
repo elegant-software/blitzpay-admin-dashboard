@@ -1,5 +1,6 @@
+import { StorefrontTranslatePipe } from '../i18n/storefront-translate.pipe';
 import { CommonModule } from '@angular/common';
-import { AfterViewChecked, Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription, finalize, forkJoin, map, switchMap } from 'rxjs';
@@ -17,96 +18,48 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
 @Component({
   selector: 'web-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, WebCartComponent, MerchantLogoComponent],
+  imports: [StorefrontTranslatePipe, CommonModule, FormsModule, RouterLink, WebCartComponent, MerchantLogoComponent],
   template: `
     <ng-container *ngIf="!loading; else catalogLoading">
     <section class="merchant-hero">
       <web-merchant-logo [merchant]="merchant" />
       <div>
-        <p class="eyebrow">{{ brand.theme() ? 'Fresh from our kitchen' : 'Shop online' }}</p>
-        <h1>{{ merchant?.merchantName || 'Merchant catalog' }}</h1>
-        <p class="fulfillment-label" *ngIf="branch">Fulfilled by {{ branch.name }}<span *ngIf="branchAddress"> &middot; {{ branchAddress }}</span></p>
+        <p class="eyebrow">{{ (brand.theme() ? 'Fresh from our kitchen' : 'Shop online') | storefrontTranslate }}</p>
+        <h1>{{ merchant?.merchantName || ('Merchant catalog' | storefrontTranslate) }}</h1>
+        <p class="fulfillment-label" *ngIf="branch">{{ 'Fulfilled by {0}' | storefrontTranslate: [branch.name] }}<span *ngIf="branchAddress"> &middot; {{ branchAddress }}</span></p>
       </div>
     </section>
 
-    <p class="storefront-alert" *ngIf="errorMessage" role="alert">{{ errorMessage }}</p>
+    <p class="storefront-alert" *ngIf="errorMessage" role="alert">{{ (errorMessage | storefrontTranslate) }}</p>
     <p class="table-note" *ngIf="tableCheckIn?.tableCode" data-testid="table-note">
-      <strong>Your table: {{ tableCheckIn?.tableName }}</strong><span>Your order is brought to your table.</span>
+      <strong>{{ 'Your table: {0}' | storefrontTranslate: [tableCheckIn?.tableName] }}</strong><span>{{ 'Your order is brought to your table.' | storefrontTranslate }}</span>
     </p>
     <p class="table-availability muted" *ngIf="!tableCheckIn && availability && availability.total > 0" data-testid="table-availability">
-      {{ availability.free }} of {{ availability.total }} tables free<span *ngIf="availability.freeSeats != null"> &middot; {{ availability.freeSeats }} free seats</span>
+      {{ '{0} of {1} tables free' | storefrontTranslate: [availability.free, availability.total] }}<span *ngIf="availability.freeSeats != null"> {{ '· {0} free seats' | storefrontTranslate: [availability.freeSeats] }}</span>
     </p>
     <p class="table-note counter" *ngIf="tableCheckIn && !tableCheckIn.tableCode" data-testid="counter-note">
-      This table is not taking orders right now. Order here and collect your order at the counter.
-    </p>
+      {{ 'This table is not taking orders right now. Order here and collect your order at the counter.' | storefrontTranslate }}</p>
     <section class="unavailable surface" *ngIf="!loading && branch && branch.active === false">
-      <p class="eyebrow">Unavailable Branch Notice</p>
-      <h2>This location is not accepting online orders.</h2>
-      <p class="muted">Please check again later.</p>
+      <p class="eyebrow">{{ 'Unavailable Branch Notice' | storefrontTranslate }}</p>
+      <h2>{{ 'This location is not accepting online orders.' | storefrontTranslate }}</h2>
+      <p class="muted">{{ 'Please check again later.' | storefrontTranslate }}</p>
     </section>
 
     <section class="shop-layout" *ngIf="branch?.active !== false">
       <article class="surface products">
         <div class="catalog-toolbar">
-          <div>
-            <h2>{{ brand.theme() ? 'The menu' : 'Products' }}</h2>
-            <p class="muted">{{ products.length }} {{ brand.theme() ? 'things to look forward to' : 'available' }}</p>
-          </div>
-          <div class="search-products language-picker" *ngIf="languages.length">
-            <span>Language</span>
-            <div class="language-control">
-              <button
-                #languageTrigger
-                class="language-trigger"
-                type="button"
-                data-testid="catalog-language"
-                aria-haspopup="listbox"
-                aria-controls="catalog-language-options"
-                [attr.aria-expanded]="languageMenuOpen"
-                (click)="toggleLanguageMenu()"
-                (keydown)="onLanguageTriggerKeydown($event)"
-              >
-                <span [attr.lang]="activeLanguage" dir="auto">{{ languageName(activeLanguage || 'en') }}</span>
-                <svg class="language-chevron" [class.is-open]="languageMenuOpen" viewBox="0 0 20 20" aria-hidden="true">
-                  <path d="m5 7.5 5 5 5-5" />
-                </svg>
-              </button>
-              <div
-                *ngIf="languageMenuOpen"
-                class="language-options"
-                id="catalog-language-options"
-                role="listbox"
-                aria-label="Catalog language"
-              >
-                <button
-                  #languageOption
-                  *ngFor="let code of languages; let index = index"
-                  type="button"
-                  role="option"
-                  class="language-option"
-                  [attr.data-language]="code"
-                  [attr.lang]="code"
-                  [attr.aria-selected]="activeLanguage === code"
-                  [attr.tabindex]="focusedLanguageIndex === index ? 0 : -1"
-                  (click)="selectLanguage(code)"
-                  (keydown)="onLanguageOptionKeydown($event, index)"
-                >
-                  <span dir="auto">{{ languageName(code) }}</span>
-                  <svg *ngIf="activeLanguage === code" viewBox="0 0 20 20" aria-hidden="true">
-                    <path d="m4 10 4 4 8-8" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+          <div class="catalog-heading">
+            <h2>{{ (brand.theme() ? 'The menu' : 'Products') | storefrontTranslate }}</h2>
+            <p class="muted">{{ (brand.theme() ? '{0} things to look forward to' : '{0} available') | storefrontTranslate: [products.length] }}</p>
           </div>
           <label class="search-products">
-            <span>Search products</span>
-            <input type="search" [(ngModel)]="query" (ngModelChange)="saveBrowseState()" placeholder="Search products" />
+            <span>{{ 'Search products' | storefrontTranslate }}</span>
+            <input type="search" [(ngModel)]="query" (ngModelChange)="saveBrowseState()" [attr.placeholder]="'Search products' | storefrontTranslate" />
           </label>
         </div>
         <div [attr.aria-busy]="productsLoading">
         <section *ngIf="productsLoading" data-testid="catalog-skeleton" role="status" aria-live="polite">
-          <span class="visually-hidden">Loading menu in {{ languageName(activeLanguage || 'en') }}...</span>
+          <span class="visually-hidden">{{ 'Loading menu in {0}...' | storefrontTranslate: [languageName(activeLanguage || 'en')] }}</span>
           <div class="product-grid" aria-hidden="true">
             <article class="product-card skeleton-card" *ngFor="let placeholder of skeletonCards">
               <div class="skeleton skeleton-image"></div>
@@ -119,40 +72,40 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
           </div>
         </section>
         <ng-container *ngIf="!productsLoading">
-        <nav class="category-chips" *ngIf="categories.length > 0" aria-label="Product categories">
-          <button type="button" [class.active]="category === ''" (click)="chooseCategory('')">All</button>
-          <button type="button" *ngFor="let option of categories" [class.active]="category === option" (click)="chooseCategory(option)">{{ option }}</button>
+        <nav class="category-chips" *ngIf="categories.length > 0" [attr.aria-label]="'Product categories' | storefrontTranslate">
+          <button type="button" [class.active]="category === ''" [attr.aria-pressed]="category === ''" (click)="chooseCategory('')">{{ 'All products' | storefrontTranslate }}<span class="category-count">{{ products.length }}</span></button>
+          <button type="button" *ngFor="let option of categoryOptions" [class.active]="category === option.key" [attr.aria-pressed]="category === option.key" (click)="chooseCategory(option.key)"><span dir="auto">{{ option.name }}</span><span class="category-count">{{ option.count }}</span></button>
         </nav>
-        <p class="muted" *ngIf="loading">Loading products...</p>
+        <p class="muted" *ngIf="loading">{{ 'Loading products...' | storefrontTranslate }}</p>
         <section class="unavailable catalog-notice" *ngIf="!loading && products.length === 0">
-          <p class="eyebrow">Unavailable Catalog Notice</p>
-          <h2>No products are available at this location right now.</h2>
+          <p class="eyebrow">{{ 'Unavailable Catalog Notice' | storefrontTranslate }}</p>
+          <h2>{{ 'No products are available at this location right now.' | storefrontTranslate }}</h2>
         </section>
-            <p class="muted" *ngIf="products.length > 0 && visibleProducts.length === 0">No products match your search.</p>
+            <p class="muted" *ngIf="products.length > 0 && visibleProducts.length === 0">{{ 'No products match your search.' | storefrontTranslate }}</p>
             <div class="product-grid" *ngIf="products.length > 0">
               <article class="product-card" *ngFor="let product of visibleProducts; trackBy: trackProduct" [class.is-selected]="productQuantity(product.productId) > 0" [attr.dir]="catalogLanguage.direction">
                 <a class="product-detail-link" [routerLink]="['/m', merchantId, 'b', branchId, 'p', product.productId]">
                   <div class="product-image">
                     <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" loading="lazy" decoding="async" />
-                    <span *ngIf="!product.imageUrl">Product image</span>
+                    <span *ngIf="!product.imageUrl">{{ 'Product image' | storefrontTranslate }}</span>
                   </div>
                   <div class="product-copy" [attr.lang]="product.language">
                     <span class="surface-label" *ngIf="product.categoryName">{{ product.categoryName }}</span>
                     <h3 dir="auto">{{ product.name }}</h3>
-                    <p class="muted" dir="auto">{{ product.description || 'View details' }}</p>
+                    <p class="muted" dir="auto">{{ product.description || ('View details' | storefrontTranslate) }}</p>
                     <strong><bdi dir="ltr">{{ product.unitPrice | currency: currency }}</bdi></strong>
                   </div>
                 </a>
                 <div class="product-cart-actions" *ngIf="productQuantity(product.productId) as quantity; else addToCart">
-                  <span class="in-cart-label">In cart</span>
-                  <div class="quantity product-quantity" role="group" [attr.aria-label]="'Quantity for ' + product.name">
-                    <button type="button" [attr.data-testid]="'decrease-' + product.productId" [attr.aria-label]="quantity === 1 ? 'Remove ' + product.name + ' from cart' : 'Remove one ' + product.name" (click)="cart.decrease(product.productId)">&minus;</button>
-                    <span class="quantity-count" aria-live="polite" aria-atomic="true" [attr.aria-label]="quantity + ' in cart'">{{ quantity }}</span>
-                    <button type="button" [attr.data-testid]="'increase-' + product.productId" [attr.aria-label]="'Add one ' + product.name" (click)="addProduct(product)">+</button>
+                  <span class="in-cart-label">{{ 'In cart' | storefrontTranslate }}</span>
+                  <div class="quantity product-quantity" role="group" [attr.aria-label]="'Quantity for {0}' | storefrontTranslate: [product.name]">
+                    <button type="button" [attr.data-testid]="'decrease-' + product.productId" [attr.aria-label]="(quantity === 1 ? 'Remove {0} from cart' : 'Remove one {0}') | storefrontTranslate: [product.name]" (click)="cart.decrease(product.productId)">&minus;</button>
+                    <span class="quantity-count" aria-live="polite" aria-atomic="true" [attr.aria-label]="'{0} in cart' | storefrontTranslate: [quantity]">{{ quantity }}</span>
+                    <button type="button" [attr.data-testid]="'increase-' + product.productId" [attr.aria-label]="'Add one {0}' | storefrontTranslate: [product.name]" (click)="addProduct(product)">+</button>
                   </div>
                 </div>
                 <ng-template #addToCart>
-                  <button class="add-button" type="button" [attr.data-testid]="'add-' + product.productId" [attr.aria-label]="'Add ' + product.name + ' to cart'" (click)="addProduct(product)">Add</button>
+                  <button class="add-button" type="button" [attr.data-testid]="'add-' + product.productId" [attr.aria-label]="'Add {0} to cart' | storefrontTranslate: [product.name]" (click)="addProduct(product)">{{ 'Add' | storefrontTranslate }}</button>
                 </ng-template>
               </article>
             </div>
@@ -164,30 +117,32 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
     </ng-container>
     <ng-template #catalogLoading>
       <section class="surface catalog-loading" role="status" aria-live="polite" aria-busy="true">
-        <p class="eyebrow">Your menu</p><h1>Getting things ready</h1><p>Loading the live menu for this location...</p>
+        <p class="eyebrow">{{ 'Your menu' | storefrontTranslate }}</p><h1>{{ 'Getting things ready' | storefrontTranslate }}</h1><p>{{ 'Loading the live menu for this location...' | storefrontTranslate }}</p>
       </section>
     </ng-template>
   `
 })
-export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy {
+export class WebCatalogComponent implements OnInit, OnDestroy {
   readonly brand = inject(StorefrontBrandService);
   private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StorefrontApiService);
-  private readonly host = inject(ElementRef<HTMLElement>);
   readonly cart = inject(StorefrontSessionService);
   readonly catalogLanguage = inject(StorefrontLanguageService);
-  @ViewChild('languageTrigger') private languageTrigger?: ElementRef<HTMLButtonElement>;
-  @ViewChildren('languageOption', { read: ElementRef }) private languageOptionElements!: QueryList<ElementRef<HTMLButtonElement>>;
   private catalogRequest?: Subscription;
-  private pendingLanguageFocus: number | null = null;
   readonly skeletonCards = [0, 1, 2, 3];
   productsLoading = false;
-  languageMenuOpen = false;
-  focusedLanguageIndex = 0;
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly currency = environment.currency;
+  private lastLanguageChange = this.catalogLanguage.changes();
+  private readonly followHeaderLanguage = effect(() => {
+    const revision = this.catalogLanguage.changes();
+    if (revision === this.lastLanguageChange || !this.merchant) return;
+    this.lastLanguageChange = revision;
+    if (catalogLanguages(this.merchant).length > 1) this.reloadProducts();
+  });
+
   readonly tableCheckIn = inject(StorefrontTableService).forBranch(this.merchantId, this.branchId);
 
   merchant: StorefrontMerchant | null = null;
@@ -254,13 +209,20 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
   chooseLanguage(language: string): void {
     this.catalogRequest?.unsubscribe();
     this.catalogLanguage.choose(language);
-    // Category names are translated too, so a category picked in another language no longer matches.
-    this.chooseCategory('');
+    this.reloadProducts();
+  }
+
+  private reloadProducts(): void {
+    if (!this.merchant) return;
+    this.lastLanguageChange = this.catalogLanguage.changes();
+    this.catalogRequest?.unsubscribe();
+    // Retain stable category IDs across translated names; legacy name-only categories reset.
+    if (!this.products.some(product => product.categoryId === this.category)) this.chooseCategory('');
     this.query = '';
     this.saveBrowseState();
     this.errorMessage = '';
     this.productsLoading = true;
-    this.catalogRequest = this.api.getActiveProducts(this.merchantId, this.branchId, language)
+    this.catalogRequest = this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.resolve(this.merchant))
       .pipe(finalize(() => this.productsLoading = false))
       .subscribe({
         next: (products) => {
@@ -276,60 +238,6 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
     this.availabilityRequest?.unsubscribe();
   }
 
-  ngAfterViewChecked(): void {
-    if (this.pendingLanguageFocus === null) return;
-    this.languageOptionElements.get(this.pendingLanguageFocus)?.nativeElement.focus();
-    this.pendingLanguageFocus = null;
-  }
-
-  @HostListener('document:click', ['$event'])
-  closeLanguageMenuOnOutsideClick(event: MouseEvent): void {
-    if (this.languageMenuOpen && !this.host.nativeElement.contains(event.target as Node)) {
-      this.closeLanguageMenu(false);
-    }
-  }
-
-  toggleLanguageMenu(): void {
-    if (this.languageMenuOpen) {
-      this.closeLanguageMenu(false);
-      return;
-    }
-    this.openLanguageMenu(this.languages.indexOf(this.activeLanguage ?? ''));
-  }
-
-  onLanguageTriggerKeydown(event: KeyboardEvent): void {
-    if (!['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) return;
-    event.preventDefault();
-    const selectedIndex = this.languages.indexOf(this.activeLanguage ?? '');
-    const index = event.key === 'ArrowUp' ? this.languages.length - 1 : Math.max(selectedIndex, 0);
-    this.openLanguageMenu(index);
-  }
-
-  onLanguageOptionKeydown(event: KeyboardEvent, index: number): void {
-    let nextIndex: number | null = null;
-    if (event.key === 'ArrowDown') nextIndex = (index + 1) % this.languages.length;
-    else if (event.key === 'ArrowUp') nextIndex = (index - 1 + this.languages.length) % this.languages.length;
-    else if (event.key === 'Home') nextIndex = 0;
-    else if (event.key === 'End') nextIndex = this.languages.length - 1;
-    else if (event.key === 'Escape') {
-      event.preventDefault();
-      this.closeLanguageMenu(true);
-    } else if (event.key === 'Tab') {
-      this.closeLanguageMenu(false);
-    }
-
-    if (nextIndex !== null) {
-      event.preventDefault();
-      this.focusedLanguageIndex = nextIndex;
-      this.pendingLanguageFocus = nextIndex;
-    }
-  }
-
-  selectLanguage(language: string): void {
-    this.closeLanguageMenu(true);
-    this.chooseLanguage(language);
-  }
-
   get merchantInitial(): string {
     return (this.merchant?.merchantName || 'M').charAt(0).toUpperCase();
   }
@@ -342,10 +250,22 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
     return [...new Set(this.products.map((product) => product.categoryName).filter((value): value is string => !!value))];
   }
 
+  get categoryOptions(): { key: string; name: string; count: number }[] {
+    const groups = new Map<string, { key: string; name: string; count: number }>();
+    for (const product of this.products) {
+      if (!product.categoryName) continue;
+      const key = product.categoryId ?? product.categoryName;
+      const group = groups.get(key) ?? { key, name: product.categoryName, count: 0 };
+      group.count++;
+      groups.set(key, group);
+    }
+    return [...groups.values()];
+  }
+
   get visibleProducts(): StorefrontProduct[] {
     const term = this.query.trim().toLowerCase();
     return this.products.filter((product) =>
-      (!this.category || product.categoryName === this.category) &&
+      (!this.category || product.categoryId === this.category || product.categoryName === this.category) &&
       (!term || product.name.toLowerCase().includes(term))
     );
   }
@@ -380,15 +300,4 @@ export class WebCatalogComponent implements AfterViewChecked, OnInit, OnDestroy 
     return this.notifications.apiError(error, fallback);
   }
 
-  private openLanguageMenu(index: number): void {
-    this.focusedLanguageIndex = index < 0 ? 0 : index;
-    this.languageMenuOpen = true;
-    this.pendingLanguageFocus = this.focusedLanguageIndex;
-  }
-
-  private closeLanguageMenu(restoreFocus: boolean): void {
-    this.languageMenuOpen = false;
-    this.pendingLanguageFocus = null;
-    if (restoreFocus) this.languageTrigger?.nativeElement.focus();
-  }
 }

@@ -1,4 +1,5 @@
-import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, ViewChild, inject } from '@angular/core';
+import { StorefrontTranslatePipe } from './i18n/storefront-translate.pipe';
+import { Component, OnDestroy, effect, inject } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { StorefrontPwaService } from './services/storefront-pwa.service';
 import { RouterOutlet } from '@angular/router';
@@ -6,15 +7,17 @@ import { StorefrontThemeService } from './services/storefront-theme.service';
 import { environment } from '../environments/environment';
 import { NotificationComponent } from './notifications/notification.component';
 import { StorefrontBrandService } from './services/storefront-brand.service';
+import { LanguageSwitcherComponent } from './components/language-switcher.component';
+import { StorefrontUiService } from './services/storefront-ui.service';
 
 @Component({
   selector: 'web-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, NotificationComponent],
+  imports: [StorefrontTranslatePipe, RouterOutlet, CommonModule, NotificationComponent, LanguageSwitcherComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent implements AfterViewInit, OnDestroy {
+export class AppComponent implements OnDestroy {
   readonly brand = inject(StorefrontBrandService);
   /** Header logo URL that failed to load; keyed by URL so the next merchant logo is still tried. */
   failedLogo: string | null | undefined = null;
@@ -22,25 +25,16 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   readonly theme = inject(StorefrontThemeService);
   readonly environment = environment;
   private readonly document = inject(DOCUMENT);
-  @ViewChild('downloadShell', { static: true }) private downloadShell!: ElementRef<HTMLElement>;
-  private shellObserver?: ResizeObserver;
-  scrolled = window.scrollY > 160;
-  downloadsExpanded = false;
-
-  @HostListener('window:scroll')
-  onScroll(): void { this.scrolled = window.scrollY > 160; }
-
-  ngAfterViewInit(): void {
-    this.shellObserver = new ResizeObserver(entries => {
-      const height = entries[0]?.target.getBoundingClientRect().height ?? 0;
-      this.document.documentElement.style.setProperty('--storefront-download-height', `${height}px`);
-    });
-    this.shellObserver.observe(this.downloadShell.nativeElement);
-  }
+  readonly ui = inject(StorefrontUiService);
+  private readonly applyLocale = effect(() => {
+    this.document.documentElement.lang = this.ui.code();
+    this.document.documentElement.dir = this.ui.direction;
+  });
+  constructor() { this.ui.load(); }
 
   ngOnDestroy(): void {
-    this.shellObserver?.disconnect();
-    this.document.documentElement.style.removeProperty('--storefront-download-height');
+    this.document.documentElement.lang = 'en';
+    this.document.documentElement.dir = 'ltr';
   }
 
   reconnect(): void { window.location.reload(); }

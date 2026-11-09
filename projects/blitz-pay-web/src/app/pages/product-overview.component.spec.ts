@@ -4,6 +4,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { ProductOverviewComponent } from './product-overview.component';
+import { StorefrontLanguageService } from '../services/storefront-language.service';
 
 describe('ProductOverviewComponent', () => {
   const api = jasmine.createSpyObj<StorefrontApiService>('StorefrontApiService', ['getMerchant', 'getBranch', 'getProduct']);
@@ -62,8 +63,20 @@ describe('ProductOverviewComponent', () => {
     expect(harness.routeNativeElement?.textContent).toContain('Frisch geröstet');
     expect(harness.routeNativeElement?.querySelector('.overview-copy h2')?.getAttribute('lang')).toBe('de');
     expect(document.documentElement.dir).not.toBe('rtl');
-    expect(harness.routeNativeElement?.querySelector('.overview-grid')?.getAttribute('dir')).toBe('rtl');
-    expect(getComputedStyle(harness.routeNativeElement!.querySelector('.overview-copy')!).textAlign).toBe('right');
+    expect(harness.routeNativeElement?.querySelector('.overview-grid')?.getAttribute('dir')).toBe('ltr');
+    expect(getComputedStyle(harness.routeNativeElement!.querySelector('.overview-copy')!).textAlign).toBe('start');
+  });
+
+  it('reloads detail text from the header while preserving the selected quantity', async () => {
+    api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'Restaurant', offerings: ['INTERNATIONAL_MENU'], originalMenuLanguage: 'de', supportedMenuLanguages: ['ar'] }));
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/m/merchant-44/b/branch-12/p/p1', ProductOverviewComponent);
+    component.quantity = 3;
+    api.getProduct.and.returnValue(of({ productId: 'p1', branchId: 'branch-12', name: 'قهوة', unitPrice: 12, active: true }));
+    TestBed.inject(StorefrontLanguageService).choose('ar'); harness.detectChanges();
+    expect(api.getProduct.calls.mostRecent().args[3]).toBe('ar');
+    expect(component.product?.name).toBe('قهوة');
+    expect(component.quantity).toBe(3);
   });
 
   it('requests a cold product detail in the merchant original language', async () => {

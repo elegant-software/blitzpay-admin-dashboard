@@ -1,46 +1,46 @@
 <section class="welcome-hero" aria-labelledby="welcome-title">
   <div class="welcome-copy">
-    <p class="welcome-label"><span></span> A little less waiting. A lot more enjoying.</p>
-    <h1 id="welcome-title">Good food.<br><span>Your way.</span></h1>
-    <p class="welcome-intro">The menu, your order, and an easy way to pay.<br class="desktop-break"> All from the comfort of your table.</p>
+    <p class="welcome-label"><span></span> {{ 'A little less waiting. A lot more enjoying.' | storefrontTranslate }}</p>
+    <h1 id="welcome-title">{{ 'Good food.' | storefrontTranslate }}<br><span>{{ 'Your way.' | storefrontTranslate }}</span></h1>
+    <p class="welcome-intro">{{ 'The menu, your order, and an easy way to pay.' | storefrontTranslate }}<br class="desktop-break"> {{ 'All from the comfort of your table.' | storefrontTranslate }}</p>
     <div class="welcome-actions">
       <a *ngIf="cart.scope as scope; else gettingStarted" class="welcome-button" data-testid="return-menu" [routerLink]="['/m', scope.merchantId, 'b', scope.branchId]">
-        Return to your menu <span aria-hidden="true">↗</span>
+        {{ 'Return to your menu' | storefrontTranslate }}<span aria-hidden="true">↗</span>
       </a>
       <ng-template #gettingStarted>
-        <a class="welcome-button" href="#how-it-works">How to get started <span aria-hidden="true">↓</span></a>
+        <a class="welcome-button" href="#how-it-works">{{ 'How to get started' | storefrontTranslate }}<span aria-hidden="true">↓</span></a>
       </ng-template>
-      <span class="guest-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12 4 4 8-8"/></svg>No app or account needed</span>
+      <span class="guest-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12 4 4 8-8"/></svg>{{ 'No app or account needed' | storefrontTranslate }}</span>
     </div>
   </div>
 
   <div class="table-scene" aria-hidden="true">
     <div class="scene-orbit"></div>
-    <div class="scene-caption">A great meal starts here</div>
+    <div class="scene-caption">{{ 'A great meal starts here' | storefrontTranslate }}</div>
     <div class="menu-preview">
-      <div class="preview-top"><span class="preview-logo">B</span><span>AT YOUR TABLE</span><span>•••</span></div>
+      <div class="preview-top"><span class="preview-logo">B</span><span>{{ 'AT YOUR TABLE' | storefrontTranslate }}</span><span>•••</span></div>
       <div class="meal-art">
         <div class="plate"><div class="salad"><i></i><i></i><i></i><i></i><i></i><i></i><b></b><b></b><b></b></div></div>
-        <span class="meal-tag">Freshly made. Enjoyed together.</span>
+        <span class="meal-tag">{{ 'Freshly made. Enjoyed together.' | storefrontTranslate }}</span>
       </div>
-      <div class="preview-copy"><span>Something delicious awaits</span><strong>Make yourself at home.</strong><div class="preview-lines"><i></i><i></i></div></div>
-      <div class="preview-footer"><span>Browse. Order. Enjoy.</span><span>↗</span></div>
+      <div class="preview-copy"><span>{{ 'Something delicious awaits' | storefrontTranslate }}</span><strong>{{ 'Make yourself at home.' | storefrontTranslate }}</strong><div class="preview-lines"><i></i><i></i></div></div>
+      <div class="preview-footer"><span>{{ 'Browse. Order. Enjoy.' | storefrontTranslate }}</span><span>↗</span></div>
     </div>
-    <div class="scan-note"><span class="scan-symbol"><svg viewBox="0 0 32 32"><path d="M11 4H4v7m17-7h7v7M4 21v7h7m17-7v7h-7M10 10h4v4h-4zm8 0h4v4h-4zm-8 8h4v4h-4zm8 0h4v4h-4z"/></svg></span><span><strong>One scan. You’re in.</strong><small>Your table’s QR is all you need.</small></span></div>
+    <div class="scan-note"><span class="scan-symbol"><svg viewBox="0 0 32 32"><path d="M11 4H4v7m17-7h7v7M4 21v7h7m17-7v7h-7M10 10h4v4h-4zm8 0h4v4h-4zm-8 8h4v4h-4zm8 0h4v4h-4z"/></svg></span><span><strong>{{ 'One scan. You’re in.' | storefrontTranslate }}</strong><small>{{ 'Your table’s QR is all you need.' | storefrontTranslate }}</small></span></div>
     <span class="scene-spark spark-one">✳</span><span class="scene-spark spark-two">✳</span>
   </div>
 </section>
 
 <section id="how-it-works" class="getting-started" aria-labelledby="steps-title">
-  <div class="steps-heading"><div><p class="eyebrow">SETTLE IN. WE’LL KEEP IT SIMPLE.</p><h2 id="steps-title">From QR to your first bite.</h2></div><p>Already at a restaurant? Start with the QR code<br class="desktop-break"> on your table, menu, or receipt.</p></div>
+  <div class="steps-heading"><div><p class="eyebrow">{{ 'SETTLE IN. WE’LL KEEP IT SIMPLE.' | storefrontTranslate }}</p><h2 id="steps-title">{{ 'From QR to your first bite.' | storefrontTranslate }}</h2></div><p>{{ 'Already at a restaurant? Start with the QR code' | storefrontTranslate }}<br class="desktop-break"> {{ 'on your table, menu, or receipt.' | storefrontTranslate }}</p></div>
   <ol class="journey-steps">
-    <li><span class="step-number">01</span><div><h3>Scan your table’s QR</h3><p>Open your phone’s camera and point it at the restaurant’s code. Tap the link that appears.</p></div></li>
-    <li><span class="step-number">02</span><div><h3>Find your favourites</h3><p>Explore the menu and build your order. Scanning an order QR? Your order is ready to review.</p></div></li>
-    <li><span class="step-number">03</span><div><h3>Pay. Relax. Enjoy.</h3><p>Review the details and pay securely as a guest. Then get back to the good company.</p></div></li>
+    <li><span class="step-number">01</span><div><h3>{{ 'Scan your table’s QR' | storefrontTranslate }}</h3><p>{{ 'Open your phone’s camera and point it at the restaurant’s code. Tap the link that appears.' | storefrontTranslate }}</p></div></li>
+    <li><span class="step-number">02</span><div><h3>{{ 'Find your favourites' | storefrontTranslate }}</h3><p>{{ 'Explore the menu and build your order. Scanning an order QR? Your order is ready to review.' | storefrontTranslate }}</p></div></li>
+    <li><span class="step-number">03</span><div><h3>{{ 'Pay. Relax. Enjoy.' | storefrontTranslate }}</h3><p>{{ 'Review the details and pay securely as a guest. Then get back to the good company.' | storefrontTranslate }}</p></div></li>
   </ol>
   <div class="table-code-entry">
-    <p>Can’t scan the code? Type the table code printed under it.</p>
+    <p>{{ 'Can’t scan the code? Type the table code printed under it.' | storefrontTranslate }}</p>
     <web-table-code-form />
   </div>
-  <p class="qr-help"><span aria-hidden="true">↗</span> Can’t find a QR code? Ask a member of staff to help you get started.</p>
+  <p class="qr-help"><span aria-hidden="true">↗</span> {{ 'Can’t find a QR code? Ask a member of staff to help you get started.' | storefrontTranslate }}</p>
 </section>

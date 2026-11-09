@@ -81,11 +81,11 @@ h1, h2, h3, p, .cart-line, .order-item { overflow-wrap: anywhere; }
 .catalog-loading { min-height: calc(100svh - 9rem); }
 .back-link { min-height: 44px; padding-block: 12px; }
 @media (max-width: 840px) {
-  .storefront-content { padding-bottom: calc(7rem + var(--storefront-download-height, 0px) + env(safe-area-inset-bottom, 0px)) !important; }
+  .storefront-content { padding-bottom: calc(7rem + 0px + env(safe-area-inset-bottom, 0px)) !important; }
   .mobile-cart-summary {
     align-items: center; background: var(--storefront-action); color: white; display: flex;
     justify-content: space-between; gap: 0.5rem; position: fixed; z-index: 7;
-    bottom: var(--storefront-download-height, 0px); left: 0; right: 0; width: 100%;
+    bottom: 0px; left: 0; right: 0; width: 100%;
     padding: 1rem max(1rem, env(safe-area-inset-right, 0px)) calc(1rem + env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
   }
   .cart { display: none; }
@@ -167,8 +167,8 @@ button {
 }
 
 .page-hero.centered {
-  margin-left: auto;
-  margin-right: auto;
+  margin-inline-start: auto;
+  margin-inline-end: auto;
   text-align: center;
 }
 
@@ -282,6 +282,20 @@ h2 {
 }
 
 .catalog-toolbar p {
+  margin: 0;
+}
+
+.catalog-heading {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.products .catalog-heading h2,
+.products .catalog-heading p {
   margin: 0;
 }
 
@@ -891,7 +905,7 @@ button:disabled {
   }
 }
 
-.product-card[dir=rtl], .overview-grid[dir=rtl] { text-align: right; }
+.product-card[dir=rtl], .overview-grid[dir=rtl] { text-align: start; }
 .product-card[dir=rtl] .product-cart-actions { direction: rtl; }
 .product-copy { min-width: 0; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
@@ -1040,7 +1054,7 @@ button:disabled {
 :root[data-storefront-style="classic"] .category-chips { gap: .6rem; padding-bottom: .5rem; }
 :root[data-storefront-style="classic"] .category-chips button { border-radius: .25rem; padding: .6rem 1rem; font-weight: 600; }
 :root[data-storefront-style="classic"] .fulfillment-label { display: block; width: fit-content; border-radius: .2rem; font-weight: 400; line-height: 1.5; }
-:root[data-storefront-style="classic"] .table-note { border-left: 3px solid var(--storefront-primary); border-radius: .2rem; padding: 1rem 1.25rem; }
+:root[data-storefront-style="classic"] .table-note { border-inline-start: 3px solid var(--storefront-primary); border-radius: .2rem; padding: 1rem 1.25rem; }
 :root[data-storefront-style="classic"] .cart { border-top: 3px solid var(--storefront-primary); }
 :root[data-storefront-style="classic"] .cart h2 { font-size: 1.65rem; }
 :root[data-storefront-style="classic"] .overview-image { height: auto; min-height: 15rem; }
@@ -1053,3 +1067,15 @@ button:disabled {
   :root[data-storefront-style="classic"] .category-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .75rem; scroll-snap-type: x proximity; }
   :root[data-storefront-style="classic"] .category-chips button { flex: 0 0 auto; white-space: nowrap; scroll-snap-align: start; }
 }
+@font-face { font-family: Cairo; src: url('/fonts/cairo/Cairo.ttf') format('truetype'); font-style: normal; font-weight: 200 1000; font-display: swap; }
+html[lang='ar'] body,html[lang='ar'] button,html[lang='ar'] input,html[lang='ar'] select,html[lang='ar'] textarea { font-family: Cairo, 'Segoe UI', sans-serif; letter-spacing: normal; }
+body { text-align: start; }
+.category-chips { flex-wrap: nowrap; overflow-x: auto; padding-block: .5rem .85rem; margin-block: .5rem 1rem; scrollbar-width: thin; scroll-padding-inline: .25rem; }
+.category-chips button { display: inline-flex; align-items: center; gap: .5rem; flex: 0 0 auto; min-height: 44px; font-size: .86rem; font-weight: 600; padding: .6rem 1rem; cursor: pointer; }
+.category-chips button:focus-visible { outline: 3px solid var(--storefront-action); outline-offset: 2px; }
+.category-count { display: inline-flex; align-items:center; justify-content:center; min-width:1.4rem; height:1.4rem; padding-inline:.2rem; border-radius:999px; background:color-mix(in srgb,currentColor 10%,transparent); font-size:.7rem; }
+.category-chips button.active .category-count { background:#ffffff26; }
+input[type='email'],input[type='url'],input[name='tableCode'],.pickup-number { direction:ltr; }
+html[dir=rtl] .back-link svg { transform:scaleX(-1); }
+
+:root[lang='ar'][data-storefront-style] :is(h1, h2, h3) { font-family: Cairo, 'Segoe UI', sans-serif; letter-spacing: normal; }

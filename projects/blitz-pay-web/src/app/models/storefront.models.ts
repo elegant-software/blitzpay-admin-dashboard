@@ -42,6 +42,7 @@ export interface StorefrontProduct {
   imageUrl?: string | null;
   active: boolean;
   categoryName?: string | null;
+  categoryId?: string | null;
   /** Language the name and description are in; the Original Menu Language when untranslated. */
   language?: string | null;
 }
