@@ -1,4 +1,4 @@
-:host { display: block; min-height: 100dvh; }
+:host { display: block; min-height: 100dvh; --storefront-header-height: 5rem; }
 .storefront-header {
   background: var(--storefront-surface);
   border-bottom: 1px solid var(--storefront-stroke);
@@ -13,7 +13,7 @@
   justify-content: space-between;
   gap: 1.5rem;
   max-width: 76rem;
-  min-height: 5rem;
+  min-height: var(--storefront-header-height);
   margin: 0 auto;
   padding: .65rem max(1.25rem, env(safe-area-inset-right, 0px)) .65rem max(1.25rem, env(safe-area-inset-left, 0px));
 }
@@ -52,7 +52,8 @@
 .offline-notice { max-width: 34rem; margin: 1rem auto; }
 @media (max-width: 850px) { .header-note { display: none; } }
 @media (max-width: 600px) {
-  .header-inner { gap: .6rem; min-height: 4.5rem; padding-inline: 1rem; }
+  :host { --storefront-header-height: 4.5rem; }
+  .header-inner { gap: .6rem; padding-inline: 1rem; }
   .brand { gap: .5rem; }
   .brand-mark { width: 36px; height: 36px; border-radius: 12px; }
   .brand-wordmark { font-size: 1.2rem; }

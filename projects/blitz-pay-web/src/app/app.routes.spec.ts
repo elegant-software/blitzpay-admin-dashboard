@@ -10,6 +10,8 @@ describe('Web Storefront public routes', () => {
     'getMerchant',
     'getBranch',
     'getActiveProducts',
+    'getCatalogPage',
+    'getCatalogCategories',
     'getPaymentCapabilities',
     'getOrder',
     'getGuestOrder',
@@ -21,6 +23,8 @@ describe('Web Storefront public routes', () => {
     api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'Brew House' }));
     api.getBranch.and.returnValue(of({ id: 'branch-12', merchantId: 'merchant-44', name: 'Station Cafe' }));
     api.getActiveProducts.and.returnValue(of([]));
+    api.getCatalogPage.and.returnValue(of({ items: [], nextCursor: null, hasMore: false, limit: 24 }));
+    api.getCatalogCategories.and.returnValue(of({ categories: [], uncategorizedCount: 0, totalCount: 0 }));
     api.getTableAvailability.and.returnValue(of({ total: 8, free: 3, freeSeats: 10 }));
     api.getPaymentCapabilities.and.returnValue(of({ enabledPaymentFlows: [] }));
     api.getOrder.and.returnValue(of({ orderId: 'order-200', status: 'CREATED', items: [] }));
@@ -40,7 +44,7 @@ describe('Web Storefront public routes', () => {
 
     expect(harness.routeNativeElement?.textContent).toContain('Shop online');
     expect(harness.routeNativeElement?.textContent).toContain('Station Cafe');
-    expect(api.getActiveProducts).toHaveBeenCalledWith('merchant-44', 'branch-12', null);
+    expect(api.getCatalogPage).toHaveBeenCalledWith('merchant-44', 'branch-12', null, jasmine.any(Object));
     expect(harness.routeNativeElement?.textContent).toContain('3 of 8 tables free · 10 free seats');
   });
 
