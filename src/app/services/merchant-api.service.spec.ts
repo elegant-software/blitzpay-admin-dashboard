@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import {
   BackendEnvironment,
+  CardReader,
   CreateMerchantRequest,
   CreateProductCategoryRequest,
   Merchant,
@@ -226,5 +227,28 @@ describe('MerchantApiService product category API', () => {
     expect(request.request.params.get('page')).toBe('1');
     expect(request.request.params.get('size')).toBe('20');
     request.flush({ content: [], page: 1, size: 20, totalElements: 0, totalPages: 0 });
+  });
+
+  it('lists the card readers of a merchant, optionally for one branch', () => {
+    const reader: CardReader = {
+      id: 'tmr_1', branchId: 'branch-1', branchName: 'Hauptfiliale', label: 'WisePad 3 Theke',
+      deviceType: 'bbpos_wisepad3', serialNumber: 'WSC5001', softwareVersion: '4.01.07.00',
+      status: 'online', lastSeenAt: '2026-11-09T10:15:00Z'
+    };
+    let response: CardReader[] | undefined;
+
+    service.getCardReaders(environment, apiVersion, merchantId).subscribe((r) => (response = r));
+    const all = httpTestingController.expectOne((r) => r.url === 'http://localhost:8080/v1/payments/stripe/terminal/readers');
+    expect(all.request.method).toBe('GET');
+    expect(all.request.params.get('merchantId')).toBe(merchantId);
+    expect(all.request.params.has('branchId')).toBeFalse();
+    all.flush([reader]);
+    expect(response).toEqual([reader]);
+
+    service.getCardReaders(environment, apiVersion, merchantId, 'branch-1').subscribe();
+    const one = httpTestingController.expectOne((r) => r.url === 'http://localhost:8080/v1/payments/stripe/terminal/readers');
+    expect(one.request.params.get('merchantId')).toBe(merchantId);
+    expect(one.request.params.get('branchId')).toBe('branch-1');
+    one.flush([]);
   });
 });

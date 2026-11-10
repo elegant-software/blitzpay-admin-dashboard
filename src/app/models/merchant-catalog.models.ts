@@ -410,6 +410,19 @@ export interface StripeConnectStatusResponse {
   enabledPaymentFlows?: ConnectPaymentFlow[];
 }
 
+/** A Stripe Terminal card reader registered to a branch's Terminal Location (read-only monitoring). */
+export interface CardReader {
+  id: string;
+  branchId: string;
+  branchName: string;
+  label: string | null;
+  deviceType: string | null;
+  serialNumber: string | null;
+  softwareVersion: string | null;
+  status: 'online' | 'offline' | null;
+  lastSeenAt: string | null;
+}
+
 export type PaymentAccountStatus = 'loading' | 'not_connected' | 'verifying' | 'connected' | 'error';
 
 export interface StartStripeConnectRequest {

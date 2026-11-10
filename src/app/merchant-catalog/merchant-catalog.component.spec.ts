@@ -5,7 +5,7 @@ import { throwError, of } from 'rxjs';
 import { MerchantDetailComponent } from './merchant-detail.component';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { MerchantApiService } from '../services/merchant-api.service';
-import { Branch, Merchant, Product, ProductCategory, ProviderAccountResponse } from '../models/merchant-catalog.models';
+import { Branch, CardReader, Merchant, Product, ProductCategory, ProviderAccountResponse } from '../models/merchant-catalog.models';
 import { AdminLocaleService } from '../i18n/admin-locale.service';
 
 describe('MerchantDetailComponent product category management', () => {
@@ -77,6 +77,7 @@ describe('MerchantDetailComponent product category management', () => {
       'disableProviderAccount',
       'enableTapToPay',
       'disableTapToPay',
+      'getCardReaders',
       'searchMerchants',
     ]);
     merchantApi.getKitchenAccess.and.returnValue(of({ enabled: false, username: null } as any));
@@ -517,6 +518,79 @@ describe('MerchantDetailComponent product category management', () => {
       component.enableProviderAccount('PAYPAL');
 
       expect(merchantApi.enableProviderAccount).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('card readers', () => {
+    const reader: CardReader = {
+      id: 'tmr_1', branchId: 'branch-1', branchName: 'Hauptfiliale', label: 'WisePad 3 Theke',
+      deviceType: 'bbpos_wisepad3', serialNumber: 'WSC5001', softwareVersion: '4.01.07.00_DE',
+      status: 'online', lastSeenAt: '2026-11-09T10:15:00Z'
+    };
+
+    function showPaymentTab(): HTMLElement {
+      merchantApi.getVerticals.and.returnValue(of([]));
+      component.paymentAccountStatus = 'connected';
+      component.tapToPayEnabled = true;
+      component.branches = [{ branchId: 'branch-1', branchCode: 'B1', merchantId: merchant.merchantId, name: 'Hauptfiliale', status: 'ACTIVE' }];
+      component.activeDetailTab = 'payment';
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('relabels the toggle as terminal payments with a girocard hint', () => {
+      component.providerAccounts = [{ id: 'pa-1', pspCode: 'STRIPE', enabled: true, createdAt: '', updatedAt: '' }];
+      const root = showPaymentTab();
+      expect(root.querySelector('label[for="terminal-payments-toggle"]')?.textContent).toContain('Terminal payments (Tap to Pay + card reader)');
+      expect(root.textContent).toContain('girocard (EC) is only accepted with a card reader.');
+    });
+
+    it('loads card readers when terminal payments are enabled and renders them without UUIDs', () => {
+      merchantApi.getStripeConnectStatus.and.returnValue(of({
+        connected: true, chargesEnabled: true, detailsSubmitted: true, enabledPaymentFlows: ['TAP_TO_PAY']
+      }));
+      merchantApi.getCardReaders.and.returnValue(of([reader]));
+
+      component.loadPaymentAccountStatus(merchant.merchantId);
+      const root = showPaymentTab();
+
+      expect(merchantApi.getCardReaders).toHaveBeenCalledWith(jasmine.anything(), jasmine.anything(), merchant.merchantId, null);
+      const cells = Array.from(root.querySelectorAll('.card-readers-card tbody td')).map((td) => td.textContent?.trim());
+      expect(cells).toEqual(['WisePad 3 Theke', 'Hauptfiliale', 'bbpos_wisepad3', 'WSC5001', '4.01.07.00_DE', 'Online', jasmine.stringMatching(/9 Nov 2026/)]);
+      const branchSelect = root.querySelector<HTMLSelectElement>('#card-reader-branch')!;
+      expect(Array.from(branchSelect.options).map((o) => o.textContent?.trim())).toEqual(['All branches', 'Hauptfiliale']);
+      expect(root.querySelector('.card-readers-card')?.textContent).not.toContain('branch-1');
+    });
+
+    it('filters card readers by the selected branch', () => {
+      merchantApi.getCardReaders.and.returnValue(of([]));
+      component.selectedMerchant = merchant;
+      component.cardReaderBranchId = 'branch-1';
+
+      component.loadCardReaders();
+
+      expect(merchantApi.getCardReaders).toHaveBeenCalledWith(jasmine.anything(), jasmine.anything(), merchant.merchantId, 'branch-1');
+    });
+
+    it('explains where card readers are paired when there are none', () => {
+      const root = showPaymentTab();
+      expect(root.querySelector('.card-readers-card')?.textContent)
+        .toContain('Card readers are paired in the merchant app (Settings → Pair card reader).');
+    });
+
+    it('shows an error state when card readers cannot be loaded', () => {
+      merchantApi.getCardReaders.and.returnValue(throwError(() => new Error('boom')));
+      component.selectedMerchant = merchant;
+      component.loadCardReaders();
+      const root = showPaymentTab();
+      expect(root.querySelector('.card-readers-card .text-danger')?.textContent).toContain('Card readers could not be loaded.');
+    });
+
+    it('hides the card readers section when terminal payments are disabled', () => {
+      const root = showPaymentTab();
+      component.tapToPayEnabled = false;
+      fixture.detectChanges();
+      expect(root.querySelector('.card-readers-card')).toBeNull();
     });
   });
 });

@@ -25,6 +25,7 @@ import {
   EnvironmentKey,
   OperationalAppearanceItem,
   Branch,
+  CardReader,
   CategorySortField,
   CategoryTableState,
   BranchSortField,
@@ -132,6 +133,12 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
   tapToPayEnabled = false;
   tapToPayActionLoading = false;
+
+  cardReaders: CardReader[] = [];
+  cardReadersLoading = false;
+  cardReadersFailed = false;
+  /** Branch filter of the card readers table; null shows all branches. */
+  cardReaderBranchId: string | null = null;
 
   providerAccounts: ProviderAccountResponse[] = [];
   providerAccountsLoading = false;
@@ -975,6 +982,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
           else this.paymentAccountStatus = "not_connected";
           this.tapToPayEnabled =
             data.enabledPaymentFlows?.includes("TAP_TO_PAY") ?? false;
+          if (this.tapToPayEnabled) this.loadCardReaders();
         },
         error: () => {
           this.paymentAccountStatus = "error";
@@ -1001,15 +1009,42 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.tapToPayEnabled = res.tapToPayEnabled;
         this.tapToPayActionLoading = false;
+        if (this.tapToPayEnabled) this.loadCardReaders();
+        else this.cardReaders = [];
       },
       error: (err) => {
         this.notifications.apiError(
           err,
-          "Failed to update Tap to Pay setting.",
+          "Failed to update terminal payments setting.",
         );
         this.tapToPayActionLoading = false;
       },
     });
+  }
+
+  loadCardReaders(): void {
+    if (!this.selectedMerchant) return;
+    this.cardReadersLoading = true;
+    this.cardReadersFailed = false;
+    this.merchantApi
+      .getCardReaders(
+        this.selectedEnvironment,
+        this.apiVersion,
+        this.selectedMerchant.merchantId,
+        this.cardReaderBranchId,
+      )
+      .subscribe({
+        next: (readers) => {
+          this.cardReaders = readers;
+          this.cardReadersLoading = false;
+        },
+        error: (error) => {
+          this.cardReaders = [];
+          this.cardReadersLoading = false;
+          this.cardReadersFailed = true;
+          this.notifications.apiError(error, "Card readers could not be loaded.");
+        },
+      });
   }
 
   handleStripeConnect(): void {
@@ -1231,6 +1266,10 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.providerAccountsLoading = false;
 
     this.providerAccountActionLoading.clear();
+    this.tapToPayEnabled = false;
+    this.cardReaders = [];
+    this.cardReadersFailed = false;
+    this.cardReaderBranchId = null;
     this.resetAppearanceHistory();
     this.activeDetailTab = "info";
     this.catalogLanguage = displayProductLanguage(merchant, this.adminLocale.code()) ?? null;

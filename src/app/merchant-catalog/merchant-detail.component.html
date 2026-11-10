@@ -1423,9 +1423,10 @@
                         "
                       >
                         <div class="d-flex align-items-center gap-2">
-                          <span class="small fw-medium">{{ 'Tap to Pay' | adminTranslate }}</span>
+                          <label class="small fw-medium mb-0" for="terminal-payments-toggle">{{ 'Terminal payments (Tap to Pay + card reader)' | adminTranslate }}</label>
                           <div class="form-check form-switch mb-0">
                             <input dir="auto"
+                              id="terminal-payments-toggle"
                               class="form-check-input"
                               type="checkbox"
                               [ngModel]="tapToPayEnabled"
@@ -1444,6 +1445,7 @@
                             role="status"
                           ></span>
                         </div>
+                        <div class="form-text mt-1">{{ 'girocard (EC) is only accepted with a card reader.' | adminTranslate }}</div>
                       </ng-container>
                       <ng-template #noCapabilities
                         ><span class="text-body-secondary">—</span></ng-template
@@ -1454,6 +1456,104 @@
               </ng-container>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Card readers (read-only; paired in the merchant app) -->
+      <div
+        class="card mt-3 card-readers-card"
+        *ngIf="paymentAccountStatus === 'connected' && tapToPayEnabled"
+      >
+        <div
+          class="card-header d-flex justify-content-between align-items-center gap-2"
+        >
+          <span>{{ 'Card readers' | adminTranslate }}</span>
+          <div class="d-flex align-items-center gap-2">
+            <label class="table-filter-label mb-0" for="card-reader-branch"
+              >{{ 'Branch' | adminTranslate }}</label
+            >
+            <select
+              id="card-reader-branch"
+              class="form-select form-select-sm w-auto"
+              [(ngModel)]="cardReaderBranchId"
+              (ngModelChange)="loadCardReaders()"
+            >
+              <option [ngValue]="null">{{ 'All branches' | adminTranslate }}</option>
+              <option
+                *ngFor="let b of branches"
+                [ngValue]="b.branchId ?? b.id"
+              >
+                {{ b.name }}
+              </option>
+            </select>
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              type="button"
+              [disabled]="cardReadersLoading"
+              (click)="loadCardReaders()"
+            >
+              {{ 'Refresh' | adminTranslate }}
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div *ngIf="cardReadersLoading" class="text-muted small">
+            {{ 'Loading…' | adminTranslate }}
+          </div>
+          <div
+            *ngIf="!cardReadersLoading && cardReadersFailed"
+            class="text-danger small"
+          >
+            {{ 'Card readers could not be loaded.' | adminTranslate }}
+          </div>
+          <div
+            class="table-responsive"
+            *ngIf="!cardReadersLoading && !cardReadersFailed"
+          >
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>{{ 'Label' | adminTranslate }}</th>
+                  <th>{{ 'Branch' | adminTranslate }}</th>
+                  <th>{{ 'Device type' | adminTranslate }}</th>
+                  <th>{{ 'Serial number' | adminTranslate }}</th>
+                  <th>{{ 'Software version' | adminTranslate }}</th>
+                  <th>{{ 'Status' | adminTranslate }}</th>
+                  <th>{{ 'Last seen' | adminTranslate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of cardReaders">
+                  <td>{{ r.label || '—' }}</td>
+                  <td>{{ r.branchName }}</td>
+                  <td>{{ r.deviceType || '—' }}</td>
+                  <td>{{ r.serialNumber || '—' }}</td>
+                  <td>{{ r.softwareVersion || '—' }}</td>
+                  <td>
+                    <span
+                      *ngIf="r.status; else noReaderStatus"
+                      class="status-tag"
+                      [ngClass]="
+                        r.status === 'online'
+                          ? 'status-tag-success'
+                          : 'status-tag-neutral'
+                      "
+                      >{{ (r.status === 'online' ? 'Online' : 'Offline') | adminTranslate }}</span
+                    >
+                    <ng-template #noReaderStatus
+                      ><span class="text-body-secondary">—</span></ng-template
+                    >
+                  </td>
+                  <td>{{ r.lastSeenAt | displayDate }}</td>
+                </tr>
+                <tr *ngIf="cardReaders.length === 0">
+                  <td colspan="7" class="text-center text-body-secondary small">
+                    {{ 'Card readers are paired in the merchant app (Settings → Pair card reader).' | adminTranslate }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

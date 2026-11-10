@@ -9,6 +9,7 @@ import {
   AppearanceHistoryStatus,
   OperationalAppearanceItem,
   Branch,
+  CardReader,
   BranchCustomer,
   BranchFloor,
   BranchTable,
@@ -445,6 +446,21 @@ export class MerchantApiService {
   ): Observable<{ tapToPayEnabled: boolean }> {
     return this.http.delete<{ tapToPayEnabled: boolean }>(
       `${this.base(environment, apiVersion)}/merchants/${merchantId}/stripe-connect/tap-to-pay`
+    );
+  }
+
+  /** Card readers paired to the merchant's branches (Stripe Terminal Locations), optionally for one branch. */
+  getCardReaders(
+    environment: BackendEnvironment,
+    apiVersion: string,
+    merchantId: string,
+    branchId?: string | null
+  ): Observable<CardReader[]> {
+    let params = new HttpParams().set('merchantId', merchantId);
+    if (branchId) params = params.set('branchId', branchId);
+    return this.http.get<CardReader[]>(
+      `${this.base(environment, apiVersion)}/payments/stripe/terminal/readers`,
+      { params }
     );
   }
 
