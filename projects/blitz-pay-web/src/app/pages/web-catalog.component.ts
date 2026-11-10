@@ -4,15 +4,15 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Subscription, finalize, forkJoin, map, switchMap } from 'rxjs';
+import { Subscription, finalize, forkJoin, map, switchMap, of, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { WebCartComponent } from '../components/web-cart.component';
-import { StorefrontBranch, StorefrontMerchant, StorefrontProduct, StorefrontTableAvailability } from '../models/storefront.models';
+import { StorefrontBranch, StorefrontMerchant, StorefrontProduct, StorefrontTableAvailability, StorefrontCatalogPage, StorefrontCatalogCategories } from '../models/storefront.models';
 import { StorefrontApiService } from '../services/storefront-api.service';
 import { StorefrontSessionService } from '../services/storefront-session.service';
 import { StorefrontLanguageService, catalogLanguages, nativeLanguageName } from '../services/storefront-language.service';
 import { StorefrontTableService } from '../table/storefront-table.service';
-import { NotificationService } from '../notifications/notification.service';
+import { apiErrorCode, NotificationService } from '../notifications/notification.service';
 import { StorefrontBrandService } from '../services/storefront-brand.service';
 import { MerchantLogoComponent } from '../components/merchant-logo.component';
 
@@ -52,13 +52,17 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
         <div class="catalog-toolbar">
           <div class="catalog-heading">
             <h2>{{ (brand.theme() ? 'The menu' : 'Products') | storefrontTranslate }}</h2>
-            <p class="muted">{{ (brand.theme() ? '{0} things to look forward to' : '{0} available') | storefrontTranslate: [products.length] }}</p>
+            <p class="muted">{{ (brand.theme() ? '{0} things to look forward to' : '{0} available') | storefrontTranslate: [availableCount] }}</p>
           </div>
           <label class="search-products">
             <span>{{ 'Search products' | storefrontTranslate }}</span>
-            <input type="search" [(ngModel)]="query" (ngModelChange)="saveBrowseState()" [attr.placeholder]="'Search products' | storefrontTranslate" />
+            <input type="search" [(ngModel)]="query" (ngModelChange)="searchProducts()" [attr.placeholder]="'Search products' | storefrontTranslate" />
           </label>
         </div>
+        <nav class="category-chips" *ngIf="categoryOptions.length > 0" [attr.aria-label]="'Product categories' | storefrontTranslate">
+          <button type="button" [class.active]="category === ''" [attr.aria-pressed]="category === ''" (click)="chooseCategory('')">{{ 'All products' | storefrontTranslate }}<span class="category-count">{{ catalogCategories.totalCount }}</span></button>
+          <button type="button" *ngFor="let option of categoryOptions" [class.active]="category === option.key" [attr.aria-pressed]="category === option.key" (click)="chooseCategory(option.key)"><span dir="auto">{{ option.key === uncategorizedKey ? ('Uncategorized' | storefrontTranslate) : option.name }}</span><span class="category-count">{{ option.count }}</span></button>
+        </nav>
         <div [attr.aria-busy]="productsLoading">
         <section *ngIf="productsLoading" data-testid="catalog-skeleton" role="status" aria-live="polite">
           <span class="visually-hidden">{{ 'Loading menu in {0}...' | storefrontTranslate: [languageName(activeLanguage || 'en')] }}</span>
@@ -74,12 +78,9 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
           </div>
         </section>
         <ng-container *ngIf="!productsLoading">
-        <nav class="category-chips" *ngIf="categories.length > 0" [attr.aria-label]="'Product categories' | storefrontTranslate">
-          <button type="button" [class.active]="category === ''" [attr.aria-pressed]="category === ''" (click)="chooseCategory('')">{{ 'All products' | storefrontTranslate }}<span class="category-count">{{ products.length }}</span></button>
-          <button type="button" *ngFor="let option of categoryOptions" [class.active]="category === option.key" [attr.aria-pressed]="category === option.key" (click)="chooseCategory(option.key)"><span dir="auto">{{ option.name }}</span><span class="category-count">{{ option.count }}</span></button>
-        </nav>
+
         <p class="muted" *ngIf="loading">{{ 'Loading products...' | storefrontTranslate }}</p>
-        <section class="unavailable catalog-notice" *ngIf="!loading && products.length === 0">
+        <section class="unavailable catalog-notice" *ngIf="!loading && !errorMessage && products.length === 0">
           <p class="eyebrow">{{ 'Unavailable Catalog Notice' | storefrontTranslate }}</p>
           <h2>{{ 'No products are available at this location right now.' | storefrontTranslate }}</h2>
         </section>
@@ -88,8 +89,8 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
               <article class="product-card" *ngFor="let product of visibleProducts; trackBy: trackProduct" [class.is-selected]="productQuantity(product.productId) > 0" [attr.dir]="catalogLanguage.direction">
                 <a class="product-detail-link" [routerLink]="['/m', merchantId, 'b', branchId, 'p', product.productId]">
                   <div class="product-image">
-                    <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" loading="lazy" decoding="async" />
-                    <span *ngIf="!product.imageUrl">{{ 'Product image' | storefrontTranslate }}</span>
+                    <img *ngIf="product.thumbnailUrl || product.imageUrl" [src]="product.thumbnailUrl || product.imageUrl" [alt]="product.name" loading="lazy" decoding="async" />
+                    <span *ngIf="!product.thumbnailUrl && !product.imageUrl">{{ 'Product image' | storefrontTranslate }}</span>
                   </div>
                   <div class="product-copy" [attr.lang]="product.language">
                     <span class="surface-label" *ngIf="product.categoryName">{{ product.categoryName }}</span>
@@ -113,6 +114,12 @@ import { MerchantLogoComponent } from '../components/merchant-logo.component';
             </div>
         </ng-container>
         </div>
+        <div class="catalog-pagination" *ngIf="!productsLoading">
+          <p *ngIf="pageErrorMessage" class="storefront-alert" role="alert" data-testid="catalog-page-error">{{ pageErrorMessage | storefrontTranslate }}</p>
+          <p *ngIf="loadingMore" role="status" aria-live="polite">{{ 'Loading more products...' | storefrontTranslate }}</p>
+          <button *ngIf="hasMore && !loadingMore" type="button" class="pill-button" data-testid="catalog-load-more" (click)="loadMore()">{{ (pageErrorMessage ? 'Try again' : 'Load more products') | storefrontTranslate }}</button>
+          <button *ngIf="errorMessage" type="button" class="pill-button" data-testid="catalog-retry" (click)="retryCatalog()">{{ 'Try again' | storefrontTranslate }}</button>
+        </div>
       </article>
       <web-cart [merchantId]="merchantId" [branchId]="branchId" />
     </section>
@@ -134,6 +141,14 @@ export class WebCatalogComponent implements OnInit, OnDestroy {
   private catalogRequest?: Subscription;
   readonly skeletonCards = [0, 1, 2, 3];
   productsLoading = false;
+  loadingMore = false;
+  nextCursor: string | null = null;
+  pageErrorMessage = '';
+  private pageErrorCode?: string;
+  private searchLimit = 24;
+  private searchTimer?: ReturnType<typeof setTimeout>;
+  readonly uncategorizedKey = 'uncategorized';
+  catalogCategories: StorefrontCatalogCategories = { categories: [], uncategorizedCount: 0, totalCount: 0 };
   readonly merchantId = this.route.snapshot.paramMap.get('merchantId') ?? '';
   readonly branchId = this.route.snapshot.paramMap.get('branchId') ?? '';
   readonly currency = environment.currency;
@@ -180,16 +195,14 @@ export class WebCatalogComponent implements OnInit, OnDestroy {
       switchMap(({ merchant, branch }) => {
         this.merchant = merchant;
         this.branch = branch;
-        return this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.resolve(merchant))
-          .pipe(map(products => ({ merchant, branch, products })));
+        return this.readSelection().pipe(map(page => ({ merchant, branch, page })));
       }),
       finalize(() => this.loading = false)
     ).subscribe({
-      next: ({ merchant, branch, products }) => {
+      next: ({ merchant, branch, page }) => {
         this.merchant = merchant;
         this.branch = branch;
-        this.products = products;
-        this.cart.updateCatalogText(products, this.merchantId, this.branchId);
+        this.acceptPage(page, false);
       },
       error: (error: unknown) => this.errorMessage = this.toMessage(error, 'Unable to load this branch catalog.')
     });
@@ -216,26 +229,90 @@ export class WebCatalogComponent implements OnInit, OnDestroy {
 
   private reloadProducts(): void {
     if (!this.merchant) return;
+    clearTimeout(this.searchTimer);
     this.lastLanguageChange = this.catalogLanguage.changes();
     this.catalogRequest?.unsubscribe();
-    // Retain stable category IDs across translated names; legacy name-only categories reset.
-    if (!this.products.some(product => product.categoryId === this.category)) this.chooseCategory('');
-    this.query = '';
-    this.saveBrowseState();
+    this.searchLimit = 24;
     this.errorMessage = '';
+    this.pageErrorMessage = '';
+    this.pageErrorCode = undefined;
     this.productsLoading = true;
-    this.catalogRequest = this.api.getActiveProducts(this.merchantId, this.branchId, this.catalogLanguage.resolve(this.merchant))
-      .pipe(finalize(() => this.productsLoading = false))
-      .subscribe({
-        next: (products) => {
-          this.products = products;
-          this.cart.updateCatalogText(products, this.merchantId, this.branchId);
-        },
-        error: (error: unknown) => this.errorMessage = this.toMessage(error, 'Unable to load this branch catalog.')
+    this.catalogRequest = this.readSelection().pipe(finalize(() => this.productsLoading = false)).subscribe({
+      next: page => this.acceptPage(page, false),
+      error: error => this.errorMessage = this.toMessage(error, 'Unable to load this branch catalog.')
+    });
+  }
+
+  private readSelection(): Observable<StorefrontCatalogPage> {
+    if (this.branch?.active === false) return of({ items: [], hasMore: false, nextCursor: null, limit: 24 });
+    const language = this.catalogLanguage.resolve(this.merchant!);
+    return this.api.getCatalogCategories(this.merchantId, this.branchId, language).pipe(switchMap(categories => {
+      this.catalogCategories = categories;
+      if (this.category && !this.categoryOptions.some(option => option.key === this.category)) {
+        this.category = '';
+        this.saveBrowseState();
+      }
+      if (this.query.trim()) return this.api.searchCatalogProducts(this.merchantId, this.branchId, language)
+        .pipe(map(items => ({ items, nextCursor: null, hasMore: false, limit: 24 })));
+      return this.api.getCatalogPage(this.merchantId, this.branchId, language, this.productFilter());
+    }));
+  }
+
+  private productFilter(cursor?: string) {
+    return {
+      categoryId: this.category && this.category !== this.uncategorizedKey ? this.category : undefined,
+      uncategorized: this.category === this.uncategorizedKey,
+      cursor
+    };
+  }
+
+  private acceptPage(page: StorefrontCatalogPage, append: boolean): void {
+    this.products = Array.from(new Map((append ? [...this.products, ...page.items] : page.items).map(product => [product.productId, product])).values());
+    this.nextCursor = page.nextCursor;
+    this.cart.updateCatalogText(page.items, this.merchantId, this.branchId);
+  }
+
+  get hasMore(): boolean {
+    return this.query.trim() ? this.matchingProducts.length > this.searchLimit : this.nextCursor !== null;
+  }
+
+  get availableCount(): number {
+    return this.query.trim() ? this.matchingProducts.length : this.category
+      ? this.categoryOptions.find(option => option.key === this.category)?.count ?? 0 : this.catalogCategories.totalCount;
+  }
+
+  loadMore(): void {
+    if (this.loadingMore || this.productsLoading || !this.hasMore || !this.merchant) return;
+    if (this.pageErrorCode === 'INVALID_CATALOG_CURSOR') { this.retryCatalog(); return; }
+    if (this.query.trim()) { this.searchLimit += 24; return; }
+    this.loadingMore = true;
+    this.pageErrorMessage = '';
+    this.catalogRequest = this.api.getCatalogPage(this.merchantId, this.branchId, this.catalogLanguage.resolve(this.merchant),
+      this.productFilter(this.nextCursor!)).pipe(finalize(() => this.loadingMore = false)).subscribe({
+        next: page => this.acceptPage(page, true),
+        error: error => {
+          this.pageErrorCode = apiErrorCode(error);
+          this.pageErrorMessage = this.toMessage(error, 'Unable to load more products.');
+        }
       });
   }
 
+  retryCatalog(): void {
+    if (!this.merchant) return;
+    this.api.invalidateCatalog(this.merchantId, this.branchId, this.catalogLanguage.resolve(this.merchant));
+    this.reloadProducts();
+  }
+
+  searchProducts(): void {
+    this.saveBrowseState();
+    clearTimeout(this.searchTimer);
+    this.catalogRequest?.unsubscribe();
+    this.productsLoading = true;
+    this.searchTimer = setTimeout(() => this.reloadProducts(), 250);
+  }
+
   ngOnDestroy(): void {
+    clearTimeout(this.searchTimer);
     this.catalogRequest?.unsubscribe();
     this.availabilityRequest?.unsubscribe();
   }
@@ -248,33 +325,30 @@ export class WebCatalogComponent implements OnInit, OnDestroy {
     return this.branch ? [this.branch.addressLine1, this.branch.addressLine2, this.branch.postalCode, this.branch.city, this.branch.country].filter(Boolean).join(', ') : '';
   }
 
-  get categories(): string[] {
-    return [...new Set(this.products.map((product) => product.categoryName).filter((value): value is string => !!value))];
+  get categoryOptions(): { key: string; name: string; count: number }[] {
+    return [
+      ...this.catalogCategories.categories.map(category => ({ key: category.id, name: category.name, count: category.productCount })),
+      ...(this.catalogCategories.uncategorizedCount > 0 ? [{ key: this.uncategorizedKey, name: 'Uncategorized', count: this.catalogCategories.uncategorizedCount }] : [])
+    ];
   }
 
-  get categoryOptions(): { key: string; name: string; count: number }[] {
-    const groups = new Map<string, { key: string; name: string; count: number }>();
-    for (const product of this.products) {
-      if (!product.categoryName) continue;
-      const key = product.categoryId ?? product.categoryName;
-      const group = groups.get(key) ?? { key, name: product.categoryName, count: 0 };
-      group.count++;
-      groups.set(key, group);
-    }
-    return [...groups.values()];
+  private get matchingProducts(): StorefrontProduct[] {
+    const term = this.query.trim().toLowerCase();
+    return this.products.filter(product => (!this.category || (this.category === this.uncategorizedKey
+      ? !product.categoryId : product.categoryId === this.category)) && (!term || product.name.toLowerCase().includes(term)));
   }
 
   get visibleProducts(): StorefrontProduct[] {
-    const term = this.query.trim().toLowerCase();
-    return this.products.filter((product) =>
-      (!this.category || product.categoryId === this.category || product.categoryName === this.category) &&
-      (!term || product.name.toLowerCase().includes(term))
-    );
+    return this.query.trim() ? this.matchingProducts.slice(0, this.searchLimit) : this.matchingProducts;
   }
 
   chooseCategory(category: string): void {
+    if (category === this.category) return;
+    clearTimeout(this.searchTimer);
     this.category = category;
+    this.products = [];
     this.saveBrowseState();
+    this.reloadProducts();
   }
 
   saveBrowseState(): void {

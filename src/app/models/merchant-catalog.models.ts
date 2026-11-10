@@ -163,6 +163,7 @@ export interface Product {
   description?: string | null;
   unitPrice: number;
   imageUrl?: string | null;
+  thumbnailUrl?: string | null;
   active: boolean;
   status: string;
   categoryId?: string | null;

@@ -1,3 +1,4 @@
+import { StorefrontCatalogPage, StorefrontProduct } from '../models/storefront.models';
 import { StorefrontLanguageService } from '../services/storefront-language.service';
 import { StorefrontUiService } from '../services/storefront-ui.service';
 import { Subject, of } from 'rxjs';
@@ -10,11 +11,16 @@ import { WebCatalogComponent } from './web-catalog.component';
 import { StorefrontSessionService } from '../services/storefront-session.service';
 import { NotificationService } from '../notifications/notification.service';
 
+const catalogPage = (items: StorefrontProduct[]): StorefrontCatalogPage => ({ items, hasMore: false, nextCursor: null, limit: 24 });
+
 describe('WebCatalogComponent', () => {
   const api = jasmine.createSpyObj<StorefrontApiService>('StorefrontApiService', [
     'getMerchant',
     'getBranch',
-    'getActiveProducts',
+    'getCatalogPage',
+    'getCatalogCategories',
+    'invalidateCatalog',
+    'searchCatalogProducts',
     'getPaymentCapabilities',
     'getTableAvailability'
   ]);
@@ -22,15 +28,18 @@ describe('WebCatalogComponent', () => {
   beforeEach(async () => {
     api.getMerchant.calls.reset();
     api.getBranch.calls.reset();
-    api.getActiveProducts.calls.reset();
+    api.getCatalogPage.calls.reset();
     api.getPaymentCapabilities.calls.reset();
+    api.getCatalogCategories.calls.reset();
+    api.getCatalogCategories.and.callFake((_merchant, _branch, language) => of({
+      categories: [{ id: 'drinks', name: language === 'ar' ? 'Translated drinks' : 'Drinks', productCount: 1 }],
+      uncategorizedCount: 0, totalCount: 1
+    }));
     api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'Brew House' }));
     api.getBranch.and.returnValue(
       of({ id: 'branch-12', merchantId: 'merchant-44', name: 'Station Cafe' })
     );
-    api.getActiveProducts.and.returnValue(
-      of([{ productId: 'p1', branchId: 'branch-12', name: 'Coffee', unitPrice: 3.5, active: true }])
-    );
+    api.getCatalogPage.and.returnValue(of(catalogPage([{ productId: 'p1', branchId: 'branch-12', name: 'Coffee', unitPrice: 3.5, active: true }])));
     api.getPaymentCapabilities.and.returnValue(of({ enabledPaymentFlows: ['PAY_BY_BANK'] }));
     api.getTableAvailability.and.returnValue(of({ total: 0, free: 0, freeSeats: 0 }));
     sessionStorage.clear();
@@ -126,11 +135,11 @@ describe('WebCatalogComponent', () => {
       offerings: ['INTERNATIONAL_MENU'], originalMenuLanguage: 'de', supportedMenuLanguages: ['ar', 'en'] }));
     const harness = await RouterTestingHarness.create();
     const component = await harness.navigateByUrl('/m/merchant-44/b/branch-12', WebCatalogComponent);
-    api.getActiveProducts.and.returnValue(of([{ productId: 'p1', branchId: 'branch-12', name: 'Kaffee',
-      description: 'Original text', language: 'de', unitPrice: 3.5, active: true }]));
+    api.getCatalogPage.and.returnValue(of(catalogPage([{ productId: 'p1', branchId: 'branch-12', name: 'Kaffee',
+      description: 'Original text', language: 'de', unitPrice: 3.5, active: true }])));
     TestBed.inject(StorefrontLanguageService).choose('ar');
     harness.detectChanges();
-    expect(api.getActiveProducts.calls.mostRecent().args[2]).toBe('ar');
+    expect(api.getCatalogPage.calls.mostRecent().args[2]).toBe('ar');
     expect(component.products[0].language).toBe('de');
     expect(harness.routeNativeElement!.textContent).toContain('Original text');
     expect(harness.routeNativeElement!.querySelector('[data-testid="catalog-language"]')).toBeNull();
@@ -138,13 +147,13 @@ describe('WebCatalogComponent', () => {
   it('exposes category counts and preserves category IDs across translated names', async () => {
     api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'Restaurant',
       offerings: ['INTERNATIONAL_MENU'], originalMenuLanguage: 'de', supportedMenuLanguages: ['ar'] }));
-    api.getActiveProducts.and.returnValue(of([{ productId: 'p1', branchId: 'branch-12', name: 'Coffee',
-      categoryId: 'drinks', categoryName: 'Drinks', unitPrice: 3.5, active: true }]));
+    api.getCatalogPage.and.returnValue(of(catalogPage([{ productId: 'p1', branchId: 'branch-12', name: 'Coffee',
+      categoryId: 'drinks', categoryName: 'Drinks', unitPrice: 3.5, active: true }])));
     const harness = await RouterTestingHarness.create();
     const component = await harness.navigateByUrl('/m/merchant-44/b/branch-12', WebCatalogComponent);
     component.chooseCategory('drinks');
-    api.getActiveProducts.and.returnValue(of([{ productId: 'p1', branchId: 'branch-12', name: 'Translated coffee',
-      categoryId: 'drinks', categoryName: 'Translated drinks', unitPrice: 3.5, active: true }]));
+    api.getCatalogPage.and.returnValue(of(catalogPage([{ productId: 'p1', branchId: 'branch-12', name: 'Translated coffee',
+      categoryId: 'drinks', categoryName: 'Translated drinks', unitPrice: 3.5, active: true }])));
     TestBed.inject(StorefrontLanguageService).choose('ar'); harness.detectChanges();
     expect(component.category).toBe('drinks');
     expect(component.categoryOptions[0].count).toBe(1);
@@ -153,10 +162,10 @@ describe('WebCatalogComponent', () => {
   });
   it('keeps Arabic backend content automatically directed when the UI is English', async () => {
     sessionStorage.setItem('blitzpay.storefront-language', 'ar');
-    api.getActiveProducts.and.returnValue(of([{
+    api.getCatalogPage.and.returnValue(of(catalogPage([{
       productId: 'p1', branchId: 'branch-12', name: 'قهوة', description: 'قهوة طازجة',
       categoryName: 'مشروبات', language: 'ar', unitPrice: 3.5, active: true
-    }]));
+    }])));
     const harness = await RouterTestingHarness.create();
     const component = await harness.navigateByUrl('/m/merchant-44/b/branch-12', WebCatalogComponent);
     harness.detectChanges();
@@ -194,7 +203,7 @@ describe('WebCatalogComponent', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/m/merchant-44/b/branch-12');
     harness.detectChanges();
-    expect(api.getActiveProducts).toHaveBeenCalledWith('merchant-44', 'branch-12', 'de');
+    expect(api.getCatalogPage).toHaveBeenCalledWith('merchant-44', 'branch-12', 'de', jasmine.any(Object));
     expect(harness.routeNativeElement!.querySelector('[data-testid="catalog-language"]')).toBeNull();
     expect(sessionStorage.getItem('blitzpay.storefront-language')).toBeNull();
   });
@@ -204,7 +213,7 @@ describe('WebCatalogComponent', () => {
     api.getMerchant.and.returnValue(of({ applicationId: 'merchant-44', merchantName: 'My Restaurant', originalMenuLanguage: 'de', supportedMenuLanguages: ['ar', 'en', 'tr'], offerings: ['INTERNATIONAL_MENU'] }));
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/m/merchant-44/b/branch-12');
-    expect(api.getActiveProducts).toHaveBeenCalledWith('merchant-44', 'branch-12', 'tr');
+    expect(api.getCatalogPage).toHaveBeenCalledWith('merchant-44', 'branch-12', 'tr', jasmine.any(Object));
   });
 
   it('keeps cart and selector visible during skeleton loading and ignores an obsolete response', async () => {
@@ -213,18 +222,18 @@ describe('WebCatalogComponent', () => {
     const component = await harness.navigateByUrl('/m/merchant-44/b/branch-12', WebCatalogComponent);
     harness.detectChanges();
     harness.routeNativeElement!.querySelector<HTMLButtonElement>('[data-testid="add-p1"]')!.click();
-    const arabic = new Subject<any[]>();
-    const english = new Subject<any[]>();
-    api.getActiveProducts.and.returnValues(arabic, english);
+    const arabic = new Subject<StorefrontCatalogPage>();
+    const english = new Subject<StorefrontCatalogPage>();
+    api.getCatalogPage.and.returnValues(arabic, english);
     component.chooseLanguage('ar');
     harness.detectChanges();
     expect(harness.routeNativeElement!.querySelector('[data-testid="catalog-skeleton"]')).not.toBeNull();
     expect(harness.routeNativeElement!.querySelector('[data-testid="catalog-language"]')).toBeNull();
     expect(harness.routeNativeElement!.querySelector('web-cart')).not.toBeNull();
     component.chooseLanguage('en');
-    english.next([{ productId: 'p1', branchId: 'branch-12', name: 'Fresh coffee', unitPrice: 3.5, active: true, language: 'en' }]);
+    english.next(catalogPage([{ productId: 'p1', branchId: 'branch-12', name: 'Fresh coffee', unitPrice: 3.5, active: true, language: 'en' }]));
     english.complete();
-    arabic.next([{ productId: 'p1', branchId: 'branch-12', name: 'Obsolete', unitPrice: 3.5, active: true }]);
+    arabic.next(catalogPage([{ productId: 'p1', branchId: 'branch-12', name: 'Obsolete', unitPrice: 3.5, active: true }]));
     arabic.complete();
     harness.detectChanges();
     expect(harness.routeNativeElement!.querySelector('[data-testid="catalog-skeleton"]')).toBeNull();
@@ -239,8 +248,8 @@ describe('WebCatalogComponent', () => {
     TestBed.inject(NotificationService).messageObserver.subscribe(message => {
       for (const item of Array.isArray(message) ? message : [message]) toasts.push(item.detail ?? '');
     });
-    const request = new Subject<any[]>();
-    api.getActiveProducts.and.returnValue(request);
+    const request = new Subject<StorefrontCatalogPage>();
+    api.getCatalogPage.and.returnValue(request);
     component.chooseLanguage('ar');
     request.error(new HttpErrorResponse({ status: 503, error: { detail: 'Translations temporarily unavailable' } }));
     harness.detectChanges();
@@ -256,9 +265,9 @@ describe('WebCatalogComponent', () => {
     const harness = await RouterTestingHarness.create();
     const component = await harness.navigateByUrl('/m/merchant-44/b/branch-12', WebCatalogComponent);
     component.addProduct(component.products[0]);
-    api.getActiveProducts.and.returnValue(of([{ productId: 'p1', branchId: 'branch-12', name: 'Coffee EN', unitPrice: 3.5, active: true }]));
+    api.getCatalogPage.and.returnValue(of(catalogPage([{ productId: 'p1', branchId: 'branch-12', name: 'Coffee EN', unitPrice: 3.5, active: true }])));
     TestBed.inject(StorefrontLanguageService).choose('en'); harness.detectChanges();
-    expect(api.getActiveProducts).toHaveBeenCalledWith('merchant-44', 'branch-12', 'en');
+    expect(api.getCatalogPage).toHaveBeenCalledWith('merchant-44', 'branch-12', 'en', jasmine.any(Object));
     expect(component.cart.itemCount).toBe(1);
     expect(component.cart.lines[0].product.name).toBe('Coffee EN');
     expect(sessionStorage.getItem('blitzpay.storefront-language')).toBe('en');

@@ -1,6 +1,10 @@
 /** English source, German and Arabic; tab-separated to keep the initial guest bundle small. */
 const rows = `Open shopper app	Shopper-App öffnen	افتح تطبيق المتسوق
 Or continue ordering here in your browser.	Oder bestelle hier im Browser weiter.	أو تابع الطلب هنا في متصفحك.
+Uncategorized	Ohne Kategorie	بدون فئة
+Load more products	Weitere Produkte laden	تحميل المزيد من المنتجات
+Loading more products...	Weitere Produkte werden geladen...	جارٍ تحميل المزيد من المنتجات...
+Unable to load more products.	Weitere Produkte konnten nicht geladen werden.	تعذّر تحميل المزيد من المنتجات.
 {0} home	{0} Startseite	الصفحة الرئيسية لـ {0}
 Fresh from our kitchen. Made for your table.	Frisch aus unserer Küche. Für deinen Tisch zubereitet.	طازج من مطبخنا. لطاولتك.
 Fresh from our kitchen	Frisch aus unserer Küche	طازج من مطبخنا
