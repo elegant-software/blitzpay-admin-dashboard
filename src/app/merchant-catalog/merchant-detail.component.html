@@ -891,6 +891,7 @@
           <section
             *ngIf="activeDetailTab === 'branches-products'"
             class="card merchant-products-card"
+            [attr.aria-busy]="productsLoading"
           >
             <div
               class="card-header d-flex justify-content-between align-items-center"
@@ -901,7 +902,7 @@
                   {{ 'Items available in the selected branch.' | adminTranslate }}
                 </p>
               </div>
-              <span class="merchant-section-count">{{
+              <span class="merchant-section-count" *ngIf="!productsLoading">{{
                 productFilterActive ? (productVisibleCount + " / " + products.length) : (products.length)
               }}</span>
             </div>
@@ -955,6 +956,14 @@
                   }}
                 </span>
               </div>
+              <div class="product-category-filters" role="group" [attr.aria-label]="'Filter products by category' | adminTranslate" *ngIf="selectedBranch">
+                <button type="button" class="product-category-chip" [class.is-selected]="!selectedProductCategory" [attr.aria-pressed]="!selectedProductCategory" [disabled]="productsLoading" (click)="selectProductCategory('')">
+                  <span>{{ 'All products' | adminTranslate }}</span><span class="product-category-count" *ngIf="!productsLoading">{{ products.length }}</span>
+                </button>
+                <button *ngFor="let category of productCategoryOptions" type="button" class="product-category-chip" [class.is-selected]="selectedProductCategory === category.id" [attr.aria-pressed]="selectedProductCategory === category.id" [disabled]="productsLoading" (click)="selectProductCategory(category.id)">
+                  <span>{{ category.id === uncategorizedProductCategory ? ('Uncategorized' | adminTranslate) : category.name }}</span><span class="product-category-count" *ngIf="!productsLoading">{{ category.count }}</span>
+                </button>
+              </div>
               <div class="table-card-toolbar mb-3">
                 <div class="table-filter-input-wrap">
                   <label class="table-filter-label" for="product-filter"
@@ -962,6 +971,7 @@
                   >
                   <input
                     id="product-filter"
+                    [disabled]="productsLoading || !!productsLoadError"
                     pInputText
                     class="table-filter-input"
                     [(ngModel)]="productTableState.filter.query"
@@ -974,13 +984,20 @@
                     class="btn btn-outline-secondary table-filter-clear"
                     type="button"
                     (click)="clearProductFilters()"
-                    [disabled]="!productFilterActive"
+                    [disabled]="!productFilterActive || productsLoading"
                   >
                     {{ 'Clear' | adminTranslate }}
                   </button>
                 </div>
               </div>
-              <div class="table-responsive datatable-shell">
+              <div *ngIf="productsLoadError" class="alert alert-danger product-load-error" role="alert">
+                <span>{{ productsLoadError }}</span>
+                <button type="button" class="btn btn-outline-danger btn-sm" (click)="retryProducts()">{{ 'Retry' | adminTranslate }}</button>
+              </div>
+              <div *ngIf="productsLoading" class="product-loading-skeleton" role="status" [attr.aria-label]="'Loading products' | adminTranslate">
+                <div *ngFor="let row of productSkeletonRows" class="product-skeleton-row" aria-hidden="true"><span class="product-skeleton-image"></span><span class="product-skeleton-text"></span><span class="product-skeleton-text short"></span></div>
+              </div>
+              <div class="table-responsive datatable-shell" *ngIf="!productsLoading && !productsLoadError">
                 <table
                   class="table table-sm align-middle mb-0 merchant-results-table"
                 >
@@ -1091,21 +1108,22 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let product of visibleProductRows">
+                    <tr *ngFor="let product of visibleProductRows; trackBy: trackProduct">
                       <td class="product-thumb-col">
                         <img
                           *ngIf="
-                            product.imageUrl &&
+                            (product.thumbnailUrl || product.imageUrl) &&
                             !failedProductImages.has(product.productId)
                           "
-                          [src]="product.imageUrl"
+                          [src]="product.thumbnailUrl || product.imageUrl"
+                          loading="lazy" decoding="async" width="40" height="40"
                           [alt]="product.name"
                           class="product-thumb"
                           (error)="onProductImageError(product.productId)"
                         />
                         <div
                           *ngIf="
-                            !product.imageUrl ||
+                            !(product.thumbnailUrl || product.imageUrl) ||
                             failedProductImages.has(product.productId)
                           "
                           class="product-thumb-empty"

@@ -1,6 +1,7 @@
 import { inject as injectAdminLocale } from '@angular/core';
 import { AdminLocaleService } from '../i18n/admin-locale.service';
 import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
+import { apiErrorMessage } from "../notifications/notification.service";
 import { NotificationService } from "../notifications/notification.service";
 import { CommonModule } from "@angular/common";
 import { Component, OnDestroy, OnInit, effect, inject } from "@angular/core";
@@ -87,6 +88,12 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   selectedBranch: Branch | null = null;
   qrCatalogUrl = "";
   products: Product[] = [];
+  selectedProductCategory = "";
+  productCategoryOptions: { id: string; name: string; count: number }[] = [];
+  readonly uncategorizedProductCategory = "__uncategorized__";
+  readonly productSkeletonRows = [0, 1, 2, 3, 4];
+  productsLoading = false;
+  productsLoadError = "";
 
   appearanceOperational: OperationalAppearanceItem[] = [];
   appearanceOperationalLoading = false;
@@ -168,6 +175,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
   private routeSub?: Subscription;
   private productRequest?: Subscription;
+  private branchRequest?: Subscription;
   private previousUiLanguage = this.adminLocale.code();
   private readonly followUiLanguage = effect(() => {
     const code = this.adminLocale.code();
@@ -210,6 +218,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
     this.productRequest?.unsubscribe();
+    this.branchRequest?.unsubscribe();
   }
 
   get selectedEnvironment() {
@@ -255,7 +264,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     return hasActiveQuery(this.categoryTableState.filter.query);
   }
   get productFilterActive(): boolean {
-    return hasActiveQuery(this.productTableState.filter.query);
+    return !!this.selectedProductCategory || hasActiveQuery(this.productTableState.filter.query);
   }
   get branchPaginatorVisible(): boolean {
     return this.branchVisibleCount > this.branchTableState.pagination.rows;
@@ -264,7 +273,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     return this.categoryVisibleCount > this.categoryTableState.pagination.rows;
   }
   get productPaginatorVisible(): boolean {
-    return this.productVisibleCount > this.productTableState.pagination.rows;
+    return this.products.length > 0 && !this.productsLoading && !this.productsLoadError;
   }
 
   get branchNameSortDirection(): TableSortDirection | null {
@@ -560,6 +569,20 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.categoryTableState.pagination.first = 0;
     this.syncCategoryTableState();
   }
+  selectProductCategory(categoryId: string): void {
+    if (this.productsLoading) return;
+    this.selectedProductCategory = categoryId;
+    this.onProductFilterChange();
+  }
+
+  retryProducts(): void {
+    this.loadProductsForSelectedBranch();
+  }
+
+  trackProduct(_: number, product: Product): string {
+    return product.productId;
+  }
+
   onProductFilterChange(): void {
     this.productTableState.pagination.first = 0;
     this.syncProductTableState();
@@ -575,6 +598,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.syncCategoryTableState();
   }
   clearProductFilters(): void {
+    this.selectedProductCategory = "";
     this.productTableState.filter.query = "";
     this.productTableState.pagination.first = 0;
     this.syncProductTableState();
@@ -622,6 +646,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.syncCategoryTableState();
   }
   toggleProductSort(field: ProductSortField): void {
+    this.productTableState.pagination.first = 0;
     const isSameField = this.productTableState.sort.field === field;
     this.productTableState.sort = {
       field,
@@ -635,6 +660,8 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
   selectBranch(branch: Branch): void {
     if (!this.selectedMerchant) return;
+    this.branchRequest?.unsubscribe();
+    this.productRequest?.unsubscribe();
     const branchId = branch.branchId ?? branch.id;
     if (!branchId) {
       this.selectedBranch = this.normalizeBranch(branch);
@@ -642,7 +669,9 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     }
 
     this.loading = true;
-    this.merchantApi
+    this.productsLoading = true;
+    this.productsLoadError = "";
+    this.branchRequest = this.merchantApi
       .getBranch(
         this.selectedEnvironment,
         this.apiVersion,
@@ -667,6 +696,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
             return;
           }
           this.loading = false;
+          this.productsLoading = false;
           this.notifications.apiError(error, "Unable to load branch details.");
         },
       });
@@ -1314,12 +1344,15 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.productRequest?.unsubscribe();
     if (!this.selectedMerchant || !this.selectedBranch?.branchId) {
       this.loading = false;
+      this.productsLoading = false;
       this.products = [];
       this.resetProductTableStateForBranch(null);
       return;
     }
 
     this.loading = true;
+    this.productsLoading = true;
+    this.productsLoadError = "";
     this.resetProductTableStateForBranch(this.selectedBranch.branchId);
     this.productRequest = this.merchantApi
       .getProducts(
@@ -1333,14 +1366,14 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (products) => {
           this.loading = false;
-          this.products = products;
+          this.productsLoading = false;
+          this.products = products.filter(product => product.branchId === this.selectedBranch?.branchId);
           this.syncProductTableState();
         },
         error: (error) => {
           this.loading = false;
-          this.products = [];
-          this.syncProductTableState();
-          this.notifications.apiError(error, "Unable to load products.");
+          this.productsLoading = false;
+          this.productsLoadError = apiErrorMessage(error, this.adminLocale.text("Unable to load products."));
         },
       });
   }
@@ -1392,8 +1425,25 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   }
 
   private syncProductTableState(): void {
+    const options = new Map<string, { id: string; name: string; count: number }>();
+    for (const product of this.products) {
+      const id = product.categoryId || this.uncategorizedProductCategory;
+      const option = options.get(id);
+      if (option) option.count++;
+      else options.set(id, {
+        id,
+        name: product.categoryName || this.categories.find(category => category.id === id)?.name || this.adminLocale.text("Uncategorized"),
+        count: 1,
+      });
+    }
+    this.productCategoryOptions = [...options.values()].sort((left, right) =>
+      left.id === this.uncategorizedProductCategory ? 1 : right.id === this.uncategorizedProductCategory ? -1 : left.name.localeCompare(right.name));
+    if (this.selectedProductCategory && !options.has(this.selectedProductCategory)) this.selectedProductCategory = "";
+    const categoryRows = this.selectedProductCategory
+      ? this.products.filter(product => (product.categoryId || this.uncategorizedProductCategory) === this.selectedProductCategory)
+      : this.products;
     const filteredRows = filterRowsByFields(
-      this.products,
+      categoryRows,
       this.productTableState.filter.query,
       (p) => [p.productCode, p.categoryName, p.name],
     );
@@ -1421,7 +1471,15 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   }
 
   private resetProductTableStateForBranch(branchId: string | null): void {
-    this.productTableState = this.createProductTableState(branchId);
+    if (this.productTableState.branchId !== branchId) {
+      const rows = this.productTableState.pagination.rows;
+      this.selectedProductCategory = "";
+      this.products = [];
+      this.productCategoryOptions = [];
+      this.failedProductImages.clear();
+      this.productTableState = this.createProductTableState(branchId);
+      this.productTableState.pagination.rows = rows;
+    }
     this.syncProductTableState();
   }
 

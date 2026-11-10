@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { StorefrontLanguageService } from './storefront-language.service';
-import { map, Observable } from 'rxjs';
+import { map, Observable, shareReplay } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   CreatePayByBankCheckoutRequest,
@@ -14,6 +14,9 @@ import {
   StorefrontPaymentCapabilities,
   StorefrontPaymentMethod,
   StorefrontProduct,
+  StorefrontCatalogPage,
+  StorefrontCatalogCategories,
+  StorefrontCatalogFilter,
   StorefrontTableAvailability,
   StorefrontTableResolution,
   StorefrontThemeLook
@@ -21,6 +24,7 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class StorefrontApiService {
+  private readonly catalogCache = new Map<string, { expires: number; request: Observable<unknown> }>();
   private readonly catalogLanguage = inject(StorefrontLanguageService);
   constructor(private readonly http: HttpClient) {}
 
@@ -52,6 +56,61 @@ export class StorefrontApiService {
           .filter((product) => product.active)
           .sort((left, right) => left.name.localeCompare(right.name)))
       );
+  }
+
+  getCatalogPage(merchantId: string, branchId: string, language?: string | null, filter: StorefrontCatalogFilter = {}): Observable<StorefrontCatalogPage> {
+    return this.cachedCatalog(['page', merchantId, branchId, language ?? '', filter.categoryId ?? '', !!filter.uncategorized, filter.cursor ?? ''], () => {
+      let params = new HttpParams().set('branchId', branchId).set('limit', 24);
+      if (filter.categoryId) params = params.set('categoryId', filter.categoryId);
+      if (filter.uncategorized) params = params.set('uncategorized', true);
+      if (filter.cursor) params = params.set('cursor', filter.cursor);
+      return this.http.get<StorefrontCatalogPage>(`${this.baseUrl}/merchants/${encodeURIComponent(merchantId)}/catalog/products`,
+        { params, headers: this.languageHeaders(language) }).pipe(map(response => {
+          if (!response || !Array.isArray(response.items) || response.limit !== 24 || typeof response.hasMore !== 'boolean' ||
+              (response.hasMore ? !response.nextCursor || typeof response.nextCursor !== 'string' || response.nextCursor === filter.cursor : response.nextCursor != null)) {
+            throw new Error('Invalid catalog page');
+          }
+          return { ...response, items: response.items.filter(product => product && product.active && product.branchId === branchId &&
+            !!product.productId && typeof product.name === 'string' && Number.isFinite(product.unitPrice) &&
+            (!filter.categoryId || product.categoryId === filter.categoryId) && (!filter.uncategorized || !product.categoryId)) };
+        }));
+    });
+  }
+
+  getCatalogCategories(merchantId: string, branchId: string, language?: string | null): Observable<StorefrontCatalogCategories> {
+    return this.cachedCatalog(['categories', merchantId, branchId, language ?? ''], () => this.http.get<StorefrontCatalogCategories>(
+      `${this.baseUrl}/merchants/${encodeURIComponent(merchantId)}/catalog/categories`,
+      { params: new HttpParams().set('branchId', branchId), headers: this.languageHeaders(language) }
+    ).pipe(map(response => {
+      if (!response || !Array.isArray(response.categories) || !Number.isSafeInteger(response.totalCount) || response.totalCount < 0 ||
+          !Number.isSafeInteger(response.uncategorizedCount) || response.uncategorizedCount < 0 ||
+          response.categories.some(category => !category || !category.id || !category.name || !Number.isSafeInteger(category.productCount) || category.productCount <= 0)) {
+        throw new Error('Invalid branch categories');
+      }
+      return response;
+    })));
+  }
+
+  searchCatalogProducts(merchantId: string, branchId: string, language?: string | null): Observable<StorefrontProduct[]> {
+    return this.cachedCatalog(['search', merchantId, branchId, language ?? ''],
+      () => this.getActiveProducts(merchantId, branchId, language).pipe(map(products => products.filter(product => product.branchId === branchId))));
+  }
+
+  invalidateCatalog(merchantId: string, branchId: string, language?: string | null): void {
+    for (const key of this.catalogCache.keys()) {
+      const scope = JSON.parse(key) as unknown[];
+      if (scope[1] === merchantId && scope[2] === branchId && scope[3] === (language ?? '')) this.catalogCache.delete(key);
+    }
+  }
+
+  private cachedCatalog<T>(parts: unknown[], request: () => Observable<T>): Observable<T> {
+    const key = JSON.stringify(parts);
+    const cached = this.catalogCache.get(key);
+    if (cached && cached.expires > Date.now()) return cached.request as Observable<T>;
+    const result = request().pipe(shareReplay({ bufferSize: 1, refCount: true }));
+    if (this.catalogCache.size >= 64) this.catalogCache.delete(this.catalogCache.keys().next().value!);
+    this.catalogCache.set(key, { expires: Date.now() + 300_000, request: result });
+    return result;
   }
 
   getProduct(merchantId: string, branchId: string, productId: string, language?: string | null): Observable<StorefrontProduct> {

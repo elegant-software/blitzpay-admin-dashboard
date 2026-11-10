@@ -1035,5 +1035,9 @@
   "Last seen": "Zuletzt gesehen",
   "Online": "Online",
   "Offline": "Offline",
-  "Card readers are paired in the merchant app (Settings → Pair card reader).": "Kartenterminals werden in der Händler-App gekoppelt (Einstellungen → Kartenterminal koppeln)."
+  "Card readers are paired in the merchant app (Settings → Pair card reader).": "Kartenterminals werden in der Händler-App gekoppelt (Einstellungen → Kartenterminal koppeln).",
+  "All products": "Alle Produkte",
+  "Uncategorized": "Ohne Kategorie",
+  "Filter products by category": "Produkte nach Kategorie filtern",
+  "Loading products": "Produkte werden geladen"
 }

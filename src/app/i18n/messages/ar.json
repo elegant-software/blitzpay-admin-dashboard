@@ -1035,5 +1035,9 @@
   "Last seen": "آخر ظهور",
   "Online": "متصل",
   "Offline": "غير متصل",
-  "Card readers are paired in the merchant app (Settings → Pair card reader).": "يتم إقران قارئات البطاقات في تطبيق التاجر (الإعدادات ← إقران قارئ البطاقات)."
+  "Card readers are paired in the merchant app (Settings → Pair card reader).": "يتم إقران قارئات البطاقات في تطبيق التاجر (الإعدادات ← إقران قارئ البطاقات).",
+  "All products": "كل المنتجات",
+  "Uncategorized": "بدون فئة",
+  "Filter products by category": "تصفية المنتجات حسب الفئة",
+  "Loading products": "جارٍ تحميل المنتجات"
 }
