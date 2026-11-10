@@ -8,6 +8,8 @@ import { NotificationService } from './notifications/notification.service';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
 describe('Web Storefront shell', () => {
+  beforeEach(() => sessionStorage.clear()); // other specs leave a saved UI language behind
+
   it('links the legal notice and privacy policy on every page', async () => {
     await TestBed.configureTestingModule({ imports: [AppComponent], providers: [provideRouter([]), provideHttpClient()] }).compileComponents();
     spyOn(TestBed.inject(StorefrontUiService), 'load').and.stub();
