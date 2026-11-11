@@ -136,6 +136,10 @@ export class StorefrontApiService {
     return this.http.post<StorefrontOrder>(`${this.baseUrl}/storefront/orders`, payload, { headers: this.languageHeaders() });
   }
 
+  getGuestInvoice(orderId: string): Observable<{ url: string; filename: string }> {
+    return this.http.get<{ url: string; filename: string }>(`${this.baseUrl}/storefront/orders/${encodeURIComponent(orderId)}/invoice`);
+  }
+
   getGuestOrder(orderId: string): Observable<StorefrontOrder> {
     return this.http.get<StorefrontOrder>(`${this.baseUrl}/storefront/orders/${encodeURIComponent(orderId)}`);
   }

@@ -15,6 +15,7 @@ describe('Web Storefront public routes', () => {
     'getPaymentCapabilities',
     'getOrder',
     'getGuestOrder',
+    'getGuestInvoice',
     'getTableAvailability'
   ]);
 
@@ -25,6 +26,7 @@ describe('Web Storefront public routes', () => {
     api.getActiveProducts.and.returnValue(of([]));
     api.getCatalogPage.and.returnValue(of({ items: [], nextCursor: null, hasMore: false, limit: 24 }));
     api.getCatalogCategories.and.returnValue(of({ categories: [], uncategorizedCount: 0, totalCount: 0 }));
+    api.getGuestInvoice.and.returnValue(of({ url: "https://storage.example/invoice.pdf", filename: "invoice.pdf" }));
     api.getTableAvailability.and.returnValue(of({ total: 8, free: 3, freeSeats: 10 }));
     api.getPaymentCapabilities.and.returnValue(of({ enabledPaymentFlows: [] }));
     api.getOrder.and.returnValue(of({ orderId: 'order-200', status: 'CREATED', items: [] }));

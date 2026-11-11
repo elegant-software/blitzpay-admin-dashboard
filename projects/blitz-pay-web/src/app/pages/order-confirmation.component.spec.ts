@@ -16,7 +16,7 @@ describe('Payment return', () => {
   function create() {
     TestBed.configureTestingModule({ providers: [provideRouter([]),
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ orderId: 'o1' }) } } },
-      { provide: StorefrontApiService, useValue: { getGuestOrder, guestOrderEvents } }
+      { provide: StorefrontApiService, useValue: { getGuestOrder, guestOrderEvents, getGuestInvoice: () => of({ url: "https://example.com/invoice.pdf", filename: "invoice.pdf" }) } }
     ] });
     const fixture = TestBed.createComponent(OrderConfirmationComponent);
     fixture.detectChanges();
@@ -24,6 +24,7 @@ describe('Payment return', () => {
   }
 
   beforeEach(() => {
+    sessionStorage.clear();
     events = new Subject<StorefrontOrder>();
     unsubscribed = false;
     initial = { orderId: 'o1', status: 'CREATED' };
@@ -40,6 +41,7 @@ describe('Payment return', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Payment confirmed');
     expect(fixture.nativeElement.textContent).toContain('Checking your payment');
     expect(fixture.nativeElement.querySelector('web-app-download')).toBeNull();
+    expect(fixture.nativeElement.querySelector('web-order-invoice')).toBeNull();
   });
 
   it('shows non-sticky store links only after the backend confirms payment', () => {

@@ -1,3 +1,4 @@
+import { OrderInvoiceComponent } from '../components/order-invoice.component';
 import { StorefrontTranslatePipe } from '../i18n/storefront-translate.pipe';
 import { AppDownloadComponent } from '../components/app-download.component';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
@@ -20,7 +21,7 @@ const PREPARATION_LABELS: Record<StorefrontPreparationStatus, string> = {
 @Component({
   selector: 'web-order-confirmation',
   standalone: true,
-  imports: [StorefrontTranslatePipe, CommonModule, RouterLink, AppDownloadComponent],
+  imports: [StorefrontTranslatePipe, CommonModule, RouterLink, AppDownloadComponent, OrderInvoiceComponent],
   template: `
     <article class="surface confirmation">
       <span *ngIf="paid" class="confirmation-mark" aria-hidden="true">&#10003;</span>
@@ -41,6 +42,7 @@ const PREPARATION_LABELS: Record<StorefrontPreparationStatus, string> = {
       <p *ngIf="errorMessage" class="storefront-alert" role="alert">{{ (errorMessage | storefrontTranslate) }}</p>
       <button *ngIf="!paid" class="checkout-button" type="button" [disabled]="loading" (click)="refresh()">{{ loading ? ('Checking...' | storefrontTranslate) : ('Check payment status' | storefrontTranslate) }}</button>
       <a class="back-link" *ngIf="!paid && !cash && checkoutLink" [routerLink]="checkoutLink">{{ 'Back to checkout' | storefrontTranslate }}</a>
+      <web-order-invoice *ngIf="paid" [orderId]="orderId" />
       <web-app-download *ngIf="paid" />
     </article>
   `

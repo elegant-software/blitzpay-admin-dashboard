@@ -1,5 +1,14 @@
 /** English source, German and Arabic; tab-separated to keep the initial guest bundle small. */
-const rows = `Uncategorized	Ohne Kategorie	???? ?????
+const rows = `Your invoice	Ihre Rechnung	فاتورتك
+Preparing your invoice...	Ihre Rechnung wird vorbereitet...	جارٍ تجهيز فاتورتك...
+Download invoice	Rechnung herunterladen	تنزيل الفاتورة
+Scan to download your invoice	Scannen, um Ihre Rechnung herunterzuladen	امسح الرمز لتنزيل فاتورتك
+This download link expires in 30 minutes. Refresh to get a new link.	Dieser Download-Link läuft in 30 Minuten ab. Aktualisieren Sie ihn, um einen neuen Link zu erhalten.	تنتهي صلاحية رابط التنزيل خلال 30 دقيقة. حدّث للحصول على رابط جديد.
+Refresh invoice	Rechnung aktualisieren	تحديث الفاتورة
+Unable to create the QR code. Use the download link.	Der QR-Code konnte nicht erstellt werden. Verwenden Sie den Download-Link.	تعذّر إنشاء رمز QR. استخدم رابط التنزيل.
+Your invoice is not ready yet. Please refresh in a moment.	Ihre Rechnung ist noch nicht bereit. Bitte aktualisieren Sie in Kürze.	فاتورتك ليست جاهزة بعد. يرجى التحديث بعد قليل.
+Unable to load your invoice. Please try again.	Ihre Rechnung konnte nicht geladen werden. Bitte versuchen Sie es erneut.	تعذّر تحميل فاتورتك. يرجى المحاولة مجددًا.
+Uncategorized	Ohne Kategorie	???? ?????
 Load more products	Weitere Produkte laden	????? ?????? ?? ????????
 Loading more products...	Weitere Produkte werden geladen...	???? ????? ?????? ?? ????????...
 Unable to load more products.	Weitere Produkte konnten nicht geladen werden.	????? ????? ?????? ?? ????????.

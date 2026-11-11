@@ -19,6 +19,14 @@ describe('StorefrontApiService', () => {
 
   afterEach(() => http.verify());
 
+  it('requests the order invoice and preserves the signed download response', () => {
+    const invoice = { url: 'https://storage.example/invoices/ORD-PAID001.pdf?X-Amz-Signature=test', filename: 'invoice-ORD-PAID001.pdf' };
+    service.getGuestInvoice('ORD-PAID001').subscribe(result => expect(result).toEqual(invoice));
+    const request = http.expectOne('/v1/storefront/orders/ORD-PAID001/invoice');
+    expect(request.request.method).toBe('GET');
+    request.flush(invoice);
+  });
+
   for (const language of ['ar', 'de', 'en', 'tr']) {
     it(`preserves branch parameters and backend fallback fields when requesting ${language}`, () => {
       const fallback = { productId: 'p1', branchId: 'branch-12', name: 'Kaffee', description: 'Original', categoryName: 'Getränke', language: 'de', active: true, unitPrice: 3.5 };
