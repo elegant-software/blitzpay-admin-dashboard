@@ -207,9 +207,10 @@ export class MerchantApiService {
     environment: BackendEnvironment,
     apiVersion: string,
     merchantId: string,
-    payload: CreateProductCategoryRequest
+    payload: CreateProductCategoryRequest,
+    image?: File
   ): Observable<ProductCategory> {
-    return this.http.post<ProductCategory>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/product-categories`, payload);
+    return this.http.post<ProductCategory>(`${this.base(environment, apiVersion)}/merchants/${merchantId}/product-categories`, image ? this.categoryImageBody(payload, image) : payload);
   }
 
   renameProductCategory(
@@ -217,12 +218,22 @@ export class MerchantApiService {
     apiVersion: string,
     merchantId: string,
     categoryId: string,
-    payload: RenameProductCategoryRequest
+    payload: RenameProductCategoryRequest,
+    image?: File,
+    removeImage = false
   ): Observable<ProductCategory> {
     return this.http.put<ProductCategory>(
       `${this.base(environment, apiVersion)}/merchants/${merchantId}/product-categories/${categoryId}`,
-      payload
+      image || removeImage ? this.categoryImageBody(payload, image, removeImage) : payload
     );
+  }
+
+  private categoryImageBody(payload: CreateProductCategoryRequest | RenameProductCategoryRequest, image?: File, removeImage = false): FormData {
+    const body = new FormData();
+    body.append('category', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+    if (image) body.append('image', image);
+    if (removeImage) body.append('removeImage', 'true');
+    return body;
   }
 
   deleteProductCategory(

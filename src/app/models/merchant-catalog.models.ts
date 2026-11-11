@@ -140,6 +140,7 @@ export interface Branch {
 }
 
 export interface ProductCategory {
+  imageUrl?: string | null;
   id: string;
   name: string;
   createdAt: string;

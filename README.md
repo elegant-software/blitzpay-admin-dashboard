@@ -21,6 +21,7 @@ This repository contains an **Angular admin dashboard** built with CoreUI styles
   - merchant location save/remove controls
   - branch list/create and branch detail loading
   - product list/filter/create/update/soft-remove with optional image file input
+  - category image upload, preview, replacement/removal, and list thumbnails ([API details](docs/reference/category-images.md))
 
 - Merchant onboarding workspace with:
   - step summary cards

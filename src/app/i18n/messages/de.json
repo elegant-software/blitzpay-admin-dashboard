@@ -1039,5 +1039,11 @@
   "All products": "Alle Produkte",
   "Uncategorized": "Ohne Kategorie",
   "Filter products by category": "Produkte nach Kategorie filtern",
-  "Loading products": "Produkte werden geladen"
+  "Loading products": "Produkte werden geladen",
+  "Category image preview": "Vorschau des Kategoriebilds",
+  "Remove image": "Bild entfernen",
+  "JPEG, PNG or WebP, up to 5 MB.": "JPEG, PNG oder WebP, bis zu 5 MB.",
+  "Choose a JPEG, PNG or WebP image up to 5 MB. Empty files are not allowed.": "Wählen Sie ein JPEG-, PNG- oder WebP-Bild bis zu 5 MB. Leere Dateien sind nicht erlaubt.",
+  "Unable to save category.": "Kategorie konnte nicht gespeichert werden.",
+  "Category saved.": "Kategorie gespeichert."
 }
