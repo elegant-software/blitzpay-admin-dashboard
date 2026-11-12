@@ -1,0 +1,108 @@
+<section class="card mb-4" aria-labelledby="kiosk-title">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span id="kiosk-title">{{ 'Kiosk' | adminTranslate }}</span>
+    <span *ngIf="loading || busy" class="spinner-border spinner-border-sm text-secondary" role="status" [attr.aria-label]="'Loading' | adminTranslate"></span>
+  </div>
+  <div class="card-body">
+    <p *ngIf="forbidden" class="text-body-secondary small mb-0">
+      {{ 'Only a Merchant Manager of this merchant can manage the Kiosk.' | adminTranslate }}
+    </p>
+
+    <ng-container *ngIf="!forbidden && !loading">
+      <h3 class="h6">{{ 'Kiosk Login' | adminTranslate }}</h3>
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <div class="form-check form-switch mb-0">
+          <input dir="auto" id="kiosk-switch" class="form-check-input" type="checkbox" role="switch"
+            [checked]="enabled" [disabled]="busy" (change)="onToggle($event)" />
+          <label class="form-check-label" for="kiosk-switch">{{ enabled ? (('Enabled' | adminTranslate)) : (('Disabled' | adminTranslate)) }}</label>
+        </div>
+        <span *ngIf="loginName" class="small">{{ 'Login:' | adminTranslate }} <code>{{ loginName }}</code></span>
+        <button *ngIf="enabled" class="btn btn-sm btn-outline-secondary ms-auto" type="button" [disabled]="busy" (click)="resetPassword()">
+          {{ 'Reset password' | adminTranslate }}
+        </button>
+      </div>
+      <p class="small text-body-secondary mt-2 mb-0">{{ 'The Kiosk of this branch signs in once with this login during setup.' | adminTranslate }}</p>
+
+      <div *ngIf="login" class="border rounded p-3 mt-3" aria-live="polite">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="form-label">{{ 'Login' | adminTranslate }}</div>
+            <code data-test="kiosk-login">{{ login.login }}</code>
+          </div>
+          <div class="col-md-8">
+            <div class="form-label">{{ 'Password' | adminTranslate }}</div>
+            <div class="d-flex align-items-center gap-2">
+              <code data-test="kiosk-password">{{ passwordRevealed ? (login.password) : ('••••••••••••') }}</code>
+              <button class="icon-action-btn" type="button" (click)="togglePasswordReveal()"
+                [attr.aria-label]="passwordRevealed ? (('Hide password' | adminTranslate)) : (('Show password' | adminTranslate))"
+                [title]="passwordRevealed ? (('Hide password' | adminTranslate)) : (('Show password' | adminTranslate))">
+                <i class="pi" [ngClass]="passwordRevealed ? 'pi-eye-slash' : 'pi-eye'" aria-hidden="true"></i>
+              </button>
+              <button class="icon-action-btn" type="button" [attr.aria-label]="'Copy password' | adminTranslate" [attr.title]="'Copy password' | adminTranslate" (click)="copyPassword()">
+                <i class="pi pi-copy" aria-hidden="true"></i>
+              </button>
+              <span *ngIf="copied" class="small text-success">{{ 'Copied' | adminTranslate }}</span>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="copyFailed" class="alert alert-warning mt-3 mb-0 py-1 px-2 small">{{ 'Copy failed. Select the text and copy it manually.' | adminTranslate }}</div>
+        <p class="small fw-semibold mt-3 mb-0">{{ 'This password is shown only now. Use Reset password to get a new one.' | adminTranslate }}</p>
+      </div>
+
+      <form *ngIf="enabled" class="border-top mt-4 pt-3" data-test="kiosk-settings" novalidate (ngSubmit)="save()">
+        <h3 class="h6">{{ 'Kiosk Settings' | adminTranslate }}</h3>
+
+        <fieldset class="mb-3">
+          <legend class="form-label fs-6">{{ 'Payment choices' | adminTranslate }}</legend>
+          <div class="form-check" *ngFor="let choice of paymentChoices">
+            <input class="form-check-input" type="checkbox" [id]="'kiosk-pay-' + choice"
+              [checked]="hasPaymentChoice(choice)" (change)="togglePaymentChoice(choice, $any($event.target).checked)" />
+            <label class="form-check-label" [for]="'kiosk-pay-' + choice">
+              {{ (choice === 'CARD' ? 'Card' : choice === 'CASH' ? 'Cash at counter' : 'Scan to pay') | adminTranslate }}
+            </label>
+          </div>
+          <div *ngIf="errors.paymentChoices" class="text-danger small" role="alert" data-test="kiosk-payment-error">{{ errors.paymentChoices | adminTranslate }}</div>
+        </fieldset>
+
+        <div class="mb-3">
+          <label class="form-label" for="kiosk-reset-seconds">{{ 'Auto-reset timeout (seconds)' | adminTranslate }}</label>
+          <input id="kiosk-reset-seconds" name="resetSeconds" class="form-control" style="max-width: 10rem" type="number"
+            [min]="resetMin" [max]="resetMax" step="1" [class.is-invalid]="!!errors.resetSeconds"
+            [ngModel]="settings.resetSeconds" (ngModelChange)="onResetSecondsChange($event)" />
+          <div *ngIf="errors.resetSeconds" class="text-danger small" role="alert" data-test="kiosk-reset-error">{{ errors.resetSeconds | adminTranslate }}</div>
+          <div class="form-text">{{ 'How long the confirmation screen shows before the Kiosk resets.' | adminTranslate }}</div>
+        </div>
+
+        <fieldset class="mb-3" *ngIf="supportedLanguages.length">
+          <legend class="form-label fs-6">{{ 'Languages' | adminTranslate }}</legend>
+          <div class="form-check" *ngFor="let code of supportedLanguages">
+            <input class="form-check-input" type="checkbox" [id]="'kiosk-lang-' + code"
+              [checked]="settings.languages.includes(code)" (change)="toggleLanguage(code, $any($event.target).checked)" />
+            <label class="form-check-label" [for]="'kiosk-lang-' + code">{{ languageName(code) }}</label>
+          </div>
+        </fieldset>
+
+        <fieldset class="mb-3">
+          <legend class="form-label fs-6">{{ 'Advertised Products' | adminTranslate }}</legend>
+          <p class="form-text mt-0">{{ 'Shown on the Standby screen. When none are chosen, the Standby screen shows all active products that have a picture.' | adminTranslate }}</p>
+          <p *ngIf="!activeProducts.length" class="small text-body-secondary">{{ 'This branch has no active products.' | adminTranslate }}</p>
+          <div class="list-group" style="max-height: 18rem; overflow-y: auto">
+            <label class="list-group-item d-flex align-items-center gap-2" *ngFor="let product of activeProducts">
+              <input class="form-check-input mt-0" type="checkbox" [attr.data-test]="'kiosk-adv-' + product.productId"
+                [checked]="settings.advertisedProductIds.includes(product.productId)"
+                (change)="toggleAdvertised(product.productId, $any($event.target).checked)" />
+              <img *ngIf="product.thumbnailUrl || product.imageUrl" [src]="product.thumbnailUrl || product.imageUrl" alt=""
+                width="40" height="40" loading="lazy" style="object-fit: cover; border-radius: 4px" />
+              <span>{{ product.name }}</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <button class="btn btn-primary" type="submit" [disabled]="saving">
+          <span *ngIf="saving" class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+          {{ 'Save Kiosk Settings' | adminTranslate }}
+        </button>
+      </form>
+    </ng-container>
+  </div>
+</section>

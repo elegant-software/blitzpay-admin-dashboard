@@ -5,6 +5,7 @@ import { of, Subject } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MerchantDetailComponent } from './merchant-detail.component';
 import { BranchKitchenScreenComponent } from './branch-kitchen-screen.component';
+import { BranchKioskComponent } from './branch-kiosk.component';
 import { BranchKitchenRoutingComponent } from './branch-kitchen-routing.component';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { Branch, Product } from '../models/merchant-catalog.models';
@@ -27,7 +28,7 @@ describe('Branch product category browsing', () => {
     await TestBed.configureTestingModule({ imports: [MerchantDetailComponent], providers: [
       { provide: MerchantApiService, useValue: api }, provideRouter([]),
     ] }).overrideComponent(MerchantDetailComponent, {
-      remove: { imports: [BranchKitchenScreenComponent, BranchKitchenRoutingComponent] },
+      remove: { imports: [BranchKitchenScreenComponent, BranchKioskComponent, BranchKitchenRoutingComponent] },
       add: { schemas: [NO_ERRORS_SCHEMA] },
     }).compileComponents();
     fixture = TestBed.createComponent(MerchantDetailComponent);

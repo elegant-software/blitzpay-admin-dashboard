@@ -52,6 +52,22 @@ _Avoid_: KDS, kitchen app, order board
 The one shared login per Branch that its Kitchen Screens sign in with. A Merchant Manager enables, resets or disables it; enabling or resetting shows a new password once, and the password is never stored or shown again. The dashboard keeps the password only in the Branch page's component state.
 _Avoid_: kitchen account, kitchen user, device login
 
+**Kiosk**:
+A restaurant-owned device, fixed to one Merchant and one Branch, on which any customer shops as a guest without registering, logging in or scanning a QR code with their own phone. Its Orders are the same Order entity as the Web Storefront's. Managed from the Branch page.
+_Avoid_: Storefront, shopper app, POS, kitchen screen
+
+**Kiosk Login**:
+The one shared login per Branch that a Kiosk signs in with once during setup, modelled on the Kitchen Login. A Merchant Manager enables, resets or disables it; enabling or resetting shows a new password once, and the password is never stored or shown again. The dashboard keeps the password only in the Branch page's component state.
+_Avoid_: Kiosk account, device key, API key
+
+**Kiosk Settings**:
+What a Merchant Manager configures for one Branch's Kiosk in the dashboard: which payment choices (card, cash at counter, Scan to Pay) are enabled, how long the confirmation screen shows before the Kiosk resets, which of the Merchant's Supported Menu Languages the Kiosk offers, and which Products are Advertised Products.
+_Avoid_: Kiosk config, device settings
+
+**Advertised Product**:
+A Product a Merchant Manager has chosen, in Kiosk Settings, to show on the Kiosk's Standby screen. When none are chosen, the Standby screen shows the Branch's active Products that have a picture.
+_Avoid_: Featured product, promoted product, Category Representative (that is the printed-catalog term)
+
 **Table**, **Table Code**, **Table Name**, **Table Link**, **Branch Link**, **Floor Plan**, **Table Placement**, **Table Status**, **Occupied Table**, **Guest Count**, **Branch Capacity**:
 Defined in the backend glossary (zack-pay `CONTEXT.md`, zack-pay#195). The dashboard manages them on the Branch's **Tables** page (`/merchants/:id/branches/:branchId/tables`): Tables with seats and printable QR codes, Floor Plans with Tables dragged onto the picture (positions stored as fractions 0..1 of the picture), and a read-only **Live floor**. Table pins always show seats ("5 · 4 seats"; live: "5 · 3/4 seats" for Guest Count over seats; "?" when seats are not set). A Platform Admin never clears Tables, sets Guest Counts or takes or confirms payments here. Branch Capacity is edited on the Branch page; seats above it only warn.
 _Avoid_: seat, map, layout, seating chart
