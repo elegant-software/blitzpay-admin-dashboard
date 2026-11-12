@@ -571,6 +571,7 @@ export interface NoteEditFormModel {
 // ── Orders ──────────────────────────────────────────────────────────────────
 
 export type OrderType = 'WALK_IN_ORDERING' | 'PRE_ORDER';
+export type FulfilmentType = 'DINE_IN' | 'TAKE_AWAY';
 export type OrderStatus = 'PENDING' | 'PAID' | 'CANCELLED' | 'EXPIRED';
 
 export interface OrderItemResponse {
@@ -588,6 +589,8 @@ export interface OrderResponse {
   branchId: string;
   branchName?: string | null;
   orderType: OrderType;
+  /** Null for invoice and appointment orders. */
+  fulfilmentType?: FulfilmentType | null;
   status: OrderStatus;
   usesDeferredPayment: boolean;
   targetShopperId?: string | null;
