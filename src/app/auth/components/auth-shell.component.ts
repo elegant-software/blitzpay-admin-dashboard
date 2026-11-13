@@ -6,6 +6,7 @@ import { AuthStateService } from '../services/auth-state.service';
 import { AdminLanguageService } from '../../i18n/admin-language.service';
 import { AdminTranslatePipe } from '../../i18n/admin-translate.pipe';
 import { LanguageSelectorComponent } from '../../i18n/language-selector.component';
+import { AppVersionService } from '../../services/app-version.service';
 
 type ThemeMode = 'light' | 'dark';
 
@@ -18,6 +19,9 @@ type ThemeMode = 'light' | 'dark';
 })
 export class AuthShellComponent implements OnDestroy {
   private readonly language = inject(AdminLanguageService);
+  private readonly appVersion = inject(AppVersionService);
+  readonly dashboardVersion = this.appVersion.dashboardVersion;
+  readonly backendVersion$ = this.appVersion.backendVersion$;
   sidebarCollapsed = false;
   theme: ThemeMode;
   readonly session$;

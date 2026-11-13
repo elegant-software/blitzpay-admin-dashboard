@@ -8,6 +8,8 @@ export interface RuntimeConfig {
   storefrontHost: string;
   /** Reachable storefront URL for local links and QR codes, including protocol and port. */
   localStorefrontUrl?: string;
+  /** Release tag of this dashboard image (e.g. v2.26.0), written at container start from APP_VERSION. Absent locally. */
+  version?: string;
 }
 
 const config = (window as { __BLITZPAY_CONFIG__?: RuntimeConfig }).__BLITZPAY_CONFIG__;

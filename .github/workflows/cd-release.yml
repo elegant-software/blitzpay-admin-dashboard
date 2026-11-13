@@ -111,7 +111,9 @@ jobs:
           file: Dockerfile
           push: true
           tags: ${{ env.IMAGE_REFERENCE }}
-          build-args: BUILD_CONFIGURATION=staging
+          build-args: |
+            BUILD_CONFIGURATION=staging
+            APP_VERSION=${{ github.event.release.tag_name || github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
