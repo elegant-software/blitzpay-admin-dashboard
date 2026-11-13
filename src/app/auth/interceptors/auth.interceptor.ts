@@ -10,11 +10,14 @@ import { AuthService } from '../services/auth.service';
  */
 export const HANDLE_FORBIDDEN_LOCALLY = new HttpContextToken<boolean>(() => false);
 
+/** Set on a request to a public backend endpoint (e.g. `/actuator/info`): sent without a token, and its errors never log the user out. */
+export const SKIP_AUTH = new HttpContextToken<boolean>(() => false);
+
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authConfig = inject(AuthConfigService);
   const authService = inject(AuthService);
 
-  if (!authConfig.isProtectedApiRequest(req.url)) {
+  if (req.context.get(SKIP_AUTH) || !authConfig.isProtectedApiRequest(req.url)) {
     return next(req);
   }
 

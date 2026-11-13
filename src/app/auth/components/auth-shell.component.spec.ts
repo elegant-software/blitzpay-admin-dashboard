@@ -21,7 +21,9 @@ describe('AuthShellComponent', () => {
   });
 
   afterEach(() => {
-    TestBed.inject(HttpTestingController).verify();
+    const http = TestBed.inject(HttpTestingController);
+    http.match((req) => req.url.endsWith('/actuator/info'));
+    http.verify();
     localStorage.removeItem('blitzpay.admin-language');
     localStorage.removeItem('zackpay-admin-theme');
     document.documentElement.removeAttribute('data-coreui-theme');
@@ -76,6 +78,14 @@ describe('AuthShellComponent', () => {
       expect(sidebar.getBoundingClientRect().left).toBe(0);
       expect(frame.contentWindow!.getComputedStyle(main).marginRight).toBe('0px');
     } finally { frame.remove(); }
+  });
+
+  it('shows the dashboard and backend versions in the footer', () => {
+    TestBed.inject(HttpTestingController).expectOne((req) => req.url.endsWith('/actuator/info'))
+      .flush({ build: { version: 'v2.26.0' } });
+    fixture.detectChanges();
+    const footer = (fixture.nativeElement as HTMLElement).querySelector('footer [data-testid="app-version"]');
+    expect(footer?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Dashboard dev · API v2.26.0');
   });
 
   it('renders sidebar navigation links for all main sections', () => {

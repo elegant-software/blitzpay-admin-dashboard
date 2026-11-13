@@ -60,6 +60,7 @@ revalidation. Backend PR #225 and its anonymous-read follow-up are required befo
 ### Releases & Deploys
 - Both apps share one release. Publishing a GitHub Release `vX.Y.Z` triggers `.github/workflows/cd-release.yml`, which verifies CI passed for the tagged commit, builds both images with that tag, and deploys both to `blitzpay-staging`.
 - Pushing to `main` only runs CI; it does not deploy.
+- The release tag is the dashboard's version: `cd-release.yml` passes it as the `APP_VERSION` build-arg, `docker/write-config.sh` writes it into `config.js` (`version`), and the footer shows it next to the backend's `GET /actuator/info` `build.version`. The AWS build appends it to `config.js`. Locally it shows `dev`. Never hand-edit a version.
 - To redeploy one app with an existing tag, run `cd-deploy-k8s.yml` manually. Pick `app` = `admin` or `storefront`.
 
 ### Changing Domains / URLs

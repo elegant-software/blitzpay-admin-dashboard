@@ -61,6 +61,12 @@ jobs:
 
       - run: npm run build -- --configuration aws-staging
 
+      # The S3 build has no container start to write config.js, so stamp the release tag here.
+      - name: Write release version into config.js
+        env:
+          APP_VERSION: ${{ github.event.release.tag_name || github.ref_name }}
+        run: echo "window.__BLITZPAY_CONFIG__.version = '${APP_VERSION}';" >> dist/blitzpay-admin-dashboard/browser/config.js
+
       - name: Assume AWS deploy role (OIDC)
         uses: aws-actions/configure-aws-credentials@v6
         with:
@@ -73,11 +79,14 @@ jobs:
             s3://${{ secrets.WEB_ADMIN_BUCKET }} \
             --delete \
             --cache-control "public,max-age=31536000,immutable" \
-            --exclude "index.html"
-          # index.html must not be cached so SPA updates are picked up immediately
-          aws s3 cp dist/blitzpay-admin-dashboard/browser/index.html \
-            s3://${{ secrets.WEB_ADMIN_BUCKET }}/index.html \
-            --cache-control "no-cache,no-store,must-revalidate"
+            --exclude "index.html" \
+            --exclude "config.js"
+          # index.html and config.js (not content-hashed) must not be cached so updates are picked up immediately
+          for file in index.html config.js; do
+            aws s3 cp "dist/blitzpay-admin-dashboard/browser/${file}" \
+              "s3://${{ secrets.WEB_ADMIN_BUCKET }}/${file}" \
+              --cache-control "no-cache,no-store,must-revalidate"
+          done
 
       - name: Invalidate CloudFront cache
         run: |
