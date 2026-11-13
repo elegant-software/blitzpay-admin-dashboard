@@ -1,33 +1,67 @@
 <section class="card mb-4" aria-labelledby="kiosk-title">
   <div class="card-header d-flex justify-content-between align-items-center">
-    <span id="kiosk-title">{{ 'Kiosk' | adminTranslate }}</span>
+    <span id="kiosk-title">{{ 'Kiosks' | adminTranslate }}</span>
     <span *ngIf="loading || busy" class="spinner-border spinner-border-sm text-secondary" role="status" [attr.aria-label]="'Loading' | adminTranslate"></span>
   </div>
   <div class="card-body">
     <p *ngIf="forbidden" class="text-body-secondary small mb-0">
-      {{ 'Only a Merchant Manager of this merchant can manage the Kiosk.' | adminTranslate }}
+      {{ 'Only a Merchant Manager of this merchant can manage the Kiosks.' | adminTranslate }}
     </p>
 
     <ng-container *ngIf="!forbidden && !loading">
-      <h3 class="h6">{{ 'Kiosk Login' | adminTranslate }}</h3>
-      <div class="d-flex flex-wrap align-items-center gap-3">
-        <div class="form-check form-switch mb-0">
-          <input dir="auto" id="kiosk-switch" class="form-check-input" type="checkbox" role="switch"
-            [checked]="enabled" [disabled]="busy" (change)="onToggle($event)" />
-          <label class="form-check-label" for="kiosk-switch">{{ enabled ? (('Enabled' | adminTranslate)) : (('Disabled' | adminTranslate)) }}</label>
-        </div>
-        <span *ngIf="loginName" class="small">{{ 'Login:' | adminTranslate }} <code>{{ loginName }}</code></span>
-        <button *ngIf="enabled" class="btn btn-sm btn-outline-secondary ms-auto" type="button" [disabled]="busy" (click)="resetPassword()">
-          {{ 'Reset password' | adminTranslate }}
-        </button>
-      </div>
-      <p class="small text-body-secondary mt-2 mb-0">{{ 'The Kiosk of this branch signs in once with this login during setup.' | adminTranslate }}</p>
+      <p class="small text-body-secondary">{{ 'Each Kiosk of this branch signs in once with its own login during setup.' | adminTranslate }}</p>
 
-      <div *ngIf="login" class="border rounded p-3 mt-3" aria-live="polite">
+      <p *ngIf="!kiosks.length" class="small text-body-secondary" data-test="kiosk-empty">{{ 'This branch has no Kiosks yet.' | adminTranslate }}</p>
+      <div *ngIf="kiosks.length" class="table-responsive">
+        <table class="table table-sm align-middle mb-0" data-test="kiosk-list">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'Name' | adminTranslate }}</th>
+              <th scope="col">{{ 'Username' | adminTranslate }}</th>
+              <th scope="col">{{ 'Status' | adminTranslate }}</th>
+              <th scope="col"><span class="visually-hidden">{{ 'Actions' | adminTranslate }}</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let kiosk of kiosks" [attr.data-test]="'kiosk-row-' + kiosk.number">
+              <td>{{ kiosk.name }}</td>
+              <td><code>{{ kiosk.username }}</code></td>
+              <td>
+                <span class="badge" [ngClass]="kiosk.enabled ? 'text-bg-success' : 'text-bg-secondary'">
+                  {{ kiosk.enabled ? (('Enabled' | adminTranslate)) : (('Disabled' | adminTranslate)) }}
+                </span>
+              </td>
+              <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-outline-secondary me-1" type="button" data-test="kiosk-enable" [disabled]="busy" (click)="enableKiosk(kiosk)">
+                  {{ kiosk.enabled ? (('Reset password' | adminTranslate)) : (('Enable' | adminTranslate)) }}
+                </button>
+                <button *ngIf="kiosk.enabled" class="btn btn-sm btn-outline-secondary me-1" type="button" data-test="kiosk-disable" [disabled]="busy" (click)="disableKiosk(kiosk)">
+                  {{ 'Disable' | adminTranslate }}
+                </button>
+                <button class="btn btn-sm btn-outline-danger" type="button" data-test="kiosk-remove" [disabled]="busy" (click)="removeKiosk(kiosk)">
+                  {{ 'Remove' | adminTranslate }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <form class="d-flex flex-wrap align-items-end gap-2 mt-3" data-test="kiosk-add" novalidate (ngSubmit)="addKiosk()">
+        <div>
+          <label class="form-label" for="kiosk-new-name">{{ 'Kiosk name (optional)' | adminTranslate }}</label>
+          <input dir="auto" id="kiosk-new-name" name="newKioskName" class="form-control form-control-sm" type="text" maxlength="100"
+            [placeholder]="'Kiosk {0}' | adminTranslate: [(kiosks.length + 1)]" [(ngModel)]="newKioskName" [disabled]="busy" />
+        </div>
+        <button class="btn btn-sm btn-primary" type="submit" [disabled]="busy">{{ 'Add kiosk' | adminTranslate }}</button>
+      </form>
+
+      <div *ngIf="login" class="border rounded p-3 mt-3" aria-live="polite" data-test="kiosk-login">
+        <h4 class="h6">{{ login.name }}</h4>
         <div class="row g-3">
           <div class="col-md-4">
-            <div class="form-label">{{ 'Login' | adminTranslate }}</div>
-            <code data-test="kiosk-login">{{ login.login }}</code>
+            <div class="form-label">{{ 'Username' | adminTranslate }}</div>
+            <code data-test="kiosk-username">{{ login.username }}</code>
           </div>
           <div class="col-md-8">
             <div class="form-label">{{ 'Password' | adminTranslate }}</div>
@@ -38,19 +72,30 @@
                 [title]="passwordRevealed ? (('Hide password' | adminTranslate)) : (('Show password' | adminTranslate))">
                 <i class="pi" [ngClass]="passwordRevealed ? 'pi-eye-slash' : 'pi-eye'" aria-hidden="true"></i>
               </button>
-              <button class="icon-action-btn" type="button" [attr.aria-label]="'Copy password' | adminTranslate" [attr.title]="'Copy password' | adminTranslate" (click)="copyPassword()">
+              <button class="icon-action-btn" type="button" [attr.aria-label]="'Copy password' | adminTranslate" [attr.title]="'Copy password' | adminTranslate" (click)="copy('password')">
                 <i class="pi pi-copy" aria-hidden="true"></i>
               </button>
-              <span *ngIf="copied" class="small text-success">{{ 'Copied' | adminTranslate }}</span>
+              <span *ngIf="copied === 'password'" class="small text-success">{{ 'Copied' | adminTranslate }}</span>
             </div>
+          </div>
+          <div class="col-12">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="form-label mb-0">{{ 'Run settings' | adminTranslate }}</span>
+              <button class="icon-action-btn" type="button" [attr.aria-label]="'Copy run settings' | adminTranslate" [attr.title]="'Copy run settings' | adminTranslate" (click)="copy('settings')">
+                <i class="pi pi-copy" aria-hidden="true"></i>
+              </button>
+              <span *ngIf="copied === 'settings'" class="small text-success">{{ 'Copied' | adminTranslate }}</span>
+            </div>
+            <pre class="bg-body-tertiary border rounded p-2 mb-0 small" data-test="kiosk-run-settings">{{ runSettings }}</pre>
           </div>
         </div>
         <div *ngIf="copyFailed" class="alert alert-warning mt-3 mb-0 py-1 px-2 small">{{ 'Copy failed. Select the text and copy it manually.' | adminTranslate }}</div>
         <p class="small fw-semibold mt-3 mb-0">{{ 'This password is shown only now. Use Reset password to get a new one.' | adminTranslate }}</p>
       </div>
 
-      <form *ngIf="enabled" class="border-top mt-4 pt-3" data-test="kiosk-settings" novalidate (ngSubmit)="save()">
+      <form class="border-top mt-4 pt-3" data-test="kiosk-settings" novalidate (ngSubmit)="save()">
         <h3 class="h6">{{ 'Kiosk Settings' | adminTranslate }}</h3>
+        <p class="form-text mt-0">{{ 'Shared by all Kiosks of this branch.' | adminTranslate }}</p>
 
         <fieldset class="mb-3">
           <legend class="form-label fs-6">{{ 'Payment choices' | adminTranslate }}</legend>

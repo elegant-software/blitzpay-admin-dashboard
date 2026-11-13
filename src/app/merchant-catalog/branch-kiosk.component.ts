@@ -2,13 +2,14 @@ import { CommonModule } from "@angular/common";
 import { HttpErrorResponse } from "@angular/common/http";
 import { Component, Input, OnChanges, OnDestroy, SimpleChanges, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { Observable, Subscription } from "rxjs";
+import { Observable, Subscription, forkJoin } from "rxjs";
 
 import { environment } from "../../environments/environment";
 import { AdminLocaleService } from "../i18n/admin-locale.service";
 import { AdminTranslatePipe } from "../i18n/admin-translate.pipe";
 import { languageLabel } from "../menu-language/menu-language";
 import {
+  Kiosk,
   KioskLogin,
   KioskPaymentChoice,
   KioskSettings,
@@ -27,12 +28,18 @@ import {
   validateKioskSettings,
 } from "./kiosk-settings.validation";
 
+type CopyTarget = "password" | "settings";
+
+const BRANCH_NOT_FOUND = "Branch not found.";
+const KIOSK_NOT_FOUND = "Kiosk not found. Reload the page.";
+
 /**
- * Kiosk Login and Kiosk Settings of a Branch.
+ * The Kiosks of a Branch, each with its own Kiosk Login, and the Kiosk Settings they share.
  *
- * Mirrors the Kitchen Screen switch: the Kiosk Login password comes back once
- * from `enable` and lives only in this component's state. It is never stored,
- * logged, or put in a URL, and it is dropped when the component is destroyed.
+ * Mirrors the Kitchen Screen switch: a Kiosk Login password comes back once from
+ * add, enable or reset and lives only in this component's state. It is never
+ * stored, logged, or put in a URL, and it is dropped when the component is destroyed.
+ * Kiosk ids travel only as hidden values; the UI shows names and usernames.
  */
 @Component({
   selector: "app-branch-kiosk",
@@ -61,14 +68,15 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
   loading = false;
   busy = false;
   saving = false;
-  enabled = false;
   forbidden = false;
-  loginName: string | null = null;
 
-  /** The Kiosk Login from the last enable/reset. Holds the password in component state only. */
+  kiosks: Kiosk[] = [];
+  newKioskName = "";
+
+  /** The Kiosk Login from the last add/enable/reset. Holds the password in component state only. */
   login: KioskLogin | null = null;
   passwordRevealed = false;
-  copied = false;
+  copied: CopyTarget | null = null;
   copyFailed = false;
 
   settings: KioskSettings = this.freshSettings();
@@ -84,6 +92,17 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
 
   get activeProducts(): Product[] {
     return this.products.filter((product) => product.active);
+  }
+
+  get runSettings(): string {
+    if (!this.login) return "";
+    return [
+      `KIOSK_API_URL=${this.login.apiBaseUrl}`,
+      `KIOSK_BRANCH_ID=${this.login.branchId}`,
+      `KEYCLOAK_URL=${this.login.keycloakUrl}`,
+      `KEYCLOAK_REALM=${this.login.realm}`,
+      `KEYCLOAK_CLIENT_ID=${this.login.clientId}`,
+    ].join("\n");
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -103,37 +122,83 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
     return languageLabel(code, this.menuLanguages);
   }
 
-  onToggle(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const wantEnabled = input.checked;
-
-    // The switch reflects backend state and changes only when the API request succeeds.
-    input.checked = this.enabled;
-    if (this.busy || wantEnabled === this.enabled) return;
-
-    if (wantEnabled) {
-      this.enable(false);
-    } else if (confirm(this.locale.text("Disable the Kiosk? The Kiosk of this branch will be logged out."))) {
-      this.disable();
-    }
+  addKiosk(): void {
+    if (this.busy) return;
+    this.run(
+      this.kioskApi.addKiosk(this.selectedEnvironment, this.apiVersion, this.branchId, this.newKioskName),
+      "Could not add the Kiosk. Please try again.",
+      (login) => {
+        this.newKioskName = "";
+        this.showLogin(login);
+        this.notifications.success("Kiosk added successfully.");
+        this.reloadKiosks();
+      },
+    );
   }
 
-  resetPassword(): void {
+  /** Re-enables a disabled Kiosk, or resets the password of an enabled one after confirmation. */
+  enableKiosk(kiosk: Kiosk): void {
     if (this.busy) return;
-    if (!confirm(this.locale.text("Reset the Kiosk password? A Kiosk that is already logged in keeps working. A new login needs the new password."))) return;
-    this.enable(true);
+    const isPasswordReset = kiosk.enabled;
+    if (
+      isPasswordReset &&
+      !confirm(this.locale.text("Reset the password of {0}? A Kiosk that is already logged in keeps working. A new login needs the new password.", [kiosk.name]))
+    ) {
+      return;
+    }
+    this.run(
+      this.kioskApi.enableKiosk(this.selectedEnvironment, this.apiVersion, this.branchId, kiosk.id),
+      isPasswordReset ? "Could not reset the Kiosk password. Please try again." : "Could not enable the Kiosk. Please try again.",
+      (login) => {
+        this.replaceKiosk({ ...kiosk, name: login.name ?? kiosk.name, username: login.username ?? kiosk.username, enabled: true });
+        this.showLogin(login);
+        this.notifications.success(isPasswordReset ? "Kiosk password reset successfully." : "Kiosk enabled successfully.");
+      },
+      KIOSK_NOT_FOUND,
+    );
+  }
+
+  disableKiosk(kiosk: Kiosk): void {
+    if (this.busy) return;
+    if (!confirm(this.locale.text("Disable {0}? It will be logged out.", [kiosk.name]))) return;
+    this.run(
+      this.kioskApi.disableKiosk(this.selectedEnvironment, this.apiVersion, this.branchId, kiosk.id),
+      "Could not disable the Kiosk. Please try again.",
+      (updated) => {
+        if (this.login?.kioskId === kiosk.id) this.clearLogin();
+        this.replaceKiosk(updated ?? { ...kiosk, enabled: false });
+        this.notifications.success("Kiosk disabled successfully.");
+      },
+      KIOSK_NOT_FOUND,
+    );
+  }
+
+  removeKiosk(kiosk: Kiosk): void {
+    if (this.busy) return;
+    if (!confirm(this.locale.text("Remove {0}? Its Kiosk Login is deleted and it can no longer sign in. This cannot be undone.", [kiosk.name]))) return;
+    this.run(
+      this.kioskApi.removeKiosk(this.selectedEnvironment, this.apiVersion, this.branchId, kiosk.id),
+      "Could not remove the Kiosk. Please try again.",
+      () => {
+        if (this.login?.kioskId === kiosk.id) this.clearLogin();
+        this.kiosks = this.kiosks.filter((k) => k.id !== kiosk.id);
+        this.notifications.success("Kiosk removed successfully.");
+      },
+      KIOSK_NOT_FOUND,
+    );
   }
 
   togglePasswordReveal(): void {
     this.passwordRevealed = !this.passwordRevealed;
   }
 
-  copyPassword(): void {
+  copy(target: CopyTarget): void {
     if (!this.login) return;
-    this.copied = false;
+    const value = target === "password" ? this.login.password : this.runSettings;
+    this.copied = null;
     this.copyFailed = false;
-    navigator.clipboard.writeText(this.login.password).then(
-      () => (this.copied = true),
+    navigator.clipboard.writeText(value).then(
+      () => (this.copied = target),
       () => (this.copyFailed = true),
     );
   }
@@ -175,9 +240,9 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
     this.saveRequest = this.kioskApi
       .saveSettings(this.selectedEnvironment, this.apiVersion, this.branchId, body)
       .subscribe({
-        next: () => {
+        next: (saved) => {
           this.saving = false;
-          this.settings = body;
+          this.settings = this.copySettings(saved ?? body);
           this.notifications.success("Kiosk Settings saved.");
         },
         error: (error) => {
@@ -206,13 +271,21 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
   }
 
   private freshSettings(): KioskSettings {
-    return { ...DEFAULT_KIOSK_SETTINGS, paymentChoices: [...DEFAULT_KIOSK_SETTINGS.paymentChoices] };
+    return this.copySettings(DEFAULT_KIOSK_SETTINGS);
+  }
+
+  private copySettings(settings: Partial<KioskSettings> | null | undefined): KioskSettings {
+    return {
+      paymentChoices: [...(settings?.paymentChoices ?? DEFAULT_KIOSK_SETTINGS.paymentChoices)],
+      resetSeconds: settings?.resetSeconds ?? DEFAULT_KIOSK_SETTINGS.resetSeconds,
+      languages: [...(settings?.languages ?? [])],
+      advertisedProductIds: [...(settings?.advertisedProductIds ?? [])],
+    };
   }
 
   private load(): void {
     this.request?.unsubscribe();
-    this.enabled = false;
-    this.loginName = null;
+    this.kiosks = [];
     this.forbidden = false;
     this.settings = this.freshSettings();
     this.submitted = false;
@@ -220,54 +293,40 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
     if (!this.branchId) return;
 
     this.loading = true;
-    this.request = this.kioskApi.getKiosk(this.selectedEnvironment, this.apiVersion, this.branchId).subscribe({
-      next: (status) => {
+    this.request = forkJoin({
+      kiosks: this.kioskApi.listKiosks(this.selectedEnvironment, this.apiVersion, this.branchId),
+      settings: this.kioskApi.getSettings(this.selectedEnvironment, this.apiVersion, this.branchId),
+    }).subscribe({
+      next: ({ kiosks, settings }) => {
         this.loading = false;
-        this.enabled = status.enabled;
-        this.loginName = status.login;
-        this.settings = {
-          paymentChoices: [...(status.settings?.paymentChoices ?? DEFAULT_KIOSK_SETTINGS.paymentChoices)],
-          resetSeconds: status.settings?.resetSeconds ?? DEFAULT_KIOSK_SETTINGS.resetSeconds,
-          languages: [...(status.settings?.languages ?? [])],
-          advertisedProductIds: [...(status.settings?.advertisedProductIds ?? [])],
-        };
+        this.kiosks = kiosks ?? [];
+        this.settings = this.copySettings(settings);
       },
       error: (error) => {
         this.loading = false;
-        this.handleError(error, "Could not load Kiosk status. Please try again.");
+        this.handleError(error, "Could not load the Kiosks. Please try again.");
       },
     });
   }
 
-  private enable(isPasswordReset: boolean): void {
-    this.run(
-      this.kioskApi.enableKiosk(this.selectedEnvironment, this.apiVersion, this.branchId),
-      isPasswordReset
-        ? "Could not reset the Kiosk password. Please try again."
-        : "Could not enable the Kiosk. Please try again.",
-      (login) => {
-        this.enabled = true;
-        this.loginName = login.login;
-        this.clearLogin();
-        this.login = login;
-        this.notifications.success(isPasswordReset ? "Kiosk password reset successfully." : "Kiosk enabled successfully.");
-      },
-    );
+  /** Refreshes the list after an add, so the new Kiosk shows with its number and in order. Keeps the shown credentials. */
+  private reloadKiosks(): void {
+    this.request = this.kioskApi.listKiosks(this.selectedEnvironment, this.apiVersion, this.branchId).subscribe({
+      next: (kiosks) => (this.kiosks = kiosks ?? []),
+      error: (error) => this.handleError(error, "Could not load the Kiosks. Please try again."),
+    });
   }
 
-  private disable(): void {
-    this.run(
-      this.kioskApi.disableKiosk(this.selectedEnvironment, this.apiVersion, this.branchId),
-      "Could not disable the Kiosk. Please try again.",
-      () => {
-        this.clearLogin();
-        this.enabled = false;
-        this.notifications.success("Kiosk disabled successfully.");
-      },
-    );
+  private replaceKiosk(updated: Kiosk): void {
+    this.kiosks = this.kiosks.map((k) => (k.id === updated.id ? updated : k));
   }
 
-  private run<T>(call$: Observable<T>, fallback: string, onSuccess: (result: T) => void): void {
+  private showLogin(login: KioskLogin): void {
+    this.clearLogin();
+    this.login = login;
+  }
+
+  private run<T>(call$: Observable<T>, fallback: string, onSuccess: (result: T) => void, notFound = BRANCH_NOT_FOUND): void {
     if (this.busy) return;
     this.busy = true;
     this.request?.unsubscribe();
@@ -278,7 +337,7 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
       },
       error: (error) => {
         this.busy = false;
-        this.handleError(error, fallback);
+        this.handleError(error, fallback, notFound);
       },
     });
   }
@@ -286,12 +345,12 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
   private clearLogin(): void {
     this.login = null;
     this.passwordRevealed = false;
-    this.copied = false;
+    this.copied = null;
     this.copyFailed = false;
   }
 
-  /** 403 keeps the access-denied note; 404 never exposes the raw message (it may contain the branch UUID); the rest go through the error-code handling of NotificationService. */
-  private handleError(error: unknown, fallback: string): void {
+  /** 403 keeps the access-denied note; 404 never exposes the raw message (it may contain a UUID); the rest go through the error-code handling of NotificationService. */
+  private handleError(error: unknown, fallback: string, notFound = BRANCH_NOT_FOUND): void {
     const status = error instanceof HttpErrorResponse ? error.status : undefined;
     if (status === 403) {
       this.clearLogin();
@@ -299,7 +358,7 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
       return;
     }
     if (status === 404) {
-      this.notifications.error("Branch not found.");
+      this.notifications.error(notFound);
       return;
     }
     this.notifications.apiError(error, fallback);

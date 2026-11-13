@@ -88,7 +88,7 @@ describe('MerchantDetailComponent product category management', () => {
       imports: [MerchantDetailComponent],
       providers: [
         { provide: MerchantApiService, useValue: merchantApi },
-        { provide: KioskApiService, useValue: { getKiosk: () => of({ enabled: false, login: null, settings: { paymentChoices: ['CARD'], resetSeconds: 30, languages: [], advertisedProductIds: [] } }) } },
+        { provide: KioskApiService, useValue: { listKiosks: () => of([]), getSettings: () => of({ paymentChoices: ['CARD'], resetSeconds: 30, languages: [], advertisedProductIds: [] }) } },
         provideRouter([])
       ]
     }).compileComponents();

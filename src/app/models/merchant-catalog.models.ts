@@ -816,7 +816,7 @@ export interface PreparationConfiguration {
 
 export type KioskPaymentChoice = 'CARD' | 'CASH' | 'SCAN_TO_PAY';
 
-/** What a Merchant Manager configures for one Branch's Kiosk. */
+/** What a Merchant Manager configures for a Branch; shared by all Kiosks of the Branch. `GET`/`PUT .../kiosk/settings`. */
 export interface KioskSettings {
   paymentChoices: KioskPaymentChoice[];
   resetSeconds: number;
@@ -824,18 +824,27 @@ export interface KioskSettings {
   advertisedProductIds: string[];
 }
 
-/** `GET /merchant/branches/{branchId}/kiosk`. `login` is null if no Kiosk Login was ever provisioned. */
-export interface KioskAccessStatus {
+/** One Kiosk of a Branch, from `GET /merchant/branches/{branchId}/kiosks`. Never carries a password. */
+export interface Kiosk {
+  id: string;
+  number: number;
+  name: string;
+  username: string;
   enabled: boolean;
-  login: string | null;
-  settings: KioskSettings;
 }
 
 /**
- * The Kiosk Login returned once by `POST .../kiosk/enable`. The password exists only in this response:
- * keep it in component state, never in storage, the URL, logs or error reports.
+ * The Kiosk Login returned once by `POST .../kiosks` (add) and `POST .../kiosks/{kioskId}/enable` (enable or reset).
+ * The password exists only in this response: keep it in component state, never in storage, the URL, logs or error reports.
  */
 export interface KioskLogin {
-  login: string;
+  kioskId: string;
+  name: string;
+  username: string;
   password: string;
+  keycloakUrl: string;
+  realm: string;
+  clientId: string;
+  apiBaseUrl: string;
+  branchId: string;
 }

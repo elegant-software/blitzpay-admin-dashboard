@@ -57,11 +57,11 @@ A restaurant-owned device, fixed to one Merchant and one Branch, on which any cu
 _Avoid_: Storefront, shopper app, POS, kitchen screen
 
 **Kiosk Login**:
-The one shared login per Branch that a Kiosk signs in with once during setup, modelled on the Kitchen Login. A Merchant Manager enables, resets or disables it; enabling or resetting shows a new password once, and the password is never stored or shown again. The dashboard keeps the password only in the Branch page's component state.
+The login one Kiosk signs in with once during setup: a Keycloak user in the Branch group, provisioned automatically when a Merchant Manager adds the Kiosk on the Branch page, exactly like the Kitchen Login. A Branch can have several Kiosks, each with its own Kiosk Login. Adding, enabling or resetting a Kiosk shows a new password once; disabling revokes its sessions; removing deletes the Kiosk and its login. The password is never stored or shown again. The dashboard keeps the password only in the Branch page's component state.
 _Avoid_: Kiosk account, device key, API key
 
 **Kiosk Settings**:
-What a Merchant Manager configures for one Branch's Kiosk in the dashboard: which payment choices (card, cash at counter, Scan to Pay) are enabled, how long the confirmation screen shows before the Kiosk resets, which of the Merchant's Supported Menu Languages the Kiosk offers, and which Products are Advertised Products.
+What a Merchant Manager configures once per Branch in the dashboard, shared by all its Kiosks: which payment choices (card, cash at counter, Scan to Pay) are enabled, how long the confirmation screen shows before the Kiosk resets, which of the Merchant's Supported Menu Languages the Kiosk offers, and which Products are Advertised Products.
 _Avoid_: Kiosk config, device settings
 
 **Advertised Product**:

@@ -6,7 +6,7 @@ export const KIOSK_RESET_DEFAULT_SECONDS = 30;
 export const KIOSK_PAYMENT_CHOICES: readonly KioskPaymentChoice[] = ['CARD', 'CASH', 'SCAN_TO_PAY'];
 
 export const DEFAULT_KIOSK_SETTINGS: KioskSettings = {
-  paymentChoices: ['CARD'],
+  paymentChoices: ['CARD', 'CASH', 'SCAN_TO_PAY'],
   resetSeconds: KIOSK_RESET_DEFAULT_SECONDS,
   languages: [],
   advertisedProductIds: [],
