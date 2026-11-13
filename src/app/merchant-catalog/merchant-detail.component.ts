@@ -119,6 +119,13 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   categoryDialogOpen = false;
   categoryDialogMode: "create" | "edit" = "create";
   categoryFormName = "";
+  categoryImageFile: File | null = null;
+  categoryImagePreview: string | null = null;
+  categoryImageRemoved = false;
+  categorySaving = false;
+  categoryPreviewFailed = false;
+  failedCategoryImages = new Set<string>();
+  private categoryImageObjectUrl: string | null = null;
   categoryDialogError = "";
   translatingCategory: ProductCategory | null = null;
 
@@ -218,6 +225,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.releaseCategoryPreview();
     this.routeSub?.unsubscribe();
     this.productRequest?.unsubscribe();
     this.branchRequest?.unsubscribe();
@@ -775,82 +783,99 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   }
 
   openCreateCategoryDialog(): void {
-    if (!this.selectedMerchant) return;
-    this.selectedCategory = null;
-    this.categoryDialogMode = "create";
-    this.categoryFormName = "";
-    this.categoryDialogError = "";
+    if (!this.selectedMerchant || this.categorySaving) return;
+    this.closeCategoryDialog(true);
     this.categoryDialogOpen = true;
   }
 
   openEditCategoryDialog(category: ProductCategory): void {
+    if (this.categorySaving) return;
+    this.closeCategoryDialog(true);
     this.selectedCategory = category;
     this.categoryDialogMode = "edit";
     this.categoryFormName = category.name;
-    this.categoryDialogError = "";
+    this.categoryImagePreview = category.imageUrl ?? null;
     this.categoryDialogOpen = true;
   }
 
   closeCategoryDialog(force = false): void {
-    if (
-      !force &&
-      this.categoryFormName !== (this.selectedCategory?.name ?? "") &&
-      !confirm(this.adminLocale.text("Close the category editor and discard unsaved changes?"))
-    )
-      return;
+    if (this.categorySaving && !force) return;
+    if (!force && (this.categoryFormName !== (this.selectedCategory?.name ?? "") || this.categoryImageFile || this.categoryImageRemoved) &&
+      !confirm(this.adminLocale.text("Close the category editor and discard unsaved changes?"))) return;
+    this.releaseCategoryPreview();
     this.categoryDialogError = "";
     this.categoryDialogOpen = false;
     this.selectedCategory = null;
     this.categoryFormName = "";
+    this.categoryImageFile = null;
+    this.categoryImagePreview = null;
+    this.categoryImageRemoved = false;
+    this.categoryPreviewFailed = false;
     this.categoryDialogMode = "create";
   }
 
+  onCategoryImageSelected(event: Event): void {
+    if (this.categorySaving) return;
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size === 0 || file.size > 5 * 1024 * 1024) {
+      this.categoryDialogError = "Choose a JPEG, PNG or WebP image up to 5 MB. Empty files are not allowed.";
+      return;
+    }
+    this.releaseCategoryPreview();
+    this.categoryImageObjectUrl = URL.createObjectURL(file);
+    this.categoryImageFile = file;
+    this.categoryImagePreview = this.categoryImageObjectUrl;
+    this.categoryImageRemoved = false;
+    this.categoryPreviewFailed = false;
+    this.categoryDialogError = "";
+  }
+
+  removeCategoryImage(): void {
+    if (this.categorySaving) return;
+    this.releaseCategoryPreview();
+    this.categoryImageFile = null;
+    this.categoryImagePreview = null;
+    this.categoryImageRemoved = !!this.selectedCategory?.imageUrl;
+    this.categoryPreviewFailed = false;
+    this.categoryDialogError = "";
+  }
+
+  private releaseCategoryPreview(): void {
+    if (this.categoryImageObjectUrl) URL.revokeObjectURL(this.categoryImageObjectUrl);
+    this.categoryImageObjectUrl = null;
+  }
+
   saveCategory(): void {
-    if (!this.selectedMerchant) return;
+    if (!this.selectedMerchant || this.categorySaving) return;
     const name = this.categoryFormName.trim();
     if (!name) {
       this.categoryDialogError = "Category name is required.";
       return;
     }
-
-    this.loading = true;
+    this.categorySaving = true;
     this.categoryDialogError = "";
-
-    const request$ =
-      this.categoryDialogMode === "create"
-        ? this.merchantApi.createProductCategory(
-            this.selectedEnvironment,
-            this.apiVersion,
-            this.selectedMerchant.merchantId,
-            { name },
-          )
-        : this.merchantApi.renameProductCategory(
-            this.selectedEnvironment,
-            this.apiVersion,
-            this.selectedMerchant.merchantId,
-            this.selectedCategory!.id,
-            { name },
-          );
-
+    const createImageArgs: [] | [File] = this.categoryImageFile ? [this.categoryImageFile] : [];
+    const updateImageArgs: [image?: File, removeImage?: boolean] = this.categoryImageFile || this.categoryImageRemoved
+      ? [this.categoryImageFile ?? undefined, this.categoryImageRemoved] : [];
+    const request$ = this.categoryDialogMode === "create"
+      ? this.merchantApi.createProductCategory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, { name }, ...createImageArgs)
+      : this.merchantApi.renameProductCategory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, this.selectedCategory!.id, { name }, ...updateImageArgs);
     request$.subscribe({
       next: (category) => {
-        this.loading = false;
+        this.categorySaving = false;
         const wasCreate = this.categoryDialogMode === "create";
+        this.failedCategoryImages.delete(category.id);
         this.categories = this.upsertCategory(this.categories, category);
         this.syncCategoryTableState();
         this.closeCategoryDialog(true);
-        this.notifications.success(
-          wasCreate ? "Category created." : "Category renamed.",
-        );
+        this.notifications.success(wasCreate ? "Category created." : "Category saved.");
       },
       error: (error) => {
-        this.loading = false;
-        this.notifications.apiError(
-          error,
-          this.categoryDialogMode === "create"
-            ? "Unable to create category."
-            : "Unable to rename category.",
-        );
+        this.categorySaving = false;
+        this.categoryDialogError = apiErrorMessage(error, this.adminLocale.text("Unable to save category."));
       },
     });
   }

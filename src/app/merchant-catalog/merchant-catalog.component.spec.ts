@@ -1,7 +1,8 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { NotificationService } from '../notifications/notification.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { throwError, of } from 'rxjs';
+import { throwError, of, Subject } from 'rxjs';
 import { MerchantDetailComponent } from './merchant-detail.component';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { KioskApiService } from '../services/kiosk-api.service';
@@ -278,6 +279,72 @@ describe('MerchantDetailComponent product category management', () => {
     expect(actionButtons.every(button => button.querySelector('svg'))).toBeTrue();
   });
 
+  it('previews and saves a selected category image', () => {
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:category-image');
+    const revoke = spyOn(URL, 'revokeObjectURL');
+    const image = new File(['png'], 'drinks.png', { type: 'image/png' });
+    const saved = { ...beverages, imageUrl: '/drinks.png' };
+    merchantApi.createProductCategory.and.returnValue(of(saved));
+    component.openCreateCategoryDialog();
+    component.categoryFormName = 'Beverages';
+    component.onCategoryImageSelected({ target: { files: [image], value: 'drinks.png' } } as unknown as Event);
+    expect(component.categoryImagePreview).toBe('blob:category-image');
+    component.saveCategory();
+    expect(merchantApi.createProductCategory).toHaveBeenCalledWith(component.selectedEnvironment, 'v1', merchant.merchantId, { name: 'Beverages' }, image);
+    expect(component.categories[0].imageUrl).toBe('/drinks.png');
+    expect(component.categoryDialogOpen).toBeFalse();
+    expect(revoke).toHaveBeenCalledWith('blob:category-image');
+  });
+
+  it('removes an existing category image on save', () => {
+    merchantApi.renameProductCategory.and.returnValue(of({ ...beverages, imageUrl: null }));
+    component.openEditCategoryDialog({ ...beverages, imageUrl: '/old.png' });
+    expect(component.categoryImagePreview).toBe('/old.png');
+    component.removeCategoryImage();
+    expect(component.categoryImagePreview).toBeNull();
+    component.saveCategory();
+    expect(merchantApi.renameProductCategory).toHaveBeenCalledWith(component.selectedEnvironment, 'v1', merchant.merchantId, beverages.id, { name: 'Beverages' }, undefined, true);
+  });
+
+  it('guards image-only unsaved changes and releases the preview when discarded', () => {
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:category-image');
+    const revoke = spyOn(URL, 'revokeObjectURL');
+    const confirmDiscard = spyOn(window, 'confirm').and.returnValue(false);
+    component.openEditCategoryDialog(beverages);
+    component.onCategoryImageSelected({ target: { files: [new File(['png'], 'image.png', { type: 'image/png' })], value: '' } } as unknown as Event);
+    component.closeCategoryDialog();
+    expect(component.categoryDialogOpen).toBeTrue();
+    confirmDiscard.and.returnValue(true);
+    component.closeCategoryDialog();
+    expect(component.categoryDialogOpen).toBeFalse();
+    expect(revoke).toHaveBeenCalledWith('blob:category-image');
+  });
+
+  it('rejects invalid and oversized category images without replacing the current preview', () => {
+    component.openEditCategoryDialog({ ...beverages, imageUrl: '/old.png' });
+    for (const file of [new File(['x'], 'image.svg', { type: 'image/svg+xml' }), new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'large.png', { type: 'image/png' }), new File([], 'empty.png', { type: 'image/png' })]) {
+      component.onCategoryImageSelected({ target: { files: [file], value: '' } } as unknown as Event);
+      expect(component.categoryDialogError).toBeTruthy();
+      expect(component.categoryImagePreview).toBe('/old.png');
+    }
+  });
+
+  it('keeps save errors inside the category dialog with the image available for retry', () => {
+    merchantApi.renameProductCategory.and.returnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { code: 'INVALID_REQUEST', detail: 'Category image is invalid.' } })));
+    component.openEditCategoryDialog(beverages);
+    component.saveCategory();
+    expect(component.categoryDialogOpen).toBeTrue();
+    expect(component.categoryDialogError).toBe('Category image is invalid.');
+    expect(component.categorySaving).toBeFalse();
+  });
+
+  it('prevents duplicate category submissions while saving', () => {
+    merchantApi.createProductCategory.and.returnValue(new Subject<ProductCategory>());
+    component.openCreateCategoryDialog(); component.categoryFormName = 'Food';
+    component.saveCategory(); component.saveCategory();
+    expect(merchantApi.createProductCategory).toHaveBeenCalledTimes(1);
+  });
+
   it('creates a new product category and closes the dialog', () => {
     const category: ProductCategory = {
       id: 'cat-4',
@@ -358,7 +425,7 @@ describe('MerchantDetailComponent product category management', () => {
       { name: 'Hot Drinks' }
     );
     expect(component.categories).toEqual([renamedCategory]);
-    expect(TestBed.inject(NotificationService).success).toHaveBeenCalledWith('Category renamed.');
+    expect(TestBed.inject(NotificationService).success).toHaveBeenCalledWith('Category saved.');
   });
 
   it('keeps the active category filter and sort after a rename, removing a row that no longer matches', () => {

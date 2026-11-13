@@ -1023,6 +1023,9 @@
   "Open preview": "Vorschau öffnen",
   "Add a branch first; the storefront shows a branch's menu.": "Lege zuerst eine Filiale an; der Storefront zeigt die Speisekarte einer Filiale.",
   "draft": "Entwurf",
+  "Dine in": "Vor Ort essen",
+  "Take away": "Zum Mitnehmen",
+  "Fulfilment": "Abwicklung",
   "Terminal payments (Tap to Pay + card reader)": "Terminalzahlungen (Tap to Pay + Kartenterminal)",
   "girocard (EC) is only accepted with a card reader.": "girocard (EC) wird nur mit einem Kartenterminal akzeptiert.",
   "Failed to update terminal payments setting.": "Einstellung für Terminalzahlungen konnte nicht aktualisiert werden.",
@@ -1078,5 +1081,11 @@
   "Could not load the Kiosks. Please try again.": "Kioske konnten nicht geladen werden. Bitte erneut versuchen.",
   "Kiosk added successfully.": "Kiosk hinzugefügt.",
   "Kiosk removed successfully.": "Kiosk entfernt.",
-  "Kiosk not found. Reload the page.": "Kiosk nicht gefunden. Bitte Seite neu laden."
+  "Kiosk not found. Reload the page.": "Kiosk nicht gefunden. Bitte Seite neu laden.",
+  "Category image preview": "Vorschau des Kategoriebilds",
+  "Remove image": "Bild entfernen",
+  "JPEG, PNG or WebP, up to 5 MB.": "JPEG, PNG oder WebP, bis zu 5 MB.",
+  "Choose a JPEG, PNG or WebP image up to 5 MB. Empty files are not allowed.": "Wählen Sie ein JPEG-, PNG- oder WebP-Bild bis zu 5 MB. Leere Dateien sind nicht erlaubt.",
+  "Unable to save category.": "Kategorie konnte nicht gespeichert werden.",
+  "Category saved.": "Kategorie gespeichert."
 }

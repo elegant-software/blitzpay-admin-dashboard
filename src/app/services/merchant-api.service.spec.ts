@@ -88,6 +88,38 @@ describe('MerchantApiService product category API', () => {
     });
   });
 
+  it('creates a category and uploads its image in one multipart request', async () => {
+    const image = new File(['image'], 'drinks.png', { type: 'image/png' });
+    let result: ProductCategory | undefined;
+    service.createProductCategory(environment, apiVersion, merchantId, { name: 'Drinks' }, image).subscribe(value => result = value);
+    const request = httpTestingController.expectOne('http://localhost:8080/v1/merchants/merchant-123/product-categories');
+    expect(request.request.method).toBe('POST');
+    const body = request.request.body as FormData;
+    expect(body.get('image')).toBe(image);
+    expect(JSON.parse(await (body.get('category') as Blob).text())).toEqual({ name: 'Drinks' });
+    request.flush({ ...categoryResponse, imageUrl: '/category.png' });
+    expect(result?.imageUrl).toBe('/category.png');
+  });
+
+  it('explicitly removes an image while updating a category', () => {
+    service.renameProductCategory(environment, apiVersion, merchantId, categoryId, { name: 'Drinks' }, undefined, true).subscribe();
+    const request = httpTestingController.expectOne('http://localhost:8080/v1/merchants/merchant-123/product-categories/category-456');
+    expect(request.request.method).toBe('PUT');
+    const body = request.request.body as FormData;
+    expect(body.get('removeImage')).toBe('true');
+    expect(body.has('image')).toBeFalse();
+    request.flush({ ...categoryResponse, imageUrl: null });
+  });
+
+  it('replaces a category image in the same update request', () => {
+    const image = new File(['image'], 'drinks.png', { type: 'image/png' });
+    service.renameProductCategory(environment, apiVersion, merchantId, categoryId, { name: 'Drinks' }, image).subscribe();
+    const request = httpTestingController.expectOne('http://localhost:8080/v1/merchants/merchant-123/product-categories/category-456');
+    expect(request.request.method).toBe('PUT');
+    expect((request.request.body as FormData).get('image')).toBe(image);
+    request.flush(categoryResponse);
+  });
+
   it('deletes a product category for a merchant', () => {
     let completed = false;
 

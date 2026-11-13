@@ -1023,6 +1023,9 @@
   "Open preview": "فتح المعاينة",
   "Add a branch first; the storefront shows a branch's menu.": "أضف فرعًا أولًا؛ يعرض المتجر قائمة الفرع.",
   "draft": "مسودة",
+  "Dine in": "تناول الطعام في المكان",
+  "Take away": "طلب خارجي",
+  "Fulfilment": "طريقة التسليم",
   "Terminal payments (Tap to Pay + card reader)": "مدفوعات الطرفية (Tap to Pay + قارئ البطاقات)",
   "girocard (EC) is only accepted with a card reader.": "لا تُقبل بطاقة girocard (EC) إلا عبر قارئ البطاقات.",
   "Failed to update terminal payments setting.": "تعذّر تحديث إعداد مدفوعات الطرفية.",
@@ -1078,5 +1081,11 @@
   "Could not load the Kiosks. Please try again.": "تعذّر تحميل الأكشاك. يرجى المحاولة مرة أخرى.",
   "Kiosk added successfully.": "تمت إضافة الكشك.",
   "Kiosk removed successfully.": "تمت إزالة الكشك.",
-  "Kiosk not found. Reload the page.": "لم يتم العثور على الكشك. يرجى إعادة تحميل الصفحة."
+  "Kiosk not found. Reload the page.": "لم يتم العثور على الكشك. يرجى إعادة تحميل الصفحة.",
+  "Category image preview": "معاينة صورة الفئة",
+  "Remove image": "إزالة الصورة",
+  "JPEG, PNG or WebP, up to 5 MB.": "JPEG أو PNG أو WebP، بحد أقصى 5 ميغابايت.",
+  "Choose a JPEG, PNG or WebP image up to 5 MB. Empty files are not allowed.": "اختر صورة JPEG أو PNG أو WebP بحد أقصى 5 ميغابايت. لا يُسمح بالملفات الفارغة.",
+  "Unable to save category.": "تعذر حفظ الفئة.",
+  "Category saved.": "تم حفظ الفئة."
 }

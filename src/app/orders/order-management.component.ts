@@ -473,6 +473,14 @@ export class OrderManagementComponent implements OnInit {
     }
   }
 
+  fulfilmentLabel(order: OrderResponse): string | null {
+    switch (order.fulfilmentType) {
+      case 'DINE_IN': return 'Dine in';
+      case 'TAKE_AWAY': return 'Take away';
+      default: return null;
+    }
+  }
+
   isInvoiceOrder(order: OrderResponse): boolean {
     return !!order.targetShopperId;
   }
