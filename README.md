@@ -133,3 +133,12 @@ If you still see ENOENT, verify the repository was fully copied/cloned and that 
 - APIs are expected at `http://localhost:8080/{version}` (local) or `https://api-blitzpay-staging.zackpay.de/{version}` (staging).
 - Product create/update requests are sent as multipart form data.
 - Branch secret fields are entered for creation but are cleared from UI form state after save.
+
+
+## Invoice downloads after payment
+
+Paid orders show a private invoice download link and a QR code. Links expire after 30 minutes;
+use **Refresh invoice** to renew them. Invoice availability and download errors have retry actions.
+Guest checkout shows an optional **Email me the invoice** checkbox; selecting it reveals the
+validated email field. The paid confirmation page offers the download and QR independently of
+email consent. SMTP must be configured on the backend for email delivery; downloads do not need SMTP.
