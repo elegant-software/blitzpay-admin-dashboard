@@ -271,6 +271,7 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM14 3v5h5M8 12h8M8 16h8" /></svg>{{ 'Invoice' | adminTranslate }}
               </span>
               <span *ngIf="!isInvoiceOrder(order)" class="standard-badge">{{ 'Standard' | adminTranslate }}</span>
+              <span *ngIf="fulfilmentLabel(order) as fulfilment" class="standard-badge ms-1" data-testid="fulfilment-badge">{{ fulfilment | adminTranslate }}</span>
             </td>
             <td data-label="Items"><span class="orders-item-count">{{ '{0} item{1}' | adminTranslate: [(order.items.length), (order.items.length === 1 ? ('') : ('s'))] }}</span></td>
             <td data-label="Total"><strong class="orders-total">{{ formatMinorAmount(order.totalAmountMinor, order.currency) }}</strong></td>
@@ -516,6 +517,10 @@
               </span>
               <span *ngIf="!isInvoiceOrder(selectedOrder)">{{ 'Standard' | adminTranslate }}</span>
             </div>
+          </div>
+          <div *ngIf="fulfilmentLabel(selectedOrder) as fulfilment">
+            <div class="order-meta-label">{{ 'Fulfilment' | adminTranslate }}</div>
+            <div data-testid="fulfilment-detail">{{ fulfilment | adminTranslate }}</div>
           </div>
           <div>
             <div class="order-meta-label">{{ 'Total' | adminTranslate }}</div>

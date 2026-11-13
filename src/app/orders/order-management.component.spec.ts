@@ -109,6 +109,13 @@ describe('OrderManagementComponent', () => {
     });
   }
 
+  it('labels the fulfilment type and hides it for invoice orders', () => {
+    expect(component.fulfilmentLabel(order({ fulfilmentType: 'DINE_IN' }))).toBe('Dine in');
+    expect(component.fulfilmentLabel(order({ fulfilmentType: 'TAKE_AWAY' }))).toBe('Take away');
+    expect(component.fulfilmentLabel(order({ fulfilmentType: null }))).toBeNull();
+    expect(component.fulfilmentLabel(order())).toBeNull();
+  });
+
   it('flags cash orders, unpaid or settled', () => {
     const order = { checkoutPaymentMethod: 'CASH' } as any;
     expect(component.isCash(order)).toBeTrue();
