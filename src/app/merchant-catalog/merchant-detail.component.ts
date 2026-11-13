@@ -1,6 +1,7 @@
 import { inject as injectAdminLocale } from '@angular/core';
 import { AdminLocaleService } from '../i18n/admin-locale.service';
 import { AdminTranslatePipe } from '../i18n/admin-translate.pipe';
+import { apiErrorMessage } from "../notifications/notification.service";
 import { NotificationService } from "../notifications/notification.service";
 import { CommonModule } from "@angular/common";
 import { Component, OnDestroy, OnInit, effect, inject } from "@angular/core";
@@ -24,6 +25,7 @@ import {
   EnvironmentKey,
   OperationalAppearanceItem,
   Branch,
+  CardReader,
   CategorySortField,
   CategoryTableState,
   BranchSortField,
@@ -86,6 +88,12 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   selectedBranch: Branch | null = null;
   qrCatalogUrl = "";
   products: Product[] = [];
+  selectedProductCategory = "";
+  productCategoryOptions: { id: string; name: string; count: number }[] = [];
+  readonly uncategorizedProductCategory = "__uncategorized__";
+  readonly productSkeletonRows = [0, 1, 2, 3, 4];
+  productsLoading = false;
+  productsLoadError = "";
 
   appearanceOperational: OperationalAppearanceItem[] = [];
   appearanceOperationalLoading = false;
@@ -109,6 +117,13 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   categoryDialogOpen = false;
   categoryDialogMode: "create" | "edit" = "create";
   categoryFormName = "";
+  categoryImageFile: File | null = null;
+  categoryImagePreview: string | null = null;
+  categoryImageRemoved = false;
+  categorySaving = false;
+  categoryPreviewFailed = false;
+  failedCategoryImages = new Set<string>();
+  private categoryImageObjectUrl: string | null = null;
   categoryDialogError = "";
   translatingCategory: ProductCategory | null = null;
 
@@ -125,6 +140,12 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
   tapToPayEnabled = false;
   tapToPayActionLoading = false;
+
+  cardReaders: CardReader[] = [];
+  cardReadersLoading = false;
+  cardReadersFailed = false;
+  /** Branch filter of the card readers table; null shows all branches. */
+  cardReaderBranchId: string | null = null;
 
   providerAccounts: ProviderAccountResponse[] = [];
   providerAccountsLoading = false;
@@ -161,6 +182,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
   private routeSub?: Subscription;
   private productRequest?: Subscription;
+  private branchRequest?: Subscription;
   private previousUiLanguage = this.adminLocale.code();
   private readonly followUiLanguage = effect(() => {
     const code = this.adminLocale.code();
@@ -201,8 +223,10 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.releaseCategoryPreview();
     this.routeSub?.unsubscribe();
     this.productRequest?.unsubscribe();
+    this.branchRequest?.unsubscribe();
   }
 
   get selectedEnvironment() {
@@ -248,7 +272,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     return hasActiveQuery(this.categoryTableState.filter.query);
   }
   get productFilterActive(): boolean {
-    return hasActiveQuery(this.productTableState.filter.query);
+    return !!this.selectedProductCategory || hasActiveQuery(this.productTableState.filter.query);
   }
   get branchPaginatorVisible(): boolean {
     return this.branchVisibleCount > this.branchTableState.pagination.rows;
@@ -257,7 +281,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     return this.categoryVisibleCount > this.categoryTableState.pagination.rows;
   }
   get productPaginatorVisible(): boolean {
-    return this.productVisibleCount > this.productTableState.pagination.rows;
+    return this.products.length > 0 && !this.productsLoading && !this.productsLoadError;
   }
 
   get branchNameSortDirection(): TableSortDirection | null {
@@ -553,6 +577,20 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.categoryTableState.pagination.first = 0;
     this.syncCategoryTableState();
   }
+  selectProductCategory(categoryId: string): void {
+    if (this.productsLoading) return;
+    this.selectedProductCategory = categoryId;
+    this.onProductFilterChange();
+  }
+
+  retryProducts(): void {
+    this.loadProductsForSelectedBranch();
+  }
+
+  trackProduct(_: number, product: Product): string {
+    return product.productId;
+  }
+
   onProductFilterChange(): void {
     this.productTableState.pagination.first = 0;
     this.syncProductTableState();
@@ -568,6 +606,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.syncCategoryTableState();
   }
   clearProductFilters(): void {
+    this.selectedProductCategory = "";
     this.productTableState.filter.query = "";
     this.productTableState.pagination.first = 0;
     this.syncProductTableState();
@@ -615,6 +654,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.syncCategoryTableState();
   }
   toggleProductSort(field: ProductSortField): void {
+    this.productTableState.pagination.first = 0;
     const isSameField = this.productTableState.sort.field === field;
     this.productTableState.sort = {
       field,
@@ -628,6 +668,8 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
 
   selectBranch(branch: Branch): void {
     if (!this.selectedMerchant) return;
+    this.branchRequest?.unsubscribe();
+    this.productRequest?.unsubscribe();
     const branchId = branch.branchId ?? branch.id;
     if (!branchId) {
       this.selectedBranch = this.normalizeBranch(branch);
@@ -635,7 +677,9 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     }
 
     this.loading = true;
-    this.merchantApi
+    this.productsLoading = true;
+    this.productsLoadError = "";
+    this.branchRequest = this.merchantApi
       .getBranch(
         this.selectedEnvironment,
         this.apiVersion,
@@ -660,6 +704,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
             return;
           }
           this.loading = false;
+          this.productsLoading = false;
           this.notifications.apiError(error, "Unable to load branch details.");
         },
       });
@@ -736,82 +781,99 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   }
 
   openCreateCategoryDialog(): void {
-    if (!this.selectedMerchant) return;
-    this.selectedCategory = null;
-    this.categoryDialogMode = "create";
-    this.categoryFormName = "";
-    this.categoryDialogError = "";
+    if (!this.selectedMerchant || this.categorySaving) return;
+    this.closeCategoryDialog(true);
     this.categoryDialogOpen = true;
   }
 
   openEditCategoryDialog(category: ProductCategory): void {
+    if (this.categorySaving) return;
+    this.closeCategoryDialog(true);
     this.selectedCategory = category;
     this.categoryDialogMode = "edit";
     this.categoryFormName = category.name;
-    this.categoryDialogError = "";
+    this.categoryImagePreview = category.imageUrl ?? null;
     this.categoryDialogOpen = true;
   }
 
   closeCategoryDialog(force = false): void {
-    if (
-      !force &&
-      this.categoryFormName !== (this.selectedCategory?.name ?? "") &&
-      !confirm(this.adminLocale.text("Close the category editor and discard unsaved changes?"))
-    )
-      return;
+    if (this.categorySaving && !force) return;
+    if (!force && (this.categoryFormName !== (this.selectedCategory?.name ?? "") || this.categoryImageFile || this.categoryImageRemoved) &&
+      !confirm(this.adminLocale.text("Close the category editor and discard unsaved changes?"))) return;
+    this.releaseCategoryPreview();
     this.categoryDialogError = "";
     this.categoryDialogOpen = false;
     this.selectedCategory = null;
     this.categoryFormName = "";
+    this.categoryImageFile = null;
+    this.categoryImagePreview = null;
+    this.categoryImageRemoved = false;
+    this.categoryPreviewFailed = false;
     this.categoryDialogMode = "create";
   }
 
+  onCategoryImageSelected(event: Event): void {
+    if (this.categorySaving) return;
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size === 0 || file.size > 5 * 1024 * 1024) {
+      this.categoryDialogError = "Choose a JPEG, PNG or WebP image up to 5 MB. Empty files are not allowed.";
+      return;
+    }
+    this.releaseCategoryPreview();
+    this.categoryImageObjectUrl = URL.createObjectURL(file);
+    this.categoryImageFile = file;
+    this.categoryImagePreview = this.categoryImageObjectUrl;
+    this.categoryImageRemoved = false;
+    this.categoryPreviewFailed = false;
+    this.categoryDialogError = "";
+  }
+
+  removeCategoryImage(): void {
+    if (this.categorySaving) return;
+    this.releaseCategoryPreview();
+    this.categoryImageFile = null;
+    this.categoryImagePreview = null;
+    this.categoryImageRemoved = !!this.selectedCategory?.imageUrl;
+    this.categoryPreviewFailed = false;
+    this.categoryDialogError = "";
+  }
+
+  private releaseCategoryPreview(): void {
+    if (this.categoryImageObjectUrl) URL.revokeObjectURL(this.categoryImageObjectUrl);
+    this.categoryImageObjectUrl = null;
+  }
+
   saveCategory(): void {
-    if (!this.selectedMerchant) return;
+    if (!this.selectedMerchant || this.categorySaving) return;
     const name = this.categoryFormName.trim();
     if (!name) {
       this.categoryDialogError = "Category name is required.";
       return;
     }
-
-    this.loading = true;
+    this.categorySaving = true;
     this.categoryDialogError = "";
-
-    const request$ =
-      this.categoryDialogMode === "create"
-        ? this.merchantApi.createProductCategory(
-            this.selectedEnvironment,
-            this.apiVersion,
-            this.selectedMerchant.merchantId,
-            { name },
-          )
-        : this.merchantApi.renameProductCategory(
-            this.selectedEnvironment,
-            this.apiVersion,
-            this.selectedMerchant.merchantId,
-            this.selectedCategory!.id,
-            { name },
-          );
-
+    const createImageArgs: [] | [File] = this.categoryImageFile ? [this.categoryImageFile] : [];
+    const updateImageArgs: [image?: File, removeImage?: boolean] = this.categoryImageFile || this.categoryImageRemoved
+      ? [this.categoryImageFile ?? undefined, this.categoryImageRemoved] : [];
+    const request$ = this.categoryDialogMode === "create"
+      ? this.merchantApi.createProductCategory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, { name }, ...createImageArgs)
+      : this.merchantApi.renameProductCategory(this.selectedEnvironment, this.apiVersion, this.selectedMerchant.merchantId, this.selectedCategory!.id, { name }, ...updateImageArgs);
     request$.subscribe({
       next: (category) => {
-        this.loading = false;
+        this.categorySaving = false;
         const wasCreate = this.categoryDialogMode === "create";
+        this.failedCategoryImages.delete(category.id);
         this.categories = this.upsertCategory(this.categories, category);
         this.syncCategoryTableState();
         this.closeCategoryDialog(true);
-        this.notifications.success(
-          wasCreate ? "Category created." : "Category renamed.",
-        );
+        this.notifications.success(wasCreate ? "Category created." : "Category saved.");
       },
       error: (error) => {
-        this.loading = false;
-        this.notifications.apiError(
-          error,
-          this.categoryDialogMode === "create"
-            ? "Unable to create category."
-            : "Unable to rename category.",
-        );
+        this.categorySaving = false;
+        this.categoryDialogError = apiErrorMessage(error, this.adminLocale.text("Unable to save category."));
       },
     });
   }
@@ -945,6 +1007,7 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
           else this.paymentAccountStatus = "not_connected";
           this.tapToPayEnabled =
             data.enabledPaymentFlows?.includes("TAP_TO_PAY") ?? false;
+          if (this.tapToPayEnabled) this.loadCardReaders();
         },
         error: () => {
           this.paymentAccountStatus = "error";
@@ -971,15 +1034,42 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.tapToPayEnabled = res.tapToPayEnabled;
         this.tapToPayActionLoading = false;
+        if (this.tapToPayEnabled) this.loadCardReaders();
+        else this.cardReaders = [];
       },
       error: (err) => {
         this.notifications.apiError(
           err,
-          "Failed to update Tap to Pay setting.",
+          "Failed to update terminal payments setting.",
         );
         this.tapToPayActionLoading = false;
       },
     });
+  }
+
+  loadCardReaders(): void {
+    if (!this.selectedMerchant) return;
+    this.cardReadersLoading = true;
+    this.cardReadersFailed = false;
+    this.merchantApi
+      .getCardReaders(
+        this.selectedEnvironment,
+        this.apiVersion,
+        this.selectedMerchant.merchantId,
+        this.cardReaderBranchId,
+      )
+      .subscribe({
+        next: (readers) => {
+          this.cardReaders = readers;
+          this.cardReadersLoading = false;
+        },
+        error: (error) => {
+          this.cardReaders = [];
+          this.cardReadersLoading = false;
+          this.cardReadersFailed = true;
+          this.notifications.apiError(error, "Card readers could not be loaded.");
+        },
+      });
   }
 
   handleStripeConnect(): void {
@@ -1201,6 +1291,10 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.providerAccountsLoading = false;
 
     this.providerAccountActionLoading.clear();
+    this.tapToPayEnabled = false;
+    this.cardReaders = [];
+    this.cardReadersFailed = false;
+    this.cardReaderBranchId = null;
     this.resetAppearanceHistory();
     this.activeDetailTab = "info";
     this.catalogLanguage = displayProductLanguage(merchant, this.adminLocale.code()) ?? null;
@@ -1275,12 +1369,15 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
     this.productRequest?.unsubscribe();
     if (!this.selectedMerchant || !this.selectedBranch?.branchId) {
       this.loading = false;
+      this.productsLoading = false;
       this.products = [];
       this.resetProductTableStateForBranch(null);
       return;
     }
 
     this.loading = true;
+    this.productsLoading = true;
+    this.productsLoadError = "";
     this.resetProductTableStateForBranch(this.selectedBranch.branchId);
     this.productRequest = this.merchantApi
       .getProducts(
@@ -1294,14 +1391,14 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (products) => {
           this.loading = false;
-          this.products = products;
+          this.productsLoading = false;
+          this.products = products.filter(product => product.branchId === this.selectedBranch?.branchId);
           this.syncProductTableState();
         },
         error: (error) => {
           this.loading = false;
-          this.products = [];
-          this.syncProductTableState();
-          this.notifications.apiError(error, "Unable to load products.");
+          this.productsLoading = false;
+          this.productsLoadError = apiErrorMessage(error, this.adminLocale.text("Unable to load products."));
         },
       });
   }
@@ -1353,8 +1450,25 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   }
 
   private syncProductTableState(): void {
+    const options = new Map<string, { id: string; name: string; count: number }>();
+    for (const product of this.products) {
+      const id = product.categoryId || this.uncategorizedProductCategory;
+      const option = options.get(id);
+      if (option) option.count++;
+      else options.set(id, {
+        id,
+        name: product.categoryName || this.categories.find(category => category.id === id)?.name || this.adminLocale.text("Uncategorized"),
+        count: 1,
+      });
+    }
+    this.productCategoryOptions = [...options.values()].sort((left, right) =>
+      left.id === this.uncategorizedProductCategory ? 1 : right.id === this.uncategorizedProductCategory ? -1 : left.name.localeCompare(right.name));
+    if (this.selectedProductCategory && !options.has(this.selectedProductCategory)) this.selectedProductCategory = "";
+    const categoryRows = this.selectedProductCategory
+      ? this.products.filter(product => (product.categoryId || this.uncategorizedProductCategory) === this.selectedProductCategory)
+      : this.products;
     const filteredRows = filterRowsByFields(
-      this.products,
+      categoryRows,
       this.productTableState.filter.query,
       (p) => [p.productCode, p.categoryName, p.name],
     );
@@ -1382,7 +1496,15 @@ export class MerchantDetailComponent implements OnInit, OnDestroy {
   }
 
   private resetProductTableStateForBranch(branchId: string | null): void {
-    this.productTableState = this.createProductTableState(branchId);
+    if (this.productTableState.branchId !== branchId) {
+      const rows = this.productTableState.pagination.rows;
+      this.selectedProductCategory = "";
+      this.products = [];
+      this.productCategoryOptions = [];
+      this.failedProductImages.clear();
+      this.productTableState = this.createProductTableState(branchId);
+      this.productTableState.pagination.rows = rows;
+    }
     this.syncProductTableState();
   }
 

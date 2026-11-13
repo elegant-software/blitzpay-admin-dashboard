@@ -8,6 +8,7 @@ describe("NotificationService", () => {
   let messages: ToastMessageOptions[];
 
   beforeEach(() => {
+    sessionStorage.clear(); // other specs leave a saved UI language behind
     notifications = TestBed.inject(NotificationService);
     messages = [];
     notifications.messageObserver.subscribe((message) =>

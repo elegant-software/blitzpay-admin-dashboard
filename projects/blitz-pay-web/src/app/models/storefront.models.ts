@@ -40,11 +40,31 @@ export interface StorefrontProduct {
   description?: string | null;
   unitPrice: number;
   imageUrl?: string | null;
+  thumbnailUrl?: string | null;
   active: boolean;
   categoryName?: string | null;
   categoryId?: string | null;
   /** Language the name and description are in; the Original Menu Language when untranslated. */
   language?: string | null;
+}
+
+export interface StorefrontCatalogPage {
+  items: StorefrontProduct[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  limit: number;
+}
+
+export interface StorefrontCatalogCategories {
+  categories: { id: string; name: string; productCount: number }[];
+  uncategorizedCount: number;
+  totalCount: number;
+}
+
+export interface StorefrontCatalogFilter {
+  categoryId?: string;
+  uncategorized?: boolean;
+  cursor?: string;
 }
 
 export interface StorefrontOrderItem {

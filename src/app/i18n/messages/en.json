@@ -1,3 +1,14 @@
 {
-  "Diese Filiale hat keine aktiven Produkte – es gibt nichts zu drucken.": "This branch has no active products to print."
+  "Diese Filiale hat keine aktiven Produkte – es gibt nichts zu drucken.": "This branch has no active products to print.",
+  "All products": "All products",
+  "Uncategorized": "Uncategorized",
+  "Filter products by category": "Filter products by category",
+  "Loading products": "Loading products",
+  "Retry": "Retry",
+  "Category image preview": "Category image preview",
+  "Remove image": "Remove image",
+  "JPEG, PNG or WebP, up to 5 MB.": "JPEG, PNG or WebP, up to 5 MB.",
+  "Choose a JPEG, PNG or WebP image up to 5 MB. Empty files are not allowed.": "Choose a JPEG, PNG or WebP image up to 5 MB. Empty files are not allowed.",
+  "Unable to save category.": "Unable to save category.",
+  "Category saved.": "Category saved."
 }

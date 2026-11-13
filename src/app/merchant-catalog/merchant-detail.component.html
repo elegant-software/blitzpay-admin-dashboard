@@ -818,7 +818,13 @@
                   </thead>
                   <tbody>
                     <tr *ngFor="let category of visibleCategoryRows">
-                      <td>{{ category.name }}</td>
+                      <td>
+                        <div class="d-flex align-items-center gap-2">
+                          <img *ngIf="category.imageUrl && !failedCategoryImages.has(category.id)" [src]="category.imageUrl" [alt]="category.name" class="product-thumb" width="40" height="40" loading="lazy" decoding="async" (error)="failedCategoryImages.add(category.id)" />
+                          <div *ngIf="!category.imageUrl || failedCategoryImages.has(category.id)" class="product-thumb-empty" aria-hidden="true"></div>
+                          <span>{{ category.name }}</span>
+                        </div>
+                      </td>
                       <td>{{ category.updatedAt | displayDate }}</td>
                       <td class="text-end">
                         <button
@@ -891,6 +897,7 @@
           <section
             *ngIf="activeDetailTab === 'branches-products'"
             class="card merchant-products-card"
+            [attr.aria-busy]="productsLoading"
           >
             <div
               class="card-header d-flex justify-content-between align-items-center"
@@ -901,7 +908,7 @@
                   {{ 'Items available in the selected branch.' | adminTranslate }}
                 </p>
               </div>
-              <span class="merchant-section-count">{{
+              <span class="merchant-section-count" *ngIf="!productsLoading">{{
                 productFilterActive ? (productVisibleCount + " / " + products.length) : (products.length)
               }}</span>
             </div>
@@ -955,6 +962,14 @@
                   }}
                 </span>
               </div>
+              <div class="product-category-filters" role="group" [attr.aria-label]="'Filter products by category' | adminTranslate" *ngIf="selectedBranch">
+                <button type="button" class="product-category-chip" [class.is-selected]="!selectedProductCategory" [attr.aria-pressed]="!selectedProductCategory" [disabled]="productsLoading" (click)="selectProductCategory('')">
+                  <span>{{ 'All products' | adminTranslate }}</span><span class="product-category-count" *ngIf="!productsLoading">{{ products.length }}</span>
+                </button>
+                <button *ngFor="let category of productCategoryOptions" type="button" class="product-category-chip" [class.is-selected]="selectedProductCategory === category.id" [attr.aria-pressed]="selectedProductCategory === category.id" [disabled]="productsLoading" (click)="selectProductCategory(category.id)">
+                  <span>{{ category.id === uncategorizedProductCategory ? ('Uncategorized' | adminTranslate) : category.name }}</span><span class="product-category-count" *ngIf="!productsLoading">{{ category.count }}</span>
+                </button>
+              </div>
               <div class="table-card-toolbar mb-3">
                 <div class="table-filter-input-wrap">
                   <label class="table-filter-label" for="product-filter"
@@ -962,6 +977,7 @@
                   >
                   <input
                     id="product-filter"
+                    [disabled]="productsLoading || !!productsLoadError"
                     pInputText
                     class="table-filter-input"
                     [(ngModel)]="productTableState.filter.query"
@@ -974,13 +990,20 @@
                     class="btn btn-outline-secondary table-filter-clear"
                     type="button"
                     (click)="clearProductFilters()"
-                    [disabled]="!productFilterActive"
+                    [disabled]="!productFilterActive || productsLoading"
                   >
                     {{ 'Clear' | adminTranslate }}
                   </button>
                 </div>
               </div>
-              <div class="table-responsive datatable-shell">
+              <div *ngIf="productsLoadError" class="alert alert-danger product-load-error" role="alert">
+                <span>{{ productsLoadError }}</span>
+                <button type="button" class="btn btn-outline-danger btn-sm" (click)="retryProducts()">{{ 'Retry' | adminTranslate }}</button>
+              </div>
+              <div *ngIf="productsLoading" class="product-loading-skeleton" role="status" [attr.aria-label]="'Loading products' | adminTranslate">
+                <div *ngFor="let row of productSkeletonRows" class="product-skeleton-row" aria-hidden="true"><span class="product-skeleton-image"></span><span class="product-skeleton-text"></span><span class="product-skeleton-text short"></span></div>
+              </div>
+              <div class="table-responsive datatable-shell" *ngIf="!productsLoading && !productsLoadError">
                 <table
                   class="table table-sm align-middle mb-0 merchant-results-table"
                 >
@@ -1091,21 +1114,22 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let product of visibleProductRows">
+                    <tr *ngFor="let product of visibleProductRows; trackBy: trackProduct">
                       <td class="product-thumb-col">
                         <img
                           *ngIf="
-                            product.imageUrl &&
+                            (product.thumbnailUrl || product.imageUrl) &&
                             !failedProductImages.has(product.productId)
                           "
-                          [src]="product.imageUrl"
+                          [src]="product.thumbnailUrl || product.imageUrl"
+                          loading="lazy" decoding="async" width="40" height="40"
                           [alt]="product.name"
                           class="product-thumb"
                           (error)="onProductImageError(product.productId)"
                         />
                         <div
                           *ngIf="
-                            !product.imageUrl ||
+                            !(product.thumbnailUrl || product.imageUrl) ||
                             failedProductImages.has(product.productId)
                           "
                           class="product-thumb-empty"
@@ -1405,9 +1429,10 @@
                         "
                       >
                         <div class="d-flex align-items-center gap-2">
-                          <span class="small fw-medium">{{ 'Tap to Pay' | adminTranslate }}</span>
+                          <label class="small fw-medium mb-0" for="terminal-payments-toggle">{{ 'Terminal payments (Tap to Pay + card reader)' | adminTranslate }}</label>
                           <div class="form-check form-switch mb-0">
                             <input dir="auto"
+                              id="terminal-payments-toggle"
                               class="form-check-input"
                               type="checkbox"
                               [ngModel]="tapToPayEnabled"
@@ -1426,6 +1451,7 @@
                             role="status"
                           ></span>
                         </div>
+                        <div class="form-text mt-1">{{ 'girocard (EC) is only accepted with a card reader.' | adminTranslate }}</div>
                       </ng-container>
                       <ng-template #noCapabilities
                         ><span class="text-body-secondary">—</span></ng-template
@@ -1436,6 +1462,104 @@
               </ng-container>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Card readers (read-only; paired in the merchant app) -->
+      <div
+        class="card mt-3 card-readers-card"
+        *ngIf="paymentAccountStatus === 'connected' && tapToPayEnabled"
+      >
+        <div
+          class="card-header d-flex justify-content-between align-items-center gap-2"
+        >
+          <span>{{ 'Card readers' | adminTranslate }}</span>
+          <div class="d-flex align-items-center gap-2">
+            <label class="table-filter-label mb-0" for="card-reader-branch"
+              >{{ 'Branch' | adminTranslate }}</label
+            >
+            <select
+              id="card-reader-branch"
+              class="form-select form-select-sm w-auto"
+              [(ngModel)]="cardReaderBranchId"
+              (ngModelChange)="loadCardReaders()"
+            >
+              <option [ngValue]="null">{{ 'All branches' | adminTranslate }}</option>
+              <option
+                *ngFor="let b of branches"
+                [ngValue]="b.branchId ?? b.id"
+              >
+                {{ b.name }}
+              </option>
+            </select>
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              type="button"
+              [disabled]="cardReadersLoading"
+              (click)="loadCardReaders()"
+            >
+              {{ 'Refresh' | adminTranslate }}
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div *ngIf="cardReadersLoading" class="text-muted small">
+            {{ 'Loading…' | adminTranslate }}
+          </div>
+          <div
+            *ngIf="!cardReadersLoading && cardReadersFailed"
+            class="text-danger small"
+          >
+            {{ 'Card readers could not be loaded.' | adminTranslate }}
+          </div>
+          <div
+            class="table-responsive"
+            *ngIf="!cardReadersLoading && !cardReadersFailed"
+          >
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>{{ 'Label' | adminTranslate }}</th>
+                  <th>{{ 'Branch' | adminTranslate }}</th>
+                  <th>{{ 'Device type' | adminTranslate }}</th>
+                  <th>{{ 'Serial number' | adminTranslate }}</th>
+                  <th>{{ 'Software version' | adminTranslate }}</th>
+                  <th>{{ 'Status' | adminTranslate }}</th>
+                  <th>{{ 'Last seen' | adminTranslate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of cardReaders">
+                  <td>{{ r.label || '—' }}</td>
+                  <td>{{ r.branchName }}</td>
+                  <td>{{ r.deviceType || '—' }}</td>
+                  <td>{{ r.serialNumber || '—' }}</td>
+                  <td>{{ r.softwareVersion || '—' }}</td>
+                  <td>
+                    <span
+                      *ngIf="r.status; else noReaderStatus"
+                      class="status-tag"
+                      [ngClass]="
+                        r.status === 'online'
+                          ? 'status-tag-success'
+                          : 'status-tag-neutral'
+                      "
+                      >{{ (r.status === 'online' ? 'Online' : 'Offline') | adminTranslate }}</span
+                    >
+                    <ng-template #noReaderStatus
+                      ><span class="text-body-secondary">—</span></ng-template
+                    >
+                  </td>
+                  <td>{{ r.lastSeenAt | displayDate }}</td>
+                </tr>
+                <tr *ngIf="cardReaders.length === 0">
+                  <td colspan="7" class="text-center text-body-secondary small">
+                    {{ 'Card readers are paired in the merchant app (Settings → Pair card reader).' | adminTranslate }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -1687,7 +1811,7 @@
   </ng-container>
 </div>
 
-<!-- Category dialog (inline, single-field) -->
+<!-- Product category editor -->
 <div class="product-dialog-backdrop" *ngIf="categoryDialogOpen">
   <div
     class="product-dialog card"
@@ -1704,23 +1828,31 @@
       <button
         class="btn btn-sm btn-outline-secondary"
         type="button"
-        (click)="closeCategoryDialog()"
+        [disabled]="categorySaving" (click)="closeCategoryDialog()"
       >
         {{ 'Close' | adminTranslate }}
       </button>
     </div>
     <div class="card-body">
-      <div class="alert alert-danger mb-3" *ngIf="categoryDialogError">
-        {{ (categoryDialogError | adminTranslate) }}
-      </div>
       <div class="row g-3">
         <div class="col-12">
           <label class="form-label required">{{ 'Name' | adminTranslate }}</label>
-          <input dir="auto" class="form-control" [(ngModel)]="categoryFormName" />
+          <input dir="auto" class="form-control" [(ngModel)]="categoryFormName" [disabled]="categorySaving" maxlength="100" />
         </div>
       </div>
+      <div class="mt-3">
+        <label class="form-label" for="category-image">{{ 'Image' | adminTranslate }}</label>
+        <input id="category-image" type="file" class="form-control" accept="image/jpeg,image/png,image/webp" [disabled]="categorySaving" (change)="onCategoryImageSelected($event)" />
+        <div class="form-text">{{ 'JPEG, PNG or WebP, up to 5 MB.' | adminTranslate }}</div>
+        <div class="d-flex align-items-center gap-3 mt-2">
+          <img *ngIf="categoryImagePreview && !categoryPreviewFailed" [src]="categoryImagePreview" [alt]="'Category image preview' | adminTranslate" class="product-dialog-image-preview" (error)="categoryPreviewFailed = true" />
+          <div *ngIf="!categoryImagePreview || categoryPreviewFailed" class="product-thumb-empty" aria-hidden="true"></div>
+          <button *ngIf="categoryImagePreview" type="button" class="btn btn-sm btn-outline-danger" [disabled]="categorySaving" (click)="removeCategoryImage()">{{ 'Remove image' | adminTranslate }}</button>
+        </div>
+      </div>
+      <div class="alert alert-danger mt-3 mb-0" role="alert" *ngIf="categoryDialogError">{{ categoryDialogError | adminTranslate }}</div>
       <div class="dialog-actions mt-3">
-        <button class="btn btn-primary" type="button" (click)="saveCategory()">
+        <button class="btn btn-primary" type="button" [disabled]="categorySaving" (click)="saveCategory()">
           {{
             categoryDialogMode === "create" ? (('Create category' | adminTranslate)) : (('Save category' | adminTranslate))
           }}
@@ -1728,7 +1860,7 @@
         <button
           class="btn btn-outline-secondary"
           type="button"
-          (click)="closeCategoryDialog()"
+          [disabled]="categorySaving" (click)="closeCategoryDialog()"
         >
           {{ 'Cancel' | adminTranslate }}
         </button>

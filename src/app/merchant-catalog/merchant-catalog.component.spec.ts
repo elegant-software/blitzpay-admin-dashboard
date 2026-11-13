@@ -1,11 +1,12 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { NotificationService } from '../notifications/notification.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { throwError, of } from 'rxjs';
+import { throwError, of, Subject } from 'rxjs';
 import { MerchantDetailComponent } from './merchant-detail.component';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
 import { MerchantApiService } from '../services/merchant-api.service';
-import { Branch, Merchant, Product, ProductCategory, ProviderAccountResponse } from '../models/merchant-catalog.models';
+import { Branch, CardReader, Merchant, Product, ProductCategory, ProviderAccountResponse } from '../models/merchant-catalog.models';
 import { AdminLocaleService } from '../i18n/admin-locale.service';
 
 describe('MerchantDetailComponent product category management', () => {
@@ -77,6 +78,7 @@ describe('MerchantDetailComponent product category management', () => {
       'disableProviderAccount',
       'enableTapToPay',
       'disableTapToPay',
+      'getCardReaders',
       'searchMerchants',
     ]);
     merchantApi.getKitchenAccess.and.returnValue(of({ enabled: false, username: null } as any));
@@ -275,6 +277,72 @@ describe('MerchantDetailComponent product category management', () => {
     expect(actionButtons.every(button => button.querySelector('svg'))).toBeTrue();
   });
 
+  it('previews and saves a selected category image', () => {
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:category-image');
+    const revoke = spyOn(URL, 'revokeObjectURL');
+    const image = new File(['png'], 'drinks.png', { type: 'image/png' });
+    const saved = { ...beverages, imageUrl: '/drinks.png' };
+    merchantApi.createProductCategory.and.returnValue(of(saved));
+    component.openCreateCategoryDialog();
+    component.categoryFormName = 'Beverages';
+    component.onCategoryImageSelected({ target: { files: [image], value: 'drinks.png' } } as unknown as Event);
+    expect(component.categoryImagePreview).toBe('blob:category-image');
+    component.saveCategory();
+    expect(merchantApi.createProductCategory).toHaveBeenCalledWith(component.selectedEnvironment, 'v1', merchant.merchantId, { name: 'Beverages' }, image);
+    expect(component.categories[0].imageUrl).toBe('/drinks.png');
+    expect(component.categoryDialogOpen).toBeFalse();
+    expect(revoke).toHaveBeenCalledWith('blob:category-image');
+  });
+
+  it('removes an existing category image on save', () => {
+    merchantApi.renameProductCategory.and.returnValue(of({ ...beverages, imageUrl: null }));
+    component.openEditCategoryDialog({ ...beverages, imageUrl: '/old.png' });
+    expect(component.categoryImagePreview).toBe('/old.png');
+    component.removeCategoryImage();
+    expect(component.categoryImagePreview).toBeNull();
+    component.saveCategory();
+    expect(merchantApi.renameProductCategory).toHaveBeenCalledWith(component.selectedEnvironment, 'v1', merchant.merchantId, beverages.id, { name: 'Beverages' }, undefined, true);
+  });
+
+  it('guards image-only unsaved changes and releases the preview when discarded', () => {
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:category-image');
+    const revoke = spyOn(URL, 'revokeObjectURL');
+    const confirmDiscard = spyOn(window, 'confirm').and.returnValue(false);
+    component.openEditCategoryDialog(beverages);
+    component.onCategoryImageSelected({ target: { files: [new File(['png'], 'image.png', { type: 'image/png' })], value: '' } } as unknown as Event);
+    component.closeCategoryDialog();
+    expect(component.categoryDialogOpen).toBeTrue();
+    confirmDiscard.and.returnValue(true);
+    component.closeCategoryDialog();
+    expect(component.categoryDialogOpen).toBeFalse();
+    expect(revoke).toHaveBeenCalledWith('blob:category-image');
+  });
+
+  it('rejects invalid and oversized category images without replacing the current preview', () => {
+    component.openEditCategoryDialog({ ...beverages, imageUrl: '/old.png' });
+    for (const file of [new File(['x'], 'image.svg', { type: 'image/svg+xml' }), new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'large.png', { type: 'image/png' }), new File([], 'empty.png', { type: 'image/png' })]) {
+      component.onCategoryImageSelected({ target: { files: [file], value: '' } } as unknown as Event);
+      expect(component.categoryDialogError).toBeTruthy();
+      expect(component.categoryImagePreview).toBe('/old.png');
+    }
+  });
+
+  it('keeps save errors inside the category dialog with the image available for retry', () => {
+    merchantApi.renameProductCategory.and.returnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { code: 'INVALID_REQUEST', detail: 'Category image is invalid.' } })));
+    component.openEditCategoryDialog(beverages);
+    component.saveCategory();
+    expect(component.categoryDialogOpen).toBeTrue();
+    expect(component.categoryDialogError).toBe('Category image is invalid.');
+    expect(component.categorySaving).toBeFalse();
+  });
+
+  it('prevents duplicate category submissions while saving', () => {
+    merchantApi.createProductCategory.and.returnValue(new Subject<ProductCategory>());
+    component.openCreateCategoryDialog(); component.categoryFormName = 'Food';
+    component.saveCategory(); component.saveCategory();
+    expect(merchantApi.createProductCategory).toHaveBeenCalledTimes(1);
+  });
+
   it('creates a new product category and closes the dialog', () => {
     const category: ProductCategory = {
       id: 'cat-4',
@@ -355,7 +423,7 @@ describe('MerchantDetailComponent product category management', () => {
       { name: 'Hot Drinks' }
     );
     expect(component.categories).toEqual([renamedCategory]);
-    expect(TestBed.inject(NotificationService).success).toHaveBeenCalledWith('Category renamed.');
+    expect(TestBed.inject(NotificationService).success).toHaveBeenCalledWith('Category saved.');
   });
 
   it('keeps the active category filter and sort after a rename, removing a row that no longer matches', () => {
@@ -517,6 +585,79 @@ describe('MerchantDetailComponent product category management', () => {
       component.enableProviderAccount('PAYPAL');
 
       expect(merchantApi.enableProviderAccount).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('card readers', () => {
+    const reader: CardReader = {
+      id: 'tmr_1', branchId: 'branch-1', branchName: 'Hauptfiliale', label: 'WisePad 3 Theke',
+      deviceType: 'bbpos_wisepad3', serialNumber: 'WSC5001', softwareVersion: '4.01.07.00_DE',
+      status: 'online', lastSeenAt: '2026-11-09T10:15:00Z'
+    };
+
+    function showPaymentTab(): HTMLElement {
+      merchantApi.getVerticals.and.returnValue(of([]));
+      component.paymentAccountStatus = 'connected';
+      component.tapToPayEnabled = true;
+      component.branches = [{ branchId: 'branch-1', branchCode: 'B1', merchantId: merchant.merchantId, name: 'Hauptfiliale', status: 'ACTIVE' }];
+      component.activeDetailTab = 'payment';
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('relabels the toggle as terminal payments with a girocard hint', () => {
+      component.providerAccounts = [{ id: 'pa-1', pspCode: 'STRIPE', enabled: true, createdAt: '', updatedAt: '' }];
+      const root = showPaymentTab();
+      expect(root.querySelector('label[for="terminal-payments-toggle"]')?.textContent).toContain('Terminal payments (Tap to Pay + card reader)');
+      expect(root.textContent).toContain('girocard (EC) is only accepted with a card reader.');
+    });
+
+    it('loads card readers when terminal payments are enabled and renders them without UUIDs', () => {
+      merchantApi.getStripeConnectStatus.and.returnValue(of({
+        connected: true, chargesEnabled: true, detailsSubmitted: true, enabledPaymentFlows: ['TAP_TO_PAY']
+      }));
+      merchantApi.getCardReaders.and.returnValue(of([reader]));
+
+      component.loadPaymentAccountStatus(merchant.merchantId);
+      const root = showPaymentTab();
+
+      expect(merchantApi.getCardReaders).toHaveBeenCalledWith(jasmine.anything(), jasmine.anything(), merchant.merchantId, null);
+      const cells = Array.from(root.querySelectorAll('.card-readers-card tbody td')).map((td) => td.textContent?.trim());
+      expect(cells).toEqual(['WisePad 3 Theke', 'Hauptfiliale', 'bbpos_wisepad3', 'WSC5001', '4.01.07.00_DE', 'Online', jasmine.stringMatching(/9 Nov 2026/)]);
+      const branchSelect = root.querySelector<HTMLSelectElement>('#card-reader-branch')!;
+      expect(Array.from(branchSelect.options).map((o) => o.textContent?.trim())).toEqual(['All branches', 'Hauptfiliale']);
+      expect(root.querySelector('.card-readers-card')?.textContent).not.toContain('branch-1');
+    });
+
+    it('filters card readers by the selected branch', () => {
+      merchantApi.getCardReaders.and.returnValue(of([]));
+      component.selectedMerchant = merchant;
+      component.cardReaderBranchId = 'branch-1';
+
+      component.loadCardReaders();
+
+      expect(merchantApi.getCardReaders).toHaveBeenCalledWith(jasmine.anything(), jasmine.anything(), merchant.merchantId, 'branch-1');
+    });
+
+    it('explains where card readers are paired when there are none', () => {
+      const root = showPaymentTab();
+      expect(root.querySelector('.card-readers-card')?.textContent)
+        .toContain('Card readers are paired in the merchant app (Settings → Pair card reader).');
+    });
+
+    it('shows an error state when card readers cannot be loaded', () => {
+      merchantApi.getCardReaders.and.returnValue(throwError(() => new Error('boom')));
+      component.selectedMerchant = merchant;
+      component.loadCardReaders();
+      const root = showPaymentTab();
+      expect(root.querySelector('.card-readers-card .text-danger')?.textContent).toContain('Card readers could not be loaded.');
+    });
+
+    it('hides the card readers section when terminal payments are disabled', () => {
+      const root = showPaymentTab();
+      component.tapToPayEnabled = false;
+      fixture.detectChanges();
+      expect(root.querySelector('.card-readers-card')).toBeNull();
     });
   });
 });
