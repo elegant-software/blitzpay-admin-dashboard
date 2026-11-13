@@ -1039,5 +1039,11 @@
   "All products": "كل المنتجات",
   "Uncategorized": "بدون فئة",
   "Filter products by category": "تصفية المنتجات حسب الفئة",
-  "Loading products": "جارٍ تحميل المنتجات"
+  "Loading products": "جارٍ تحميل المنتجات",
+  "Category image preview": "معاينة صورة الفئة",
+  "Remove image": "إزالة الصورة",
+  "JPEG, PNG or WebP, up to 5 MB.": "JPEG أو PNG أو WebP، بحد أقصى 5 ميغابايت.",
+  "Choose a JPEG, PNG or WebP image up to 5 MB. Empty files are not allowed.": "اختر صورة JPEG أو PNG أو WebP بحد أقصى 5 ميغابايت. لا يُسمح بالملفات الفارغة.",
+  "Unable to save category.": "تعذر حفظ الفئة.",
+  "Category saved.": "تم حفظ الفئة."
 }
