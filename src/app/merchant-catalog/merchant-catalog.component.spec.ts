@@ -5,6 +5,7 @@ import { Router, provideRouter } from '@angular/router';
 import { throwError, of, Subject } from 'rxjs';
 import { MerchantDetailComponent } from './merchant-detail.component';
 import { getEnvironmentByKey } from '../services/merchant-environment.service';
+import { KioskApiService } from '../services/kiosk-api.service';
 import { MerchantApiService } from '../services/merchant-api.service';
 import { Branch, CardReader, Merchant, Product, ProductCategory, ProviderAccountResponse } from '../models/merchant-catalog.models';
 import { AdminLocaleService } from '../i18n/admin-locale.service';
@@ -88,6 +89,7 @@ describe('MerchantDetailComponent product category management', () => {
       imports: [MerchantDetailComponent],
       providers: [
         { provide: MerchantApiService, useValue: merchantApi },
+        { provide: KioskApiService, useValue: { listKiosks: () => of([]), getSettings: () => of({ paymentChoices: ['CARD'], resetSeconds: 30, languages: [], advertisedProductIds: [] }) } },
         provideRouter([])
       ]
     }).compileComponents();

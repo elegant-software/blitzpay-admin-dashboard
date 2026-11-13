@@ -815,3 +815,40 @@ export interface PreparationConfiguration {
   categoryDefaults: Record<string, string>;
   productOverrides: Record<string, string>;
 }
+
+// ── Kiosk ─────────────────────────────────────────────────────────────────
+
+export type KioskPaymentChoice = 'CARD' | 'CASH' | 'SCAN_TO_PAY';
+
+/** What a Merchant Manager configures for a Branch; shared by all Kiosks of the Branch. `GET`/`PUT .../kiosk/settings`. */
+export interface KioskSettings {
+  paymentChoices: KioskPaymentChoice[];
+  resetSeconds: number;
+  languages: string[];
+  advertisedProductIds: string[];
+}
+
+/** One Kiosk of a Branch, from `GET /merchant/branches/{branchId}/kiosks`. Never carries a password. */
+export interface Kiosk {
+  id: string;
+  number: number;
+  name: string;
+  username: string;
+  enabled: boolean;
+}
+
+/**
+ * The Kiosk Login returned once by `POST .../kiosks` (add) and `POST .../kiosks/{kioskId}/enable` (enable or reset).
+ * The password exists only in this response: keep it in component state, never in storage, the URL, logs or error reports.
+ */
+export interface KioskLogin {
+  kioskId: string;
+  name: string;
+  username: string;
+  password: string;
+  keycloakUrl: string;
+  realm: string;
+  clientId: string;
+  apiBaseUrl: string;
+  branchId: string;
+}

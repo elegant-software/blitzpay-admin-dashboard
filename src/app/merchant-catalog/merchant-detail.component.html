@@ -1232,6 +1232,12 @@
           >
             <h2 id="branch-kitchen-title" class="h6 mb-3">{{ 'Kitchen · {0}' | adminTranslate: [(selectedBranch!.name)] }}</h2>
             <app-branch-kitchen-screen [branchId]="selectedBranch!.branchId!" />
+            <app-branch-kiosk
+              [branchId]="selectedBranch!.branchId!"
+              [products]="products"
+              [supportedLanguages]="supportedMenuLanguages"
+              [menuLanguages]="menuLanguages"
+            />
             <app-branch-kitchen-routing
               [merchantId]="selectedMerchant.merchantId"
               [branchId]="selectedBranch!.branchId!"

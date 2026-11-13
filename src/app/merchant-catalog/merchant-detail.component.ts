@@ -56,6 +56,7 @@ import { environment } from "../../environments/environment";
 import { BranchCatalogQrComponent } from "./branch-catalog-qr.component";
 import { BranchKitchenRoutingComponent } from "./branch-kitchen-routing.component";
 import { BranchKitchenScreenComponent } from "./branch-kitchen-screen.component";
+import { BranchKioskComponent } from "./branch-kiosk.component";
 
 @Component({
   selector: "app-merchant-detail",
@@ -71,6 +72,7 @@ import { BranchKitchenScreenComponent } from "./branch-kitchen-screen.component"
     BranchCatalogQrComponent,
     BranchKitchenRoutingComponent,
     BranchKitchenScreenComponent,
+    BranchKioskComponent,
   ],
   templateUrl: "./merchant-detail.component.html",
   styleUrl: "./merchant-catalog.component.css",
