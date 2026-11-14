@@ -1087,5 +1087,12 @@
   "JPEG, PNG or WebP, up to 5 MB.": "JPEG, PNG oder WebP, bis zu 5 MB.",
   "Choose a JPEG, PNG or WebP image up to 5 MB. Empty files are not allowed.": "Wählen Sie ein JPEG-, PNG- oder WebP-Bild bis zu 5 MB. Leere Dateien sind nicht erlaubt.",
   "Unable to save category.": "Kategorie konnte nicht gespeichert werden.",
-  "Category saved.": "Kategorie gespeichert."
+  "Category saved.": "Kategorie gespeichert.",
+  "Admin PIN": "Admin-PIN",
+  "New Admin PIN": "Neue Admin-PIN",
+  "An Admin PIN is set. Staff enter it on a Kiosk to sign it out.": "Eine Admin-PIN ist gesetzt. Das Personal gibt sie am Kiosk ein, um ihn abzumelden.",
+  "No Admin PIN is set, so staff cannot sign a Kiosk out on the device.": "Keine Admin-PIN gesetzt, daher kann das Personal einen Kiosk nicht am Gerät abmelden.",
+  "4 to 8 digits. Leave empty to keep the current PIN.": "4 bis 8 Ziffern. Leer lassen, um die aktuelle PIN zu behalten.",
+  "Remove the Admin PIN": "Admin-PIN entfernen",
+  "Enter 4 to 8 digits.": "Geben Sie 4 bis 8 Ziffern ein."
 }

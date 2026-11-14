@@ -826,6 +826,10 @@ export interface KioskSettings {
   resetSeconds: number;
   languages: string[];
   advertisedProductIds: string[];
+  /** Write-only Admin PIN (4 to 8 digits) that opens the Kiosks' admin menu. Omit = unchanged, "" = removed. */
+  adminPin?: string;
+  /** Read-only: whether the Branch has an Admin PIN. */
+  adminPinSet?: boolean;
 }
 
 /** One Kiosk of a Branch, from `GET /merchant/branches/{branchId}/kiosks`. Never carries a password. */

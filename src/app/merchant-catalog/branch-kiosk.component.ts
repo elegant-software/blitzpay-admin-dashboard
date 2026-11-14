@@ -82,6 +82,8 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
   settings: KioskSettings = this.freshSettings();
   submitted = false;
   errors: KioskSettingsErrors = {};
+  /** Ticked to remove the Admin PIN on the next save. The PIN itself is never read back from the backend. */
+  removeAdminPin = false;
 
   private request?: Subscription;
   private saveRequest?: Subscription;
@@ -232,7 +234,7 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
     if (this.saving) return;
     this.submitted = true;
     this.revalidate();
-    if (this.errors.paymentChoices || this.errors.resetSeconds) return;
+    if (this.errors.paymentChoices || this.errors.resetSeconds || this.errors.adminPin) return;
 
     this.saving = true;
     this.saveRequest?.unsubscribe();
@@ -242,7 +244,8 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
       .subscribe({
         next: (saved) => {
           this.saving = false;
-          this.settings = this.copySettings(saved ?? body);
+          this.removeAdminPin = false;
+          this.settings = this.copySettings(saved ?? { ...body, adminPinSet: this.settings.adminPinSet });
           this.notifications.success("Kiosk Settings saved.");
         },
         error: (error) => {
@@ -263,7 +266,15 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
       advertisedProductIds: hasProducts
         ? this.settings.advertisedProductIds.filter((id) => activeIds.has(id))
         : [...this.settings.advertisedProductIds],
+      // Sent only when changed, so a normal save keeps the Admin PIN.
+      ...(this.removeAdminPin ? { adminPin: "" } : this.settings.adminPin ? { adminPin: this.settings.adminPin } : {}),
     };
+  }
+
+  onAdminPinChange(value: string): void {
+    this.settings.adminPin = value.replace(/\D/g, "");
+    if (this.settings.adminPin) this.removeAdminPin = false;
+    this.revalidate();
   }
 
   private revalidate(): void {
@@ -280,6 +291,7 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
       resetSeconds: settings?.resetSeconds ?? DEFAULT_KIOSK_SETTINGS.resetSeconds,
       languages: [...(settings?.languages ?? [])],
       advertisedProductIds: [...(settings?.advertisedProductIds ?? [])],
+      adminPinSet: settings?.adminPinSet ?? false,
     };
   }
 
@@ -288,6 +300,7 @@ export class BranchKioskComponent implements OnChanges, OnDestroy {
     this.kiosks = [];
     this.forbidden = false;
     this.settings = this.freshSettings();
+    this.removeAdminPin = false;
     this.submitted = false;
     this.errors = {};
     if (!this.branchId) return;

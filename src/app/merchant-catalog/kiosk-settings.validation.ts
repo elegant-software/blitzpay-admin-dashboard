@@ -15,6 +15,7 @@ export const DEFAULT_KIOSK_SETTINGS: KioskSettings = {
 export interface KioskSettingsErrors {
   paymentChoices?: string;
   resetSeconds?: string;
+  adminPin?: string;
 }
 
 /** Messages are English source keys, translated in the template. */
@@ -26,6 +27,9 @@ export function validateKioskSettings(settings: KioskSettings): KioskSettingsErr
   const seconds = settings.resetSeconds;
   if (!Number.isInteger(seconds) || seconds < KIOSK_RESET_MIN_SECONDS || seconds > KIOSK_RESET_MAX_SECONDS) {
     errors.resetSeconds = 'Enter a whole number of seconds from 5 to 300.';
+  }
+  if (settings.adminPin && !/^\d{4,8}$/.test(settings.adminPin)) {
+    errors.adminPin = 'Enter 4 to 8 digits.';
   }
   return errors;
 }
