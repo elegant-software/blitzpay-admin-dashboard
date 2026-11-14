@@ -4,7 +4,7 @@ export const environment = {
   defaultEnvironmentKey: 'local' as const,
   auth: {
     authorityUrl: runtimeConfig.authUrl ?? `https://${runtimeConfig.authHost}`,
-    realm: 'blitzpay',
+    realm: 'blitzpay-business',
     clientId: 'blitzpay-admin-dashboard',
     redirectPath: '/',
     postLogoutRedirectPath: '/auth/login',
