@@ -4,7 +4,7 @@ export const environment = {
   defaultEnvironmentKey: 'aws-staging' as const,
   auth: {
     authorityUrl: `https://${runtimeConfig.authHost}`,
-    realm: 'blitzpay',
+    realm: 'blitzpay-business',
     clientId: 'blitzpay-admin-dashboard',
     redirectPath: '/',
     postLogoutRedirectPath: '/auth/login',
