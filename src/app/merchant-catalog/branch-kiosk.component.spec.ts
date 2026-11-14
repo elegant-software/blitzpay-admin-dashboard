@@ -191,6 +191,31 @@ describe("BranchKioskComponent", () => {
     expect(notifications.success).toHaveBeenCalledWith("Kiosk Settings saved.");
   });
 
+  it("sends the Admin PIN only when one is typed or removal is ticked, and blocks a malformed one", async () => {
+    await setup();
+    api.saveSettings.and.callFake((_e, _v, _b, body) => of({ ...body, adminPin: undefined, adminPinSet: body.adminPin !== "" }));
+
+    component.onAdminPinChange("12");
+    component.save();
+    expect(api.saveSettings).not.toHaveBeenCalled();
+    expect(component.errors.adminPin).toBeDefined();
+
+    component.onAdminPinChange("4821");
+    component.save();
+    expect(api.saveSettings.calls.mostRecent().args[3].adminPin).toBe("4821");
+    expect(component.settings.adminPin).toBeUndefined();
+    expect(component.settings.adminPinSet).toBeTrue();
+
+    component.save();
+    expect("adminPin" in api.saveSettings.calls.mostRecent().args[3]).toBeFalse();
+
+    component.removeAdminPin = true;
+    component.save();
+    expect(api.saveSettings.calls.mostRecent().args[3].adminPin).toBe("");
+    expect(component.settings.adminPinSet).toBeFalse();
+    expect(component.removeAdminPin).toBeFalse();
+  });
+
   it("reports a failed save through the notification service", async () => {
     await setup();
     const error = new HttpErrorResponse({ status: 400, error: { code: "KIOSK_INVALID" } });

@@ -143,6 +143,24 @@
           </div>
         </fieldset>
 
+        <fieldset class="mb-3" data-test="kiosk-admin-pin">
+          <legend class="form-label fs-6">{{ 'Admin PIN' | adminTranslate }}</legend>
+          <p class="form-text mt-0">
+            {{ (settings.adminPinSet ? 'An Admin PIN is set. Staff enter it on a Kiosk to sign it out.' : 'No Admin PIN is set, so staff cannot sign a Kiosk out on the device.') | adminTranslate }}
+          </p>
+          <label class="form-label" for="kiosk-admin-pin">{{ (settings.adminPinSet ? 'New Admin PIN' : 'Admin PIN') | adminTranslate }}</label>
+          <input id="kiosk-admin-pin" name="adminPin" class="form-control" style="max-width: 10rem" type="password"
+            inputmode="numeric" autocomplete="new-password" maxlength="8" [class.is-invalid]="!!errors.adminPin"
+            [ngModel]="settings.adminPin ?? ''" (ngModelChange)="onAdminPinChange($event)" />
+          <div *ngIf="errors.adminPin" class="text-danger small" role="alert" data-test="kiosk-admin-pin-error">{{ errors.adminPin | adminTranslate }}</div>
+          <div class="form-text">{{ '4 to 8 digits. Leave empty to keep the current PIN.' | adminTranslate }}</div>
+          <div class="form-check mt-2" *ngIf="settings.adminPinSet">
+            <input class="form-check-input" type="checkbox" id="kiosk-admin-pin-remove" name="removeAdminPin"
+              [(ngModel)]="removeAdminPin" [disabled]="!!settings.adminPin" />
+            <label class="form-check-label" for="kiosk-admin-pin-remove">{{ 'Remove the Admin PIN' | adminTranslate }}</label>
+          </div>
+        </fieldset>
+
         <button class="btn btn-primary" type="submit" [disabled]="saving">
           <span *ngIf="saving" class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
           {{ 'Save Kiosk Settings' | adminTranslate }}

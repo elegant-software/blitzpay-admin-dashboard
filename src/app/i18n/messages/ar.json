@@ -1087,5 +1087,12 @@
   "JPEG, PNG or WebP, up to 5 MB.": "JPEG أو PNG أو WebP، بحد أقصى 5 ميغابايت.",
   "Choose a JPEG, PNG or WebP image up to 5 MB. Empty files are not allowed.": "اختر صورة JPEG أو PNG أو WebP بحد أقصى 5 ميغابايت. لا يُسمح بالملفات الفارغة.",
   "Unable to save category.": "تعذر حفظ الفئة.",
-  "Category saved.": "تم حفظ الفئة."
+  "Category saved.": "تم حفظ الفئة.",
+  "Admin PIN": "رمز PIN للمسؤول",
+  "New Admin PIN": "رمز PIN جديد للمسؤول",
+  "An Admin PIN is set. Staff enter it on a Kiosk to sign it out.": "تم تعيين رمز PIN للمسؤول. يُدخله الموظفون على الكشك لتسجيل خروجه.",
+  "No Admin PIN is set, so staff cannot sign a Kiosk out on the device.": "لم يتم تعيين رمز PIN للمسؤول، لذا لا يمكن للموظفين تسجيل خروج الكشك من الجهاز.",
+  "4 to 8 digits. Leave empty to keep the current PIN.": "من 4 إلى 8 أرقام. اتركه فارغًا للإبقاء على الرمز الحالي.",
+  "Remove the Admin PIN": "إزالة رمز PIN للمسؤول",
+  "Enter 4 to 8 digits.": "أدخل من 4 إلى 8 أرقام."
 }
